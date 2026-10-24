@@ -19,6 +19,7 @@ struct ContentView: View {
     @AppStorage("expCrypt") private var expCrypt = 0
     @AppStorage("expDelay") private var expDelay = 1.5
     @AppStorage("expSkip") private var expSkip = false
+    @AppStorage("expBond") private var expBond = true
 
     private var keyValid: Bool {
         if let d = Data(hex: authKey) { return d.count == 16 }
@@ -126,6 +127,9 @@ struct ContentView: View {
                         Text("5 с").tag(5.0)
                     }
                     Toggle("Без device info/battery", isOn: $expSkip)
+                    Toggle("Створювати пару перед сесією", isOn: $expBond)
+                    Button("Створити пару зараз") { ble.probeBonding { ble.addLog("Перевірку пари завершено") } }
+                        .disabled(ble.connectedID == nil || !ble.servicesReady || busy)
                 }
 
                 Section("Журнал") {
@@ -182,7 +186,7 @@ struct ContentView: View {
         guard let face else { return }
         do {
             let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
-            s.experiment = BandExperiment(ackMode: expAck, cryptMode: expCrypt, delay: expDelay, skipProbe: expSkip)
+            s.experiment = BandExperiment(ackMode: expAck, cryptMode: expCrypt, delay: expDelay, skipProbe: expSkip, bonding: expBond)
             session = s
             busy = true
             progress = 0

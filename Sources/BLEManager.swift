@@ -42,6 +42,7 @@ final class BLEManager: NSObject, ObservableObject {
     private var awaitingResponse = false
     private var responseCompletion: (() -> Void)?
     private var notifyCompletions: [CBUUID: (Bool) -> Void] = [:]
+    private var readCompletions: [CBUUID: (Data?, Error?) -> Void] = [:]
 
     override init() {
         super.init()
@@ -62,6 +63,13 @@ final class BLEManager: NSObject, ObservableObject {
         }
         devices.removeAll()
         peripherals.removeAll()
+        // Пристрої, вже підключені до iPhone іншим застосунком (напр. Mi Fitness), не рекламуються
+        let fe95 = CBUUID(string: "FE95")
+        for p in central.retrieveConnectedPeripherals(withServices: [fe95]) {
+            peripherals[p.identifier] = p
+            devices.append(DiscoveredBand(id: p.identifier, name: (p.name ?? "?") + " (вже підключений до iPhone)", rssi: 0))
+            addLog("Уже підключений до системи: \(p.name ?? "?")")
+        }
         isScanning = true
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         addLog("Пошук пристроїв…")
@@ -98,6 +106,51 @@ final class BLEManager: NSObject, ObservableObject {
         }
         notifyCompletions[uuid] = completion
         p.setNotifyValue(true, for: c)
+    }
+
+    func read(_ uuid: CBUUID, completion: @escaping (Data?, Error?) -> Void) {
+        guard let p = active, let c = characteristics[uuid], c.properties.contains(.read) else {
+            completion(nil, nil)
+            return
+        }
+        readCompletions[uuid] = completion
+        p.readValue(for: c)
+    }
+
+    /// Спроба створити системну пару (bonding). Браслет шифрує BLE-зв'язок лише після пари,
+    /// а iOS запускає пару, коли характеристика відповідає "insufficient authentication/encryption".
+    func probeBonding(completion: @escaping () -> Void) {
+        let readable = characteristics.values
+            .filter { $0.properties.contains(.read) }
+            .map(\.uuid)
+        addLog("Перевірка пари: читаю \(readable.map(\.uuidString).joined(separator: ", "))")
+        var remaining = readable
+        func next() {
+            guard let uuid = remaining.first else {
+                // Пульс часто вимагає шифрування — підписка теж запускає пару
+                let hr = CBUUID(string: "2A37")
+                if characteristics[hr] != nil {
+                    subscribe(to: hr) { [weak self] ok in
+                        self?.addLog("Підписка 2A37: \(ok ? "ок" : "помилка")")
+                        completion()
+                    }
+                } else {
+                    completion()
+                }
+                return
+            }
+            remaining.removeFirst()
+            read(uuid) { [weak self] data, error in
+                if let error {
+                    self?.addLog("  читання \(uuid.uuidString): помилка — \(error.localizedDescription)")
+                } else {
+                    let hex = (data ?? Data()).prefix(20).map { String(format: "%02x", $0) }.joined()
+                    self?.addLog("  читання \(uuid.uuidString): \(hex)")
+                }
+                next()
+            }
+        }
+        next()
     }
 
     // MARK: - Запис
@@ -151,6 +204,7 @@ final class BLEManager: NSObject, ObservableObject {
         awaitingResponse = false
         responseCompletion = nil
         notifyCompletions.removeAll()
+        readCompletions.removeAll()
     }
 }
 
@@ -231,6 +285,11 @@ extension BLEManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let cb = readCompletions.removeValue(forKey: characteristic.uuid) {
+            cb(characteristic.value, error)
+            return
+        }
+        if let error { addLog("Сповіщення \(characteristic.uuid.uuidString): \(error.localizedDescription)") }
         if let d = characteristic.value { onData?(characteristic.uuid, d) }
     }
 

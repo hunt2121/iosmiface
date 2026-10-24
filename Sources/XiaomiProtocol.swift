@@ -41,9 +41,11 @@ struct BandExperiment {
     var delay = 1.5
     /// Не слати device info / battery, одразу запит на встановлення
     var skipProbe = false
+    /// Перед сесією спробувати створити системну пару iPhone ↔ браслет
+    var bonding = true
 
     var title: String {
-        "ack=\(ackMode) crypt=\(cryptMode) delay=\(delay) skipProbe=\(skipProbe)"
+        "ack=\(ackMode) crypt=\(cryptMode) delay=\(delay) skipProbe=\(skipProbe) bonding=\(bonding)"
     }
 }
 
@@ -130,14 +132,20 @@ final class XiaomiBandSession {
         ble.onDisconnect = { [weak self] in self?.fail(BandError.disconnected) }
 
         stage = .waitingSession
-        report(0, "Відкриття сесії…")
-        armTimeout(18, "відкриття сесії")
+        report(0, experiment.bonding ? "Перевірка пари (підтвердіть запит iOS, якщо з'явиться)…" : "Відкриття сесії…")
+        armTimeout(experiment.bonding ? 60 : 18, "відкриття сесії")
         ble.subscribe(to: Self.rxUUID) { [weak self] ok in
             guard let self, self.stage == .waitingSession else { return }
             guard ok else { return self.fail(BandError.protocolUnsupported("Не вдалося підписатися на сповіщення 0x5E")) }
-            // Діагностика: 0x5F теж має notify, тож слухаємо й його
-            self.ble.subscribe(to: Self.txUUID) { _ in }
-            self.sendStartSession(attempt: 1)
+            if self.experiment.bonding {
+                self.ble.probeBonding { [weak self] in
+                    guard let self, self.stage == .waitingSession else { return }
+                    self.armTimeout(18, "відкриття сесії")
+                    self.sendStartSession(attempt: 1)
+                }
+            } else {
+                self.sendStartSession(attempt: 1)
+            }
         }
     }
 
@@ -155,7 +163,7 @@ final class XiaomiBandSession {
     // MARK: - Прийом
 
     private func handleNotification(_ uuid: CBUUID, _ data: Data) {
-        if stage == .waitingSession || stage == .waitingWatchNonce || stage == .waitingAuthResult {
+        if uuid != Self.rxUUID || stage == .waitingSession || stage == .waitingWatchNonce || stage == .waitingAuthResult {
             ble.addLog("← raw \(uuid.uuidString.prefix(4)) \(Self.hex(data, max: 24))")
         }
         guard uuid == Self.rxUUID else { return }
