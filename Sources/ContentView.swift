@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var foundDevices: [MiFitnessKey.Device] = []
     @State private var keyStatus: String?
     @State private var keyStatusIsError = false
+    @State private var showKeyHelp = false
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -93,14 +94,11 @@ struct ContentView: View {
                     ble.disconnect()
                     bandFaces = nil
                 }
-                // Після повернення в застосунок ключ міг змінитися (наприклад, після нового спарювання)
-                if phase == .active { autoFindKey(atLaunch: false) }
             }
             .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
                 if importingFolder { folderPicked(result) } else { loadFace(result) }
             }
-            .onAppear { autoFindKey(atLaunch: true) }
             .confirmationDialog("Видалити циферблат з браслета?",
                                 isPresented: Binding(get: { faceToDelete != nil },
                                                      set: { if !$0 { faceToDelete = nil } }),
@@ -118,11 +116,19 @@ struct ContentView: View {
     // MARK: - Розділи
 
     private var authSection: some View {
-        Section {
+        Section("1. Auth key") {
+            TextField("32 hex-символи", text: $authKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .font(.system(.body, design: .monospaced))
+                .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
+            Text(keyValid ? "Ключ виглядає коректно" : "Введіть ключ вручну або знайдіть його автоматично")
+                .font(.footnote)
+                .foregroundStyle(keyValid ? .green : .secondary)
             Button {
                 findKey()
             } label: {
-                Label("Знайти ключ у Mi Fitness", systemImage: "key.viewfinder")
+                Label("Знайти автоматично", systemImage: "key.viewfinder")
             }
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
@@ -148,18 +154,19 @@ struct ContentView: View {
                 Text(keyStatus).font(.footnote)
                     .foregroundStyle(keyStatusIsError ? .red : .green)
             }
-            TextField("32 hex-символи", text: $authKey)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .font(.system(.body, design: .monospaced))
-                .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
-            Text(keyValid ? "Ключ виглядає коректно" : "Потрібно рівно 16 байт у hex")
-                .font(.footnote)
-                .foregroundStyle(keyValid ? .green : .secondary)
-        } header: {
-            Text("1. Auth key")
-        } footer: {
-            Text("Першого разу виберіть у «Файлах» папку На iPhone › Mi Fitness (або MHWCahe у ній). Застосунок запам'ятає її й надалі знаходитиме ключ сам.")
+        }
+        .alert("Пошук ключа", isPresented: $showKeyHelp) {
+            Button("Вибрати папку") {
+                Task { @MainActor in
+                    // Даємо алерту закритися, інакше вікно вибору може не відкритися
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    importingFolder = true
+                    showImporter = true
+                }
+            }
+            Button("Скасувати", role: .cancel) {}
+        } message: {
+            Text("У вікні, що відкриється, перейдіть у розділ «На iPhone», виберіть папку «Mi Fitness» і натисніть «Відкрити». Застосунок сам знайде ключ і запам'ятає папку.")
         }
     }
 
@@ -304,25 +311,10 @@ struct ContentView: View {
         }
     }
 
-    /// Автоматичний пошук ключа при вході в застосунок.
-    /// Якщо папку Mi Fitness ще не вибирали, а ключа немає — один раз пропонуємо її вибрати.
-    private func autoFindKey(atLaunch: Bool) {
-        guard !busy else { return }
-        if let folder = MiFitnessKey.savedFolder() {
-            searchKey(in: folder, isNewFolder: false, quiet: keyValid)
-        } else if atLaunch, !keyValid {
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 600_000_000)
-                importingFolder = true
-                showImporter = true
-            }
-        }
-    }
-
     private func findKey() {
+        // Папку вже вибирали — шукаємо одразу, інакше показуємо коротку інструкцію
         guard let folder = MiFitnessKey.savedFolder() else {
-            importingFolder = true
-            showImporter = true
+            showKeyHelp = true
             return
         }
         searchKey(in: folder, isNewFolder: false)
