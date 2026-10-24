@@ -15,11 +15,11 @@ struct ContentView: View {
     @State private var message: String?
     @State private var messageIsError = false
     @State private var session: XiaomiBandSession?
-    @AppStorage("expAck") private var expAck = 0
+    @AppStorage("expAck2") private var expAck = 2
     @AppStorage("expCrypt") private var expCrypt = 0
     @AppStorage("expDelay") private var expDelay = 1.5
     @AppStorage("expSkip") private var expSkip = false
-    @AppStorage("expBond") private var expBond = true
+    @AppStorage("expBond2") private var expBond = false
 
     private var keyValid: Bool {
         if let d = Data(hex: authKey) { return d.count == 16 }

@@ -34,7 +34,7 @@ enum BandError: LocalizedError {
 /// Діагностичні перемикачі: браслет Band 10 поки ігнорує наші зашифровані команди.
 struct BandExperiment {
     /// 0 = ack з seq отриманого пакета; 1 = ack з seq+1 ("наступний очікуваний"); 2 = без ack
-    var ackMode = 0
+    var ackMode = 2
     /// 0 = AES-CTR ключем шифрування; 1 = ключем дешифрування; 2 = без шифрування (opcode 1)
     var cryptMode = 0
     /// Затримка після автентифікації перед першою командою, секунди
@@ -42,7 +42,7 @@ struct BandExperiment {
     /// Не слати device info / battery, одразу запит на встановлення
     var skipProbe = false
     /// Перед сесією спробувати створити системну пару iPhone ↔ браслет
-    var bonding = true
+    var bonding = false
 
     var title: String {
         "ack=\(ackMode) crypt=\(cryptMode) delay=\(delay) skipProbe=\(skipProbe) bonding=\(bonding)"
@@ -67,7 +67,9 @@ final class XiaomiBandSession {
         static let authStep3: UInt32 = 27
         static let authUserId: UInt32 = 5
 
+        static let watchfaceList: UInt32 = 0
         static let watchfaceSet: UInt32 = 1
+        static let watchfaceDelete: UInt32 = 2
         static let watchfaceInstall: UInt32 = 4
 
         static let uploadStart: UInt32 = 0
@@ -76,7 +78,8 @@ final class XiaomiBandSession {
 
     private enum Stage {
         case idle, waitingSession, waitingWatchNonce, waitingAuthResult, probing
-        case waitingInstallStatus, waitingUploadAck, uploading, finishing, done
+        case waitingInstallStatus, listing, deleting
+        case waitingUploadAck, uploading, finishing, done
     }
 
     private let ble: BLEManager
@@ -97,6 +100,8 @@ final class XiaomiBandSession {
     private var successNote = "Циферблат встановлено й активовано"
     private var timeoutWork: DispatchWorkItem?
     private var uploadParts: [Data] = []
+    private var lastInstallStatus: UInt64 = 0
+    private var retriedAfterDelete = false
 
     init(ble: BLEManager, authKeyHex: String) throws {
         guard let key = Data(hex: authKeyHex), key.count == 16 else { throw BandError.badAuthKey }
@@ -115,6 +120,7 @@ final class XiaomiBandSession {
         self.completion = completion
         self.rxBuffer.removeAll()
         self.sequence = 0
+        self.retriedAfterDelete = false
         self.encryptionKey = nil
         self.decryptionKey = nil
 
@@ -365,8 +371,51 @@ final class XiaomiBandSession {
                 ble.addLog("Циферблат уже встановлений, активую")
                 activateWatchface(note: "Циферблат уже був на браслеті, його активовано")
             default:
-                fail(BandError.device("статус встановлення \(status)"))
+                // Щоб зрозуміти причину, дивимось список циферблатів на браслеті
+                lastInstallStatus = status
+                ble.addLog("Статус встановлення \(status), запитую список циферблатів")
+                stage = .listing
+                armTimeout(15, "список циферблатів")
+                sendCommand(type: Command.watchface, subtype: Command.watchfaceList) { _ in }
             }
+
+        case Command.watchfaceList:
+            guard stage == .listing, let face else { return }
+            let list = msg.message(6)?.message(1)?.messages(1) ?? []
+            ble.addLog("На браслеті \(list.count) циферблатів:")
+            var sameId: ProtoMessage?
+            for item in list {
+                let id = item.string(1) ?? "?"
+                let flags = [(item.uint(3) ?? 0) != 0 ? "активний" : nil,
+                             (item.uint(4) ?? 0) != 0 ? "можна видалити" : "системний"]
+                    .compactMap { $0 }.joined(separator: ", ")
+                ble.addLog("  • \(id) «\(item.string(2) ?? "")» (\(flags))")
+                if id == face.id { sameId = item }
+            }
+            if let same = sameId, (same.uint(4) ?? 0) != 0, !retriedAfterDelete {
+                if (same.uint(3) ?? 0) != 0 {
+                    return fail(BandError.device("на браслеті вже є циферблат з тим самим ID \(face.id), і він зараз активний. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено"))
+                }
+                ble.addLog("Знайдено стару версію з тим самим ID — видаляю й повторюю")
+                retriedAfterDelete = true
+                stage = .deleting
+                armTimeout(15, "видалення старої версії")
+                var wf = ProtoWriter()
+                wf.string(2, face.id)
+                sendCommand(type: Command.watchface, subtype: Command.watchfaceDelete) { $0.message(6, wf) }
+                return
+            }
+            let userFaces = list.filter { ($0.uint(4) ?? 0) != 0 }.count
+            var why = "статус встановлення \(lastInstallStatus)"
+            if userFaces >= 10 { why += ". На браслеті \(userFaces) власних циферблатів — видаліть кілька (ліміт ≈10)" }
+            else if sameId != nil { why += ". Циферблат з таким ID уже є, і його не вдалося замінити" }
+            else { why += ". Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті" }
+            fail(BandError.device(why))
+
+        case Command.watchfaceDelete:
+            guard stage == .deleting else { return }
+            ble.addLog("← видалено (ack=\(msg.message(6)?.uint(4) ?? 0)), повторюю встановлення")
+            beginInstall()
 
         case Command.watchfaceSet:
             ble.addLog("← підтвердження активації (ack=\(msg.message(6)?.uint(4) ?? 0))")

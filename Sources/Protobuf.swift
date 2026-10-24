@@ -115,4 +115,8 @@ struct ProtoMessage {
     func message(_ number: Int) -> ProtoMessage? {
         data(number).flatMap { ProtoMessage($0) }
     }
+
+    func messages(_ number: Int) -> [ProtoMessage] {
+        fields.filter { $0.number == number && $0.wire == 2 }.compactMap { ProtoMessage($0.payload) }
+    }
 }
