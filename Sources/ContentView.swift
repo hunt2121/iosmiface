@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var message: String?
     @State private var messageIsError = false
     @State private var session: XiaomiBandSession?
+    @AppStorage("expAck") private var expAck = 0
+    @AppStorage("expCrypt") private var expCrypt = 0
+    @AppStorage("expDelay") private var expDelay = 1.5
+    @AppStorage("expSkip") private var expSkip = false
 
     private var keyValid: Bool {
         if let d = Data(hex: authKey) { return d.count == 16 }
@@ -106,6 +110,24 @@ struct ContentView: View {
                     }
                 }
 
+                Section("Діагностика (експерименти)") {
+                    Picker("Підтвердження (ack)", selection: $expAck) {
+                        Text("seq пакета").tag(0)
+                        Text("seq+1").tag(1)
+                        Text("не слати").tag(2)
+                    }
+                    Picker("Шифрування команд", selection: $expCrypt) {
+                        Text("ключ шифр.").tag(0)
+                        Text("ключ дешифр.").tag(1)
+                        Text("без шифр.").tag(2)
+                    }
+                    Picker("Пауза після входу", selection: $expDelay) {
+                        Text("1.5 с").tag(1.5)
+                        Text("5 с").tag(5.0)
+                    }
+                    Toggle("Без device info/battery", isOn: $expSkip)
+                }
+
                 Section("Журнал") {
                     HStack {
                         Button("Копіювати") {
@@ -160,6 +182,7 @@ struct ContentView: View {
         guard let face else { return }
         do {
             let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
+            s.experiment = BandExperiment(ackMode: expAck, cryptMode: expCrypt, delay: expDelay, skipProbe: expSkip)
             session = s
             busy = true
             progress = 0

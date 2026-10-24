@@ -31,7 +31,25 @@ enum BandError: LocalizedError {
     }
 }
 
+/// Діагностичні перемикачі: браслет Band 10 поки ігнорує наші зашифровані команди.
+struct BandExperiment {
+    /// 0 = ack з seq отриманого пакета; 1 = ack з seq+1 ("наступний очікуваний"); 2 = без ack
+    var ackMode = 0
+    /// 0 = AES-CTR ключем шифрування; 1 = ключем дешифрування; 2 = без шифрування (opcode 1)
+    var cryptMode = 0
+    /// Затримка після автентифікації перед першою командою, секунди
+    var delay = 1.5
+    /// Не слати device info / battery, одразу запит на встановлення
+    var skipProbe = false
+
+    var title: String {
+        "ack=\(ackMode) crypt=\(cryptMode) delay=\(delay) skipProbe=\(skipProbe)"
+    }
+}
+
 final class XiaomiBandSession {
+    var experiment = BandExperiment()
+
     // BLE V2 (Mi Band 9 Active та новіші)
     static let rxUUID = CBUUID(string: "0000005e-0000-1000-8000-00805f9b34fb") // браслет → телефон (notify)
     static let txUUID = CBUUID(string: "0000005f-0000-1000-8000-00805f9b34fb") // телефон → браслет
@@ -175,10 +193,14 @@ final class XiaomiBandSession {
             if stage == .waitingSession { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
             ble.addLog("← pkt seq=\(seq) ch=\(channel) op=\(opcode) len=\(payload.count)")
-            let ackOK = ble.enqueue(XiaomiPacketV2.ack(seq: seq), to: Self.txUUID) { [weak self] in
-                self?.ble.addLog("→ ack seq=\(seq) відправлено")
+            if experiment.ackMode != 2 {
+                let ackSeq = experiment.ackMode == 1 ? seq &+ 1 : seq
+                let frame = XiaomiPacketV2.ack(seq: ackSeq)
+                let ackOK = ble.enqueue(frame, to: Self.txUUID) { [weak self] in
+                    self?.ble.addLog("→ ack seq=\(ackSeq) відправлено \(Self.hex(frame))")
+                }
+                if !ackOK { ble.addLog("! ack seq=\(ackSeq) не поставлено в чергу") }
             }
-            if !ackOK { ble.addLog("! ack seq=\(seq) не поставлено в чергу") }
 
             var plain = payload
             if opcode == XiaomiPacketV2.opEncrypted {
@@ -282,12 +304,18 @@ final class XiaomiBandSession {
             // Як і Gadgetbridge після автентифікації: запит інформації про пристрій і батарею.
             // Це ще й перевірка, що браслет сприймає наші зашифровані команди.
             stage = .probing
-            armTimeout(20, "початкова синхронізація")
-            sendCommand(type: 2, subtype: 2) { _ in }   // device info
-            sendCommand(type: 2, subtype: 1) { _ in }   // battery
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            armTimeout(30, "початкова синхронізація")
+            ble.addLog("Експеримент: \(experiment.title)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + experiment.delay) { [weak self] in
                 guard let self, self.stage == .probing else { return }
-                self.beginInstall()
+                if !self.experiment.skipProbe {
+                    self.sendCommand(type: 2, subtype: 2) { _ in }   // device info
+                    self.sendCommand(type: 2, subtype: 1) { _ in }   // battery
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    guard let self, self.stage == .probing else { return }
+                    self.beginInstall()
+                }
             }
 
         default:
@@ -444,10 +472,11 @@ final class XiaomiBandSession {
         w.uint(2, subtype)
         build(&w)
 
-        let encrypted = type != Command.auth
+        let encrypted = type != Command.auth && experiment.cryptMode != 2
         var payload = w.data
         if encrypted {
-            guard let key = encryptionKey else { return fail(BandError.authFailed) }
+            let chosen = experiment.cryptMode == 1 ? decryptionKey : encryptionKey
+            guard let key = chosen else { return fail(BandError.authFailed) }
             payload = XiaomiCrypto.v2Crypt(key: key, data: payload)
         }
         let seq = nextSequence()
@@ -459,7 +488,10 @@ final class XiaomiBandSession {
         // Вміст auth-команд не логуємо, щоб не світити матеріал для ключів
         let shown = type == Command.auth ? "" : " " + Self.hex(w.data)
         ble.addLog("→ cmd \(type)/\(subtype) seq=\(seq) \(encrypted ? "enc" : "plain") \(packet.count)B\(shown)")
-        let queued = ble.enqueue(packet, to: Self.txUUID)
+        if type != Command.auth { ble.addLog("  raw \(Self.hex(packet))") }
+        let queued = ble.enqueue(packet, to: Self.txUUID) { [weak self] in
+            if type != Command.auth { self?.ble.addLog("  записано seq=\(seq)") }
+        }
         if !queued { ble.addLog("! не вдалося поставити пакет у чергу запису") }
     }
 
