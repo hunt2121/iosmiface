@@ -80,7 +80,7 @@ struct ContentView: View {
                     .navigationTitle("Ключ")
             }
             // Ключа немає — на іконці червоний знак «!»
-            .tabItem { Label("Ключ", image: "TabKey") }
+            .tabItem { Label("Ключ", systemImage: "key.fill") }
             .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
 
