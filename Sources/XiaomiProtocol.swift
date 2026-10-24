@@ -55,7 +55,7 @@ final class XiaomiBandSession {
     }
 
     private enum Stage {
-        case idle, waitingSession, waitingWatchNonce, waitingAuthResult
+        case idle, waitingSession, waitingWatchNonce, waitingAuthResult, probing
         case waitingInstallStatus, waitingUploadAck, uploading, finishing, done
     }
 
@@ -168,14 +168,17 @@ final class XiaomiBandSession {
 
     private func handlePacket(_ packet: XiaomiPacketV2.Parsed) {
         switch packet {
-        case .ack:
-            break
+        case .ack(let seq):
+            ble.addLog("← ack seq=\(seq)")
         case .sessionConfig(_, let opcode):
             ble.addLog("← SESSION_CONFIG op=\(opcode)")
             if stage == .waitingSession { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
             ble.addLog("← pkt seq=\(seq) ch=\(channel) op=\(opcode) len=\(payload.count)")
-            ble.enqueue(XiaomiPacketV2.ack(seq: seq), to: Self.txUUID)
+            let ackOK = ble.enqueue(XiaomiPacketV2.ack(seq: seq), to: Self.txUUID) { [weak self] in
+                self?.ble.addLog("→ ack seq=\(seq) відправлено")
+            }
+            if !ackOK { ble.addLog("! ack seq=\(seq) не поставлено в чергу") }
 
             var plain = payload
             if opcode == XiaomiPacketV2.opEncrypted {
@@ -276,7 +279,16 @@ final class XiaomiBandSession {
         case Command.authStep3, Command.authUserId:
             guard stage == .waitingAuthResult else { return }
             ble.addLog("Автентифіковано")
-            beginInstall()
+            // Як і Gadgetbridge після автентифікації: запит інформації про пристрій і батарею.
+            // Це ще й перевірка, що браслет сприймає наші зашифровані команди.
+            stage = .probing
+            armTimeout(20, "початкова синхронізація")
+            sendCommand(type: 2, subtype: 2) { _ in }   // device info
+            sendCommand(type: 2, subtype: 1) { _ in }   // battery
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self, self.stage == .probing else { return }
+                self.beginInstall()
+            }
 
         default:
             ble.addLog("Невідома auth-команда \(subtype)")
