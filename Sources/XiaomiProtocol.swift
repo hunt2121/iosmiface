@@ -113,18 +113,33 @@ final class XiaomiBandSession {
 
         stage = .waitingSession
         report(0, "Відкриття сесії…")
-        armTimeout(15, "відкриття сесії")
+        armTimeout(18, "відкриття сесії")
         ble.subscribe(to: Self.rxUUID) { [weak self] ok in
             guard let self, self.stage == .waitingSession else { return }
             guard ok else { return self.fail(BandError.protocolUnsupported("Не вдалося підписатися на сповіщення 0x5E")) }
-            self.ble.addLog("→ START_SESSION")
-            self.ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
+            // Діагностика: 0x5F теж має notify, тож слухаємо й його
+            self.ble.subscribe(to: Self.txUUID) { _ in }
+            self.sendStartSession(attempt: 1)
+        }
+    }
+
+    /// Браслет іноді не відповідає з першого разу, тож повторюємо до 3 разів.
+    private func sendStartSession(attempt: Int) {
+        guard stage == .waitingSession else { return }
+        ble.addLog("→ START_SESSION (спроба \(attempt))")
+        ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
+        guard attempt < 3 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+            self?.sendStartSession(attempt: attempt + 1)
         }
     }
 
     // MARK: - Прийом
 
     private func handleNotification(_ uuid: CBUUID, _ data: Data) {
+        if stage == .waitingSession || stage == .waitingWatchNonce || stage == .waitingAuthResult {
+            ble.addLog("← raw \(uuid.uuidString.prefix(4)) \(Self.hex(data, max: 24))")
+        }
         guard uuid == Self.rxUUID else { return }
         rxBuffer.append(contentsOf: data)
         processBuffer()
