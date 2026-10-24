@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: macos-15
+    env:
+      BUILD_NUM: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,15 +29,16 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUM" \
             build
 
       - name: Package IPA
         run: |
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/BandFace.app Payload/
-          zip -r BandFace.ipa Payload
+          zip -r "BandFace-build${BUILD_NUM}.ipa" Payload
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BandFace-ipa
-          path: BandFace.ipa
+          name: BandFace-build${{ github.run_number }}
+          path: BandFace-build${{ github.run_number }}.ipa

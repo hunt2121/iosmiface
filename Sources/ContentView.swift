@@ -25,9 +25,23 @@ struct ContentView: View {
         keyValid && face != nil && ble.connectedID != nil && ble.servicesReady && !busy
     }
 
+    private static var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+    }
+
+    private static var versionString: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("1. Auth key") {
                     TextField("32 hex-символи", text: $authKey)
                         .textInputAutocapitalization(.never)
