@@ -115,6 +115,7 @@ final class XiaomiBandSession {
     private var uploadParts: [Data] = []
     private var lastInstallStatus: UInt64 = 0
     private var retriedAfterDelete = false
+    private var sessionOpened = false
 
     init(ble: BLEManager, authKeyHex: String) throws {
         guard let key = Data(hex: authKeyHex), key.count == 16 else { throw BandError.badAuthKey }
@@ -171,6 +172,7 @@ final class XiaomiBandSession {
     /// Браслет іноді не відповідає з першого разу, тож повторюємо до 3 разів.
     private func sendStartSession(attempt: Int) {
         guard stage == .waitingSession else { return }
+        sessionOpened = true
         ble.debug("→ START_SESSION (спроба \(attempt))")
         ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
         guard attempt < 3 else { return }
@@ -668,5 +670,15 @@ final class XiaomiBandSession {
         ble.onData = nil
         ble.onDisconnect = nil
         uploadParts.removeAll()
+        releaseBand()
+    }
+
+    /// Закриває сесію й відписується від сповіщень, щоб браслет знову міг працювати з Mi Fitness.
+    private func releaseBand() {
+        guard sessionOpened, ble.connectedID != nil else { return }
+        sessionOpened = false
+        ble.enqueue(XiaomiPacketV2.stopSessionRequest(), to: Self.txUUID)
+        ble.debug("→ STOP_SESSION")
+        ble.unsubscribe(from: Self.rxUUID)
     }
 }

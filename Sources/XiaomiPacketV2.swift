@@ -96,6 +96,11 @@ enum XiaomiPacketV2 {
         return frame(type: typeSessionConfig, seq: 0, payload: Data(payload))
     }
 
+    /// STOP_SESSION_REQUEST: звільняє браслет для інших застосунків (Mi Fitness).
+    static func stopSessionRequest() -> Data {
+        frame(type: typeSessionConfig, seq: 0, payload: Data([0x03]))
+    }
+
     static func dataPacket(seq: UInt8, channel: XiaomiChannel, opcode: UInt8, payload: Data) -> Data {
         var body = Data([channel.raw & 0xF, opcode])
         body.append(payload)

@@ -122,6 +122,11 @@ final class BLEManager: NSObject, ObservableObject {
         p.readValue(for: c)
     }
 
+    func unsubscribe(from uuid: CBUUID) {
+        guard let p = active, let c = characteristics[uuid], c.isNotifying else { return }
+        p.setNotifyValue(false, for: c)
+    }
+
     // MARK: - Запис
 
     /// Ставить дані в чергу. Дані розбиваються на фрагменти за MTU.

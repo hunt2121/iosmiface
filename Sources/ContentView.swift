@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var bandFaces: [BandWatchface]?
     @State private var faceToDelete: BandWatchface?
     @AppStorage("verboseLog") private var verboseLog = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private var keyValid: Bool {
         if let d = Data(hex: authKey) { return d.count == 16 }
@@ -88,6 +89,13 @@ struct ContentView: View {
                 logSection
             }
             .navigationTitle("BandFace")
+            .onChange(of: scenePhase) { phase in
+                // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
+                if phase == .background && !busy && ble.connectedID != nil {
+                    ble.disconnect()
+                    bandFaces = nil
+                }
+            }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.data]) { result in
                 loadFace(result)
             }
