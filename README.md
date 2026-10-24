@@ -5,7 +5,7 @@ iOS-застосунок (SwiftUI + CoreBluetooth) для встановленн
 ## Збірка на GitHub
 
 Push у репозиторій запускає workflow **Build IPA** (також вручну: Actions → Build IPA → Run workflow).
-Результат — артефакт `BandFace-ipa` (непідписаний IPA). Підпишіть його своїм Apple ID через Sideloadly або AltStore.
+Результат — артефакт `BandFace-buildN` (N — номер збірки) (непідписаний IPA). Підпишіть його своїм Apple ID через Sideloadly або AltStore.
 
 ## Користування
 
