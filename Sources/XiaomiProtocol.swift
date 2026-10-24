@@ -159,6 +159,7 @@ final class XiaomiBandSession {
             ble.addLog("← SESSION_CONFIG op=\(opcode)")
             if stage == .waitingSession { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
+            ble.addLog("← pkt seq=\(seq) ch=\(channel) op=\(opcode) len=\(payload.count)")
             ble.enqueue(XiaomiPacketV2.ack(seq: seq), to: Self.txUUID)
 
             var plain = payload
@@ -184,7 +185,8 @@ final class XiaomiBandSession {
             return
         }
         let subtype = msg.uint(2) ?? 0
-        ble.addLog("← команда \(type)/\(subtype)")
+        let status = msg.uint(100).map { " status=\($0)" } ?? ""
+        ble.addLog("← команда \(type)/\(subtype)\(status) \(Self.hex(bytes))")
 
         switch UInt32(type) {
         case Command.auth: handleAuth(msg, subtype: UInt32(subtype))
@@ -421,12 +423,22 @@ final class XiaomiBandSession {
             guard let key = encryptionKey else { return fail(BandError.authFailed) }
             payload = XiaomiCrypto.v2Crypt(key: key, data: payload)
         }
+        let seq = nextSequence()
         let packet = XiaomiPacketV2.dataPacket(
-            seq: nextSequence(),
+            seq: seq,
             channel: .protobuf,
             opcode: encrypted ? XiaomiPacketV2.opEncrypted : XiaomiPacketV2.opPlaintext,
             payload: payload)
-        ble.enqueue(packet, to: Self.txUUID)
+        // Вміст auth-команд не логуємо, щоб не світити матеріал для ключів
+        let shown = type == Command.auth ? "" : " " + Self.hex(w.data)
+        ble.addLog("→ cmd \(type)/\(subtype) seq=\(seq) \(encrypted ? "enc" : "plain") \(packet.count)B\(shown)")
+        let queued = ble.enqueue(packet, to: Self.txUUID)
+        if !queued { ble.addLog("! не вдалося поставити пакет у чергу запису") }
+    }
+
+    private static func hex(_ data: Data, max: Int = 48) -> String {
+        let head = data.prefix(max).map { String(format: "%02x", $0) }.joined()
+        return data.count > max ? head + "…(\(data.count)B)" : head
     }
 
     private static func le16(_ v: UInt16) -> Data { Data([UInt8(v & 0xFF), UInt8(v >> 8)]) }

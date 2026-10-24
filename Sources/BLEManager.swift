@@ -50,7 +50,7 @@ final class BLEManager: NSObject, ObservableObject {
 
     func addLog(_ text: String) {
         log.append(text)
-        if log.count > 400 { log.removeFirst(log.count - 400) }
+        if log.count > 2000 { log.removeFirst(log.count - 2000) }
     }
 
     // MARK: - Пошук і підключення

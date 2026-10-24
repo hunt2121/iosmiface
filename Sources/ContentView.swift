@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
@@ -92,8 +93,24 @@ struct ContentView: View {
                 }
 
                 Section("Журнал") {
-                    ForEach(Array(ble.log.suffix(60).enumerated()), id: \.offset) { _, line in
-                        Text(line).font(.system(.caption2, design: .monospaced))
+                    HStack {
+                        Button("Копіювати") {
+                            UIPasteboard.general.string = ble.log.joined(separator: "\n")
+                        }
+                        .buttonStyle(.borderless)
+                        Spacer()
+                        ShareLink(item: ble.log.joined(separator: "\n")) {
+                            Label("Поділитися", systemImage: "square.and.arrow.up")
+                        }
+                        .buttonStyle(.borderless)
+                        Spacer()
+                        Button("Очистити", role: .destructive) { ble.log.removeAll() }
+                            .buttonStyle(.borderless)
+                    }
+                    ForEach(Array(ble.log.suffix(150).enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(.caption2, design: .monospaced))
+                            .textSelection(.enabled)
                     }
                 }
             }
