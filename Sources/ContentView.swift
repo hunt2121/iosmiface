@@ -3,6 +3,8 @@ import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
+    enum Tab: Hashable { case faces, key, log }
+
     @EnvironmentObject var ble: BLEManager
 
     @State private var authKey: String = KeychainStore.load(account: "authKey") ?? ""
@@ -12,8 +14,7 @@ struct ContentView: View {
     @State private var keyStatus: String?
     @State private var keyStatusIsError = false
     @State private var showKeyHelp = false
-    @State private var editingKey = false
-    @FocusState private var keyFieldFocused: Bool
+    @State private var tab: Tab = .faces
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -45,98 +46,97 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
-                        if keyValid {
-                            // Коротка непомітна позначка ключа; натискання відкриває редагування
+        TabView(selection: $tab) {
+            NavigationStack {
+                Form {
+                    if !keyValid {
+                        Section {
                             Button {
-                                editingKey.toggle()
+                                tab = .key
                             } label: {
-                                Text("Ключ \(Self.shortKey(authKey))\(editingKey ? " · сховати" : " · змінити")")
+                                Label("Спершу додайте ключ у вкладці «Ключ»", systemImage: "key")
                             }
-                            .buttonStyle(.plain)
                         }
                     }
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    bandSection
+                    installSection
+                    statusSection
+                    facesSection
                 }
+                .navigationTitle("Циферблати")
+            }
+            .tabItem { Label("Циферблати", systemImage: "applewatch") }
+            .tag(Tab.faces)
 
-                if !keyValid || editingKey || keyFieldFocused {
-                    authSection
-                }
+            NavigationStack {
+                Form { authSection }
+                    .navigationTitle("Ключ")
+            }
+            .tabItem { Label("Ключ", systemImage: "key.fill") }
+            .tag(Tab.key)
 
-                bandSection
-
-                Section("3. Встановлення циферблата") {
-                    Button(fileName ?? "Вибрати .face файл") {
-                        importingFolder = false
-                        showImporter = true
-                    }
-                    if let face {
-                        Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    Button("Встановити на браслет") {
-                        if let face { run(.install(face)) }
-                    }
-                    .disabled(!canOperate || face == nil)
-                }
-
-                if busy || message != nil {
+            NavigationStack {
+                Form {
+                    logSection
                     Section {
-                        if busy {
-                            ProgressView(value: progress)
-                            Text(progressText).font(.footnote).foregroundStyle(.secondary)
-                        }
-                        if let message {
-                            Text(message).font(.footnote)
-                                .foregroundStyle(messageIsError ? .red : .green)
-                        }
+                        Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                facesSection
-
-                logSection
+                .navigationTitle("Журнал")
             }
-            .navigationTitle("BandFace")
-            .onChange(of: scenePhase) { phase in
-                // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
-                if phase == .background && !busy && ble.connectedID != nil {
-                    ble.disconnect()
-                    bandFaces = nil
+            .tabItem { Label("Журнал", systemImage: "list.bullet.rectangle") }
+            .tag(Tab.log)
+        }
+        .onChange(of: scenePhase) { phase in
+            // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
+            if phase == .background && !busy && ble.connectedID != nil {
+                ble.disconnect()
+                bandFaces = nil
+            }
+            // Ключ міг змінитися в Mi Fitness (наприклад, після нового спарювання)
+            if phase == .active { autoFindKey() }
+        }
+        .onAppear {
+            if !keyValid && !MiFitnessKey.hasSavedFolder { tab = .key }
+            autoFindKey()
+        }
+        .fileImporter(isPresented: $showImporter,
+                      allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
+            if importingFolder { folderPicked(result) } else { loadFace(result) }
+        }
+        .confirmationDialog("Видалити циферблат з браслета?",
+                            isPresented: Binding(get: { faceToDelete != nil },
+                                                 set: { if !$0 { faceToDelete = nil } }),
+                            titleVisibility: .visible,
+                            presenting: faceToDelete) { f in
+            Button("Видалити «\(f.name.isEmpty ? f.id : f.name)»", role: .destructive) {
+                run(.delete(f.id))
+            }
+        } message: { _ in
+            Text("Цю дію не можна скасувати.")
+        }
+        .alert("Пошук ключа", isPresented: $showKeyHelp) {
+            Button("Вибрати папку") {
+                Task { @MainActor in
+                    // Даємо алерту закритися, інакше вікно вибору може не відкритися
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    importingFolder = true
+                    showImporter = true
                 }
-                // Ключ міг змінитися в Mi Fitness (наприклад, після нового спарювання)
-                if phase == .active { autoFindKey() }
             }
-            .onAppear { autoFindKey() }
-            .fileImporter(isPresented: $showImporter,
-                          allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
-                if importingFolder { folderPicked(result) } else { loadFace(result) }
-            }
-            .confirmationDialog("Видалити циферблат з браслета?",
-                                isPresented: Binding(get: { faceToDelete != nil },
-                                                     set: { if !$0 { faceToDelete = nil } }),
-                                titleVisibility: .visible,
-                                presenting: faceToDelete) { f in
-                Button("Видалити «\(f.name.isEmpty ? f.id : f.name)»", role: .destructive) {
-                    run(.delete(f.id))
-                }
-            } message: { _ in
-                Text("Цю дію не можна скасувати.")
-            }
+            Button("Скасувати", role: .cancel) {}
+        } message: {
+            Text("У вікні, що відкриється, перейдіть у розділ «На iPhone», виберіть папку «Mi Fitness» і натисніть «Відкрити». Застосунок сам знайде ключ і запам'ятає папку.")
         }
     }
 
     // MARK: - Розділи
 
     private var authSection: some View {
-        Section("1. Auth key") {
+        Section {
             TextField("32 hex-символи", text: $authKey)
-                .focused($keyFieldFocused)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(.system(.body, design: .monospaced))
@@ -173,24 +173,50 @@ struct ContentView: View {
                 Text(keyStatus).font(.footnote)
                     .foregroundStyle(keyStatusIsError ? .red : .green)
             }
+        } header: {
+            Text("Auth key браслета")
+        } footer: {
+            Text(MiFitnessKey.hasSavedFolder
+                 ? "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок."
+                 : "«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам.")
         }
-        .alert("Пошук ключа", isPresented: $showKeyHelp) {
-            Button("Вибрати папку") {
-                Task { @MainActor in
-                    // Даємо алерту закритися, інакше вікно вибору може не відкритися
-                    try? await Task.sleep(nanoseconds: 400_000_000)
-                    importingFolder = true
-                    showImporter = true
+    }
+
+    private var installSection: some View {
+        Section("Встановлення циферблата") {
+            Button(fileName ?? "Вибрати .face файл") {
+                importingFolder = false
+                showImporter = true
+            }
+            if let face {
+                Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("Встановити на браслет") {
+                if let face { run(.install(face)) }
+            }
+            .disabled(!canOperate || face == nil)
+        }
+    }
+
+    @ViewBuilder
+    private var statusSection: some View {
+        if busy || message != nil {
+            Section {
+                if busy {
+                    ProgressView(value: progress)
+                    Text(progressText).font(.footnote).foregroundStyle(.secondary)
+                }
+                if let message {
+                    Text(message).font(.footnote)
+                        .foregroundStyle(messageIsError ? .red : .green)
                 }
             }
-            Button("Скасувати", role: .cancel) {}
-        } message: {
-            Text("У вікні, що відкриється, перейдіть у розділ «На iPhone», виберіть папку «Mi Fitness» і натисніть «Відкрити». Застосунок сам знайде ключ і запам'ятає папку.")
         }
     }
 
     private var bandSection: some View {
-        Section("2. Браслет") {
+        Section("Браслет") {
             if let name = ble.connectedName {
                 HStack {
                     Label(name, systemImage: "applewatch")
@@ -334,12 +360,6 @@ struct ContentView: View {
     private func autoFindKey() {
         guard !busy, let folder = MiFitnessKey.savedFolder() else { return }
         searchKey(in: folder, isNewFolder: false, quiet: true)
-    }
-
-    private static func shortKey(_ key: String) -> String {
-        let k = key.lowercased()
-        guard k.count >= 8 else { return k }
-        return "\(k.prefix(4))…\(k.suffix(4))"
     }
 
     private func findKey() {
