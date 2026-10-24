@@ -52,10 +52,17 @@ struct ContentView: View {
                     if !keyValid {
                         Section {
                             Button {
+                                // Переходимо у вкладку «Ключ» і одразу починаємо пошук там
                                 tab = .key
+                                Task { @MainActor in
+                                    try? await Task.sleep(nanoseconds: 350_000_000)
+                                    findKey()
+                                }
                             } label: {
-                                Label("Спершу додайте ключ у вкладці «Ключ»", systemImage: "key")
+                                Label("Додати ключ браслета", systemImage: "key")
                             }
+                        } footer: {
+                            Text("Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.")
                         }
                     }
                     bandSection
@@ -72,7 +79,9 @@ struct ContentView: View {
                 Form { authSection }
                     .navigationTitle("Ключ")
             }
-            .tabItem { Label("Ключ", systemImage: "key.fill") }
+            // Порожня іконка зі знаком «!» — ключа немає; заповнена — ключ є
+            .tabItem { Label("Ключ", systemImage: keyValid ? "key.fill" : "key") }
+            .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
 
             NavigationStack {
@@ -99,7 +108,6 @@ struct ContentView: View {
             if phase == .active { autoFindKey() }
         }
         .onAppear {
-            if !keyValid && !MiFitnessKey.hasSavedFolder { tab = .key }
             autoFindKey()
         }
         .fileImporter(isPresented: $showImporter,
