@@ -102,6 +102,7 @@ final class XiaomiBandSession {
     private var uploadParts: [Data] = []
     private var lastInstallStatus: UInt64 = 0
     private var retriedAfterDelete = false
+    private var highestRxSeq: UInt8?
 
     init(ble: BLEManager, authKeyHex: String) throws {
         guard let key = Data(hex: authKeyHex), key.count == 16 else { throw BandError.badAuthKey }
@@ -121,6 +122,7 @@ final class XiaomiBandSession {
         self.rxBuffer.removeAll()
         self.sequence = 0
         self.retriedAfterDelete = false
+        self.highestRxSeq = nil
         self.encryptionKey = nil
         self.decryptionKey = nil
 
@@ -206,6 +208,7 @@ final class XiaomiBandSession {
             ble.addLog("← SESSION_CONFIG op=\(opcode)")
             if stage == .waitingSession { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
+            highestRxSeq = max(highestRxSeq ?? 0, seq)
             ble.addLog("← pkt seq=\(seq) ch=\(channel) op=\(opcode) len=\(payload.count)")
             if experiment.ackMode != 2 {
                 let ackSeq = experiment.ackMode == 1 ? seq &+ 1 : seq
@@ -430,11 +433,21 @@ final class XiaomiBandSession {
         guard let face else { return }
         stage = .finishing
         successNote = note
-        armTimeout(8, "активація циферблата", softSuccess: note + " (підтвердження не отримано)")
+        armTimeout(12, "активація циферблата", softSuccess: note + " (підтвердження не отримано)")
         var wf = ProtoWriter()
         wf.string(2, face.id)
         sendCommand(type: Command.watchface, subtype: Command.watchfaceSet) { $0.message(6, wf) }
         ble.addLog("→ set watchface \(face.id)")
+        // Браслет повторює непідтверджені пакети й блокує нові відповіді.
+        // Наприкінці надсилаємо одне сукупне підтвердження останнього отриманого пакета.
+        if experiment.ackMode == 2, let last = highestRxSeq {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self, self.stage == .finishing else { return }
+                self.ble.enqueue(XiaomiPacketV2.ack(seq: last), to: Self.txUUID) { [weak self] in
+                    self?.ble.addLog("→ сукупний ack seq=\(last)")
+                }
+            }
+        }
     }
 
     // MARK: - Завантаження даних
@@ -581,6 +594,7 @@ final class XiaomiBandSession {
         stage = .done
         timeoutWork?.cancel()
         cleanup()
+        ble.addLog("Готово: \(message)")
         let cb = completion
         completion = nil
         cb?(.success(message))
