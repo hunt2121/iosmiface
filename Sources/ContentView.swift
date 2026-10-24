@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var keyStatus: String?
     @State private var keyStatusIsError = false
     @State private var showKeyHelp = false
+    @State private var editingKey = false
+    @FocusState private var keyFieldFocused: Bool
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -46,12 +48,25 @@ struct ContentView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
+                        if keyValid {
+                            // Коротка непомітна позначка ключа; натискання відкриває редагування
+                            Button {
+                                editingKey.toggle()
+                            } label: {
+                                Text("Ключ \(Self.shortKey(authKey))\(editingKey ? " · сховати" : " · змінити")")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
 
-                authSection
+                if !keyValid || editingKey || keyFieldFocused {
+                    authSection
+                }
 
                 bandSection
 
@@ -94,7 +109,10 @@ struct ContentView: View {
                     ble.disconnect()
                     bandFaces = nil
                 }
+                // Ключ міг змінитися в Mi Fitness (наприклад, після нового спарювання)
+                if phase == .active { autoFindKey() }
             }
+            .onAppear { autoFindKey() }
             .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
                 if importingFolder { folderPicked(result) } else { loadFace(result) }
@@ -118,6 +136,7 @@ struct ContentView: View {
     private var authSection: some View {
         Section("1. Auth key") {
             TextField("32 hex-символи", text: $authKey)
+                .focused($keyFieldFocused)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(.system(.body, design: .monospaced))
@@ -311,6 +330,18 @@ struct ContentView: View {
         }
     }
 
+    /// Після першого вибору папки Mi Fitness ключ шукається сам при кожному вході.
+    private func autoFindKey() {
+        guard !busy, let folder = MiFitnessKey.savedFolder() else { return }
+        searchKey(in: folder, isNewFolder: false, quiet: true)
+    }
+
+    private static func shortKey(_ key: String) -> String {
+        let k = key.lowercased()
+        guard k.count >= 8 else { return k }
+        return "\(k.prefix(4))…\(k.suffix(4))"
+    }
+
     private func findKey() {
         // Папку вже вибирали — шукаємо одразу, інакше показуємо коротку інструкцію
         guard let folder = MiFitnessKey.savedFolder() else {
@@ -352,11 +383,7 @@ struct ContentView: View {
                         ?? devices[0]
                     let changed = match.key != authKey.lowercased()
                     authKey = match.key
-                    if quiet && !changed {
-                        keyStatus = "Ключ з Mi Fitness актуальний"
-                        keyStatusIsError = false
-                        return
-                    }
+                    if quiet && !changed { return }
                     keyStatus = devices.count == 1
                         ? "Ключ знайдено\(match.name.isEmpty ? "" : " для «\(match.name)»")"
                         : "Знайдено \(devices.count) пристрої, вибрано «\(match.name)». За потреби виберіть інший"
