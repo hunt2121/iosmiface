@@ -34,6 +34,10 @@ enum MiFitnessKey {
 
     /// Запам'ятовує папку, щоб наступного разу не вибирати її знову.
     static func saveFolder(_ url: URL) {
+        // Закладку треба створювати, поки доступ до папки відкритий, інакше після
+        // перезапуску застосунку iOS не дасть до неї доступу
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         if let data = try? url.bookmarkData() {
             UserDefaults.standard.set(data, forKey: bookmarkKey)
         }

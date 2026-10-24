@@ -72,15 +72,15 @@ struct ContentView: View {
                 }
                 .navigationTitle("Циферблати")
             }
-            .tabItem { Label("Циферблати", systemImage: "applewatch") }
+            .tabItem { Label("Циферблати", image: "TabWatch") }
             .tag(Tab.faces)
 
             NavigationStack {
                 Form { authSection }
                     .navigationTitle("Ключ")
             }
-            // Порожня іконка зі знаком «!» — ключа немає; заповнена — ключ є
-            .tabItem { Label("Ключ", systemImage: keyValid ? "key.fill" : "key") }
+            // Ключа немає — на іконці червоний знак «!»
+            .tabItem { Label("Ключ", image: "TabKey") }
             .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
 
@@ -95,7 +95,7 @@ struct ContentView: View {
                 }
                 .navigationTitle("Журнал")
             }
-            .tabItem { Label("Журнал", systemImage: "list.bullet.rectangle") }
+            .tabItem { Label("Журнал", image: "TabLog") }
             .tag(Tab.log)
         }
         .onChange(of: scenePhase) { phase in
@@ -385,6 +385,7 @@ struct ContentView: View {
             keyStatus = e.localizedDescription
             keyStatusIsError = true
         case .success(let url):
+            MiFitnessKey.saveFolder(url)
             searchKey(in: url, isNewFolder: true)
         }
     }
@@ -400,7 +401,6 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let devices):
-                    if isNewFolder { MiFitnessKey.saveFolder(folder) }
                     foundDevices = devices
                     // Якщо браслет підключено, беремо ключ саме для нього
                     let connected = ble.connectedName?.lowercased()
@@ -418,11 +418,16 @@ struct ContentView: View {
                     keyStatusIsError = false
                     if changed { ble.addLog("Auth key оновлено з даних Mi Fitness") }
                 case .failure(let error):
-                    if !isNewFolder, let e = error as? MiFitnessKey.SearchError, e != .noKey {
-                        // Збережена папка більше не підходить — попросимо вибрати знову
+                    let folderLost = (error as? MiFitnessKey.SearchError).map { $0 != .noKey } ?? false
+                    if folderLost {
+                        // Папка недоступна (наприклад, iOS скинула дозвіл) — попросимо вибрати знову
                         MiFitnessKey.forgetFolder()
                     }
-                    keyStatus = error.localizedDescription
+                    if quiet && folderLost {
+                        keyStatus = "Доступ до папки Mi Fitness втрачено. Натисніть «Знайти автоматично», щоб вибрати її знову"
+                    } else {
+                        keyStatus = error.localizedDescription
+                    }
                     keyStatusIsError = true
                 }
             }
