@@ -93,15 +93,14 @@ struct ContentView: View {
                     ble.disconnect()
                     bandFaces = nil
                 }
+                // Після повернення в застосунок ключ міг змінитися (наприклад, після нового спарювання)
+                if phase == .active { autoFindKey(atLaunch: false) }
             }
             .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
                 if importingFolder { folderPicked(result) } else { loadFace(result) }
             }
-            .onAppear {
-                // Ключ ще не введено, а папку Mi Fitness уже вибирали раніше — шукаємо автоматично
-                if !keyValid, MiFitnessKey.hasSavedFolder { findKey() }
-            }
+            .onAppear { autoFindKey(atLaunch: true) }
             .confirmationDialog("Видалити циферблат з браслета?",
                                 isPresented: Binding(get: { faceToDelete != nil },
                                                      set: { if !$0 { faceToDelete = nil } }),
@@ -305,6 +304,21 @@ struct ContentView: View {
         }
     }
 
+    /// Автоматичний пошук ключа при вході в застосунок.
+    /// Якщо папку Mi Fitness ще не вибирали, а ключа немає — один раз пропонуємо її вибрати.
+    private func autoFindKey(atLaunch: Bool) {
+        guard !busy else { return }
+        if let folder = MiFitnessKey.savedFolder() {
+            searchKey(in: folder, isNewFolder: false, quiet: keyValid)
+        } else if atLaunch, !keyValid {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                importingFolder = true
+                showImporter = true
+            }
+        }
+    }
+
     private func findKey() {
         guard let folder = MiFitnessKey.savedFolder() else {
             importingFolder = true
@@ -324,9 +338,12 @@ struct ContentView: View {
         }
     }
 
-    private func searchKey(in folder: URL, isNewFolder: Bool) {
-        keyStatus = "Пошук…"
-        keyStatusIsError = false
+    /// `quiet`: автоматична перевірка, коли ключ уже є — показуємо лише зміни й помилки.
+    private func searchKey(in folder: URL, isNewFolder: Bool, quiet: Bool = false) {
+        if !quiet {
+            keyStatus = "Пошук…"
+            keyStatusIsError = false
+        }
         DispatchQueue.global(qos: .userInitiated).async {
             let result = Result { try MiFitnessKey.findDevices(in: folder) }
             DispatchQueue.main.async {
@@ -336,15 +353,23 @@ struct ContentView: View {
                     foundDevices = devices
                     // Якщо браслет підключено, беремо ключ саме для нього
                     let connected = ble.connectedName?.lowercased()
-                    let match = devices.first { !$0.name.isEmpty && $0.name.lowercased() == connected }
+                    // Ключ, який уже вибрано й досі є в Mi Fitness, не перебиваємо
+                    let match = devices.first { $0.key == authKey.lowercased() }
+                        ?? devices.first { !$0.name.isEmpty && $0.name.lowercased() == connected }
                         ?? devices.first { $0.name.lowercased().contains("band") }
                         ?? devices[0]
+                    let changed = match.key != authKey.lowercased()
                     authKey = match.key
+                    if quiet && !changed {
+                        keyStatus = "Ключ з Mi Fitness актуальний"
+                        keyStatusIsError = false
+                        return
+                    }
                     keyStatus = devices.count == 1
                         ? "Ключ знайдено\(match.name.isEmpty ? "" : " для «\(match.name)»")"
                         : "Знайдено \(devices.count) пристрої, вибрано «\(match.name)». За потреби виберіть інший"
                     keyStatusIsError = false
-                    ble.addLog("Auth key знайдено в даних Mi Fitness")
+                    if changed { ble.addLog("Auth key оновлено з даних Mi Fitness") }
                 case .failure(let error):
                     if !isNewFolder, let e = error as? MiFitnessKey.SearchError, e != .noKey {
                         // Збережена папка більше не підходить — попросимо вибрати знову
