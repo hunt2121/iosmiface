@@ -1,0 +1,26 @@
+name: BandFace
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  BandFace:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: BandFace
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "1"
+        NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
