@@ -51,7 +51,12 @@ final class BLEManager: NSObject, ObservableObject {
 
     func addLog(_ text: String) {
         log.append(text)
-        if log.count > 2000 { log.removeFirst(log.count - 2000) }
+        if log.count > 3000 { log.removeFirst(log.count - 3000) }
+    }
+
+    /// Технічний запис — лише коли увімкнено «Детальний журнал».
+    func debug(_ text: String) {
+        if UserDefaults.standard.bool(forKey: "verboseLog") { addLog(text) }
     }
 
     // MARK: - Пошук і підключення
@@ -68,7 +73,7 @@ final class BLEManager: NSObject, ObservableObject {
         for p in central.retrieveConnectedPeripherals(withServices: [fe95]) {
             peripherals[p.identifier] = p
             devices.append(DiscoveredBand(id: p.identifier, name: (p.name ?? "?") + " (вже підключений до iPhone)", rssi: 0))
-            addLog("Уже підключений до системи: \(p.name ?? "?")")
+            debug("Уже підключений до системи: \(p.name ?? "?")")
         }
         isScanning = true
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
@@ -115,42 +120,6 @@ final class BLEManager: NSObject, ObservableObject {
         }
         readCompletions[uuid] = completion
         p.readValue(for: c)
-    }
-
-    /// Спроба створити системну пару (bonding). Браслет шифрує BLE-зв'язок лише після пари,
-    /// а iOS запускає пару, коли характеристика відповідає "insufficient authentication/encryption".
-    func probeBonding(completion: @escaping () -> Void) {
-        let readable = characteristics.values
-            .filter { $0.properties.contains(.read) }
-            .map(\.uuid)
-        addLog("Перевірка пари: читаю \(readable.map(\.uuidString).joined(separator: ", "))")
-        var remaining = readable
-        func next() {
-            guard let uuid = remaining.first else {
-                // Пульс часто вимагає шифрування — підписка теж запускає пару
-                let hr = CBUUID(string: "2A37")
-                if characteristics[hr] != nil {
-                    subscribe(to: hr) { [weak self] ok in
-                        self?.addLog("Підписка 2A37: \(ok ? "ок" : "помилка")")
-                        completion()
-                    }
-                } else {
-                    completion()
-                }
-                return
-            }
-            remaining.removeFirst()
-            read(uuid) { [weak self] data, error in
-                if let error {
-                    self?.addLog("  читання \(uuid.uuidString): помилка — \(error.localizedDescription)")
-                } else {
-                    let hex = (data ?? Data()).prefix(20).map { String(format: "%02x", $0) }.joined()
-                    self?.addLog("  читання \(uuid.uuidString): \(hex)")
-                }
-                next()
-            }
-        }
-        next()
     }
 
     // MARK: - Запис
@@ -234,7 +203,7 @@ extension BLEManager: CBCentralManagerDelegate {
         servicesReady = false
         characteristics.removeAll()
         resetTransfer()
-        addLog("Підключено. Пошук сервісів…")
+        addLog("Підключено")
         peripheral.discoverServices(nil)
     }
 
@@ -260,7 +229,7 @@ extension BLEManager: CBPeripheralDelegate {
         pendingServiceDiscovery = services.count
         if services.isEmpty { servicesReady = true }
         for s in services {
-            addLog("Сервіс \(s.uuid.uuidString)")
+            debug("Сервіс \(s.uuid.uuidString)")
             peripheral.discoverCharacteristics(nil, for: s)
         }
     }
@@ -268,12 +237,12 @@ extension BLEManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         for c in service.characteristics ?? [] {
             characteristics[c.uuid] = c
-            addLog("  • \(c.uuid.uuidString) [\(describe(c.properties))]")
+            debug("  • \(c.uuid.uuidString) [\(describe(c.properties))]")
         }
         pendingServiceDiscovery -= 1
         if pendingServiceDiscovery <= 0 {
             servicesReady = true
-            addLog("Виявлення сервісів завершено")
+            debug("Виявлення сервісів завершено")
         }
     }
 

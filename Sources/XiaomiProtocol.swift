@@ -31,41 +31,47 @@ enum BandError: LocalizedError {
     }
 }
 
-/// Діагностичні перемикачі: браслет Band 10 поки ігнорує наші зашифровані команди.
-struct BandExperiment {
-    /// 0 = ack з seq отриманого пакета; 1 = ack з seq+1 ("наступний очікуваний"); 2 = без ack
-    var ackMode = 2
-    /// 0 = AES-CTR ключем шифрування; 1 = ключем дешифрування; 2 = без шифрування (opcode 1)
-    var cryptMode = 0
-    /// Затримка після автентифікації перед першою командою, секунди
-    var delay = 1.5
-    /// Не слати device info / battery, одразу запит на встановлення
-    var skipProbe = false
-    /// Перед сесією спробувати створити системну пару iPhone ↔ браслет
-    var bonding = false
-
-    var title: String {
-        "ack=\(ackMode) crypt=\(cryptMode) delay=\(delay) skipProbe=\(skipProbe) bonding=\(bonding)"
-    }
+/// Циферблат, що вже є на браслеті.
+struct BandWatchface: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let active: Bool
+    let canDelete: Bool
 }
 
+/// Одна операція = одна сесія: відкриття сесії, автентифікація, команда(и).
+///
+/// Особливість Band 10 (з'ясована на реальному пристрої): якщо підтверджувати (ack) кожен
+/// пакет браслета, він перестає приймати наші команди. Тому ми не підтверджуємо пакети,
+/// а коли браслет надіслав повне вікно (6 пакетів) без підтвердження, надсилаємо одне
+/// сукупне підтвердження останнього пакета — інакше він не надішле наступну відповідь.
 final class XiaomiBandSession {
-    var experiment = BandExperiment()
+    enum Operation {
+        case install(FaceFile)
+        case list
+        case activate(String)
+        case delete(String)
+    }
 
-    // BLE V2 (Mi Band 9 Active та новіші)
-    static let rxUUID = CBUUID(string: "0000005e-0000-1000-8000-00805f9b34fb") // браслет → телефон (notify)
+    static let rxUUID = CBUUID(string: "0000005e-0000-1000-8000-00805f9b34fb") // браслет → телефон
     static let txUUID = CBUUID(string: "0000005f-0000-1000-8000-00805f9b34fb") // телефон → браслет
-    // BLE V1 (Mi Band 8), тут лише для діагностики
     static let v1CommandUUID = CBUUID(string: "00000051-0000-1000-8000-00805f9b34fb")
+
+    /// Скільки непідтверджених пакетів браслет надсилає, перш ніж чекати на ack.
+    private static let bandWindow = 6
 
     private enum Command {
         static let auth: UInt32 = 1
+        static let system: UInt32 = 2
         static let watchface: UInt32 = 4
         static let dataUpload: UInt32 = 22
 
         static let authNonce: UInt32 = 26
         static let authStep3: UInt32 = 27
         static let authUserId: UInt32 = 5
+
+        static let systemBattery: UInt32 = 1
+        static let systemDeviceInfo: UInt32 = 2
 
         static let watchfaceList: UInt32 = 0
         static let watchfaceSet: UInt32 = 1
@@ -78,15 +84,18 @@ final class XiaomiBandSession {
 
     private enum Stage {
         case idle, waitingSession, waitingWatchNonce, waitingAuthResult, probing
-        case waitingInstallStatus, listing, deleting
-        case waitingUploadAck, uploading, finishing, done
+        case waitingInstallStatus, listing, deleting, activating
+        case waitingUploadAck, uploading, done
     }
+
+    /// Викликається, коли браслет повернув список циферблатів.
+    var onWatchfaces: (([BandWatchface]) -> Void)?
 
     private let ble: BLEManager
     private let secretKey: Data
 
+    private var operation: Operation = .list
     private var stage: Stage = .idle
-    private var face: FaceFile?
     private var progress: ((Double, String) -> Void)?
     private var completion: ((Result<String, Error>) -> Void)?
 
@@ -97,12 +106,15 @@ final class XiaomiBandSession {
     private var decryptionKey: Data?
     private var encryptionNonce = Data()
 
-    private var successNote = "Циферблат встановлено й активовано"
+    private var seenRx: Set<UInt8> = []
+    private var highestRx: UInt8?
+    private var lastAckedRx: UInt8?
+
+    private var successNote = ""
     private var timeoutWork: DispatchWorkItem?
     private var uploadParts: [Data] = []
     private var lastInstallStatus: UInt64 = 0
     private var retriedAfterDelete = false
-    private var highestRxSeq: UInt8?
 
     init(ble: BLEManager, authKeyHex: String) throws {
         guard let key = Data(hex: authKeyHex), key.count == 16 else { throw BandError.badAuthKey }
@@ -110,21 +122,28 @@ final class XiaomiBandSession {
         self.secretKey = key
     }
 
+    private var face: FaceFile? {
+        if case .install(let f) = operation { return f }
+        return nil
+    }
+
     // MARK: - Публічний API
 
-    func install(face: FaceFile,
-                 progress: @escaping (Double, String) -> Void,
-                 completion: @escaping (Result<String, Error>) -> Void) {
+    func run(_ operation: Operation,
+             progress: @escaping (Double, String) -> Void = { _, _ in },
+             completion: @escaping (Result<String, Error>) -> Void) {
         guard stage == .idle || stage == .done else { return }
-        self.face = face
+        self.operation = operation
         self.progress = progress
         self.completion = completion
-        self.rxBuffer.removeAll()
-        self.sequence = 0
-        self.retriedAfterDelete = false
-        self.highestRxSeq = nil
-        self.encryptionKey = nil
-        self.decryptionKey = nil
+        rxBuffer.removeAll()
+        sequence = 0
+        seenRx.removeAll()
+        highestRx = nil
+        lastAckedRx = nil
+        retriedAfterDelete = false
+        encryptionKey = nil
+        decryptionKey = nil
 
         guard ble.connectedID != nil else { return fail(BandError.notConnected) }
         guard ble.characteristics[Self.rxUUID] != nil, ble.characteristics[Self.txUUID] != nil else {
@@ -140,27 +159,19 @@ final class XiaomiBandSession {
         ble.onDisconnect = { [weak self] in self?.fail(BandError.disconnected) }
 
         stage = .waitingSession
-        report(0, experiment.bonding ? "Перевірка пари (підтвердіть запит iOS, якщо з'явиться)…" : "Відкриття сесії…")
-        armTimeout(experiment.bonding ? 60 : 18, "відкриття сесії")
+        report(0, "Відкриття сесії…")
+        armTimeout(18, "відкриття сесії")
         ble.subscribe(to: Self.rxUUID) { [weak self] ok in
             guard let self, self.stage == .waitingSession else { return }
             guard ok else { return self.fail(BandError.protocolUnsupported("Не вдалося підписатися на сповіщення 0x5E")) }
-            if self.experiment.bonding {
-                self.ble.probeBonding { [weak self] in
-                    guard let self, self.stage == .waitingSession else { return }
-                    self.armTimeout(18, "відкриття сесії")
-                    self.sendStartSession(attempt: 1)
-                }
-            } else {
-                self.sendStartSession(attempt: 1)
-            }
+            self.sendStartSession(attempt: 1)
         }
     }
 
     /// Браслет іноді не відповідає з першого разу, тож повторюємо до 3 разів.
     private func sendStartSession(attempt: Int) {
         guard stage == .waitingSession else { return }
-        ble.addLog("→ START_SESSION (спроба \(attempt))")
+        ble.debug("→ START_SESSION (спроба \(attempt))")
         ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
         guard attempt < 3 else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
@@ -171,9 +182,6 @@ final class XiaomiBandSession {
     // MARK: - Прийом
 
     private func handleNotification(_ uuid: CBUUID, _ data: Data) {
-        if uuid != Self.rxUUID || stage == .waitingSession || stage == .waitingWatchNonce || stage == .waitingAuthResult {
-            ble.addLog("← raw \(uuid.uuidString.prefix(4)) \(Self.hex(data, max: 24))")
-        }
         guard uuid == Self.rxUUID else { return }
         rxBuffer.append(contentsOf: data)
         processBuffer()
@@ -186,10 +194,10 @@ final class XiaomiBandSession {
                 return
             case .invalid:
                 if let next = rxBuffer.dropFirst().firstIndex(of: XiaomiPacketV2.preamble[0]) {
-                    ble.addLog("Некоректний кадр, пропускаю \(next) байт")
+                    ble.debug("Некоректний кадр, пропускаю \(next) байт")
                     rxBuffer.removeFirst(next)
                 } else {
-                    ble.addLog("Некоректний кадр, буфер очищено")
+                    ble.debug("Некоректний кадр, буфер очищено")
                     rxBuffer.removeAll()
                     return
                 }
@@ -203,26 +211,22 @@ final class XiaomiBandSession {
     private func handlePacket(_ packet: XiaomiPacketV2.Parsed) {
         switch packet {
         case .ack(let seq):
-            ble.addLog("← ack seq=\(seq)")
+            ble.debug("← ack \(seq)")
         case .sessionConfig(_, let opcode):
-            ble.addLog("← SESSION_CONFIG op=\(opcode)")
+            ble.debug("← SESSION_CONFIG op=\(opcode)")
             if stage == .waitingSession { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
-            highestRxSeq = max(highestRxSeq ?? 0, seq)
-            ble.addLog("← pkt seq=\(seq) ch=\(channel) op=\(opcode) len=\(payload.count)")
-            if experiment.ackMode != 2 {
-                let ackSeq = experiment.ackMode == 1 ? seq &+ 1 : seq
-                let frame = XiaomiPacketV2.ack(seq: ackSeq)
-                let ackOK = ble.enqueue(frame, to: Self.txUUID) { [weak self] in
-                    self?.ble.addLog("→ ack seq=\(ackSeq) відправлено \(Self.hex(frame))")
-                }
-                if !ackOK { ble.addLog("! ack seq=\(ackSeq) не поставлено в чергу") }
+            // Браслет повторює непідтверджені пакети — обробляємо кожен лише раз
+            guard seenRx.insert(seq).inserted else {
+                ble.debug("← повтор пакета \(seq)")
+                return
             }
+            highestRx = seq
 
             var plain = payload
             if opcode == XiaomiPacketV2.opEncrypted {
                 guard let key = decryptionKey else {
-                    ble.addLog("← зашифрований пакет до завершення автентифікації, ігнорую")
+                    ble.debug("← зашифрований пакет до автентифікації, ігнорую")
                     return
                 }
                 plain = XiaomiCrypto.v2Crypt(key: key, data: payload)
@@ -231,22 +235,22 @@ final class XiaomiBandSession {
             if channel == .protobuf {
                 handleCommand(plain)
             } else {
-                ble.addLog("← канал \(channel): \(plain.count) байт")
+                ble.debug("← канал \(channel): \(plain.count) байт")
             }
         }
     }
 
     private func handleCommand(_ bytes: Data) {
         guard let msg = ProtoMessage(bytes), let type = msg.uint(1) else {
-            ble.addLog("← не вдалося розібрати команду")
+            ble.debug("← не вдалося розібрати команду")
             return
         }
         let subtype = msg.uint(2) ?? 0
-        let status = msg.uint(100).map { " status=\($0)" } ?? ""
-        ble.addLog("← команда \(type)/\(subtype)\(status) \(Self.hex(bytes))")
+        ble.debug("← \(type)/\(subtype) \(Self.hex(bytes))")
 
         switch UInt32(type) {
         case Command.auth: handleAuth(msg, subtype: UInt32(subtype))
+        case Command.system: handleSystem(msg, subtype: UInt32(subtype))
         case Command.watchface: handleWatchface(msg, subtype: UInt32(subtype))
         case Command.dataUpload: handleUpload(msg, subtype: UInt32(subtype))
         default: break
@@ -257,6 +261,7 @@ final class XiaomiBandSession {
 
     private func startHandshake() {
         stage = .waitingWatchNonce
+        report(0, "Автентифікація…")
         armTimeout(15, "автентифікація")
 
         var nonce = Data(count: 16)
@@ -269,7 +274,6 @@ final class XiaomiBandSession {
         var auth = ProtoWriter()
         auth.message(30, phone)
         sendCommand(type: Command.auth, subtype: Command.authNonce) { $0.message(3, auth) }
-        ble.addLog("→ auth: phone nonce")
     }
 
     private func handleAuth(_ msg: ProtoMessage, subtype: UInt32) {
@@ -287,7 +291,7 @@ final class XiaomiBandSession {
 
             let expected = XiaomiCrypto.hmacSHA256(key: decKey, data: watchNonce + phoneNonce)
             guard expected == watchHmac else {
-                ble.addLog("HMAC браслета не збігся: неправильний auth key?")
+                ble.addLog("Браслет не прийняв ключ: неправильний auth key?")
                 return fail(BandError.authFailed)
             }
             decryptionKey = decKey
@@ -313,30 +317,14 @@ final class XiaomiBandSession {
             stage = .waitingAuthResult
             armTimeout(15, "підтвердження автентифікації")
             sendCommand(type: Command.auth, subtype: Command.authStep3) { $0.message(3, auth) }
-            ble.addLog("→ auth: step 3")
 
         case Command.authStep3, Command.authUserId:
             guard stage == .waitingAuthResult else { return }
-            ble.addLog("Автентифіковано")
-            // Як і Gadgetbridge після автентифікації: запит інформації про пристрій і батарею.
-            // Це ще й перевірка, що браслет сприймає наші зашифровані команди.
-            stage = .probing
-            armTimeout(30, "початкова синхронізація")
-            ble.addLog("Експеримент: \(experiment.title)")
-            DispatchQueue.main.asyncAfter(deadline: .now() + experiment.delay) { [weak self] in
-                guard let self, self.stage == .probing else { return }
-                if !self.experiment.skipProbe {
-                    self.sendCommand(type: 2, subtype: 2) { _ in }   // device info
-                    self.sendCommand(type: 2, subtype: 1) { _ in }   // battery
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                    guard let self, self.stage == .probing else { return }
-                    self.beginInstall()
-                }
-            }
+            ble.addLog("Підключено до браслета")
+            afterAuth()
 
         default:
-            ble.addLog("Невідома auth-команда \(subtype)")
+            ble.debug("Невідома auth-команда \(subtype)")
         }
     }
 
@@ -345,7 +333,49 @@ final class XiaomiBandSession {
         return String(code.prefix(2)).count == 2 ? String(code.prefix(2)) : "EN"
     }
 
-    // MARK: - Циферблат
+    private func afterAuth() {
+        switch operation {
+        case .install:
+            // Перевірений на Band 10 порядок: інформація про пристрій, заряд, потім встановлення
+            stage = .probing
+            armTimeout(20, "інформація про браслет")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self, self.stage == .probing else { return }
+                self.sendCommand(type: Command.system, subtype: Command.systemDeviceInfo) { _ in }
+                self.sendCommand(type: Command.system, subtype: Command.systemBattery) { _ in }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    guard let self, self.stage == .probing else { return }
+                    self.beginInstall()
+                }
+            }
+        case .list:
+            requestList()
+        case .activate(let id):
+            activate(id, note: "Циферблат активовано")
+        case .delete(let id):
+            deleteFace(id)
+        }
+    }
+
+    private func handleSystem(_ msg: ProtoMessage, subtype: UInt32) {
+        guard let system = msg.message(4) else { return }
+        switch subtype {
+        case Command.systemDeviceInfo:
+            if let info = system.message(3) {
+                let model = info.string(4) ?? "?"
+                let fw = info.string(2) ?? "?"
+                ble.addLog("Браслет: модель \(model), прошивка \(fw)")
+            }
+        case Command.systemBattery:
+            if let level = system.message(2)?.message(1)?.uint(1) {
+                ble.addLog("Заряд: \(level)%")
+            }
+        default:
+            break
+        }
+    }
+
+    // MARK: - Циферблати
 
     private func beginInstall() {
         guard let face else { return }
@@ -359,7 +389,42 @@ final class XiaomiBandSession {
         var wf = ProtoWriter()
         wf.message(6, start)
         sendCommand(type: Command.watchface, subtype: Command.watchfaceInstall) { $0.message(6, wf) }
-        ble.addLog("→ install \(face.id), \(face.data.count) байт")
+        ble.addLog("Встановлення \(face.id) (\(face.data.count / 1024) КБ)…")
+    }
+
+    private func requestList() {
+        stage = .listing
+        report(0, "Отримання списку…")
+        armTimeout(15, "список циферблатів")
+        sendCommand(type: Command.watchface, subtype: Command.watchfaceList) { _ in }
+    }
+
+    private func activate(_ id: String, note: String) {
+        stage = .activating
+        successNote = note
+        report(1, "Активація…")
+        armTimeout(12, "активація циферблата", softSuccess: note + " (підтвердження не отримано)")
+        var wf = ProtoWriter()
+        wf.string(2, id)
+        sendCommand(type: Command.watchface, subtype: Command.watchfaceSet) { $0.message(6, wf) }
+    }
+
+    private func deleteFace(_ id: String) {
+        stage = .deleting
+        report(0, "Видалення…")
+        armTimeout(15, "видалення циферблата")
+        var wf = ProtoWriter()
+        wf.string(2, id)
+        sendCommand(type: Command.watchface, subtype: Command.watchfaceDelete) { $0.message(6, wf) }
+    }
+
+    private static func parseList(_ msg: ProtoMessage) -> [BandWatchface] {
+        (msg.message(6)?.message(1)?.messages(1) ?? []).map { item in
+            BandWatchface(id: item.string(1) ?? "?",
+                          name: item.string(2) ?? "",
+                          active: (item.uint(3) ?? 0) != 0,
+                          canDelete: (item.uint(4) ?? 0) != 0)
+        }
     }
 
     private func handleWatchface(_ msg: ProtoMessage, subtype: UInt32) {
@@ -371,83 +436,60 @@ final class XiaomiBandSession {
             case 0:
                 requestUpload()
             case 2:
-                ble.addLog("Циферблат уже встановлений, активую")
-                activateWatchface(note: "Циферблат уже був на браслеті, його активовано")
+                ble.addLog("Цей циферблат уже є на браслеті")
+                activate(face?.id ?? "", note: "Циферблат уже був на браслеті, його активовано")
             default:
                 // Щоб зрозуміти причину, дивимось список циферблатів на браслеті
                 lastInstallStatus = status
-                ble.addLog("Статус встановлення \(status), запитую список циферблатів")
-                stage = .listing
-                armTimeout(15, "список циферблатів")
-                sendCommand(type: Command.watchface, subtype: Command.watchfaceList) { _ in }
+                ble.addLog("Браслет відмовив (статус \(status)), перевіряю список циферблатів")
+                requestList()
             }
 
         case Command.watchfaceList:
-            guard stage == .listing, let face else { return }
-            let list = msg.message(6)?.message(1)?.messages(1) ?? []
-            ble.addLog("На браслеті \(list.count) циферблатів:")
-            var sameId: ProtoMessage?
-            for item in list {
-                let id = item.string(1) ?? "?"
-                let flags = [(item.uint(3) ?? 0) != 0 ? "активний" : nil,
-                             (item.uint(4) ?? 0) != 0 ? "можна видалити" : "системний"]
-                    .compactMap { $0 }.joined(separator: ", ")
-                ble.addLog("  • \(id) «\(item.string(2) ?? "")» (\(flags))")
-                if id == face.id { sameId = item }
+            guard stage == .listing else { return }
+            let list = Self.parseList(msg)
+            onWatchfaces?(list)
+            ble.addLog("На браслеті \(list.count) циферблатів")
+            guard let face else {
+                return succeed("Список оновлено")
             }
-            if let same = sameId, (same.uint(4) ?? 0) != 0, !retriedAfterDelete {
-                if (same.uint(3) ?? 0) != 0 {
-                    return fail(BandError.device("на браслеті вже є циферблат з тим самим ID \(face.id), і він зараз активний. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено"))
-                }
-                ble.addLog("Знайдено стару версію з тим самим ID — видаляю й повторюю")
-                retriedAfterDelete = true
-                stage = .deleting
-                armTimeout(15, "видалення старої версії")
-                var wf = ProtoWriter()
-                wf.string(2, face.id)
-                sendCommand(type: Command.watchface, subtype: Command.watchfaceDelete) { $0.message(6, wf) }
-                return
-            }
-            let userFaces = list.filter { ($0.uint(4) ?? 0) != 0 }.count
-            var why = "статус встановлення \(lastInstallStatus)"
-            if userFaces >= 10 { why += ". На браслеті \(userFaces) власних циферблатів — видаліть кілька (ліміт ≈10)" }
-            else if sameId != nil { why += ". Циферблат з таким ID уже є, і його не вдалося замінити" }
-            else { why += ". Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті" }
-            fail(BandError.device(why))
+            explainInstallFailure(face: face, list: list)
 
         case Command.watchfaceDelete:
             guard stage == .deleting else { return }
-            ble.addLog("← видалено (ack=\(msg.message(6)?.uint(4) ?? 0)), повторюю встановлення")
-            beginInstall()
+            if face != nil {
+                ble.addLog("Стару версію видалено, повторюю встановлення")
+                beginInstall()
+            } else {
+                succeed("Циферблат видалено")
+            }
 
         case Command.watchfaceSet:
-            ble.addLog("← підтвердження активації (ack=\(msg.message(6)?.uint(4) ?? 0))")
-            if stage == .finishing { succeed(successNote) }
+            guard stage == .activating else { return }
+            succeed(successNote)
 
         default:
             break
         }
     }
 
-    private func activateWatchface(note: String) {
-        guard let face else { return }
-        stage = .finishing
-        successNote = note
-        armTimeout(12, "активація циферблата", softSuccess: note + " (підтвердження не отримано)")
-        var wf = ProtoWriter()
-        wf.string(2, face.id)
-        sendCommand(type: Command.watchface, subtype: Command.watchfaceSet) { $0.message(6, wf) }
-        ble.addLog("→ set watchface \(face.id)")
-        // Браслет повторює непідтверджені пакети й блокує нові відповіді.
-        // Наприкінці надсилаємо одне сукупне підтвердження останнього отриманого пакета.
-        if experiment.ackMode == 2, let last = highestRxSeq {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                guard let self, self.stage == .finishing else { return }
-                self.ble.enqueue(XiaomiPacketV2.ack(seq: last), to: Self.txUUID) { [weak self] in
-                    self?.ble.addLog("→ сукупний ack seq=\(last)")
-                }
+    private func explainInstallFailure(face: FaceFile, list: [BandWatchface]) {
+        let same = list.first { $0.id == face.id }
+        if let same, same.canDelete, !retriedAfterDelete {
+            if same.active {
+                return fail(BandError.device("на браслеті вже є стара версія цього циферблата, і вона зараз активна. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено"))
             }
+            ble.addLog("Знайдено стару версію цього циферблата — замінюю")
+            retriedAfterDelete = true
+            deleteFace(face.id)
+            return
         }
+        let userFaces = list.filter(\.canDelete).count
+        var why = "статус \(lastInstallStatus)"
+        if userFaces >= 10 { why += ". На браслеті \(userFaces) власних циферблатів — видаліть кілька (ліміт ≈10)" }
+        else if same != nil { why += ". Циферблат з таким ID уже є, і його не вдалося замінити" }
+        else { why += ". Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті" }
+        fail(BandError.device(why))
     }
 
     // MARK: - Завантаження даних
@@ -464,7 +506,6 @@ final class XiaomiBandSession {
         var upload = ProtoWriter()
         upload.message(1, req)
         sendCommand(type: Command.dataUpload, subtype: Command.uploadStart) { $0.message(24, upload) }
-        ble.addLog("→ upload request")
     }
 
     private func handleUpload(_ msg: ProtoMessage, subtype: UInt32) {
@@ -478,7 +519,7 @@ final class XiaomiBandSession {
         guard let face, resume <= face.data.count, chunk > 4 else {
             return fail(BandError.device("некоректні параметри завантаження"))
         }
-        ble.addLog("Завантаження: chunk=\(chunk), resume=\(resume)")
+        ble.debug("Завантаження: chunk=\(chunk), resume=\(resume)")
         startUpload(face: face, resume: resume, chunkSize: chunk)
     }
 
@@ -504,6 +545,7 @@ final class XiaomiBandSession {
             return part
         }
 
+        ble.addLog("Передача файлу (\(total) частин)…")
         stage = .uploading
         sendPart(0)
     }
@@ -512,8 +554,8 @@ final class XiaomiBandSession {
         guard stage == .uploading else { return }
         guard index < uploadParts.count else {
             uploadParts.removeAll()
-            report(1, "Дані передано, активація…")
-            activateWatchface(note: "Циферблат встановлено й активовано")
+            ble.addLog("Файл передано")
+            activate(face?.id ?? "", note: "Циферблат встановлено й активовано")
             return
         }
 
@@ -536,17 +578,23 @@ final class XiaomiBandSession {
         return sequence
     }
 
+    /// Скільки пакетів браслета ще не підтверджено.
+    private var unackedRx: Int {
+        guard let highestRx else { return 0 }
+        guard let lastAckedRx else { return Int(highestRx) + 1 }
+        return Int(highestRx &- lastAckedRx)
+    }
+
     private func sendCommand(type: UInt32, subtype: UInt32, build: (inout ProtoWriter) -> Void) {
         var w = ProtoWriter()
         w.uint(1, type)
         w.uint(2, subtype)
         build(&w)
 
-        let encrypted = type != Command.auth && experiment.cryptMode != 2
+        let encrypted = type != Command.auth
         var payload = w.data
         if encrypted {
-            let chosen = experiment.cryptMode == 1 ? decryptionKey : encryptionKey
-            guard let key = chosen else { return fail(BandError.authFailed) }
+            guard let key = encryptionKey else { return fail(BandError.authFailed) }
             payload = XiaomiCrypto.v2Crypt(key: key, data: payload)
         }
         let seq = nextSequence()
@@ -556,13 +604,18 @@ final class XiaomiBandSession {
             opcode: encrypted ? XiaomiPacketV2.opEncrypted : XiaomiPacketV2.opPlaintext,
             payload: payload)
         // Вміст auth-команд не логуємо, щоб не світити матеріал для ключів
-        let shown = type == Command.auth ? "" : " " + Self.hex(w.data)
-        ble.addLog("→ cmd \(type)/\(subtype) seq=\(seq) \(encrypted ? "enc" : "plain") \(packet.count)B\(shown)")
-        if type != Command.auth { ble.addLog("  raw \(Self.hex(packet))") }
-        let queued = ble.enqueue(packet, to: Self.txUUID) { [weak self] in
-            if type != Command.auth { self?.ble.addLog("  записано seq=\(seq)") }
+        ble.debug("→ \(type)/\(subtype) seq=\(seq)\(type == Command.auth ? "" : " " + Self.hex(w.data))")
+        if !ble.enqueue(packet, to: Self.txUUID) { ble.addLog("Не вдалося надіслати команду") }
+
+        // Вікно браслета заповнене — без сукупного ack він не надішле відповідь на цю команду
+        if encrypted, unackedRx >= Self.bandWindow, let last = highestRx {
+            lastAckedRx = last
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self, self.stage != .done else { return }
+                self.ble.enqueue(XiaomiPacketV2.ack(seq: last), to: Self.txUUID)
+                self.ble.debug("→ сукупний ack \(last)")
+            }
         }
-        if !queued { ble.addLog("! не вдалося поставити пакет у чергу запису") }
     }
 
     private static func hex(_ data: Data, max: Int = 48) -> String {
