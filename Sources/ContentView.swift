@@ -6,16 +6,22 @@ struct ContentView: View {
 
     @State private var authKey: String = KeychainStore.load(account: "authKey") ?? ""
     @State private var showImporter = false
-    @State private var faceName: String?
-    @State private var faceData: Data?
-    @State private var selected: UUID?
+    @State private var face: FaceFile?
+    @State private var fileName: String?
     @State private var progress: Double = 0
+    @State private var progressText = ""
     @State private var busy = false
     @State private var message: String?
+    @State private var messageIsError = false
+    @State private var session: XiaomiBandSession?
 
     private var keyValid: Bool {
         if let d = Data(hex: authKey) { return d.count == 16 }
         return false
+    }
+
+    private var canInstall: Bool {
+        keyValid && face != nil && ble.connectedID != nil && ble.servicesReady && !busy
     }
 
     var body: some View {
@@ -33,9 +39,10 @@ struct ContentView: View {
                 }
 
                 Section("2. Файл циферблата") {
-                    Button(faceName ?? "Вибрати .face файл") { showImporter = true }
-                    if let d = faceData {
-                        Text("\(d.count) байт").font(.footnote).foregroundStyle(.secondary)
+                    Button(fileName ?? "Вибрати .face файл") { showImporter = true }
+                    if let face {
+                        Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count) байт")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
 
@@ -45,6 +52,9 @@ struct ContentView: View {
                             Label(name, systemImage: "applewatch")
                             Spacer()
                             Button("Відключити", role: .destructive) { ble.disconnect() }
+                        }
+                        if !ble.servicesReady {
+                            HStack { ProgressView(); Text("Виявлення сервісів…").font(.footnote) }
                         }
                     } else {
                         Button(ble.isScanning ? "Зупинити пошук" : "Шукати пристрої") {
@@ -70,13 +80,19 @@ struct ContentView: View {
 
                 Section("4. Встановлення") {
                     Button("Встановити на браслет") { install() }
-                        .disabled(!keyValid || faceData == nil || ble.connectedID == nil || busy)
-                    if busy { ProgressView(value: progress) }
-                    if let message { Text(message).font(.footnote) }
+                        .disabled(!canInstall)
+                    if busy {
+                        ProgressView(value: progress)
+                        Text(progressText).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if let message {
+                        Text(message).font(.footnote)
+                            .foregroundStyle(messageIsError ? .red : .green)
+                    }
                 }
 
                 Section("Журнал") {
-                    ForEach(Array(ble.log.suffix(40).enumerated()), id: \.offset) { _, line in
+                    ForEach(Array(ble.log.suffix(60).enumerated()), id: \.offset) { _, line in
                         Text(line).font(.system(.caption2, design: .monospaced))
                     }
                 }
@@ -91,37 +107,51 @@ struct ContentView: View {
     private func loadFace(_ result: Result<URL, Error>) {
         switch result {
         case .failure(let e):
-            message = e.localizedDescription
+            show(e.localizedDescription, error: true)
         case .success(let url):
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do {
-                faceData = try Data(contentsOf: url)
-                faceName = url.lastPathComponent
+                let data = try Data(contentsOf: url)
+                face = try FaceFile(data: data)
+                fileName = url.lastPathComponent
                 message = nil
             } catch {
-                message = error.localizedDescription
+                face = nil
+                fileName = nil
+                show("Некоректний файл циферблата: \(error.localizedDescription)", error: true)
             }
         }
     }
 
     @MainActor
     private func install() {
-        guard let data = faceData, let name = faceName else { return }
-        busy = true
-        progress = 0
-        message = nil
-        Task {
-            do {
-                let session = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
-                try await session.installWatchface(data, name: name) { p in
-                    Task { @MainActor in progress = p }
+        guard let face else { return }
+        do {
+            let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
+            session = s
+            busy = true
+            progress = 0
+            progressText = "Старт…"
+            message = nil
+            s.install(face: face, progress: { value, text in
+                progress = value
+                progressText = text
+            }, completion: { result in
+                busy = false
+                switch result {
+                case .success(let text): show(text, error: false)
+                case .failure(let error): show(error.localizedDescription, error: true)
                 }
-                message = "Готово"
-            } catch {
-                message = error.localizedDescription
-            }
-            busy = false
+                session = nil
+            })
+        } catch {
+            show(error.localizedDescription, error: true)
         }
+    }
+
+    private func show(_ text: String, error: Bool) {
+        message = text
+        messageIsError = error
     }
 }
