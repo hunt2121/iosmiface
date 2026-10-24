@@ -7,6 +7,10 @@ struct ContentView: View {
 
     @State private var authKey: String = KeychainStore.load(account: "authKey") ?? ""
     @State private var showImporter = false
+    @State private var importingFolder = false
+    @State private var foundDevices: [MiFitnessKey.Device] = []
+    @State private var keyStatus: String?
+    @State private var keyStatusIsError = false
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -46,21 +50,15 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("1. Auth key") {
-                    TextField("32 hex-символи", text: $authKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .font(.system(.body, design: .monospaced))
-                        .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
-                    Text(keyValid ? "Ключ виглядає коректно" : "Потрібно рівно 16 байт у hex")
-                        .font(.footnote)
-                        .foregroundStyle(keyValid ? .green : .secondary)
-                }
+                authSection
 
                 bandSection
 
                 Section("3. Встановлення циферблата") {
-                    Button(fileName ?? "Вибрати .face файл") { showImporter = true }
+                    Button(fileName ?? "Вибрати .face файл") {
+                        importingFolder = false
+                        showImporter = true
+                    }
                     if let face {
                         Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -96,8 +94,13 @@ struct ContentView: View {
                     bandFaces = nil
                 }
             }
-            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.data]) { result in
-                loadFace(result)
+            .fileImporter(isPresented: $showImporter,
+                          allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
+                if importingFolder { folderPicked(result) } else { loadFace(result) }
+            }
+            .onAppear {
+                // Ключ ще не введено, а папку Mi Fitness уже вибирали раніше — шукаємо автоматично
+                if !keyValid, MiFitnessKey.hasSavedFolder { findKey() }
             }
             .confirmationDialog("Видалити циферблат з браслета?",
                                 isPresented: Binding(get: { faceToDelete != nil },
@@ -114,6 +117,52 @@ struct ContentView: View {
     }
 
     // MARK: - Розділи
+
+    private var authSection: some View {
+        Section {
+            Button {
+                findKey()
+            } label: {
+                Label("Знайти ключ у Mi Fitness", systemImage: "key.viewfinder")
+            }
+            if foundDevices.count > 1 {
+                ForEach(foundDevices, id: \.self) { d in
+                    Button {
+                        authKey = d.key
+                        keyStatus = "Ключ для «\(d.name)» вибрано"
+                        keyStatusIsError = false
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(d.name.isEmpty ? "Пристрій без назви" : d.name)
+                                if let mac = d.mac { Text(mac).font(.caption).foregroundStyle(.secondary) }
+                            }
+                            Spacer()
+                            if d.key == authKey.lowercased() {
+                                Image(systemName: "checkmark").foregroundStyle(.green)
+                            }
+                        }
+                    }
+                }
+            }
+            if let keyStatus {
+                Text(keyStatus).font(.footnote)
+                    .foregroundStyle(keyStatusIsError ? .red : .green)
+            }
+            TextField("32 hex-символи", text: $authKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .font(.system(.body, design: .monospaced))
+                .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
+            Text(keyValid ? "Ключ виглядає коректно" : "Потрібно рівно 16 байт у hex")
+                .font(.footnote)
+                .foregroundStyle(keyValid ? .green : .secondary)
+        } header: {
+            Text("1. Auth key")
+        } footer: {
+            Text("Першого разу виберіть у «Файлах» папку На iPhone › Mi Fitness (або MHWCahe у ній). Застосунок запам'ятає її й надалі знаходитиме ключ сам.")
+        }
+    }
 
     private var bandSection: some View {
         Section("2. Браслет") {
@@ -252,6 +301,58 @@ struct ContentView: View {
                 face = nil
                 fileName = nil
                 show("Некоректний файл циферблата: \(error.localizedDescription)", error: true)
+            }
+        }
+    }
+
+    private func findKey() {
+        guard let folder = MiFitnessKey.savedFolder() else {
+            importingFolder = true
+            showImporter = true
+            return
+        }
+        searchKey(in: folder, isNewFolder: false)
+    }
+
+    private func folderPicked(_ result: Result<URL, Error>) {
+        switch result {
+        case .failure(let e):
+            keyStatus = e.localizedDescription
+            keyStatusIsError = true
+        case .success(let url):
+            searchKey(in: url, isNewFolder: true)
+        }
+    }
+
+    private func searchKey(in folder: URL, isNewFolder: Bool) {
+        keyStatus = "Пошук…"
+        keyStatusIsError = false
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Result { try MiFitnessKey.findDevices(in: folder) }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let devices):
+                    if isNewFolder { MiFitnessKey.saveFolder(folder) }
+                    foundDevices = devices
+                    // Якщо браслет підключено, беремо ключ саме для нього
+                    let connected = ble.connectedName?.lowercased()
+                    let match = devices.first { !$0.name.isEmpty && $0.name.lowercased() == connected }
+                        ?? devices.first { $0.name.lowercased().contains("band") }
+                        ?? devices[0]
+                    authKey = match.key
+                    keyStatus = devices.count == 1
+                        ? "Ключ знайдено\(match.name.isEmpty ? "" : " для «\(match.name)»")"
+                        : "Знайдено \(devices.count) пристрої, вибрано «\(match.name)». За потреби виберіть інший"
+                    keyStatusIsError = false
+                    ble.addLog("Auth key знайдено в даних Mi Fitness")
+                case .failure(let error):
+                    if !isNewFolder, let e = error as? MiFitnessKey.SearchError, e != .noKey {
+                        // Збережена папка більше не підходить — попросимо вибрати знову
+                        MiFitnessKey.forgetFolder()
+                    }
+                    keyStatus = error.localizedDescription
+                    keyStatusIsError = true
+                }
             }
         }
     }

@@ -255,7 +255,7 @@ extension BLEManager: CBPeripheralDelegate {
         if let cb = notifyCompletions.removeValue(forKey: characteristic.uuid) {
             cb(error == nil && characteristic.isNotifying)
         }
-        if let error { addLog("Підписка \(characteristic.uuid.uuidString): \(error.localizedDescription)") }
+        if let error { debug("Підписка \(characteristic.uuid.uuidString): \(error.localizedDescription)") }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
