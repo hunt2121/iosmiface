@@ -24,6 +24,9 @@ public actor BandSession {
         /// Перед повторним відкриттям закривати чужу сесію. Небезпечно, якщо з браслетом
         /// працює інший застосунок на цьому телефоні (Mi Fitness): його сесія ламається.
         public var closeOtherSessionOnRetry = true
+        /// Запити браслета («тип/підтип»), на які відповідати порожньою командою того самого типу.
+        /// Браслет надсилає їх застосунку-компаньйону (погода тощо) і без відповіді може зависнути.
+        public var emptyReplies: Set<String> = []
         /// Скільки частин файлу може бути в дорозі без підтвердження браслета.
         /// Band 10 підтверджує кожні 6 кадрів; більше 12 у дорозі він може загубити.
         public var fileWindow = 12
@@ -447,11 +450,20 @@ public actor BandSession {
         let redact = command.type == Command.Kind.auth
         log("← cmd \(command.name) seq \(frame.sequence)" + (redact ? "" : " \(body.hexString)"))
 
-        // Команди, яких ніхто не чекає (сповіщення браслета), просто пропускаємо
         if let entry = waiters.first(where: { $0.value.matches(command) }) {
             waiters.removeValue(forKey: entry.key)
             entry.value.continuation.resume(returning: command)
+        } else if configuration.emptyReplies.contains(command.name) {
+            // Запит браслета до застосунку: відповідаємо порожньою командою того самого типу
+            let reply = Command.build(command.type, command.subtype)
+            Task { await self.sendEmptyReply(reply, name: command.name) }
         }
+    }
+
+    private func sendEmptyReply(_ body: [UInt8], name: String) async {
+        guard let keys, state == .authenticated else { return }
+        log("→ empty reply \(name)")
+        try? await writeData(DataPacket(channel: .protobuf, opcode: .encrypted, body: keys.encryptCommand(body)))
     }
 
     /// Одне сукупне підтвердження всіх уже отриманих кадрів браслета (якщо такі є).

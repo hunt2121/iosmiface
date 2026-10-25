@@ -32,6 +32,8 @@ final class FaceInstaller {
         // з Mi Fitness. Якщо браслет зайнятий — просимо закрити Mi Fitness.
         configuration.closeOtherSessionOnRetry = false
         configuration.sessionOpenAttempts = 2
+        // Запити браслета до компаньйона (2/42, 17/7, погода 10/3): без відповіді він зависає
+        configuration.emptyReplies = ["2/42", "17/7", "10/3"]
         let session = BandSession(transport: ble, configuration: configuration)
 
         ble.onData = { uuid, data in
