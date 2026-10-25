@@ -167,7 +167,8 @@ struct DonationSheet: View {
                             Text("на рік").font(.footnote).foregroundStyle(.secondary)
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    // Фіксована ширина: інакше довга плитка праворуч стискає цю до нуля
+                    .frame(width: 132)
                     tile {
                         Text("Що це дасть").font(.caption).foregroundStyle(.secondary)
                         Text("Без Sideloadly, без перепідписування й з автооновленнями")
@@ -175,7 +176,6 @@ struct DonationSheet: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity)
-                    .layoutPriority(1)
                 }
                 // Обидві плитки однакової висоти
                 .fixedSize(horizontal: false, vertical: true)
@@ -226,6 +226,7 @@ struct DonationSheet: View {
                     .frame(width: 30, height: 30)
                     .background(Circle().fill(Color(.secondarySystemBackground)))
             }
+            .buttonStyle(.plain)
             .accessibilityLabel(Text("Закрити"))
             .padding(.top, 18)
             .padding(.trailing, 16)
