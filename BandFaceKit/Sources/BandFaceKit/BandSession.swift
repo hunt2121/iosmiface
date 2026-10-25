@@ -30,6 +30,8 @@ public actor BandSession {
         /// Підтверджувати кожен кадр браслета одразу, як офіційний застосунок (видно в записі HCI).
         /// false — стара поведінка: одне сукупне підтвердження, коли вікно браслета заповнене.
         public var ackEveryFrame = false
+        /// Параметри відкриття сесії (TLV «ключ → значення»); nil — стандартні (версія, кадр, вікно, тайм-аут).
+        public var openParameters: [(key: UInt8, value: [UInt8])]?
         /// Скільки частин файлу може бути в дорозі без підтвердження браслета.
         /// Band 10 підтверджує кожні 6 кадрів; більше 12 у дорозі він може загубити.
         public var fileWindow = 12
@@ -130,7 +132,8 @@ public actor BandSession {
             resetCounters()
             do {
                 _ = try await sessionExchange(
-                    SessionControl.openRequest,
+                    configuration.openParameters.map { SessionControl(code: .openRequest, parameters: $0) }
+                        ?? SessionControl.openRequest,
                     expecting: SessionControl.Code.openResponse.rawValue,
                     timeout: configuration.sessionOpenTimeout
                 )
@@ -217,7 +220,9 @@ public actor BandSession {
     // MARK: - Автентифікація
 
     /// Автентифікація ключем браслета (16 байтів).
-    public func authenticate(authKey: [UInt8], phoneModel: String = "iPhone", region: String = "UK") async throws {
+    /// `phoneInfo` — власні дані про телефон для кроку 3 (protobuf до шифрування); nil — стандартні.
+    public func authenticate(authKey: [UInt8], phoneModel: String = "iPhone", region: String = "UK",
+                             phoneInfo: [UInt8]? = nil) async throws {
         guard authKey.count == 16 else { throw BandError.invalidAuthKey }
         guard state == .open else { throw BandError.sessionNotOpen }
 
@@ -238,7 +243,7 @@ public actor BandSession {
             throw BandError.authKeyMismatch
         }
 
-        let info = sessionKeys.encryptPhoneInfo(Command.phoneInfo(model: phoneModel, region: region))
+        let info = sessionKeys.encryptPhoneInfo(phoneInfo ?? Command.phoneInfo(model: phoneModel, region: region))
         let confirmation = sessionKeys.phoneConfirmation(phoneNonce: phoneNonce, bandNonce: bandNonce)
         log("auth: step 3")
         // Ключі потрібні вже зараз: браслет може одразу надіслати зашифровані команди.

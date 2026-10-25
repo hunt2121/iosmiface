@@ -35,6 +35,10 @@ public enum InstallPhase: Sendable, Equatable {
 public struct WatchfaceInstaller: Sendable {
     public var phoneModel = "iPhone"
     public var region = "UK"
+    /// Власні дані про телефон для автентифікації (protobuf); nil — стандартні.
+    public var phoneInfo: [UInt8]?
+    /// Команди (тіла protobuf), які надіслати одразу після автентифікації; відповіді не обов'язкові.
+    public var commandsAfterAuth: [[UInt8]] = []
     /// Паузи, перевірені на Band 10 (чи вони обов'язкові — не перевірялося).
     public var pauseAfterAuth: Duration = .milliseconds(1500)
     public var pauseBeforeInstall: Duration = .milliseconds(1500)
@@ -63,7 +67,10 @@ public struct WatchfaceInstaller: Sendable {
         try await session.open()
         do {
             onPhase?(.authenticating)
-            try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region)
+            try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region, phoneInfo: phoneInfo)
+            for body in commandsAfterAuth {
+                _ = try? await session.command(body, timeout: .seconds(3))
+            }
 
             // 2/2 і 2/1 — як офіційний застосунок; відповіді не потрібні
             try await Task.sleep(for: pauseAfterAuth)

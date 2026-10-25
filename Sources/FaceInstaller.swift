@@ -33,6 +33,17 @@ final class FaceInstaller {
         configuration.sessionOpenAttempts = 2
         // Як Mi Fitness (за записом HCI): кожен кадр браслета підтверджуємо одразу
         configuration.ackEveryFrame = true
+        // Параметри відкриття сесії — ті самі, що в Mi Fitness:
+        // версія 1.0.0, 7 = 1B 02 00, макс. кадр 0xFFFF, 5 = 1, назва пристрою, вікно 16, тайм-аут 15 000 мс
+        configuration.openParameters = [
+            (key: 1, value: [0x01, 0x00, 0x00]),
+            (key: 7, value: [0x1B, 0x02, 0x00]),
+            (key: 2, value: [0xFF, 0xFF]),
+            (key: 5, value: [0x01]),
+            (key: 6, value: Array("iPhone".utf8)),
+            (key: 3, value: [0x10, 0x00]),
+            (key: 4, value: [0x98, 0x3A]),
+        ]
         let session = BandSession(transport: ble, configuration: configuration)
 
         ble.onData = { uuid, data in
@@ -51,6 +62,9 @@ final class FaceInstaller {
         var installer = WatchfaceInstaller()
         installer.phoneModel = UIDevice.current.model
         installer.region = Self.regionCode()
+        installer.phoneInfo = Self.phoneInfo()
+        // Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2)
+        installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
         // Відповіді 2/2 і 2/1 бібліотека вже дочекалася, тож довгі паузи не потрібні
         installer.pauseAfterAuth = .milliseconds(500)
         installer.pauseBeforeInstall = .milliseconds(300)
@@ -75,6 +89,18 @@ final class FaceInstaller {
         return reporter.alreadyInstalled
             ? String(localized: "Циферблат уже є на браслеті. Виберіть його на браслеті")
             : String(localized: "Циферблат передано. Виберіть його на браслеті")
+    }
+
+    /// Дані про телефон як у Mi Fitness (з запису HCI): 1 = 1, 2 = 27.2, 3 = "Unknown",
+    /// 4 = 25183776 (схоже на прапорці можливостей), 5 = регіон.
+    private static func phoneInfo() -> [UInt8] {
+        var w = ProtoWriter()
+        w.varint(1, UInt64(1))
+        w.float(2, 27.2)
+        w.string(3, "Unknown")
+        w.varint(4, UInt64(25_183_776))
+        w.string(5, Locale.current.region?.identifier ?? "UA")
+        return w.output
     }
 
     private static func regionCode() -> String {
