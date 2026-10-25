@@ -23,7 +23,7 @@ targets:
         # Якщо мова iPhone не українська й не російська — показуємо англійську
         CFBundleDevelopmentRegion: en
         CFBundleLocalizations: [uk, en, ru]
-        CFBundleShortVersionString: "0.9"
+        CFBundleShortVersionString: "1.0"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
         UILaunchScreen: {}
