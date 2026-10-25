@@ -36,6 +36,8 @@ final class FaceInstaller {
         var configuration = BandSession.Configuration()
         // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»
         configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
+        // Якщо браслет мовчить двічі, швидше перепідключитися, ніж чекати третю спробу
+        configuration.sessionOpenAttempts = 2
         let session = BandSession(transport: ble, configuration: configuration)
 
         ble.onData = { uuid, data in

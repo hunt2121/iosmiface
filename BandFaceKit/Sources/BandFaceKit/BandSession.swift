@@ -55,6 +55,7 @@ public actor BandSession {
     private var lastBandSequence: UInt8?
     private var unacknowledged = 0
     private var ackScheduled = false
+    private var repeatAckScheduled = false
     private var keys: SessionKeys?
     /// Надіслані частини файлу, яких браслет ще не підтвердив (у порядку надсилання).
     private var unackedFileFrames: [(sequence: UInt8, bytes: [UInt8])] = []
@@ -168,6 +169,7 @@ public actor BandSession {
         lastBandSequence = nil
         unacknowledged = 0
         ackScheduled = false
+        repeatAckScheduled = false
         keys = nil
     }
 
@@ -317,6 +319,8 @@ public actor BandSession {
         guard state == .authenticated else { throw BandError.notAuthenticated }
         log("file: sending \(parts.count) parts")
         unackedFileFrames.removeAll()
+        // Із заповненим вікном браслет повторює свої кадри і може перестати приймати файл
+        await acknowledgeReceived()
         for (index, part) in parts.enumerated() {
             try Task.checkCancellation()
             // Не випереджаємо браслет більше ніж на вікно: інакше він губить частини
@@ -406,6 +410,8 @@ public actor BandSession {
         // Пропуск номерів (втрачений кадр) не зупиняє сесію: приймаємо новіший кадр.
         if let expected = expectedBandSequence, frame.sequence &- expected >= 128 {
             log("← data \(frame.sequence) dropped (expected \(expected))")
+            // Повтор означає, що браслет не отримав нашого підтвердження: підтверджуємо ще раз
+            scheduleRepeatAck()
             return
         }
         expectedBandSequence = frame.sequence &+ 1
@@ -447,6 +453,24 @@ public actor BandSession {
             waiters.removeValue(forKey: entry.key)
             entry.value.continuation.resume(returning: command)
         }
+    }
+
+    /// Браслет повторює кадри пачкою — відповідаємо одним підтвердженням на всю пачку.
+    private func scheduleRepeatAck() {
+        guard !repeatAckScheduled, lastBandSequence != nil else { return }
+        repeatAckScheduled = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            await self.sendRepeatAck()
+        }
+    }
+
+    private func sendRepeatAck() async {
+        repeatAckScheduled = false
+        guard state != .closed, let sequence = lastBandSequence else { return }
+        unacknowledged = 0
+        log("→ ack \(sequence) (band repeated frames)")
+        try? await transport.write(Frame.ack(sequence).encoded())
     }
 
     /// Одне сукупне підтвердження всіх уже отриманих кадрів браслета (якщо такі є).
