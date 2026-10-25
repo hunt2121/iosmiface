@@ -210,7 +210,7 @@ struct ContentView: View {
                     progressBlock
                         .frame(height: 36, alignment: .top)
                         .padding(.horizontal, 14)
-                        .padding(.top, 4)
+                        .padding(.top, 12)
                 }
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
