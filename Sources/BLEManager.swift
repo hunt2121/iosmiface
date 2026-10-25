@@ -59,7 +59,7 @@ final class BLEManager: NSObject, ObservableObject {
         if log.count > 3000 { log.removeFirst(log.count - 3000) }
     }
 
-    /// Технічний запис — лише коли увімкнено «Технічні подробиці».
+    /// Технічний запис — лише коли увімкнено «Розширений журнал».
     /// Текст обчислюється тільки тоді, коли він справді потрібен.
     func debug(_ text: @autoclosure () -> String) {
         if UserDefaults.standard.bool(forKey: "verboseLog") {
