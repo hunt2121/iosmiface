@@ -13,17 +13,9 @@ final class FaceInstaller {
     }
 
     /// Повертає текст для користувача; помилки — `BandError` з локалізованим описом.
-    /// Якщо браслет не відкриває сесію, один раз перепідключаємося по Bluetooth і пробуємо знову.
     func install(_ face: FaceFile, authKey: [UInt8],
                  progress: @escaping (Double, String) -> Void) async throws -> String {
-        do {
-            return try await installOnce(face, authKey: authKey, progress: progress)
-        } catch BandError.sessionOpenFailed {
-            ble.addLog(String(localized: "Браслет не відповідає — перепідключаюся…"))
-            progress(0, String(localized: "Перепідключення…"))
-            guard await ble.reconnect() else { throw BandError.sessionOpenFailed }
-            return try await installOnce(face, authKey: authKey, progress: progress)
-        }
+        try await installOnce(face, authKey: authKey, progress: progress)
     }
 
     private func installOnce(_ face: FaceFile, authKey: [UInt8],
@@ -36,7 +28,9 @@ final class FaceInstaller {
         var configuration = BandSession.Configuration()
         // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»
         configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
-        // Якщо браслет мовчить двічі, швидше перепідключитися, ніж чекати третю спробу
+        // Чужу сесію (Mi Fitness) не закриваємо і з'єднання не рвемо: це ламає браслету зв'язок
+        // з Mi Fitness. Якщо браслет зайнятий — просимо закрити Mi Fitness.
+        configuration.closeOtherSessionOnRetry = false
         configuration.sessionOpenAttempts = 2
         let session = BandSession(transport: ble, configuration: configuration)
 
@@ -73,7 +67,8 @@ final class FaceInstaller {
             throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
         } catch BandError.timeout {
             // Кажемо, на якому саме етапі браслет замовк
-            throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
+            throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))")
+                                 + " " + String(localized: "Якщо Mi Fitness відкритий, закрийте його в перемикачі застосунків"))
         }
         return reporter.alreadyInstalled
             ? String(localized: "Циферблат уже був на браслеті, його активовано")
@@ -170,7 +165,7 @@ extension BandError: LocalizedError {
         case .authKeyMismatch, .notAuthenticated:
             return String(localized: "Автентифікація не вдалася: перевірте auth key")
         case .sessionOpenFailed, .sessionNotOpen:
-            return String(localized: "Браслет не відповів (\(String(localized: "відкриття сесії")))")
+            return String(localized: "Браслет зайнятий — найімовірніше, з ним зараз працює Mi Fitness. Закрийте Mi Fitness у перемикачі застосунків і спробуйте ще раз")
         case .timeout:
             return String(localized: "Браслет не відповів (\(String(localized: "передача даних")))")
         case .installRejected(let status):

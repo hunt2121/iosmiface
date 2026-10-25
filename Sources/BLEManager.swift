@@ -367,23 +367,6 @@ extension BLEManager: BandTransport, @unchecked Sendable {
         }
     }
 
-    /// Розриває й наново встановлює з'єднання з тим самим браслетом.
-    /// true — підключено знову й сервіси знайдено (чекаємо до ~15 с).
-    @MainActor
-    func reconnect() async -> Bool {
-        guard connectedID != nil else { return false }
-        disconnect(byUser: false)
-        for _ in 0..<50 where connectedID != nil {
-            try? await Task.sleep(nanoseconds: 100_000_000)
-        }
-        reconnectLast()
-        for _ in 0..<150 {
-            if connectedID != nil && servicesReady { return true }
-            try? await Task.sleep(nanoseconds: 100_000_000)
-        }
-        return false
-    }
-
     var hasBandCharacteristics: Bool {
         characteristics[BandGATT.rx] != nil && characteristics[BandGATT.tx] != nil
     }

@@ -346,6 +346,29 @@
         }
       }
     },
+    "Браслет зайнятий — найімовірніше, з ним зараз працює Mi Fitness. Закрийте Mi Fitness у перемикачі застосунків і спробуйте ще раз": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band is busy — most likely Mi Fitness is working with it. Close Mi Fitness in the app switcher and try again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет занят — скорее всего, с ним сейчас работает Mi Fitness. Закройте Mi Fitness в переключателе приложений и попробуйте ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет зайнятий — найімовірніше, з ним зараз працює Mi Fitness. Закрийте Mi Fitness у перемикачі застосунків і спробуйте ще раз"
+          }
+        }
+      }
+    },
     "Браслет не відповів (%@)": {
       "extractionState": "manual",
       "localizations": {
@@ -365,29 +388,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Браслет не відповів (%@)"
-          }
-        }
-      }
-    },
-    "Браслет не відповідає — перепідключаюся…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band is not responding — reconnecting…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не отвечает — переподключаюсь…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не відповідає — перепідключаюся…"
           }
         }
       }
@@ -1266,29 +1266,6 @@
         }
       }
     },
-    "Перепідключення…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reconnecting…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переподключение…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перепідключення…"
-          }
-        }
-      }
-    },
     "Помилка запису: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1906,6 +1883,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шукати браслет"
+          }
+        }
+      }
+    },
+    "Якщо Mi Fitness відкритий, закрийте його в перемикачі застосунків": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If Mi Fitness is open, close it in the app switcher"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если Mi Fitness открыт, закройте его в переключателе приложений"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо Mi Fitness відкритий, закрийте його в перемикачі застосунків"
           }
         }
       }

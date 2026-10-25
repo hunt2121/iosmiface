@@ -21,6 +21,9 @@ public actor BandSession {
         public var sessionOpenAttempts = 3
         /// Пауза між закриттям старої сесії і повторним відкриттям.
         public var sessionRetryPause: Duration = .milliseconds(500)
+        /// Перед повторним відкриттям закривати чужу сесію. Небезпечно, якщо з браслетом
+        /// працює інший застосунок на цьому телефоні (Mi Fitness): його сесія ламається.
+        public var closeOtherSessionOnRetry = true
         /// Скільки частин файлу може бути в дорозі без підтвердження браслета.
         /// Band 10 підтверджує кожні 6 кадрів; більше 12 у дорозі він може загубити.
         public var fileWindow = 12
@@ -105,7 +108,7 @@ public actor BandSession {
         startPumpIfNeeded()
         state = .opening
         for attempt in 1...max(configuration.sessionOpenAttempts, 1) {
-            if attempt > 1 {
+            if attempt > 1 && configuration.closeOtherSessionOnRetry {
                 // Сесію може тримати Mi Fitness: спершу просимо закрити.
                 log("session: retry \(attempt), sending close first")
                 try await transport.write(Frame(type: .session, sequence: 0, payload: SessionControl.closeRequest.payload).encoded())
