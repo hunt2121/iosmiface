@@ -1289,6 +1289,29 @@
         }
       }
     },
+    "Натисніть «Вибрати файл»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “Choose file”"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите «Выбрать файл»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть «Вибрати файл»"
+          }
+        }
+      }
+    },
     "Не вдалося надіслати команду": {
       "extractionState": "manual",
       "localizations": {
@@ -1979,6 +2002,29 @@
         }
       }
     },
+    "Формат: .bin або .face": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format: .bin or .face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Формат: .bin или .face"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Формат: .bin або .face"
+          }
+        }
+      }
+    },
     "Цей циферблат уже є на браслеті": {
       "extractionState": "manual",
       "localizations": {
@@ -2067,29 +2113,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Циферблат з таким ID уже є, і його не вдалося замінити"
-          }
-        }
-      }
-    },
-    "Циферблат у форматі .bin або .face": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch face in .bin or .face format"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат в формате .bin или .face"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат у форматі .bin або .face"
           }
         }
       }
