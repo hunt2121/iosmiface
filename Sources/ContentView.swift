@@ -156,7 +156,7 @@ struct ContentView: View {
                         .font(.title3)
                 }
                 // Відступ від ключа до кнопки такий самий, як від верху картки до ключа
-                .padding(.bottom, 9)
+                .padding(.bottom, 7)
                 Button {
                     findKey()
                 } label: {
