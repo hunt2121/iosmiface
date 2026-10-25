@@ -155,6 +155,8 @@ struct ContentView: View {
                         .foregroundStyle(keyValid ? Color.okText : Color.secondary)
                         .font(.title3)
                 }
+                // Відступ від ключа до кнопки такий самий, як від верху картки до ключа
+                .padding(.bottom, 9)
                 Button {
                     findKey()
                 } label: {
@@ -162,12 +164,14 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
+                // Статус — по центру місця між кнопкою і низом картки; висота фіксована
                 Text(keyStatusLine?.text ?? " ")
                     .font(.footnote)
                     .foregroundStyle(keyStatusLine?.color ?? Color.secondary)
+                    .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36, alignment: .leading)
-                    .padding(.top, -4)
+                    .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36, alignment: .center)
+                    .padding(.bottom, 3)
             }
             .padding(.top, 6)
             if foundDevices.count > 1 {
