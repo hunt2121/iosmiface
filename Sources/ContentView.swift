@@ -25,9 +25,6 @@ struct ContentView: View {
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
     @AppStorage("verboseLog") private var verboseLog = false
-    /// Тестовий режим: пасивно слухати обмін браслета з Mi Fitness
-    @State private var monitor: BandMonitor?
-    @State private var monitoring = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var keyValid: Bool {
@@ -35,7 +32,7 @@ struct ContentView: View {
     }
 
     private var canOperate: Bool {
-        keyValid && ble.connectedID != nil && ble.servicesReady && !busy && !monitoring
+        keyValid && ble.connectedID != nil && ble.servicesReady && !busy
     }
 
     private static var buildNumber: String {
@@ -99,7 +96,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
-            if phase == .background && !busy && !monitoring && (ble.connectedID != nil || ble.isConnecting) {
+            if phase == .background && !busy && (ble.connectedID != nil || ble.isConnecting) {
                 ble.disconnect(byUser: false)
             }
             // Повернулися в застосунок — знову підключаємося до запам'ятованого браслета
@@ -370,20 +367,6 @@ struct ContentView: View {
     private var logSection: some View {
         Section {
             Toggle("Детальний журнал", isOn: $verboseLog)
-            Toggle("Спостерігати за Mi Fitness", isOn: $monitoring)
-                .disabled(busy)
-                .onChange(of: monitoring) { on in
-                    if on {
-                        let m = monitor ?? BandMonitor(ble: ble)
-                        monitor = m
-                        Task { @MainActor in
-                            await m.start()
-                            if !m.isRunning { monitoring = false }
-                        }
-                    } else {
-                        monitor?.stop()
-                    }
-                }
             HStack(spacing: 12) {
                 Button {
                     UIPasteboard.general.string = ble.log.joined(separator: "\n")

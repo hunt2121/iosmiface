@@ -362,14 +362,6 @@ extension BLEManager: BandTransport, @unchecked Sendable {
         }
     }
 
-    /// Підписка на RX (0x5E) як async-виклик.
-    @MainActor
-    func subscribeRX() async -> Bool {
-        await withCheckedContinuation { continuation in
-            subscribe(to: BandGATT.rx) { continuation.resume(returning: $0) }
-        }
-    }
-
     /// Вмикає або вимикає сповіщення характеристики й чекає підтвердження. true — успішно.
     @MainActor
     func setNotify(_ on: Bool, for uuid: CBUUID) async -> Bool {
