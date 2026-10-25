@@ -181,38 +181,23 @@ struct ContentView: View {
         Section("Встановлення циферблата") {
             HStack(alignment: .center, spacing: 18) {
                 previewCapsule
+                // Права колонка має фіксовані «слоти»: інформація, кнопки, прогрес.
+                // Їхня висота не змінюється, тож нічого не стрибає.
                 VStack(alignment: .leading, spacing: 8) {
-                    // Інформація про файл
-                    VStack(alignment: .leading, spacing: 5) {
-                        if let face {
-                            Text(face.name ?? String(localized: "Циферблат \(face.id)")).font(.title3.bold())
-                            Text("ID \(face.id) · \(String(face.data.count / 1024)) КБ")
-                                .font(.footnote).foregroundStyle(.secondary)
-                            if let fileName {
-                                Text(fileName).font(.caption).foregroundStyle(.secondary)
-                                    .lineLimit(1).truncationMode(.middle)
-                            }
-                        } else {
-                            Text("Файл не вибрано").font(.title3.bold())
-                            Text("Циферблат у форматі .bin або .face")
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 6)
+                    infoBlock
+                        .frame(height: 70, alignment: .topLeading)
+                        .padding(.horizontal, 14)
 
-                    // Кнопки: поки файлу немає, головна дія — вибрати файл
-                    if face == nil {
-                        Button { pickFace() } label: {
-                            Text("Вибрати файл").buttonText()
+                    // Перша кнопка завжди на тому самому місці; змінюються лише текст і стиль
+                    Group {
+                        if face == nil {
+                            Button { pickFace() } label: { Text("Вибрати файл").buttonText() }
+                                .buttonStyle(.borderedProminent)
+                        } else {
+                            Button { pickFace() } label: { Text("Вибрати інший файл").buttonText() }
+                                .buttonStyle(.bordered)
+                                .disabled(busy)
                         }
-                        .buttonStyle(.borderedProminent)
-                    } else {
-                        Button { pickFace() } label: {
-                            Text("Вибрати інший файл").buttonText()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(busy)
                     }
                     Button {
                         if let face { run(.install(face)) }
@@ -222,37 +207,61 @@ struct ContentView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!canOperate || face == nil)
 
-                    // Прогрес або результат встановлення
-                    if busy {
-                        VStack(spacing: 4) {
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Color.gray.opacity(0.3))
-                                    Capsule().fill(Color.accentColor)
-                                        .frame(width: max(12, geo.size.width * progress))
-                                }
-                            }
-                            .frame(height: 12)
-                            HStack {
-                                Text(progressText)
-                                Spacer()
-                                Text(verbatim: "\(Int(progress * 100))%")
-                            }
-                            .font(.caption).foregroundStyle(.secondary)
-                        }
+                    progressBlock
+                        .frame(height: 36, alignment: .top)
                         .padding(.horizontal, 14)
-                        .padding(.top, 6)
-                    } else if let message {
-                        Text(message).font(.footnote)
-                            .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
-                            .padding(.horizontal, 14)
-                            .padding(.top, 4)
-                    }
+                        .padding(.top, 4)
                 }
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
             }
             .padding(.vertical, 8)
+        }
+    }
+
+    /// Назва, ID і файл — завжди три рядки однакової висоти.
+    private var infoBlock: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(face.map { $0.name ?? String(localized: "Циферблат \($0.id)") } ?? String(localized: "Файл не вибрано"))
+                .font(.title3.bold())
+            Text(face.map { "ID \($0.id) · \($0.data.count / 1024) KB" } ?? String(localized: "Циферблат у форматі .bin або .face"))
+                .font(.footnote).foregroundStyle(.secondary)
+            Text(fileName ?? " ")
+                .font(.caption).foregroundStyle(.secondary)
+                .truncationMode(.middle)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
+    /// Смужка прогресу під час встановлення, інакше — результат; місце зарезервоване завжди.
+    @ViewBuilder
+    private var progressBlock: some View {
+        if busy {
+            VStack(spacing: 4) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.gray.opacity(0.3))
+                        Capsule().fill(Color.accentColor)
+                            .frame(width: max(12, geo.size.width * progress))
+                    }
+                }
+                .frame(height: 12)
+                HStack {
+                    Text(progressText).lineLimit(1)
+                    Spacer()
+                    Text(verbatim: "\(Int(progress * 100))%")
+                }
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        } else if let message {
+            Text(message).font(.caption)
+                .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Color.clear
         }
     }
 
