@@ -288,7 +288,7 @@ struct ContentView: View {
         Section("Браслет") {
             if let name = ble.connectedName {
                 HStack {
-                    Label(name, systemImage: "applewatch")
+                    Label { Text(name) } icon: { Image("TabWatch").foregroundStyle(Color.accentColor) }
                     Spacer()
                     Button("Відключити", role: .destructive) {
                         ble.disconnect()
