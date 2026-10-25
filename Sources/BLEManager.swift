@@ -1,17 +1,18 @@
 import Foundation
 import CoreBluetooth
+import BandFaceKit
 
-struct DiscoveredBand: Identifiable, Hashable {
+struct FoundBand: Identifiable, Hashable {
     let id: UUID
     let name: String
     var rssi: Int
 }
 
 /// Bluetooth-шар: пошук, підключення, виявлення сервісів, черга запису з керуванням потоком.
-/// Протокол Xiaomi живе в XiaomiProtocol.swift.
+/// Протокол браслета — у бібліотеці BandFaceKit; цей клас для неї транспорт (BandTransport).
 final class BLEManager: NSObject, ObservableObject {
     @Published var state: CBManagerState = .unknown
-    @Published var devices: [DiscoveredBand] = []
+    @Published var devices: [FoundBand] = []
     @Published var isScanning = false
     @Published var connectedID: UUID?
     @Published var connectedName: String?
@@ -41,12 +42,13 @@ final class BLEManager: NSObject, ObservableObject {
         let characteristic: CBCharacteristic
         let data: Data
         var offset = 0
-        let completion: (() -> Void)?
+        /// true — дані передано стеку Bluetooth, false — з'єднання розірвалося раніше.
+        let completion: ((Bool) -> Void)?
     }
 
     private var writeQueue: [PendingWrite] = []
     private var awaitingResponse = false
-    private var responseCompletion: (() -> Void)?
+    private var responseCompletion: ((Bool) -> Void)?
     private var notifyCompletions: [CBUUID: (Bool) -> Void] = [:]
 
     override init() {
@@ -65,8 +67,6 @@ final class BLEManager: NSObject, ObservableObject {
         if UserDefaults.standard.bool(forKey: "verboseLog") { addLog(text()) }
     }
 
-    static let xiaomiService = CBUUID(string: "FE95")
-
     // MARK: - Пошук і підключення
 
     func startScan() {
@@ -77,9 +77,9 @@ final class BLEManager: NSObject, ObservableObject {
         devices.removeAll()
         peripherals.removeAll()
         // Пристрої, вже підключені до iPhone іншим застосунком (напр. Mi Fitness), не рекламуються
-        for p in central.retrieveConnectedPeripherals(withServices: [Self.xiaomiService]) {
+        for p in central.retrieveConnectedPeripherals(withServices: [BandGATT.service]) {
             peripherals[p.identifier] = p
-            devices.append(DiscoveredBand(id: p.identifier, name: (p.name ?? "?") + " " + String(localized: "(вже підключений до iPhone)"), rssi: 0))
+            devices.append(FoundBand(id: p.identifier, name: (p.name ?? "?") + " " + String(localized: "(вже підключений до iPhone)"), rssi: 0))
             debug("Уже підключений до системи: \(p.name ?? "?")")
         }
         isScanning = true
@@ -157,7 +157,7 @@ final class BLEManager: NSObject, ObservableObject {
     /// Ставить дані в чергу. Дані розбиваються на фрагменти за MTU.
     /// `completion` викликається, коли всі фрагменти передано стеку Bluetooth.
     @discardableResult
-    func enqueue(_ data: Data, to uuid: CBUUID, completion: (() -> Void)? = nil) -> Bool {
+    func enqueue(_ data: Data, to uuid: CBUUID, completion: ((Bool) -> Void)? = nil) -> Bool {
         guard active != nil, let c = characteristics[uuid], !data.isEmpty else { return false }
         writeQueue.append(PendingWrite(characteristic: c, data: data, completion: completion))
         pump()
@@ -186,7 +186,7 @@ final class BLEManager: NSObject, ObservableObject {
             if finished {
                 writeQueue.removeFirst()
                 if noResponse {
-                    if let cb = item.completion { DispatchQueue.main.async { cb() } }
+                    if let cb = item.completion { DispatchQueue.main.async { cb(true) } }
                 } else {
                     responseCompletion = item.completion
                 }
@@ -199,10 +199,15 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     private func resetTransfer() {
+        // Ті, хто чекає на запис, дізнаються, що він не відбувся
+        let pending = writeQueue.compactMap(\.completion) + [responseCompletion].compactMap { $0 }
+        let subscriptions = Array(notifyCompletions.values)
         writeQueue.removeAll()
         awaitingResponse = false
         responseCompletion = nil
         notifyCompletions.removeAll()
+        pending.forEach { $0(false) }
+        subscriptions.forEach { $0(false) }
     }
 }
 
@@ -221,10 +226,10 @@ extension BLEManager: CBCentralManagerDelegate {
         let uuids = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
         let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] ?? [:]
         let lower = name.lowercased()
-        guard uuids.contains(Self.xiaomiService) || serviceData[Self.xiaomiService] != nil
+        guard uuids.contains(BandGATT.service) || serviceData[BandGATT.service] != nil
                 || lower.contains("xiaomi") || lower.contains("band") || lower.contains("redmi") else { return }
         peripherals[peripheral.identifier] = peripheral
-        let item = DiscoveredBand(id: peripheral.identifier, name: name, rssi: RSSI.intValue)
+        let item = FoundBand(id: peripheral.identifier, name: name, rssi: RSSI.intValue)
         if let i = devices.firstIndex(where: { $0.id == item.id }) {
             devices[i] = item
         } else {
@@ -244,7 +249,7 @@ extension BLEManager: CBCentralManagerDelegate {
         resetTransfer()
         addLog(String(localized: "Підключено"))
         // Шукаємо лише сервіс Xiaomi — так підключення швидше
-        peripheral.discoverServices([Self.xiaomiService])
+        peripheral.discoverServices([BandGATT.service])
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -308,7 +313,7 @@ extension BLEManager: CBPeripheralDelegate {
         awaitingResponse = false
         if let cb = responseCompletion {
             responseCompletion = nil
-            DispatchQueue.main.async { cb() }
+            DispatchQueue.main.async { cb(error == nil) }
         }
         pump()
     }
@@ -325,5 +330,34 @@ extension BLEManager: CBPeripheralDelegate {
         if p.contains(.notify) { r.append("notify") }
         if p.contains(.indicate) { r.append("indicate") }
         return r.joined(separator: ",")
+    }
+}
+
+// MARK: - Транспорт для BandFaceKit
+
+extension BLEManager: BandTransport, @unchecked Sendable {
+    /// Надсилає цілий кадр у TX (0x5F) і чекає, поки всі його шматки прийме стек Bluetooth.
+    /// Увесь стан класу живе на головному потоці.
+    func write(_ frame: [UInt8]) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            DispatchQueue.main.async {
+                let queued = self.enqueue(Data(frame), to: BandGATT.tx) { sent in
+                    if sent { continuation.resume() } else { continuation.resume(throwing: BandError.disconnected) }
+                }
+                if !queued { continuation.resume(throwing: BandError.notConnected) }
+            }
+        }
+    }
+
+    /// Підписка на RX (0x5E) як async-виклик.
+    @MainActor
+    func subscribeRX() async -> Bool {
+        await withCheckedContinuation { continuation in
+            subscribe(to: BandGATT.rx) { continuation.resume(returning: $0) }
+        }
+    }
+
+    var hasBandCharacteristics: Bool {
+        characteristics[BandGATT.rx] != nil && characteristics[BandGATT.tx] != nil
     }
 }

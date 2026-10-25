@@ -4,12 +4,18 @@ options:
   developmentLanguage: uk
   deploymentTarget:
     iOS: "16.0"
+packages:
+  # Протокол браслета: окрема бібліотека з ліцензією MIT (див. BandFaceKit/LICENSE)
+  BandFaceKit:
+    path: BandFaceKit
 targets:
   BandFace:
     type: application
     platform: iOS
     sources:
       - path: Sources
+    dependencies:
+      - package: BandFaceKit
     info:
       path: Sources/Info.plist
       properties:

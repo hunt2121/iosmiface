@@ -32,21 +32,3 @@ enum KeychainStore {
         return String(data: data, encoding: .utf8)
     }
 }
-
-extension Data {
-    /// "0a1b2c…" → Data. Повертає nil, якщо рядок не є валідним hex.
-    init?(hex: String) {
-        let s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "0x", with: "")
-        guard s.count % 2 == 0, !s.isEmpty else { return nil }
-        var bytes = [UInt8]()
-        var idx = s.startIndex
-        while idx < s.endIndex {
-            let next = s.index(idx, offsetBy: 2)
-            guard let b = UInt8(s[idx..<next], radix: 16) else { return nil }
-            bytes.append(b)
-            idx = next
-        }
-        self.init(bytes)
-    }
-}

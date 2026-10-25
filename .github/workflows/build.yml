@@ -19,6 +19,11 @@ jobs:
           if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
           xcodebuild -version
 
+      # Тести протоколу (BandFaceKit) на імітації браслета; падіння не зупиняє збірку IPA
+      - name: Test BandFaceKit
+        continue-on-error: true
+        run: swift test --package-path BandFaceKit
+
       - name: Install XcodeGen
         run: brew install xcodegen
 

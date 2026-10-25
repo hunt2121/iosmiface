@@ -346,52 +346,6 @@
         }
       }
     },
-    "Браслет використовує протокол V1 (характеристики 0x51–0x55). Його ще не реалізовано.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band uses protocol V1 (characteristics 0x51–0x55). It isn't supported yet."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет использует протокол V1 (характеристики 0x51–0x55). Он пока не реализован."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет використовує протокол V1 (характеристики 0x51–0x55). Його ще не реалізовано."
-          }
-        }
-      }
-    },
-    "Браслет відмовив (статус %@), перевіряю список циферблатів": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band refused (status %@), checking the watch face list"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет отказал (статус %@), проверяю список циферблатов"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет відмовив (статус %@), перевіряю список циферблатів"
-          }
-        }
-      }
-    },
     "Браслет відхилив операцію: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -438,29 +392,6 @@
         }
       }
     },
-    "Браслет не прийняв ключ: неправильний auth key?": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band didn't accept the key: wrong auth key?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не принял ключ: неверный auth key?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не прийняв ключ: неправильний auth key?"
-          }
-        }
-      }
-    },
     "Браслет не підключено": {
       "extractionState": "manual",
       "localizations": {
@@ -480,29 +411,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Браслет не підключено"
-          }
-        }
-      }
-    },
-    "Браслет: модель %@, прошивка %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Band: model %@, firmware %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет: модель %@, прошивка %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет: модель %@, прошивка %@"
           }
         }
       }
@@ -595,52 +503,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вибрати інший файл"
-          }
-        }
-      }
-    },
-    "Видалення…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deleting…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удаление…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалення…"
-          }
-        }
-      }
-    },
-    "Власних циферблатів на браслеті: %@ — видаліть кілька (ліміт ≈10)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Custom watch faces on the band: %@ — delete a few (limit ≈10)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Своих циферблатов на браслете: %@ — удалите несколько (лимит ≈10)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Власних циферблатів на браслеті: %@ — видаліть кілька (ліміт ≈10)"
           }
         }
       }
@@ -990,29 +852,6 @@
         }
       }
     },
-    "Заряд: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Battery: %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заряд: %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заряд: %@"
-          }
-        }
-      }
-    },
     "Знайдено пристроїв: %@, вибрано «%@». За потреби виберіть інший": {
       "extractionState": "manual",
       "localizations": {
@@ -1220,25 +1059,25 @@
         }
       }
     },
-    "Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті": {
+    "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для Band 10": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The file may not be meant for Band 10, may be too large, or the band is low on storage"
+            "value": "Perhaps an older version of this watch face is active right now (switch to another one), there are too many custom watch faces (limit ≈10), or the file is not for Band 10"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Возможно, файл не предназначен для Band 10, слишком большой или браслету не хватает памяти"
+            "value": "Возможно, старая версия этого циферблата сейчас активна (переключите на другой), собственных циферблатов слишком много (лимит ≈10) или файл не для Band 10"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті"
+            "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для Band 10"
           }
         }
       }
@@ -1266,52 +1105,6 @@
         }
       }
     },
-    "Не вдалося надіслати команду": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't send the command"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось отправить команду"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося надіслати команду"
-          }
-        }
-      }
-    },
-    "Не вдалося підписатися на сповіщення 0x5E": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't subscribe to 0x5E notifications"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось подписаться на уведомления 0x5E"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося підписатися на сповіщення 0x5E"
-          }
-        }
-      }
-    },
     "Некоректний файл циферблата: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1331,52 +1124,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Некоректний файл циферблата: %@"
-          }
-        }
-      }
-    },
-    "Немає доступу до вибраної папки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No access to the selected folder"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет доступа к выбранной папке"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Немає доступу до вибраної папки"
-          }
-        }
-      }
-    },
-    "Отримання списку…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Getting the list…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Получение списка…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отримання списку…"
           }
         }
       }
@@ -1795,29 +1542,6 @@
         }
       }
     },
-    "Стару версію видалено, повторюю встановлення": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Old version deleted, retrying installation"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Старая версия удалена, повторяю установку"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Стару версію видалено, повторюю встановлення"
-          }
-        }
-      }
-    },
     "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.": {
       "extractionState": "manual",
       "localizations": {
@@ -2025,29 +1749,6 @@
         }
       }
     },
-    "Циферблат з таким ID уже є, і його не вдалося замінити": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A watch face with this ID already exists and couldn't be replaced"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат с таким ID уже есть, и его не удалось заменить"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат з таким ID уже є, і його не вдалося замінити"
-          }
-        }
-      }
-    },
     "Циферблат уже був на браслеті, його активовано": {
       "extractionState": "manual",
       "localizations": {
@@ -2090,29 +1791,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Циферблати"
-          }
-        }
-      }
-    },
-    "Циферблатів на браслеті: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch faces on the band: %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблатов на браслете: %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблатів на браслеті: %@"
           }
         }
       }
@@ -2255,29 +1933,6 @@
         }
       }
     },
-    "завеликий для передачі": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "too large to transfer"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "слишком большой для передачи"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "завеликий для передачі"
-          }
-        }
-      }
-    },
     "запит на встановлення": {
       "extractionState": "manual",
       "localizations": {
@@ -2297,52 +1952,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "запит на встановлення"
-          }
-        }
-      }
-    },
-    "запит на завантаження": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "upload request"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "запрос на загрузку"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "запит на завантаження"
-          }
-        }
-      }
-    },
-    "на браслеті вже є стара версія цього циферблата, і вона зараз активна. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "an older version of this watch face is on the band and is currently active. Switch to another watch face on the band and try again — the old version will be replaced"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "на браслете уже есть старая версия этого циферблата, и она сейчас активна. Переключите на браслете другой циферблат и попробуйте ещё раз — старая версия будет заменена"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "на браслеті вже є стара версія цього циферблата, і вона зараз активна. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено"
           }
         }
       }
@@ -2439,52 +2048,6 @@
         }
       }
     },
-    "підтвердження автентифікації": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "authentication confirmation"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "подтверждение аутентификации"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "підтвердження автентифікації"
-          }
-        }
-      }
-    },
-    "список циферблатів": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "watch face list"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "список циферблатов"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "список циферблатів"
-          }
-        }
-      }
-    },
     "статус %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2573,52 +2136,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "це не файл циферблата Xiaomi (немає заголовка 5A A5)"
-          }
-        }
-      }
-    },
-    "ідентифікатор «%@» не є числом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "the ID “%@” is not a number"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "идентификатор «%@» не является числом"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ідентифікатор «%@» не є числом"
-          }
-        }
-      }
-    },
-    "інформація про браслет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "band info"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "информация о браслете"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "інформація про браслет"
           }
         }
       }

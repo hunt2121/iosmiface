@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
+import BandFaceKit
 
 struct ContentView: View {
     enum Tab: Hashable { case faces, key, log }
@@ -22,14 +23,12 @@ struct ContentView: View {
     @State private var busy = false
     @State private var message: String?
     @State private var messageIsError = false
-    @State private var session: XiaomiBandSession?
     @State private var filePreview: UIImage?
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var keyValid: Bool {
-        if let d = Data(hex: authKey) { return d.count == 16 }
-        return false
+        Hex.decode(authKey)?.count == 16
     }
 
     private var canOperate: Bool {
@@ -213,7 +212,7 @@ struct ContentView: View {
                         }
                     }
                     Button {
-                        if let face { run(.install(face)) }
+                        if let face { install(face) }
                     } label: {
                         Text("Встановити на браслет").buttonText()
                     }
@@ -237,7 +236,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 5) {
             Text(face.map { $0.name ?? String(localized: "Циферблат \($0.id)") } ?? String(localized: "Файл не вибрано"))
                 .font(.title3.bold())
-            Text(face.map { String(localized: "ID \($0.id) · \(String($0.data.count / 1024)) КБ") } ?? String(localized: "Формат: .bin або .face"))
+            Text(face.map { String(localized: "ID \($0.id) · \(String($0.size / 1024)) КБ") } ?? String(localized: "Формат: .bin або .face"))
                 .font(.footnote).foregroundStyle(.secondary)
             Text(face == nil ? String(localized: "Натисніть «Вибрати файл»") : (fileName ?? " "))
                 .font(.caption).foregroundStyle(.secondary)
@@ -404,14 +403,15 @@ struct ContentView: View {
                 let data = try Data(contentsOf: url)
                 let parsed = try FaceFile(data: data)
                 face = parsed
-                filePreview = FacePreview.image(fromFace: parsed.data)
+                filePreview = (try? parsed.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
                 fileName = url.lastPathComponent
                 message = nil
             } catch {
                 face = nil
                 filePreview = nil
                 fileName = nil
-                show(String(localized: "Некоректний файл циферблата: \(error.localizedDescription)"), error: true)
+                show(error is BandError ? error.localizedDescription
+                     : String(localized: "Некоректний файл циферблата: \(error.localizedDescription)"), error: true)
             }
         }
     }
@@ -487,29 +487,28 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func run(_ operation: XiaomiBandSession.Operation) {
-        do {
-            let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
-            session = s
-            busy = true
-            progress = 0
-            progressText = String(localized: "Старт…")
-            message = nil
-            s.run(operation, progress: { value, text in
-                progress = value
-                progressText = text
-            }, completion: { result in
-                busy = false
-                session = nil
-                switch result {
-                case .success(let text):
-                    show(text, error: false)
-                case .failure(let error):
-                    show(error.localizedDescription, error: true)
+    private func install(_ face: FaceFile) {
+        guard let key = Hex.decode(authKey), key.count == 16 else {
+            show(BandError.invalidAuthKey.localizedDescription, error: true)
+            return
+        }
+        busy = true
+        progress = 0
+        progressText = String(localized: "Старт…")
+        message = nil
+        Task { @MainActor in
+            do {
+                let text = try await FaceInstaller(ble: ble).install(face, authKey: key) { value, text in
+                    progress = value
+                    progressText = text
                 }
-            })
-        } catch {
-            show(error.localizedDescription, error: true)
+                ble.addLog(String(localized: "Готово: \(text)"))
+                show(text, error: false)
+            } catch {
+                ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
+                show(error.localizedDescription, error: true)
+            }
+            busy = false
         }
     }
 
