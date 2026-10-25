@@ -47,29 +47,6 @@
         }
       }
     },
-    "(підтвердження не отримано)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(no confirmation received)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(подтверждение не получено)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "(підтвердження не отримано)"
-          }
-        }
-      }
-    },
     "32 hex-символи": {
       "extractionState": "manual",
       "localizations": {
@@ -411,6 +388,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Браслет не підключено"
+          }
+        }
+      }
+    },
+    "Браслет не підтвердив активацію": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band did not confirm activation"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не подтвердил активацию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не підтвердив активацію"
           }
         }
       }
@@ -963,6 +963,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ключ"
+          }
+        }
+      }
+    },
+    "Ключ введено вручну": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key entered manually"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ключ введён вручную"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ключ введено вручну"
           }
         }
       }

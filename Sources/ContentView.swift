@@ -132,7 +132,7 @@ struct ContentView: View {
     private var keyStatusLine: (text: String, color: Color)? {
         if let keyStatus { return (keyStatus, keyStatusIsError ? Color.errorText : Color.okText) }
         if !keyValid { return (String(localized: "Введіть ключ вручну або знайдіть його автоматично"), Color.secondary) }
-        return nil
+        return (String(localized: "Ключ введено вручну"), Color.okText)
     }
 
     private var authSection: some View {
@@ -146,7 +146,11 @@ struct ContentView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .font(.system(.body, design: .monospaced))
-                        .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
+                        .onChange(of: authKey) { key in
+                            KeychainStore.save(key, account: "authKey")
+                            // Ключ змінили вручну — старе «Ключ знайдено…» вже не про нього
+                            if !foundDevices.contains(where: { $0.key == key.lowercased() }) { keyStatus = nil }
+                        }
                     Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
                         .foregroundStyle(keyValid ? Color.okText : Color.secondary)
                         .font(.title3)
@@ -274,10 +278,10 @@ struct ContentView: View {
                     Spacer()
                     Text(verbatim: "\(Int(progress * 100))%")
                 }
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.footnote).foregroundStyle(.secondary)
             }
         } else if let message {
-            Text(message).font(.caption)
+            Text(message).font(.footnote)
                 .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
@@ -473,7 +477,6 @@ struct ContentView: View {
                         ?? devices[0]
                     let changed = match.key != authKey.lowercased()
                     authKey = match.key
-                    if quiet && !changed { return }
                     keyStatus = devices.count == 1
                         ? (match.name.isEmpty ? String(localized: "Ключ знайдено") : String(localized: "Ключ знайдено для «\(match.name)»"))
                         : String(localized: "Знайдено пристроїв: \(String(devices.count)), вибрано «\(match.name)». За потреби виберіть інший")

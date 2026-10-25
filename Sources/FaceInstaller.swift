@@ -52,9 +52,9 @@ final class FaceInstaller {
                 DispatchQueue.main.async { reporter.show(phase) }
             }
         } catch BandError.timeout where reporter.reachedActivation {
-            // Файл уже на браслеті, просто не прийшло підтвердження активації
-            return String(localized: "Циферблат встановлено й активовано") + " "
-                + String(localized: "(підтвердження не отримано)")
+            // Файл уже на браслеті, просто не прийшло підтвердження активації (примітка — лише в журналі)
+            ble.addLog(String(localized: "Браслет не підтвердив активацію"))
+            return String(localized: "Циферблат встановлено й активовано")
         } catch BandError.timeout {
             // Кажемо, на якому саме етапі браслет замовк
             throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
