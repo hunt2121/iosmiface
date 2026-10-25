@@ -155,7 +155,7 @@ final class XiaomiBandSession {
 
         stage = .waitingSession
         report(0, String(localized: "Відкриття сесії…"))
-        armTimeout(18, String(localized: "відкриття сесії"))
+        armTimeout(20, String(localized: "відкриття сесії"))
         ble.subscribe(to: Self.rxUUID) { [weak self] ok in
             guard let self, self.stage == .waitingSession else { return }
             guard ok else { return self.fail(BandError.protocolUnsupported(String(localized: "Не вдалося підписатися на сповіщення 0x5E"))) }
@@ -164,21 +164,31 @@ final class XiaomiBandSession {
     }
 
     /// Браслет іноді не відповідає з першого разу, тож повторюємо до 3 разів.
+    /// Відкриття сесії. Якщо браслет мовчить (наприклад, сесію тримає Mi Fitness),
+    /// наступні спроби спершу закривають стару сесію, а потім відкривають нову.
     private func sendStartSession(attempt: Int) {
         guard stage == .waitingSession else { return }
         sessionOpened = true
-        ble.debug("→ START_SESSION (спроба \(attempt))")
-        ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
-        guard attempt < 3 else { return }
+        if attempt == 1 {
+            ble.debug("→ START_SESSION (спроба 1)")
+            ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
+        } else {
+            ble.debug("→ STOP_SESSION + START_SESSION (спроба \(attempt))")
+            ble.enqueue(XiaomiPacketV2.stopSessionRequest(), to: Self.txUUID)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                guard let self, self.stage == .waitingSession else { return }
+                self.ble.enqueue(XiaomiPacketV2.startSessionRequest(), to: Self.txUUID)
+            }
+        }
+        guard attempt < 4 else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
             self?.sendStartSession(attempt: attempt + 1)
         }
     }
 
-    // MARK: - Прийом
-
     private func handleNotification(_ uuid: CBUUID, _ data: Data) {
         guard uuid == Self.rxUUID else { return }
+        if stage == .waitingSession { ble.debug("← \(Self.hex(data, max: 24))") }
         rxBuffer.append(contentsOf: data)
         processBuffer()
     }
@@ -210,7 +220,8 @@ final class XiaomiBandSession {
             ble.debug("← ack \(seq)")
         case .sessionConfig(_, let opcode):
             ble.debug("← SESSION_CONFIG op=\(opcode)")
-            if stage == .waitingSession { startHandshake() }
+            // 2 = відповідь на START_SESSION (відповідь на STOP_SESSION — 4, її пропускаємо)
+            if stage == .waitingSession && opcode == 2 { startHandshake() }
         case .data(let seq, let channel, let opcode, let payload):
             // Браслет повторює непідтверджені пакети — обробляємо кожен лише раз
             guard seenRx.insert(seq).inserted else {
