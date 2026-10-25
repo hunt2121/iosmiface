@@ -25,6 +25,8 @@ struct ContentView: View {
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
     @AppStorage("verboseLog") private var verboseLog = false
+    @AppStorage("donationOpened") private var donationOpened = false
+    @State private var showDonation = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var keyValid: Bool {
@@ -70,6 +72,12 @@ struct ContentView: View {
                     installSection
                 }
                 .navigationTitle("Циферблати")
+                // Збір на App Store — капсула над панеллю вкладок; список прокручується під нею
+                .safeAreaInset(edge: .bottom) {
+                    DonationBar(thanked: donationOpened) { showDonation = true }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                }
             }
             .tabItem { Label("Циферблати", image: "TabWatch") }
             .tag(Tab.faces)
@@ -109,6 +117,11 @@ struct ContentView: View {
         }
         .onAppear {
             autoFindKey()
+        }
+        .sheet(isPresented: $showDonation) {
+            DonationSheet { donationOpened = true }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
