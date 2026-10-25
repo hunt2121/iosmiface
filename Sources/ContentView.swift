@@ -252,8 +252,9 @@ struct ContentView: View {
                     }
                     .frame(width: 112, height: 275)
                     .clipShape(Capsule(style: .continuous))
+                    // Ширша рамка довкола передогляду, як корпус браслета
                     .overlay(Capsule(style: .continuous)
-                        .stroke(Color.gray.opacity(0.35), lineWidth: 1))
+                        .strokeBorder(Color.gray.opacity(0.45), lineWidth: 3))
                     Text(face.name ?? "Циферблат \(face.id)").font(.headline)
                     Text("ID \(face.id) · \(face.data.count / 1024) КБ")
                         .font(.footnote).foregroundStyle(.secondary)
