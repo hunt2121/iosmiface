@@ -1013,29 +1013,6 @@
         }
       }
     },
-    "Збірка №%@ · версія %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build #%@ · version %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сборка №%@ · версия %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Збірка №%@ · версія %@"
-          }
-        }
-      }
-    },
     "Знайдено пристроїв: %@, вибрано «%@». За потреби виберіть інший": {
       "extractionState": "manual",
       "localizations": {

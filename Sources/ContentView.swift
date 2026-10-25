@@ -85,7 +85,7 @@ struct ContentView: View {
                 Form {
                     logSection
                     Section {
-                        Text("Збірка №\(Self.buildNumber) · версія \(Self.versionString)")
+                        Text(verbatim: "BandFace \(Self.versionString).\(Self.buildNumber)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -129,7 +129,6 @@ struct ContentView: View {
 
     // MARK: - Розділи
 
-    @ViewBuilder
     private var authSection: some View {
         Section {
             // Поле ключа з позначкою: зелена галочка — ключ коректний
@@ -147,6 +146,15 @@ struct ContentView: View {
                 Text("Введіть ключ вручну або знайдіть його автоматично")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            // Кнопка в тій самій картці, що й ключ, у стилі кнопок головного екрана
+            Button {
+                findKey()
+            } label: {
+                Text("Знайти автоматично").buttonText()
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .padding(.vertical, 4)
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -173,18 +181,6 @@ struct ContentView: View {
             }
         } header: {
             Text("Auth key браслета")
-        }
-        // Кнопка окремо від картки з ключем — у стилі кнопок головного екрана
-        Section {
-            Button {
-                findKey()
-            } label: {
-                Text("Знайти автоматично").buttonText()
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
         } footer: {
             Text(MiFitnessKey.hasSavedFolder
                  ? String(localized: "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок.")
@@ -376,6 +372,8 @@ struct ContentView: View {
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))
                     .textSelection(.enabled)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
             }
         }
     }
