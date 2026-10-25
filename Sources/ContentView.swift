@@ -74,7 +74,7 @@ struct ContentView: View {
                 }
                 .navigationTitle("Встановити")
             }
-            .tabItem { Label("Встановити", image: "TabWatch") }
+            .tabItem { Label("Встановити", image: "TabInstall") }
             .tag(Tab.faces)
 
             NavigationStack {
