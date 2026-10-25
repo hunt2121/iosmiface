@@ -128,34 +128,44 @@ struct ContentView: View {
 
     // MARK: - Розділи
 
+    /// Текст під кнопкою «Знайти автоматично»: результат пошуку або підказка, якщо ключа немає.
+    private var keyStatusLine: (text: String, color: Color)? {
+        if let keyStatus { return (keyStatus, keyStatusIsError ? Color.errorText : Color.okText) }
+        if !keyValid { return (String(localized: "Введіть ключ вручну або знайдіть його автоматично"), Color.secondary) }
+        return nil
+    }
+
     private var authSection: some View {
         Section {
-            // Поле ключа з позначкою: зелена галочка — ключ коректний
-            HStack(spacing: 10) {
-                TextField("32 hex-символи", text: $authKey)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(.system(.body, design: .monospaced))
-                    .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
-                Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
-                    .foregroundStyle(keyValid ? Color.okText : Color.secondary)
-                    .font(.title3)
+            // Поле, кнопка й статус в одному рядку картки з однаковими відступами.
+            // Статус має фіксоване місце на два рядки, тож поява тексту нічого не зсуває.
+            VStack(alignment: .leading, spacing: 14) {
+                // Поле ключа з позначкою: зелена галочка — ключ коректний
+                HStack(spacing: 10) {
+                    TextField("32 hex-символи", text: $authKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(.system(.body, design: .monospaced))
+                        .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
+                    Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
+                        .foregroundStyle(keyValid ? Color.okText : Color.secondary)
+                        .font(.title3)
+                }
+                Button {
+                    findKey()
+                } label: {
+                    Text("Знайти автоматично").buttonText()
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                Text(keyStatusLine?.text ?? " ")
+                    .font(.footnote)
+                    .foregroundStyle(keyStatusLine?.color ?? Color.secondary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36, alignment: .leading)
+                    .padding(.top, -4)
             }
-            if !keyValid {
-                Text("Введіть ключ вручну або знайдіть його автоматично")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-            // Кнопка в тій самій картці, що й ключ, у стилі кнопок головного екрана
-            Button {
-                findKey()
-            } label: {
-                Text("Знайти автоматично").buttonText()
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .padding(.vertical, 4)
-            // Без лінії між кнопкою і повідомленням про знайдений ключ
-            .listRowSeparator(.hidden)
+            .padding(.top, 6)
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -176,16 +186,16 @@ struct ContentView: View {
                     }
                 }
             }
-            if let keyStatus {
-                Text(keyStatus).font(.footnote)
-                    .foregroundStyle(keyStatusIsError ? Color.errorText : Color.okText)
-            }
         } header: {
             Text("Auth key браслета")
         } footer: {
-            Text(MiFitnessKey.hasSavedFolder
-                 ? String(localized: "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок.")
-                 : String(localized: "«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам."))
+            // Обидва варіанти підпису займають місце, видно один — висота не змінюється
+            ZStack(alignment: .topLeading) {
+                Text("Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок.")
+                    .opacity(MiFitnessKey.hasSavedFolder ? 1 : 0)
+                Text("«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам.")
+                    .opacity(MiFitnessKey.hasSavedFolder ? 0 : 1)
+            }
         }
     }
 
@@ -380,7 +390,7 @@ struct ContentView: View {
                 .font(.system(.caption2, design: .monospaced))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, -3)
+                .padding(.top, -10)
                 .padding(.bottom, 2)
                 .listRowSeparator(.hidden)
             }
