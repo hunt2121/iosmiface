@@ -85,7 +85,7 @@ struct ContentView: View {
                 Form {
                     logSection
                     Section {
-                        Text(verbatim: "BandFace \(Self.versionString).\(Self.buildNumber)")
+                        Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -368,7 +368,7 @@ struct ContentView: View {
             }
             .buttonBorderShape(.capsule)
             .padding(.top, 4)
-            .padding(.bottom, -2)
+            .padding(.bottom, 1)
             ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))
