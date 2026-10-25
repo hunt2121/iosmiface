@@ -41,8 +41,8 @@ BandFace — невеликий застосунок на SwiftUI, який пе
 
 BandFace поки немає в App Store. Кожен push збирає непідписаний IPA через GitHub Actions:
 
-1. Відкрийте **[Actions → Build IPA](https://github.com/hunt2121/iosmiface/actions/workflows/build.yml)**, виберіть останню збірку й завантажте артефакт `BandFace-buildN` (потрібно увійти в GitHub).
-2. Розпакуйте його й установіть `BandFace-buildN.ipa` через **[Sideloadly](https://sideloadly.io)** або **AltStore** зі своїм Apple ID.
+1. Відкрийте **[Actions → Build IPA](https://github.com/hunt2121/iosmiface/actions/workflows/build.yml)**, виберіть останню збірку й завантажте артефакт з назвою за версією без крапок — наприклад, `BandFace-v1044` для 1.0.44 (потрібно увійти в GitHub).
+2. Розпакуйте його й установіть the `.ipa` file через **[Sideloadly](https://sideloadly.io)** або **AltStore** зі своїм Apple ID.
 
 ## Користування
 

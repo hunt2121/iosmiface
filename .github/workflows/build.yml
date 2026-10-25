@@ -52,13 +52,17 @@ jobs:
             CURRENT_PROJECT_VERSION="$BUILD_NUM" \
             build
 
+      # Назва як версія внизу журналу («BandFace v1.0.43»), але без точок: BandFace-v1043
       - name: Package IPA
         run: |
+          VERSION=$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/')
+          NAME="BandFace-v$(echo "${VERSION}.${BUILD_NUM}" | tr -d '.')"
+          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/BandFace.app Payload/
-          zip -r "BandFace-build${BUILD_NUM}.ipa" Payload
+          zip -r "$NAME.ipa" Payload
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BandFace-build${{ github.run_number }}
-          path: BandFace-build${{ github.run_number }}.ipa
+          name: ${{ env.IPA_NAME }}
+          path: ${{ env.IPA_NAME }}.ipa
