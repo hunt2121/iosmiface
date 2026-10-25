@@ -15,7 +15,15 @@ final class FaceInstaller {
     /// Повертає текст для користувача; помилки — `BandError` з локалізованим описом.
     func install(_ face: FaceFile, authKey: [UInt8],
                  progress: @escaping (Double, String) -> Void) async throws -> String {
-        try await installOnce(face, authKey: authKey, progress: progress)
+        do {
+            return try await installOnce(face, authKey: authKey, progress: progress)
+        } catch BandError.sessionOpenFailed {
+            // Найчастіше iOS перестала доставляти нам сповіщення: нове з'єднання дає чисту підписку
+            ble.addLog(String(localized: "Браслет не відповідає — перепідключаюся…"))
+            progress(0, String(localized: "Перепідключення…"))
+            guard await ble.reconnect() else { throw BandError.sessionOpenFailed }
+            return try await installOnce(face, authKey: authKey, progress: progress)
+        }
     }
 
     private func installOnce(_ face: FaceFile, authKey: [UInt8],

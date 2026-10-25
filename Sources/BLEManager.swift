@@ -394,6 +394,24 @@ extension BLEManager: BandTransport, @unchecked Sendable {
         return rx
     }
 
+    /// Розриває з'єднання застосунку з браслетом і встановлює його знову (до ~15 с).
+    /// Mi Fitness від цього не страждає: iOS тримає фізичне з'єднання, поки воно потрібне іншим застосункам.
+    @MainActor
+    func reconnect() async -> Bool {
+        guard connectedID != nil else { return false }
+        disconnect(byUser: false)
+        for _ in 0..<50 {
+            if connectedID == nil { break }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        reconnectLast()
+        for _ in 0..<150 {
+            if connectedID != nil && servicesReady { return true }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        return false
+    }
+
     var hasBandCharacteristics: Bool {
         characteristics[BandGATT.rx] != nil && characteristics[BandGATT.tx] != nil
     }
