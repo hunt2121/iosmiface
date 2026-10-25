@@ -161,7 +161,7 @@ final class FileTransferTests: XCTestCase {
 
         let parts = FileTransfer.parts(stream: stream, chunkSize: 4096)
         XCTAssertEqual(parts.count, 3)
-        XCTAssertEqual(Array(parts[0].prefix(13)), hex("03000100001006a474d076d5"))
+        XCTAssertEqual(Array(parts[0].prefix(12)), hex("03000100001006a474d076d5"))
         XCTAssertTrue(parts.dropLast().allSatisfy { $0.count == 4096 })
         XCTAssertEqual(parts.last?.count, 1846)
         XCTAssertEqual(parts.last?[2], 3)
