@@ -3,7 +3,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    enum Tab: Hashable { case faces, key, gallery, log }
+    enum Tab: Hashable { case faces, key, log }
 
     @EnvironmentObject var ble: BLEManager
 
@@ -23,12 +23,7 @@ struct ContentView: View {
     @State private var message: String?
     @State private var messageIsError = false
     @State private var session: XiaomiBandSession?
-    @State private var bandFaces: [BandWatchface]?
-    @State private var faceToDelete: BandWatchface?
-    @State private var selectedFace: BandWatchface?
-    @State private var previews: [String: UIImage] = [:]
     @State private var filePreview: UIImage?
-    @State private var previewSearched: Set<String> = []
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -79,19 +74,6 @@ struct ContentView: View {
             .tag(Tab.faces)
 
             NavigationStack {
-                galleryView
-                    .navigationTitle("Тест")
-                    .toolbar {
-                        ToolbarItem(placement: .primaryAction) {
-                            Button { run(.list) } label: { Image(systemName: "arrow.clockwise") }
-                                .disabled(!canOperate)
-                        }
-                    }
-            }
-            .tabItem { Label("Тест", systemImage: "testtube.2") }
-            .tag(Tab.gallery)
-
-            NavigationStack {
                 Form { authSection }
                     .navigationTitle("Ключ")
             }
@@ -118,7 +100,6 @@ struct ContentView: View {
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
             if phase == .background && !busy && ble.connectedID != nil {
                 ble.disconnect()
-                bandFaces = nil
             }
             // Ключ міг змінитися в Mi Fitness (наприклад, після нового спарювання)
             if phase == .active { autoFindKey() }
@@ -126,43 +107,9 @@ struct ContentView: View {
         .onAppear {
             autoFindKey()
         }
-        .onChange(of: tab) { t in
-            // Відкрили галерею вперше за підключення — одразу завантажуємо список
-            if t == .gallery && bandFaces == nil && canOperate { run(.list, quiet: true) }
-        }
-        .confirmationDialog(selectedFace.map { $0.name.isEmpty ? "Циферблат \($0.id)" : $0.name } ?? "",
-                            isPresented: Binding(get: { selectedFace != nil },
-                                                 set: { if !$0 { selectedFace = nil } }),
-                            titleVisibility: .visible,
-                            presenting: selectedFace) { f in
-            if !f.active {
-                Button("Активувати") { run(.activate(f.id)) }
-            }
-            if f.canDelete {
-                Button("Видалити", role: .destructive) {
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 350_000_000)
-                        faceToDelete = f
-                    }
-                }
-            }
-        } message: { f in
-            Text(f.active ? "Цей циферблат зараз активний" : (f.canDelete ? "ID \(f.id)" : "Системний циферблат, його не можна видалити"))
-        }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
             if importingFolder { folderPicked(result) } else { loadFace(result) }
-        }
-        .confirmationDialog("Видалити циферблат з браслета?",
-                            isPresented: Binding(get: { faceToDelete != nil },
-                                                 set: { if !$0 { faceToDelete = nil } }),
-                            titleVisibility: .visible,
-                            presenting: faceToDelete) { f in
-            Button("Видалити «\(f.name.isEmpty ? f.id : f.name)»", role: .destructive) {
-                run(.delete(f.id))
-            }
-        } message: { _ in
-            Text("Цю дію не можна скасувати.")
         }
         .alert("Пошук ключа", isPresented: $showKeyHelp) {
             Button("Вибрати папку") {
@@ -293,7 +240,6 @@ struct ContentView: View {
                     Spacer()
                     Button("Відключити", role: .destructive) {
                         ble.disconnect()
-                        bandFaces = nil
                     }
                     .buttonStyle(.borderless)
                 }
@@ -325,23 +271,6 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
-    private func faceActions(_ f: BandWatchface) -> some View {
-        if f.canDelete {
-            Button(role: .destructive) { faceToDelete = f } label: {
-                Label("Видалити", systemImage: "trash")
-            }
-            .disabled(!canOperate)
-        }
-        if !f.active {
-            Button { run(.activate(f.id)) } label: {
-                Label("Активувати", systemImage: "checkmark")
-            }
-            .tint(.green)
-            .disabled(!canOperate)
-        }
-    }
-
     private var logSection: some View {
         Section("Журнал") {
             Toggle("Детальний журнал", isOn: $verboseLog)
@@ -363,124 +292,6 @@ struct ContentView: View {
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))
                     .textSelection(.enabled)
-            }
-        }
-    }
-
-    // MARK: - Галерея
-
-    @ViewBuilder
-    private var galleryView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if !keyValid {
-                    galleryHint("Спершу додайте ключ браслета", button: "Перейти до ключа") { tab = .key }
-                } else if ble.connectedID == nil {
-                    galleryHint("Браслет не підключено", button: "Підключити") {
-                        tab = .faces
-                        if !ble.isScanning { ble.startScan() }
-                    }
-                }
-
-                if busy || message != nil {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if busy { ProgressView(value: progress); Text(progressText) }
-                        if let message {
-                            Text(message).foregroundStyle(messageIsError ? Color.errorText : Color.okText)
-                        }
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                }
-
-                if let bandFaces {
-                    if bandFaces.isEmpty {
-                        Text("На браслеті немає циферблатів").foregroundStyle(.secondary)
-                    }
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 14)], spacing: 18) {
-                        ForEach(bandFaces) { f in faceCard(f) }
-                    }
-                } else if canOperate {
-                    Button("Показати циферблати на браслеті") { run(.list) }
-                        .buttonStyle(.borderedProminent)
-                }
-
-                if bandFaces != nil {
-                    Text("Натисніть на циферблат, щоб активувати чи видалити його. Вигляд показується для циферблатів, встановлених через BandFace.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-            }
-            .padding()
-        }
-        .refreshable { await MainActor.run { if canOperate { run(.list) } } }
-    }
-
-    private func galleryHint(_ text: String, button: String, action: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(text).font(.headline)
-            Button(button, action: action).buttonStyle(.bordered)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func faceCard(_ f: BandWatchface) -> some View {
-        Button {
-            if canOperate { selectedFace = f }
-        } label: {
-            VStack(spacing: 6) {
-                ZStack {
-                    Capsule(style: .continuous).fill(Color.black)
-                    if let img = previews[f.id] {
-                        Image(uiImage: img).resizable().scaledToFill()
-                    } else {
-                        Image("TabWatch")
-                            .resizable().scaledToFit()
-                            .frame(width: 34)
-                            .foregroundStyle(.gray)
-                    }
-                }
-                .aspectRatio(212.0 / 520.0, contentMode: .fit)
-                .clipShape(Capsule(style: .continuous))
-                .overlay(
-                    Capsule(style: .continuous)
-                        .stroke(f.active ? Color.okText : Color.gray.opacity(0.3), lineWidth: f.active ? 3 : 1)
-                )
-                Text(f.name.isEmpty ? "Без назви" : f.name)
-                    .font(.caption).lineLimit(1)
-                    .foregroundStyle(.primary)
-                if f.active {
-                    Text("Активний").font(.caption2).foregroundStyle(Color.okText)
-                } else if !f.canDelete {
-                    Text("Системний").font(.caption2).foregroundStyle(.secondary)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .contextMenu { faceActions(f) }
-    }
-
-    private func loadPreviews(for list: [BandWatchface]) {
-        var known: [String: UIImage] = [:]
-        for f in list { if let img = FacePreview.saved(for: f.id) { known[f.id] = img } }
-        previews = known
-        // Кожен циферблат шукаємо в даних Mi Fitness лише раз за запуск — пошук не швидкий
-        let missing = list.map(\.id).filter { known[$0] == nil && !previewSearched.contains($0) }
-        guard !missing.isEmpty else { return }
-        previewSearched.formUnion(missing)
-        // Решту шукаємо в даних Mi Fitness (якщо папку вже вибрано)
-        Task {
-            let found = await Task.detached(priority: .utility) {
-                await MiFitnessPreviews.search(ids: missing)
-            }.value
-            await MainActor.run {
-                for line in found.log.dropLast() { ble.debug(line) }
-                if let summary = found.log.last { ble.addLog(summary) }
-                for (id, img) in found.images {
-                    FacePreview.save(img, for: id)
-                    previews[id] = img
-                }
             }
         }
     }
@@ -584,20 +395,11 @@ struct ContentView: View {
     private func run(_ operation: XiaomiBandSession.Operation, quiet: Bool = false) {
         do {
             let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
-            s.onWatchfaces = { list in
-                bandFaces = list
-                loadPreviews(for: list)
-            }
             session = s
             busy = true
             progress = 0
             progressText = "Старт…"
             if !quiet { message = nil }
-            let refreshAfter: Bool
-            switch operation {
-            case .list: refreshAfter = false
-            default: refreshAfter = bandFaces != nil || tab == .gallery
-            }
             s.run(operation, progress: { value, text in
                 progress = value
                 progressText = text
@@ -607,25 +409,6 @@ struct ContentView: View {
                 switch result {
                 case .success(let text):
                     if !quiet { show(text, error: false) }
-                    switch operation {
-                    case .install(let f):
-                        // Запам'ятовуємо вигляд циферблата для вкладки «Тест»
-                        if let img = FacePreview.image(fromFace: f.data) {
-                            FacePreview.save(img, for: f.id)
-                            previews[f.id] = img
-                        }
-                    case .delete(let id):
-                        FacePreview.remove(for: id)
-                        previews[id] = nil
-                    default:
-                        break
-                    }
-                    if refreshAfter {
-                        Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 1_000_000_000)
-                            if canOperate { run(.list, quiet: true) }
-                        }
-                    }
                 case .failure(let error):
                     show(error.localizedDescription, error: true)
                 }

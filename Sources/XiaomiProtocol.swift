@@ -88,9 +88,6 @@ final class XiaomiBandSession {
         case waitingUploadAck, uploading, done
     }
 
-    /// Викликається, коли браслет повернув список циферблатів.
-    var onWatchfaces: (([BandWatchface]) -> Void)?
-
     private let ble: BLEManager
     private let secretKey: Data
 
@@ -450,7 +447,6 @@ final class XiaomiBandSession {
         case Command.watchfaceList:
             guard stage == .listing else { return }
             let list = Self.parseList(msg)
-            onWatchfaces?(list)
             ble.addLog("На браслеті \(list.count) циферблатів")
             guard let face else {
                 return succeed("Список оновлено")

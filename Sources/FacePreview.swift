@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 
 /// Прев'ю циферблата з файлу .face (порт XiaomiFWHelper.getWatchfacePreview і XiaomiBitmapUtils
-/// із Gadgetbridge, AGPL-3.0) та сховище прев'ю встановлених циферблатів.
+/// із Gadgetbridge, AGPL-3.0).
 enum FacePreview {
     // MARK: - Розбір .face
 
@@ -104,30 +104,4 @@ enum FacePreview {
                                intent: .defaultIntent) else { return nil }
         return UIImage(cgImage: cg)
     }
-
-    // MARK: - Сховище прев'ю
-
-    private static var folder: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("Previews", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
-    }
-
-    private static func file(for id: String) -> URL {
-        folder.appendingPathComponent(id.replacingOccurrences(of: "/", with: "_") + ".png")
-    }
-
-    static func save(_ image: UIImage, for id: String) {
-        if let png = image.pngData() { try? png.write(to: file(for: id)) }
-    }
-
-    static func saved(for id: String) -> UIImage? {
-        UIImage(contentsOfFile: file(for: id).path)
-    }
-
-    static func remove(for id: String) {
-        try? FileManager.default.removeItem(at: file(for: id))
-    }
-
 }
