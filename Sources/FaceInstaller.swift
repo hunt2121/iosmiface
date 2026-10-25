@@ -55,6 +55,8 @@ final class FaceInstaller {
         installer.pauseAfterAuth = .milliseconds(500)
         installer.pauseBeforeInstall = .milliseconds(300)
         installer.activationTimeout = .seconds(4)
+        // Тест: без активації — після 4/1 браслет перестає приймати кадри й ламає зв'язок з Mi Fitness
+        installer.activateAfterInstall = false
 
         let reporter = PhaseReporter(face: face, ble: ble, progress: progress)
         do {
@@ -71,8 +73,8 @@ final class FaceInstaller {
             throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
         }
         return reporter.alreadyInstalled
-            ? String(localized: "Циферблат уже був на браслеті, його активовано")
-            : String(localized: "Циферблат встановлено й активовано")
+            ? String(localized: "Циферблат уже є на браслеті. Виберіть його на браслеті")
+            : String(localized: "Циферблат передано. Виберіть його на браслеті")
     }
 
     private static func regionCode() -> String {

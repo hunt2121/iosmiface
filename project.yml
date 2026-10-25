@@ -25,6 +25,8 @@ targets:
         CFBundleLocalizations: [uk, en, ru]
         CFBundleShortVersionString: "0.9"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        # Режим спостереження має отримувати сповіщення браслета, поки відкритий Mi Fitness
+        UIBackgroundModes: [bluetooth-central]
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:

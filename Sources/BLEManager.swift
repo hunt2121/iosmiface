@@ -64,9 +64,12 @@ final class BLEManager: NSObject, ObservableObject {
     /// Технічний запис — лише коли увімкнено «Детальний журнал».
     /// Текст обчислюється тільки тоді, коли він справді потрібен.
     func debug(_ text: @autoclosure () -> String) {
-        if UserDefaults.standard.bool(forKey: "verboseLog") {
-            addLog(Self.timeFormatter.string(from: Date()) + " " + text())
-        }
+        if UserDefaults.standard.bool(forKey: "verboseLog") { addTimedLog(text()) }
+    }
+
+    /// Запис із часом (мілісекунди) — для детального журналу й режиму спостереження.
+    func addTimedLog(_ text: String) {
+        addLog(Self.timeFormatter.string(from: Date()) + " " + text)
     }
 
     /// Час у детальному журналі — щоб бачити, скільки триває кожен етап.

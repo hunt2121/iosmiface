@@ -44,6 +44,9 @@ public struct WatchfaceInstaller: Sendable {
     public var activationTimeout: Duration = .seconds(5)
     /// Скільки після активації чекати запити браслета до компаньйона (останній — погода 10/3).
     public var waitForBandRequests: Duration = .seconds(2)
+    /// false — лише передати файл, без 4/1: циферблат користувач вибирає на браслеті.
+    /// Після 4/1 браслет надсилає компаньйону запити (2/42, 17/7, 10/3) і перестає приймати кадри.
+    public var activateAfterInstall = true
     /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
     public var activationAttempts = 2
 
@@ -71,6 +74,14 @@ public struct WatchfaceInstaller: Sendable {
             let alreadyInstalled = try await requestInstall(face, session: session, onPhase: onPhase)
             if !alreadyInstalled {
                 try await upload(face, session: session, onPhase: onPhase)
+            }
+
+            guard activateAfterInstall else {
+                if !alreadyInstalled { try await confirmInstalled(session: session) }
+                onPhase?(.closing)
+                await session.close()
+                onPhase?(.done(alreadyInstalled: alreadyInstalled))
+                return
             }
 
             onPhase?(.activating)
@@ -113,6 +124,14 @@ public struct WatchfaceInstaller: Sendable {
                 try await session.deleteWatchface(id: face.id)
                 removedOld = true
             }
+        }
+    }
+
+    /// Без активації: чекаємо 4/5 і перевіряємо, що браслет прийняв циферблат.
+    private func confirmInstalled(session: BandSession) async throws {
+        _ = await session.waitFor(Command.Kind.watchface, 5, timeout: pauseBeforeActivation)
+        if let status = await session.installStatus, status != BandSession.installedStatus {
+            throw BandError.installAborted(status: status)
         }
     }
 
