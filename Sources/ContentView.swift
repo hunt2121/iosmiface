@@ -96,7 +96,7 @@ struct ContentView: View {
                         }
                     }
             }
-            .tabItem { Label("Циферблати", image: "TabGallery") }
+            .tabItem { Label("Циферблати", image: "TabWatch") }
             .tag(Tab.gallery)
 
             NavigationStack {
