@@ -85,13 +85,22 @@ final class FaceInstaller {
                 reporter.record(phase)
                 DispatchQueue.main.async { reporter.show(phase) }
             }
-        } catch BandError.timeout where reporter.reachedActivation {
-            // Файл уже на браслеті, але команду активації браслет не підтвердив
-            ble.addLog(String(localized: "Браслет не підтвердив активацію"))
-            throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
-        } catch BandError.timeout {
-            // Кажемо, на якому саме етапі браслет замовк
-            throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
+        } catch {
+            if await session.foreignActivityDetected {
+                // Браслет одночасно обслуговував інший застосунок (зазвичай Mi Fitness синхронізується у фоні)
+                ble.addLog(String(localized: "Браслет зараз працює з іншим застосунком (Mi Fitness)"))
+                throw InstallFailure(errorDescription: String(localized: "Браслет зараз синхронізується з Mi Fitness. Зачекайте хвилину й спробуйте ще раз"))
+            }
+            if case BandError.timeout = error {
+                if reporter.reachedActivation {
+                    // Файл уже на браслеті, але команду активації браслет не підтвердив
+                    ble.addLog(String(localized: "Браслет не підтвердив активацію"))
+                    throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
+                }
+                // Кажемо, на якому саме етапі браслет замовк
+                throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
+            }
+            throw error
         }
         // Після прийому файлу браслет сам вмикає новий циферблат
         return reporter.alreadyInstalled
