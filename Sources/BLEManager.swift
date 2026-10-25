@@ -311,7 +311,7 @@ extension BLEManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         if let cb = notifyCompletions.removeValue(forKey: characteristic.uuid) {
-            cb(error == nil && characteristic.isNotifying)
+            cb(error == nil)
         }
         if let error { debug("Підписка \(characteristic.uuid.uuidString): \(error.localizedDescription)") }
     }
@@ -367,6 +367,37 @@ extension BLEManager: BandTransport, @unchecked Sendable {
     func subscribeRX() async -> Bool {
         await withCheckedContinuation { continuation in
             subscribe(to: BandGATT.rx) { continuation.resume(returning: $0) }
+        }
+    }
+
+    /// Вмикає або вимикає сповіщення характеристики й чекає підтвердження. true — успішно.
+    @MainActor
+    func setNotify(_ on: Bool, for uuid: CBUUID) async -> Bool {
+        guard let p = active, let c = characteristics[uuid], c.properties.contains(.notify) else { return false }
+        if c.isNotifying == on { return true }
+        return await withCheckedContinuation { continuation in
+            notifyCompletions.removeValue(forKey: uuid)?(false)
+            notifyCompletions[uuid] = { continuation.resume(returning: $0) }
+            debug("Сповіщення \(uuid.uuidString): \(on ? "увімкнути" : "вимкнути")")
+            p.setNotifyValue(on, for: c)
+        }
+    }
+
+    /// Як Mi Fitness (за записом HCI): перед сесією сповіщення на 5E і 5F вимикаємо (якщо ввімкнені)
+    /// і вмикаємо знову — так браслет розуміє, що попередню сесію завершено. true — 5E увімкнено.
+    @MainActor
+    func resubscribeBand() async -> Bool {
+        for uuid in [BandGATT.rx, BandGATT.tx] { _ = await setNotify(false, for: uuid) }
+        let rx = await setNotify(true, for: BandGATT.rx)
+        _ = await setNotify(true, for: BandGATT.tx)
+        return rx
+    }
+
+    /// Після сесії вимикаємо сповіщення на обох характеристиках, як Mi Fitness.
+    @MainActor
+    func unsubscribeBand() async {
+        for uuid in [BandGATT.rx, BandGATT.tx] {
+            if !(await setNotify(false, for: uuid)) { debug("Сповіщення \(uuid.uuidString): не вдалося вимкнути") }
         }
     }
 
