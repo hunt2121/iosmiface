@@ -346,52 +346,6 @@
         }
       }
     },
-    "Браслет зараз працює з іншим застосунком (Mi Fitness)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band is working with another app right now (Mi Fitness)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет сейчас работает с другим приложением (Mi Fitness)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет зараз працює з іншим застосунком (Mi Fitness)"
-          }
-        }
-      }
-    },
-    "Браслет зараз синхронізується з Mi Fitness. Зачекайте хвилину й спробуйте ще раз": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band is syncing with Mi Fitness right now. Wait a minute and try again"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет сейчас синхронизируется с Mi Fitness. Подождите минуту и попробуйте ещё раз"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет зараз синхронізується з Mi Fitness. Зачекайте хвилину й спробуйте ще раз"
-          }
-        }
-      }
-    },
     "Браслет не активував циферблат. Спробуйте встановити ще раз": {
       "extractionState": "manual",
       "localizations": {

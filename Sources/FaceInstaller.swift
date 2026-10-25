@@ -86,11 +86,6 @@ final class FaceInstaller {
                 DispatchQueue.main.async { reporter.show(phase) }
             }
         } catch {
-            if await session.foreignActivityDetected {
-                // Браслет одночасно обслуговував інший застосунок (зазвичай Mi Fitness синхронізується у фоні)
-                ble.addLog(String(localized: "Браслет зараз працює з іншим застосунком (Mi Fitness)"))
-                throw InstallFailure(errorDescription: String(localized: "Браслет зараз синхронізується з Mi Fitness. Зачекайте хвилину й спробуйте ще раз"))
-            }
             if case BandError.timeout = error {
                 if reporter.reachedActivation {
                     // Файл уже на браслеті, але команду активації браслет не підтвердив

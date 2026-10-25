@@ -74,14 +74,7 @@ public actor BandSession {
     private var unsolicitedSeen: Set<String> = []
     /// Статус із 4/5 (6.7.2), який браслет надсилає після прийому файлу; nil — ще не надсилав.
     public private(set) var installStatus: UInt64?
-    /// Видно ознаки, що з браслетом одночасно працює інший застосунок на телефоні (Mi Fitness):
-    /// відповіді на сесії, яких ми не запитували, або підтвердження кадрів, яких ми не надсилали.
-    public private(set) var foreignActivityDetected = false
 
-    private func markForeign(_ reason: String) {
-        if !foreignActivityDetected { log("foreign activity: \(reason)") }
-        foreignActivityDetected = true
-    }
     /// 4/5 зі статусом 3 — циферблат прийнято; 1 бачили, коли браслет перервав прийом.
     public static let installedStatus: UInt64 = 3
     private var waiters: [UUID: Waiter] = [:]
@@ -424,10 +417,6 @@ public actor BandSession {
                 handleSession(frame)
             case .ack:
                 log("← ack \(frame.sequence)")
-                // Номер, якого ми ще не надсилали, — підтвердження чужого кадру
-                if state != .opening, frame.sequence &- phoneSequence < 128 {
-                    markForeign("ack \(frame.sequence), our next frame is \(phoneSequence)")
-                }
                 handleBandAck(frame.sequence)
             case .data:
                 handleData(frame)
@@ -438,10 +427,7 @@ public actor BandSession {
     private func handleSession(_ frame: Frame) {
         guard let control = SessionControl(payload: frame.payload) else { return }
         log("← session code \(control.code)")
-        guard let waiter = sessionWaiter, waiter.code == control.code else {
-            markForeign("session code \(control.code) without our request")
-            return
-        }
+        guard let waiter = sessionWaiter, waiter.code == control.code else { return }
         sessionWaiter = nil
         waiter.continuation.resume(returning: control)
     }
