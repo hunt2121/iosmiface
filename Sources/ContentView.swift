@@ -367,7 +367,8 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
             }
             .buttonBorderShape(.capsule)
-            .padding(.vertical, 4)
+            .padding(.top, 4)
+            .padding(.bottom, -2)
             ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))
