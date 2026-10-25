@@ -369,6 +369,29 @@
         }
       }
     },
+    "Браслет не відповідає — перепідключаюся…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band is not responding — reconnecting…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не отвечает — переподключаюсь…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не відповідає — перепідключаюся…"
+          }
+        }
+      }
+    },
     "Браслет не підключено": {
       "extractionState": "manual",
       "localizations": {
@@ -1239,6 +1262,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Передача файлу (частин: %@)…"
+          }
+        }
+      }
+    },
+    "Перепідключення…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnecting…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переподключение…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перепідключення…"
           }
         }
       }

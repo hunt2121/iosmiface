@@ -59,7 +59,8 @@ final class MockBand: BandTransport, @unchecked Sendable {
             let packet = DataPacket(payload: frame.payload)!
             if packet.channel == DataChannel.file.rawValue {
                 receivedParts.append(packet.body)
-                return []
+                // Як Band 10: частини файлу браслет підтверджує сам
+                return [Frame.ack(frame.sequence).encoded()]
             }
             let body = packet.opcode == DataOpcode.encrypted.rawValue
                 ? BandCrypto.aesCTR(key: keys!.encryptionKey, iv: keys!.encryptionKey, data: packet.body)
@@ -145,6 +146,7 @@ final class SessionTests: XCTestCase {
         var installer = WatchfaceInstaller()
         installer.pauseAfterAuth = .zero
         installer.pauseBeforeInstall = .zero
+        installer.pauseBeforeActivation = .zero
         return installer
     }
 
@@ -158,8 +160,8 @@ final class SessionTests: XCTestCase {
         try await makeInstaller().install(face, authKey: authKey, session: session)
 
         XCTAssertEqual(band.commandsReceived, ["1/26", "1/27", "2/2", "2/1", "4/4", "22/0", "4/1"])
-        // Шість відповідей заповнили вікно — відповідь на 4/1 прийшла лише після сукупного підтвердження.
-        XCTAssertEqual(band.acksReceived, [5])
+        // Перед 4/1 — сукупне підтвердження шести відповідей, перед закриттям — відповіді на 4/1.
+        XCTAssertEqual(band.acksReceived, [5, 6])
         // Номери кадрів даних телефону йдуть підряд, включно зі шматками файлу.
         XCTAssertEqual(band.phoneSequences, Array(0..<UInt8(band.phoneSequences.count)))
 

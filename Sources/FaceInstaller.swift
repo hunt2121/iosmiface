@@ -13,8 +13,21 @@ final class FaceInstaller {
     }
 
     /// Повертає текст для користувача; помилки — `BandError` з локалізованим описом.
+    /// Якщо браслет не відкриває сесію, один раз перепідключаємося по Bluetooth і пробуємо знову.
     func install(_ face: FaceFile, authKey: [UInt8],
                  progress: @escaping (Double, String) -> Void) async throws -> String {
+        do {
+            return try await installOnce(face, authKey: authKey, progress: progress)
+        } catch BandError.sessionOpenFailed {
+            ble.addLog(String(localized: "Браслет не відповідає — перепідключаюся…"))
+            progress(0, String(localized: "Перепідключення…"))
+            guard await ble.reconnect() else { throw BandError.sessionOpenFailed }
+            return try await installOnce(face, authKey: authKey, progress: progress)
+        }
+    }
+
+    private func installOnce(_ face: FaceFile, authKey: [UInt8],
+                             progress: @escaping (Double, String) -> Void) async throws -> String {
         guard ble.connectedID != nil else { throw BandError.notConnected }
         guard ble.hasBandCharacteristics else { throw BandError.characteristicNotFound }
         guard authKey.count == 16 else { throw BandError.invalidAuthKey }
