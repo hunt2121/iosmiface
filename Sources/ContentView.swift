@@ -72,9 +72,9 @@ struct ContentView: View {
                     installSection
                     statusSection
                 }
-                .navigationTitle("Циферблати")
+                .navigationTitle("Встановити")
             }
-            .tabItem { Label("Циферблати", image: "TabWatch") }
+            .tabItem { Label("Встановити", image: "TabWatch") }
             .tag(Tab.faces)
 
             NavigationStack {
@@ -88,7 +88,7 @@ struct ContentView: View {
 
             NavigationStack {
                 galleryView
-                    .navigationTitle("Мої циферблати")
+                    .navigationTitle("Циферблати")
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             Button { run(.list) } label: { Image(systemName: "arrow.clockwise") }
@@ -96,7 +96,7 @@ struct ContentView: View {
                         }
                     }
             }
-            .tabItem { Label("Мої", image: "TabGallery") }
+            .tabItem { Label("Циферблати", image: "TabGallery") }
             .tag(Tab.gallery)
 
             NavigationStack {
@@ -600,7 +600,7 @@ struct ContentView: View {
                     if !quiet { show(text, error: false) }
                     switch operation {
                     case .install(let f):
-                        // Запам'ятовуємо вигляд циферблата для вкладки «Мої»
+                        // Запам'ятовуємо вигляд циферблата для вкладки «Циферблати»
                         if let img = FacePreview.image(fromFace: f.data) {
                             FacePreview.save(img, for: f.id)
                             previews[f.id] = img
