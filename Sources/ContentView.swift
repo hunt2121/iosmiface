@@ -59,6 +59,8 @@ struct ContentView: View {
                             } label: {
                                 Label("Додати ключ браслета", systemImage: "key")
                             }
+                        } header: {
+                            Text("Ключ")
                         } footer: {
                             Text("Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.")
                         }
