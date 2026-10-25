@@ -22,7 +22,15 @@ jobs:
       # Тести протоколу (BandFaceKit) на імітації браслета; падіння не зупиняє збірку IPA
       - name: Test BandFaceKit
         continue-on-error: true
-        run: swift test --package-path BandFaceKit
+        run: |
+          set -o pipefail
+          swift test --package-path BandFaceKit 2>&1 | tee test.log || {
+            # Помилки тестів — в анотації, щоб їх було видно без завантаження журналу
+            grep -E "error:|failed|XCTAssert" test.log | head -10 | while IFS= read -r line; do
+              echo "::warning title=BandFaceKit tests::$line"
+            done
+            exit 1
+          }
 
       - name: Install XcodeGen
         run: brew install xcodegen
