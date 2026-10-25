@@ -257,6 +257,7 @@ extension BLEManager: CBCentralManagerDelegate {
         characteristics.removeAll()
         resetTransfer()
         addLog(String(localized: "Підключено"))
+        debug("Макс. запис без відповіді: \(peripheral.maximumWriteValueLength(for: .withoutResponse)) байт")
         // Шукаємо лише сервіс Xiaomi — так підключення швидше
         peripheral.discoverServices([BandGATT.service])
     }

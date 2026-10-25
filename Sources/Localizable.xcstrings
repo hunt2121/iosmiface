@@ -392,29 +392,6 @@
         }
       }
     },
-    "Браслет не підтвердив активацію": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band did not confirm activation"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не подтвердил активацию"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не підтвердив активацію"
-          }
-        }
-      }
-    },
     "Введіть ключ вручну або знайдіть його автоматично": {
       "extractionState": "manual",
       "localizations": {
