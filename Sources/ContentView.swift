@@ -189,7 +189,7 @@ struct ContentView: View {
                 .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
             Text(keyValid ? "Ключ виглядає коректно" : "Введіть ключ вручну або знайдіть його автоматично")
                 .font(.footnote)
-                .foregroundStyle(keyValid ? .green : .secondary)
+                .foregroundStyle(keyValid ? Color.okText : Color.secondary)
             Button {
                 findKey()
             } label: {
@@ -209,7 +209,7 @@ struct ContentView: View {
                             }
                             Spacer()
                             if d.key == authKey.lowercased() {
-                                Image(systemName: "checkmark").foregroundStyle(.green)
+                                Image(systemName: "checkmark").foregroundStyle(Color.okText)
                             }
                         }
                     }
@@ -217,7 +217,7 @@ struct ContentView: View {
             }
             if let keyStatus {
                 Text(keyStatus).font(.footnote)
-                    .foregroundStyle(keyStatusIsError ? .red : .green)
+                    .foregroundStyle(keyStatusIsError ? Color.errorText : Color.okText)
             }
         } header: {
             Text("Auth key браслета")
@@ -277,7 +277,7 @@ struct ContentView: View {
                 }
                 if let message {
                     Text(message).font(.footnote)
-                        .foregroundStyle(messageIsError ? .red : .green)
+                        .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
                 }
             }
         }
@@ -318,7 +318,7 @@ struct ContentView: View {
             }
             if ble.state == .unauthorized {
                 Text("Дозвольте Bluetooth для застосунку в Налаштуваннях iOS.")
-                    .font(.footnote).foregroundStyle(.red)
+                    .font(.footnote).foregroundStyle(Color.errorText)
             }
         }
     }
@@ -384,7 +384,7 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         if busy { ProgressView(value: progress); Text(progressText) }
                         if let message {
-                            Text(message).foregroundStyle(messageIsError ? .red : .green)
+                            Text(message).foregroundStyle(messageIsError ? Color.errorText : Color.okText)
                         }
                     }
                     .font(.footnote)
@@ -443,13 +443,13 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(f.active ? Color.green : Color.gray.opacity(0.3), lineWidth: f.active ? 3 : 1)
+                        .stroke(f.active ? Color.okText : Color.gray.opacity(0.3), lineWidth: f.active ? 3 : 1)
                 )
                 Text(f.name.isEmpty ? "Без назви" : f.name)
                     .font(.caption).lineLimit(1)
                     .foregroundStyle(.primary)
                 if f.active {
-                    Text("Активний").font(.caption2).foregroundStyle(.green)
+                    Text("Активний").font(.caption2).foregroundStyle(Color.okText)
                 } else if !f.canDelete {
                     Text("Системний").font(.caption2).foregroundStyle(.secondary)
                 }
