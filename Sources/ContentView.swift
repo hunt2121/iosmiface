@@ -98,9 +98,11 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
-            if phase == .background && !busy && ble.connectedID != nil {
-                ble.disconnect()
+            if phase == .background && !busy && (ble.connectedID != nil || ble.isConnecting) {
+                ble.disconnect(byUser: false)
             }
+            // Повернулися в застосунок — знову підключаємося до запам'ятованого браслета
+            if phase == .active { ble.reconnectLast() }
             // Ключ міг змінитися в Mi Fitness (наприклад, після нового спарювання)
             if phase == .active { autoFindKey() }
         }
@@ -245,6 +247,16 @@ struct ContentView: View {
                 }
                 if !ble.servicesReady {
                     HStack { ProgressView(); Text("Підготовка…").font(.footnote) }
+                }
+            } else if ble.isConnecting {
+                // Автоматичне (або ручне) підключення до браслета
+                HStack {
+                    ProgressView()
+                    Text("Підключення до \(ble.connectingName ?? "браслета")…")
+                        .padding(.leading, 6)
+                    Spacer()
+                    Button("Скасувати") { ble.disconnect() }
+                        .buttonStyle(.borderless)
                 }
             } else {
                 Button(ble.isScanning ? "Зупинити пошук" : "Шукати браслет") {

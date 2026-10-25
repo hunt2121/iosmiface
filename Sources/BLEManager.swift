@@ -16,6 +16,9 @@ final class BLEManager: NSObject, ObservableObject {
     @Published var connectedID: UUID?
     @Published var connectedName: String?
     @Published var servicesReady = false
+    /// Іде підключення до запам'ятованого браслета
+    @Published var isConnecting = false
+    @Published var connectingName: String?
     @Published var log: [String] = []
 
     private var central: CBCentralManager!
@@ -23,6 +26,9 @@ final class BLEManager: NSObject, ObservableObject {
     private var active: CBPeripheral?
     private(set) var characteristics: [CBUUID: CBCharacteristic] = [:]
     private var pendingServiceDiscovery = 0
+    private let lastDeviceKey = "lastDeviceID"
+    /// Користувач сам натиснув «Відключити» — до наступного запуску автоматично не підключаємося
+    private var userDisconnected = false
 
     /// Вхідні дані зі сповіщень (викликається на головному потоці).
     var onData: ((CBUUID, Data) -> Void)?
@@ -87,15 +93,47 @@ final class BLEManager: NSObject, ObservableObject {
 
     func connect(_ id: UUID) {
         guard let p = peripherals[id] else { return }
+        userDisconnected = false
+        start(p)
+    }
+
+    private func start(_ p: CBPeripheral) {
         stopScan()
         active = p
         p.delegate = self
-        addLog("Підключення до \(p.name ?? "?")…")
+        isConnecting = true
+        connectingName = p.name
+        addLog("Підключення до \(p.name ?? "браслета")…")
         central.connect(p, options: nil)
     }
 
-    func disconnect() {
-        if let p = active { central.cancelPeripheralConnection(p) }
+    /// `byUser`: користувач натиснув «Відключити» або «Скасувати».
+    /// Відключення при згортанні застосунку — не від користувача, тож потім підключимося знову.
+    func disconnect(byUser: Bool = true) {
+        if byUser { userDisconnected = true }
+        guard let p = active else { return }
+        central.cancelPeripheralConnection(p)
+        if connectedID == nil {
+            // Підключення ще не відбулося — просто скасовуємо очікування
+            active = nil
+            isConnecting = false
+            connectingName = nil
+        }
+    }
+
+    /// Автоматичне підключення до браслета, з яким працювали минулого разу.
+    func reconnectLast() {
+        guard central.state == .poweredOn, active == nil, !userDisconnected,
+              let raw = UserDefaults.standard.string(forKey: lastDeviceKey),
+              let id = UUID(uuidString: raw),
+              let p = central.retrievePeripherals(withIdentifiers: [id]).first else { return }
+        peripherals[id] = p
+        start(p)
+    }
+
+    /// Забути браслет (більше не підключатися автоматично).
+    func forgetLastDevice() {
+        UserDefaults.standard.removeObject(forKey: lastDeviceKey)
     }
 
     // MARK: - Сповіщення
@@ -185,6 +223,7 @@ final class BLEManager: NSObject, ObservableObject {
 extension BLEManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         state = central.state
+        if central.state == .poweredOn { reconnectLast() }
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
@@ -205,6 +244,9 @@ extension BLEManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         connectedID = peripheral.identifier
         connectedName = peripheral.name
+        isConnecting = false
+        connectingName = nil
+        UserDefaults.standard.set(peripheral.identifier.uuidString, forKey: lastDeviceKey)
         servicesReady = false
         characteristics.removeAll()
         resetTransfer()
@@ -214,6 +256,9 @@ extension BLEManager: CBCentralManagerDelegate {
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         addLog("Помилка підключення: \(error?.localizedDescription ?? "невідомо")")
+        active = nil
+        isConnecting = false
+        connectingName = nil
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -221,6 +266,8 @@ extension BLEManager: CBCentralManagerDelegate {
         connectedID = nil
         connectedName = nil
         servicesReady = false
+        isConnecting = false
+        connectingName = nil
         active = nil
         characteristics.removeAll()
         resetTransfer()
