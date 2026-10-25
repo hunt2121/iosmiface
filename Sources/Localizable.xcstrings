@@ -254,6 +254,29 @@
         }
       }
     },
+    "Історія": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Історія"
+          }
+        }
+      }
+    },
     "Автентифікація не вдалася: перевірте auth key": {
       "extractionState": "manual",
       "localizations": {
@@ -1009,29 +1032,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Закрити"
-          }
-        }
-      }
-    },
-    "Записи": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entries"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Записи"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Записи"
           }
         }
       }
@@ -1979,25 +1979,25 @@
         }
       }
     },
-    "Розширений журнал": {
+    "Режим розробника": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Extended log"
+            "value": "Developer mode"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Расширенный журнал"
+            "value": "Режим разработчика"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Розширений журнал"
+            "value": "Режим розробника"
           }
         }
       }

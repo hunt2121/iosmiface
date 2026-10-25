@@ -387,7 +387,7 @@ struct ContentView: View {
 
     private var logSection: some View {
         Section {
-            Toggle("Розширений журнал", isOn: $verboseLog)
+            Toggle("Режим розробника", isOn: $verboseLog)
             HStack(spacing: 12) {
                 Button {
                     UIPasteboard.general.string = ble.log.joined(separator: "\n")
@@ -421,7 +421,7 @@ struct ContentView: View {
             }
         } header: {
             // Заголовок секції — на тій самій висоті й з тими самими параметрами, що «Браслет» і «Auth key браслета»
-            Text("Записи")
+            Text("Історія")
         }
     }
 

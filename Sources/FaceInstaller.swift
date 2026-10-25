@@ -33,7 +33,7 @@ final class FaceInstaller {
 
         let ble = self.ble
         var configuration = BandSession.Configuration()
-        // Технічний журнал бібліотеки — лише в режимі «Розширений журнал»; інакше рядки навіть не формуються
+        // Технічний журнал бібліотеки — лише в режимі «Режим розробника»; інакше рядки навіть не формуються
         if UserDefaults.standard.bool(forKey: "verboseLog") {
             configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
         }

@@ -50,7 +50,7 @@ BandFace is not on the App Store yet. Every push builds an unsigned IPA with Git
 2. **Watch faces** tab → connect to your band.
 3. *Choose file* → pick a `.face` or `.bin` file → *Install on band*.
 
-If something goes wrong, turn on **Extended log** in the **Log** tab, repeat, and attach the copied log to an issue.
+If something goes wrong, turn on **Developer mode** in the **Log** tab, repeat, and attach the copied log to an issue.
 
 ## How it works
 
