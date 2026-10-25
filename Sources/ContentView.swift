@@ -210,8 +210,9 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
-                // Роздільна лінія під передоглядом — на всю ширину, а не від тексту по центру
-                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                // Лінія над «Встановити на браслет» починається на рівні тексту кнопки,
+                // як інші роздільники, а не від тексту по центру
+                .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
             }
             Button("Встановити на браслет") {
                 if let face { run(.install(face)) }
