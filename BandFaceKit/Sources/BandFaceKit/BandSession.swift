@@ -305,6 +305,7 @@ public actor BandSession {
             try await writeData(DataPacket(channel: .file, opcode: .plain, body: part))
             progress?(index + 1, parts.count)
         }
+        log("file: all parts handed to Bluetooth")
     }
 
     // MARK: - Вхідні кадри

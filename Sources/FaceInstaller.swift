@@ -44,6 +44,8 @@ final class FaceInstaller {
         // Відповіді 2/2 і 2/1 бібліотека вже дочекалася, тож довгі паузи не потрібні
         installer.pauseAfterAuth = .milliseconds(500)
         installer.pauseBeforeInstall = .milliseconds(300)
+        // Файл уже на браслеті; якщо підтвердження немає за 8 с, далі не чекаємо
+        installer.activationTimeout = .seconds(8)
 
         let reporter = PhaseReporter(face: face, ble: ble, progress: progress)
         do {

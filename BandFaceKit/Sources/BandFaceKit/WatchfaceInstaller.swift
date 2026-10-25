@@ -36,6 +36,8 @@ public struct WatchfaceInstaller: Sendable {
     /// Паузи, перевірені на Band 10 (чи вони обов'язкові — не перевірялося).
     public var pauseAfterAuth: Duration = .milliseconds(1500)
     public var pauseBeforeInstall: Duration = .milliseconds(1500)
+    /// Скільки чекати підтвердження активації (4/1).
+    public var activationTimeout: Duration = .seconds(30)
 
     public init() {}
 
@@ -64,7 +66,7 @@ public struct WatchfaceInstaller: Sendable {
             }
 
             onPhase?(.activating)
-            try await session.activateWatchface(id: face.id)
+            try await session.activateWatchface(id: face.id, timeout: activationTimeout)
 
             onPhase?(.closing)
             await session.close()
