@@ -130,22 +130,4 @@ enum FacePreview {
         try? FileManager.default.removeItem(at: file(for: id))
     }
 
-    /// Шукає картинки циферблатів у даних Mi Fitness (файли, у шляху яких є ID циферблата).
-    /// Повертає знайдені прев'ю за ID.
-    static func searchMiFitness(ids: [String]) -> [String: UIImage] {
-        guard !ids.isEmpty, let root = MiFitnessKey.savedFolder() else { return [:] }
-        let scoped = root.startAccessingSecurityScopedResource()
-        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
-        guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else { return [:] }
-        let exts: Set<String> = ["png", "jpg", "jpeg", "webp", "gif", "heic"]
-        var found: [String: UIImage] = [:]
-        for case let url as URL in walker where exts.contains(url.pathExtension.lowercased()) {
-            let path = url.path
-            for id in ids where found[id] == nil && path.contains(id) {
-                if let img = UIImage(contentsOfFile: path) { found[id] = img }
-            }
-            if found.count == ids.count { break }
-        }
-        return found
-    }
 }

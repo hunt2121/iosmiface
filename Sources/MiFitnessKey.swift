@@ -151,7 +151,7 @@ enum MiFitnessKey {
     }
 
     /// Значення CFKeyedArchiverUID (у Swift цей тип непрозорий, тож беремо його з опису: "{value = 7}").
-    private static func uidValue(_ value: Any) -> Int? {
+    static func uidValue(_ value: Any) -> Int? {
         let text = String(describing: value)
         guard text.contains("CFKeyedArchiverUID"),
               let range = text.range(of: #"value = (\d+)"#, options: .regularExpression) else { return nil }

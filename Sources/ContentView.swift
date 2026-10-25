@@ -28,6 +28,7 @@ struct ContentView: View {
     @State private var selectedFace: BandWatchface?
     @State private var previews: [String: UIImage] = [:]
     @State private var filePreview: UIImage?
+    @State private var previewSearched: Set<String> = []
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -463,15 +464,22 @@ struct ContentView: View {
         var known: [String: UIImage] = [:]
         for f in list { if let img = FacePreview.saved(for: f.id) { known[f.id] = img } }
         previews = known
-        let missing = list.map(\.id).filter { known[$0] == nil }
+        // Кожен циферблат шукаємо в даних Mi Fitness лише раз за запуск — пошук не швидкий
+        let missing = list.map(\.id).filter { known[$0] == nil && !previewSearched.contains($0) }
         guard !missing.isEmpty else { return }
+        previewSearched.formUnion(missing)
         // Решту шукаємо в даних Mi Fitness (якщо папку вже вибрано)
-        DispatchQueue.global(qos: .utility).async {
-            let found = FacePreview.searchMiFitness(ids: missing)
-            guard !found.isEmpty else { return }
-            for (id, img) in found { FacePreview.save(img, for: id) }
-            DispatchQueue.main.async {
-                for (id, img) in found { previews[id] = img }
+        Task {
+            let found = await Task.detached(priority: .utility) {
+                await MiFitnessPreviews.search(ids: missing)
+            }.value
+            await MainActor.run {
+                for line in found.log.dropLast() { ble.debug(line) }
+                if let summary = found.log.last { ble.addLog(summary) }
+                for (id, img) in found.images {
+                    FacePreview.save(img, for: id)
+                    previews[id] = img
+                }
             }
         }
     }
