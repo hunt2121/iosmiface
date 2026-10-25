@@ -346,29 +346,6 @@
         }
       }
     },
-    "Активність": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activity"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Активность"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Активність"
-          }
-        }
-      }
-    },
     "Банка · гривні, картка": {
       "extractionState": "manual",
       "localizations": {
@@ -986,6 +963,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дякуємо за підтримку!"
+          }
+        }
+      }
+    },
+    "Журнал": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Журнал"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Журнал"
           }
         }
       }

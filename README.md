@@ -25,7 +25,7 @@ BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files t
 - **Remembers your band** and reconnects automatically.
 - **Works alongside Mi Fitness.** If Mi Fitness starts syncing in the background, the install waits and resumes; the log tells you when it happens.
 - **Reliable transfer.** Every part of the file is acknowledged by the band; lost parts are resent.
-- **Activity** tab with an optional developer mode (timestamps, raw protocol frames) — handy for bug reports.
+- **Log** with an optional detailed mode (timestamps, raw protocol frames) — handy for bug reports.
 - **Localized:** English, Ukrainian, Russian. Light and dark themes.
 - **Private:** no network access, no analytics. The key is stored in the iOS Keychain.
 
@@ -50,7 +50,7 @@ BandFace is not on the App Store yet. Every push builds an unsigned IPA with Git
 2. **Watch faces** tab → connect to your band.
 3. *Choose file* → pick a `.face` or `.bin` file → *Install on band*.
 
-If something goes wrong, turn on **Developer mode** in the **Activity** tab, repeat, and attach the copied log to an issue.
+If something goes wrong, turn on **Developer mode** in the **Log** tab, repeat, and attach the copied log to an issue.
 
 ## How it works
 
