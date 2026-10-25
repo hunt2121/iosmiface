@@ -3,7 +3,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    enum Tab: Hashable { case faces, key, log }
+    enum Tab: Hashable { case faces, key, gallery, log }
 
     @EnvironmentObject var ble: BLEManager
 
@@ -25,6 +25,9 @@ struct ContentView: View {
     @State private var session: XiaomiBandSession?
     @State private var bandFaces: [BandWatchface]?
     @State private var faceToDelete: BandWatchface?
+    @State private var selectedFace: BandWatchface?
+    @State private var previews: [String: UIImage] = [:]
+    @State private var filePreview: UIImage?
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -68,7 +71,6 @@ struct ContentView: View {
                     bandSection
                     installSection
                     statusSection
-                    facesSection
                 }
                 .navigationTitle("Циферблати")
             }
@@ -83,6 +85,19 @@ struct ContentView: View {
             .tabItem { Label("Ключ", image: "TabKey") }
             .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
+
+            NavigationStack {
+                galleryView
+                    .navigationTitle("Мої циферблати")
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button { run(.list) } label: { Image(systemName: "arrow.clockwise") }
+                                .disabled(!canOperate)
+                        }
+                    }
+            }
+            .tabItem { Label("Мої", image: "TabGallery") }
+            .tag(Tab.gallery)
 
             NavigationStack {
                 Form {
@@ -109,6 +124,29 @@ struct ContentView: View {
         }
         .onAppear {
             autoFindKey()
+        }
+        .onChange(of: tab) { t in
+            // Відкрили галерею вперше за підключення — одразу завантажуємо список
+            if t == .gallery && bandFaces == nil && canOperate { run(.list, quiet: true) }
+        }
+        .confirmationDialog(selectedFace.map { $0.name.isEmpty ? "Циферблат \($0.id)" : $0.name } ?? "",
+                            isPresented: Binding(get: { selectedFace != nil },
+                                                 set: { if !$0 { selectedFace = nil } }),
+                            titleVisibility: .visible,
+                            presenting: selectedFace) { f in
+            if !f.active {
+                Button("Активувати") { run(.activate(f.id)) }
+            }
+            if f.canDelete {
+                Button("Видалити", role: .destructive) {
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 350_000_000)
+                        faceToDelete = f
+                    }
+                }
+            }
+        } message: { f in
+            Text(f.active ? "Цей циферблат зараз активний" : (f.canDelete ? "ID \(f.id)" : "Системний циферблат, його не можна видалити"))
         }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
@@ -192,13 +230,21 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
-            Button(fileName ?? "Вибрати .face файл") {
+            Button(fileName ?? "Вибрати файл .bin або .face") {
                 importingFolder = false
                 showImporter = true
             }
             if let face {
-                Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
-                    .font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 14) {
+                    if let filePreview {
+                        Image(uiImage: filePreview)
+                            .resizable().scaledToFit()
+                            .frame(height: 90)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
             }
             Button("Встановити на браслет") {
                 if let face { run(.install(face)) }
@@ -263,43 +309,6 @@ struct ContentView: View {
         }
     }
 
-    private var facesSection: some View {
-        Section {
-            Button(bandFaces == nil ? "Показати циферблати на браслеті" : "Оновити список") {
-                run(.list)
-            }
-            .disabled(!canOperate)
-
-            if let bandFaces {
-                if bandFaces.isEmpty {
-                    Text("Список порожній").foregroundStyle(.secondary)
-                }
-                ForEach(bandFaces) { f in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(f.name.isEmpty ? "Без назви" : f.name)
-                            Text(f.canDelete ? "ID \(f.id)" : "ID \(f.id) · системний")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if f.active {
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .contextMenu { faceActions(f) }
-                    .swipeActions { faceActions(f) }
-                }
-            }
-        } header: {
-            Text("Циферблати на браслеті")
-        } footer: {
-            if bandFaces != nil {
-                Text("Проведіть ліворуч або утримуйте рядок, щоб активувати чи видалити.")
-            }
-        }
-    }
-
     @ViewBuilder
     private func faceActions(_ f: BandWatchface) -> some View {
         if f.canDelete {
@@ -342,6 +351,117 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Галерея
+
+    @ViewBuilder
+    private var galleryView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if !keyValid {
+                    galleryHint("Спершу додайте ключ браслета", button: "Перейти до ключа") { tab = .key }
+                } else if ble.connectedID == nil {
+                    galleryHint("Браслет не підключено", button: "Підключити") {
+                        tab = .faces
+                        if !ble.isScanning { ble.startScan() }
+                    }
+                }
+
+                if busy || message != nil {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if busy { ProgressView(value: progress); Text(progressText) }
+                        if let message {
+                            Text(message).foregroundStyle(messageIsError ? .red : .green)
+                        }
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                }
+
+                if let bandFaces {
+                    if bandFaces.isEmpty {
+                        Text("На браслеті немає циферблатів").foregroundStyle(.secondary)
+                    }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 14)], spacing: 18) {
+                        ForEach(bandFaces) { f in faceCard(f) }
+                    }
+                } else if canOperate {
+                    Button("Показати циферблати на браслеті") { run(.list) }
+                        .buttonStyle(.borderedProminent)
+                }
+
+                if bandFaces != nil {
+                    Text("Натисніть на циферблат, щоб активувати чи видалити його. Вигляд показується для циферблатів, встановлених через BandFace.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+        }
+        .refreshable { await MainActor.run { if canOperate { run(.list) } } }
+    }
+
+    private func galleryHint(_ text: String, button: String, action: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(text).font(.headline)
+            Button(button, action: action).buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func faceCard(_ f: BandWatchface) -> some View {
+        Button {
+            if canOperate { selectedFace = f }
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Color.black)
+                    if let img = previews[f.id] {
+                        Image(uiImage: img).resizable().scaledToFill()
+                    } else {
+                        Image("TabWatch")
+                            .resizable().scaledToFit()
+                            .frame(width: 34)
+                            .foregroundStyle(.gray)
+                    }
+                }
+                .aspectRatio(212.0 / 520.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(f.active ? Color.green : Color.gray.opacity(0.3), lineWidth: f.active ? 3 : 1)
+                )
+                Text(f.name.isEmpty ? "Без назви" : f.name)
+                    .font(.caption).lineLimit(1)
+                    .foregroundStyle(.primary)
+                if f.active {
+                    Text("Активний").font(.caption2).foregroundStyle(.green)
+                } else if !f.canDelete {
+                    Text("Системний").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .contextMenu { faceActions(f) }
+    }
+
+    private func loadPreviews(for list: [BandWatchface]) {
+        var known: [String: UIImage] = [:]
+        for f in list { if let img = FacePreview.saved(for: f.id) { known[f.id] = img } }
+        previews = known
+        let missing = list.map(\.id).filter { known[$0] == nil }
+        guard !missing.isEmpty else { return }
+        // Решту шукаємо в даних Mi Fitness (якщо папку вже вибрано)
+        DispatchQueue.global(qos: .utility).async {
+            let found = FacePreview.searchMiFitness(ids: missing)
+            guard !found.isEmpty else { return }
+            for (id, img) in found { FacePreview.save(img, for: id) }
+            DispatchQueue.main.async {
+                for (id, img) in found { previews[id] = img }
+            }
+        }
+    }
+
     // MARK: - Дії
 
     private func loadFace(_ result: Result<URL, Error>) {
@@ -353,11 +473,14 @@ struct ContentView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do {
                 let data = try Data(contentsOf: url)
-                face = try FaceFile(data: data)
+                let parsed = try FaceFile(data: data)
+                face = parsed
+                filePreview = FacePreview.image(fromFace: parsed.data)
                 fileName = url.lastPathComponent
                 message = nil
             } catch {
                 face = nil
+                filePreview = nil
                 fileName = nil
                 show("Некоректний файл циферблата: \(error.localizedDescription)", error: true)
             }
@@ -438,7 +561,10 @@ struct ContentView: View {
     private func run(_ operation: XiaomiBandSession.Operation, quiet: Bool = false) {
         do {
             let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
-            s.onWatchfaces = { list in bandFaces = list }
+            s.onWatchfaces = { list in
+                bandFaces = list
+                loadPreviews(for: list)
+            }
             session = s
             busy = true
             progress = 0
@@ -447,7 +573,7 @@ struct ContentView: View {
             let refreshAfter: Bool
             switch operation {
             case .list: refreshAfter = false
-            default: refreshAfter = bandFaces != nil
+            default: refreshAfter = bandFaces != nil || tab == .gallery
             }
             s.run(operation, progress: { value, text in
                 progress = value
@@ -458,6 +584,19 @@ struct ContentView: View {
                 switch result {
                 case .success(let text):
                     if !quiet { show(text, error: false) }
+                    switch operation {
+                    case .install(let f):
+                        // Запам'ятовуємо вигляд циферблата для вкладки «Мої»
+                        if let img = FacePreview.image(fromFace: f.data) {
+                            FacePreview.save(img, for: f.id)
+                            previews[f.id] = img
+                        }
+                    case .delete(let id):
+                        FacePreview.remove(for: id)
+                        previews[id] = nil
+                    default:
+                        break
+                    }
                     if refreshAfter {
                         Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 1_000_000_000)
