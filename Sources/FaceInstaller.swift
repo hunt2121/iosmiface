@@ -99,7 +99,7 @@ final class FaceInstaller {
         }
         // Після прийому файлу браслет сам вмикає новий циферблат
         return reporter.alreadyInstalled
-            ? String(localized: "Циферблат уже був на браслеті, його активовано")
+            ? String(localized: "Цей циферблат уже встановлений")
             : String(localized: "Циферблат встановлено й активовано")
     }
 

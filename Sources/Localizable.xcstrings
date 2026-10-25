@@ -1864,6 +1864,29 @@
         }
       }
     },
+    "Цей циферблат уже встановлений": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This watch face is already installed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот циферблат уже установлен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей циферблат уже встановлений"
+          }
+        }
+      }
+    },
     "Цей циферблат уже є на браслеті": {
       "extractionState": "manual",
       "localizations": {
@@ -1952,29 +1975,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"
-          }
-        }
-      }
-    },
-    "Циферблат уже був на браслеті, його активовано": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The watch face was already on the band and has been activated"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат уже был на браслете, он активирован"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат уже був на браслеті, його активовано"
           }
         }
       }
