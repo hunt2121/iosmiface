@@ -1910,29 +1910,6 @@
         }
       }
     },
-    "Циферблат передано. Виберіть його на браслеті": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch face transferred. Select it on the band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат передан. Выберите его на браслете"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат передано. Виберіть його на браслеті"
-          }
-        }
-      }
-    },
     "Циферблат уже був на браслеті, його активовано": {
       "extractionState": "manual",
       "localizations": {
@@ -1952,29 +1929,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Циферблат уже був на браслеті, його активовано"
-          }
-        }
-      }
-    },
-    "Циферблат уже є на браслеті. Виберіть його на браслеті": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The watch face is already on the band. Select it on the band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат уже есть на браслете. Выберите его на браслете"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат уже є на браслеті. Виберіть його на браслеті"
           }
         }
       }

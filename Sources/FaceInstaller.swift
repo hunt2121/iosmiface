@@ -85,9 +85,10 @@ final class FaceInstaller {
             // Кажемо, на якому саме етапі браслет замовк
             throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
         }
+        // Після прийому файлу браслет сам вмикає новий циферблат
         return reporter.alreadyInstalled
-            ? String(localized: "Циферблат уже є на браслеті. Виберіть його на браслеті")
-            : String(localized: "Циферблат передано. Виберіть його на браслеті")
+            ? String(localized: "Циферблат уже був на браслеті, його активовано")
+            : String(localized: "Циферблат встановлено й активовано")
     }
 
     /// Дані про телефон як у Mi Fitness (з запису HCI): 1 = 1, 2 = 27.2, 3 = "Unknown",

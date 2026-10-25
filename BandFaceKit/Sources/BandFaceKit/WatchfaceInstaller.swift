@@ -51,6 +51,8 @@ public struct WatchfaceInstaller: Sendable {
     /// false — лише передати файл, без 4/1: циферблат користувач вибирає на браслеті.
     /// Після 4/1 браслет надсилає компаньйону запити (2/42, 17/7, 10/3) і перестає приймати кадри.
     public var activateAfterInstall = true
+    /// Якщо циферблат уже є на браслеті, файл не передається і браслет сам його не вмикає — тоді 4/1.
+    public var activateIfAlreadyInstalled = true
     /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
     public var activationAttempts = 2
 
@@ -84,7 +86,12 @@ public struct WatchfaceInstaller: Sendable {
             }
 
             guard activateAfterInstall else {
-                if !alreadyInstalled { try await confirmInstalled(session: session) }
+                if !alreadyInstalled {
+                    try await confirmInstalled(session: session)
+                } else if activateIfAlreadyInstalled {
+                    onPhase?(.activating)
+                    try await activate(face, session: session, afterUpload: false)
+                }
                 onPhase?(.closing)
                 await session.close()
                 onPhase?(.done(alreadyInstalled: alreadyInstalled))
