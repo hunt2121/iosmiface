@@ -38,6 +38,10 @@ public actor BandSession {
         /// Якщо браслет стільки часу не підтверджує частини файлу — надсилаємо їх повторно.
         public var fileAckTimeout: Duration = .seconds(3)
         public var fileResendAttempts = 3
+        /// Викликається один раз за сесію, коли видно, що браслет працює з іншим застосунком
+        /// на телефоні (Mi Fitness): відповідь на сесію, якої ми не запитували, або підтвердження
+        /// кадру, якого ми не надсилали. На встановлення не впливає.
+        public var onOtherApp: (@Sendable (String) -> Void)?
         public var sessionCloseTimeout: Duration = .seconds(1)
         public var commandTimeout: Duration = .seconds(10)
         /// Журнал. Ключі й вміст команд автентифікації в нього не потрапляють.
@@ -74,6 +78,14 @@ public actor BandSession {
     private var unsolicitedSeen: Set<String> = []
     /// Статус із 4/5 (6.7.2), який браслет надсилає після прийому файлу; nil — ще не надсилав.
     public private(set) var installStatus: UInt64?
+    private var otherAppReported = false
+
+    private func noteOtherApp(_ reason: String) {
+        log("other app on the band: \(reason)")
+        guard !otherAppReported else { return }
+        otherAppReported = true
+        configuration.onOtherApp?(reason)
+    }
 
     /// 4/5 зі статусом 3 — циферблат прийнято; 1 бачили, коли браслет перервав прийом.
     public static let installedStatus: UInt64 = 3
@@ -417,6 +429,10 @@ public actor BandSession {
                 handleSession(frame)
             case .ack:
                 log("← ack \(frame.sequence)")
+                // Номер, якого ми ще не надсилали, — підтвердження чужого кадру
+                if state != .opening, frame.sequence &- phoneSequence < 128 {
+                    noteOtherApp("ack \(frame.sequence), our next frame is \(phoneSequence)")
+                }
                 handleBandAck(frame.sequence)
             case .data:
                 handleData(frame)
@@ -427,7 +443,10 @@ public actor BandSession {
     private func handleSession(_ frame: Frame) {
         guard let control = SessionControl(payload: frame.payload) else { return }
         log("← session code \(control.code)")
-        guard let waiter = sessionWaiter, waiter.code == control.code else { return }
+        guard let waiter = sessionWaiter, waiter.code == control.code else {
+            noteOtherApp("session code \(control.code) without our request")
+            return
+        }
         sessionWaiter = nil
         waiter.continuation.resume(returning: control)
     }

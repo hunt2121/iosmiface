@@ -185,6 +185,29 @@
         }
       }
     },
+    "Mi Fitness почав синхронізацію з браслетом": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi Fitness started syncing with the band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi Fitness начал синхронизацию с браслетом"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi Fitness почав синхронізацію з браслетом"
+          }
+        }
+      }
+    },
     "«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам.": {
       "extractionState": "manual",
       "localizations": {

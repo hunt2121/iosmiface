@@ -36,6 +36,10 @@ final class FaceInstaller {
         var configuration = BandSession.Configuration()
         // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»
         configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
+        // Окремий рядок у звичайному журналі, коли браслет почав працювати з Mi Fitness
+        configuration.onOtherApp = { _ in
+            DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з браслетом")) }
+        }
         // Чужу сесію не закриваємо і з'єднання не рвемо: це може зламати браслету зв'язок з Mi Fitness
         configuration.closeOtherSessionOnRetry = false
         configuration.sessionOpenAttempts = 2
