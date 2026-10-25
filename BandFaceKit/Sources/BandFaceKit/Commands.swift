@@ -146,34 +146,20 @@ public struct Command: Sendable, Equatable {
 
 // MARK: - Розбір відповідей
 
-public struct DeviceInfo: Sendable, Equatable {
-    public var serialNumber: String?
-    public var firmwareVersion: String?
-    public var model: String?
-
-    public init(command: Command) {
-        serialNumber = command.root.string(at: [4, 3, 1])
-        firmwareVersion = command.root.string(at: [4, 3, 2])
-        model = command.root.string(at: [4, 3, 4])
-    }
-}
-
-public struct WatchfaceEntry: Sendable, Equatable {
-    public var id: String
-    public var name: String
-    public var isActive: Bool
-    public var canDelete: Bool
+struct WatchfaceEntry: Sendable, Equatable {
+    var id: String
+    var isActive: Bool
+    var canDelete: Bool
 
     init?(message: ProtoMessage) {
         guard let id = message.string(1) else { return nil }
         self.id = id
-        name = message.string(2) ?? ""
         isActive = message.bool(3) ?? false
         canDelete = message.bool(4) ?? false
     }
 
     /// Розбирає відповідь 4/0 (6.1.1 — повторюване повідомлення).
-    public static func list(from command: Command) -> [WatchfaceEntry] {
+    static func list(from command: Command) -> [WatchfaceEntry] {
         // Основний варіант: 6 → 1 (список) → 1 (повторювані записи).
         if let container = command.root.message(at: [6, 1]) {
             let entries = container.messages(1).compactMap(WatchfaceEntry.init(message:))

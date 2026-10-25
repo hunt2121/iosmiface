@@ -42,14 +42,6 @@ public struct ProtoWriter: Sendable {
         ProtoWriter.encodeVarint(value, into: &output)
     }
 
-    public mutating func varint(_ field: Int, _ value: Int) {
-        varint(field, UInt64(bitPattern: Int64(value)))
-    }
-
-    public mutating func bool(_ field: Int, _ value: Bool) {
-        varint(field, value ? UInt64(1) : 0)
-    }
-
     public mutating func bytes(_ field: Int, _ value: [UInt8]) {
         tag(field, 2)
         ProtoWriter.encodeVarint(UInt64(value.count), into: &output)
@@ -152,11 +144,6 @@ public struct ProtoMessage: Equatable, Sendable {
 
     public func string(_ number: Int) -> String? {
         bytes(number).flatMap { String(bytes: $0, encoding: .utf8) }
-    }
-
-    public func float(_ number: Int) -> Float? {
-        if case .fixed32(let v)? = first(number) { return Float(bitPattern: v) }
-        return nil
     }
 
     public func message(_ number: Int) -> ProtoMessage? {

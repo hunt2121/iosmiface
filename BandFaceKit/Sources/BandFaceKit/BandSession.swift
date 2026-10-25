@@ -42,7 +42,6 @@ public actor BandSession {
     public let configuration: Configuration
 
     public private(set) var state: State = .idle
-    public private(set) var bandSessionParameters: SessionControl?
 
     private var parser = FrameParser()
     private var phoneSequence: UInt8 = 0
@@ -53,7 +52,6 @@ public actor BandSession {
     private var keys: SessionKeys?
     private var waiters: [UUID: Waiter] = [:]
     private var sessionWaiter: (code: UInt8, continuation: CheckedContinuation<SessionControl, Error>)?
-    private var unsolicitedHandler: (@Sendable (Command) -> Void)?
 
     private let inputStream: AsyncStream<[UInt8]>
     private let inputContinuation: AsyncStream<[UInt8]>.Continuation
@@ -75,11 +73,6 @@ public actor BandSession {
     /// Передайте сюди кожне сповіщення з характеристики RX — у порядку надходження.
     public nonisolated func receive(_ data: Data) {
         inputContinuation.yield([UInt8](data))
-    }
-
-    /// Команди, які браслет надсилає сам (погода, сповіщення тощо).
-    public func setUnsolicitedHandler(_ handler: (@Sendable (Command) -> Void)?) {
-        unsolicitedHandler = handler
     }
 
     private func log(_ message: @autoclosure () -> String) {
@@ -112,16 +105,13 @@ public actor BandSession {
             }
             resetCounters()
             do {
-                let response = try await sessionExchange(
+                _ = try await sessionExchange(
                     SessionControl.openRequest,
                     expecting: SessionControl.Code.openResponse.rawValue,
                     timeout: configuration.sessionOpenTimeout
                 )
-                bandSessionParameters = response
                 state = .open
-                let version = response.version ?? "?"
-                let maxFrame = response.maxFrameSize.map { String($0) } ?? "?"
-                log("session: open, band version \(version), max frame \(maxFrame)")
+                log("session: open")
                 return
             } catch BandError.timeout {
                 continue
@@ -381,11 +371,10 @@ public actor BandSession {
         let redact = command.type == Command.Kind.auth
         log("← cmd \(command.name) seq \(frame.sequence)" + (redact ? "" : " \(body.hexString)"))
 
+        // Команди, яких ніхто не чекає (сповіщення браслета), просто пропускаємо
         if let entry = waiters.first(where: { $0.value.matches(command) }) {
             waiters.removeValue(forKey: entry.key)
             entry.value.continuation.resume(returning: command)
-        } else {
-            unsolicitedHandler?(command)
         }
     }
 

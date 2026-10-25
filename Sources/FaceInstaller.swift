@@ -145,12 +145,10 @@ struct InstallFailure: LocalizedError {
 extension BandError: LocalizedError {
     public var errorDescription: String? {
         switch self {
-        case .notConnected, .serviceNotFound:
+        case .notConnected:
             return String(localized: "Браслет не підключено")
         case .characteristicNotFound:
             return String(localized: "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.")
-        case .bluetoothUnavailable:
-            return String(localized: "Bluetooth вимкнено або недоступний")
         case .invalidAuthKey:
             return String(localized: "Auth key має бути 32 hex-символи (16 байт)")
         case .authKeyMismatch, .notAuthenticated:
@@ -178,8 +176,6 @@ extension BandError: LocalizedError {
             return String(localized: "Некоректний файл циферблата: \(reason)")
         case .invalidPreview(let why):
             return String(localized: "Некоректний файл циферблата: \(why)")
-        case .authKeyNotFound:
-            return String(localized: "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз")
         case .database(let why):
             return why
         case .cancelled, .disconnected:

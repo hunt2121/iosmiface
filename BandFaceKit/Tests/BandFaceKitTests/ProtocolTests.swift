@@ -58,8 +58,8 @@ final class FrameTests: XCTestCase {
         ])
         let parsed = SessionControl(payload: response.payload)!
         XCTAssertEqual(parsed.code, 2)
-        XCTAssertEqual(parsed.version, "3.0.65")
-        XCTAssertEqual(parsed.maxFrameSize, 0x8000)
+        XCTAssertEqual(parsed.parameters.map(\.key), [1, 2])
+        XCTAssertEqual(parsed.parameters.map(\.value), [[3, 0, 65], [0x00, 0x80]])
     }
 }
 
@@ -93,8 +93,8 @@ final class ProtobufTests: XCTestCase {
         w.varint(2, UInt64(0))
         w.message(6) { f in
             f.message(1) { list in
-                list.message(1) { $0.string(1, "111"); $0.string(2, "A"); $0.bool(3, true); $0.bool(4, false) }
-                list.message(1) { $0.string(1, "222"); $0.string(2, "B"); $0.bool(3, false); $0.bool(4, true) }
+                list.message(1) { $0.string(1, "111"); $0.string(2, "A"); $0.varint(3, UInt64(1)); $0.varint(4, UInt64(0)) }
+                list.message(1) { $0.string(1, "222"); $0.string(2, "B"); $0.varint(3, UInt64(0)); $0.varint(4, UInt64(1)) }
             }
         }
         let entries = WatchfaceEntry.list(from: try Command(body: w.output))
@@ -118,7 +118,6 @@ final class CryptoTests: XCTestCase {
         let keys = SessionKeys(authKey: authKey, phoneNonce: phoneNonce, bandNonce: bandNonce)
         XCTAssertEqual(keys.decryptionKey, hex("d738074e6570abb50d001db70f497a37"))
         XCTAssertEqual(keys.encryptionKey, hex("923e295e02aecb7619a8e1b9f574c988"))
-        XCTAssertEqual(keys.decryptionNonce, hex("8676d225"))
         XCTAssertEqual(keys.encryptionNonce, hex("23869a15"))
         XCTAssertEqual(keys.expectedBandHMAC(phoneNonce: phoneNonce, bandNonce: bandNonce),
                        hex("17aa8eecac21d9d71cba6ea653d126d77abc2f4d0357f1cce01d433d40e42235"))
@@ -204,7 +203,6 @@ final class FaceFileTests: XCTestCase {
 
         let localized = try FaceFile(bytes: Self.makeFace(name: nil))
         XCTAssertNil(localized.name)
-        XCTAssertEqual(localized.displayName, "266235369")
 
         XCTAssertThrowsError(try FaceFile(bytes: [0x00, 0x00] + [UInt8](repeating: 0, count: 0x100)))
     }

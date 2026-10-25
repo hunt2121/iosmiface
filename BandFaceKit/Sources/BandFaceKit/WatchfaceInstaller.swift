@@ -5,29 +5,16 @@
 import Foundation
 
 extension BandSession {
-    public func deviceInfo() async throws -> DeviceInfo {
-        DeviceInfo(command: try await command(Command.deviceInfoRequest()))
-    }
-
-    /// Заряд батареї, %.
-    public func batteryLevel() async throws -> Int? {
-        let response = try await command(Command.batteryRequest())
-        return response.root.varint(at: [4, 2, 1, 1]).map(Int.init)
-    }
-
-    public func watchfaces() async throws -> [WatchfaceEntry] {
+    func watchfaces() async throws -> [WatchfaceEntry] {
         WatchfaceEntry.list(from: try await command(Command.watchfaceListRequest()))
     }
 
-    public func deleteWatchface(id: String) async throws {
+    func deleteWatchface(id: String) async throws {
         _ = try await command(Command.deleteWatchface(id: id))
     }
 
-    /// Активує циферблат. Повертає значення поля 6.4 (на Band 10 — 0).
-    @discardableResult
-    public func activateWatchface(id: String, timeout: Duration = .seconds(30)) async throws -> UInt64? {
-        let response = try await command(Command.activateWatchface(id: id), timeout: timeout)
-        return response.root.varint(at: [6, 4])
+    func activateWatchface(id: String, timeout: Duration = .seconds(30)) async throws {
+        _ = try await command(Command.activateWatchface(id: id), timeout: timeout)
     }
 }
 
@@ -49,7 +36,6 @@ public struct WatchfaceInstaller: Sendable {
     /// Паузи, перевірені на Band 10 (чи вони обов'язкові — не перевірялося).
     public var pauseAfterAuth: Duration = .milliseconds(1500)
     public var pauseBeforeInstall: Duration = .milliseconds(1500)
-    public var readDeviceInfo = true
 
     public init() {}
 
@@ -66,11 +52,10 @@ public struct WatchfaceInstaller: Sendable {
             onPhase?(.authenticating)
             try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region)
 
-            if readDeviceInfo {
-                try await Task.sleep(for: pauseAfterAuth)
-                _ = try? await session.deviceInfo()
-                _ = try? await session.batteryLevel()
-            }
+            // 2/2 і 2/1 — як офіційний застосунок; відповіді не потрібні
+            try await Task.sleep(for: pauseAfterAuth)
+            _ = try? await session.command(Command.deviceInfoRequest())
+            _ = try? await session.command(Command.batteryRequest())
             try await Task.sleep(for: pauseBeforeInstall)
 
             let alreadyInstalled = try await requestInstall(face, session: session, onPhase: onPhase)

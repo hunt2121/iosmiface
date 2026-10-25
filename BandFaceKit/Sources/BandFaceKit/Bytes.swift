@@ -7,8 +7,6 @@ import Foundation
 public enum BandError: Error, Equatable, Sendable {
     case timeout
     case notConnected
-    case bluetoothUnavailable
-    case serviceNotFound
     case characteristicNotFound
     case sessionOpenFailed
     case sessionNotOpen
@@ -21,7 +19,6 @@ public enum BandError: Error, Equatable, Sendable {
     case uploadRejected(status: UInt64)
     case invalidFaceFile(String)
     case invalidPreview(String)
-    case authKeyNotFound
     case database(String)
     case cancelled
     case disconnected

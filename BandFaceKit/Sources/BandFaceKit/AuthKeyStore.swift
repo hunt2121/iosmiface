@@ -33,19 +33,6 @@ public enum AuthKeyStore {
         return result
     }
 
-    /// Читає облікові дані всіх браслетів з папки Mi Fitness.
-    /// `folder` — URL, отриманий з UIDocumentPickerViewController (security-scoped).
-    public static func credentials(inMiFitnessFolder folder: URL) throws -> [BandCredentials] {
-        let scoped = folder.startAccessingSecurityScopedResource()
-        defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
-        var all: [BandCredentials] = []
-        for manifest in findManifests(in: folder) {
-            all.append(contentsOf: try credentials(fromManifest: manifest))
-        }
-        guard !all.isEmpty else { throw BandError.authKeyNotFound }
-        return all
-    }
-
     /// Копіює базу разом з -wal і -shm у тимчасову папку (останні зміни можуть бути лише в WAL) і читає її.
     public static func credentials(fromManifest url: URL) throws -> [BandCredentials] {
         let fm = FileManager.default
@@ -145,21 +132,13 @@ public enum FolderBookmark {
     public static func make(for folder: URL) throws -> Data {
         let scoped = folder.startAccessingSecurityScopedResource()
         defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
-        #if os(macOS)
-        return try folder.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-        #else
-        return try folder.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
-        #endif
+        return try folder.bookmarkData()
     }
 
     /// Повертає URL і ознаку, що закладку варто перестворити.
     public static func resolve(_ data: Data) throws -> (url: URL, isStale: Bool) {
         var stale = false
-        #if os(macOS)
-        let url = try URL(resolvingBookmarkData: data, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale)
-        #else
-        let url = try URL(resolvingBookmarkData: data, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)
-        #endif
+        let url = try URL(resolvingBookmarkData: data, bookmarkDataIsStale: &stale)
         return (url, stale)
     }
 }

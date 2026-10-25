@@ -22,10 +22,6 @@ public struct FaceFile: Sendable {
         try self.init(bytes: [UInt8](data))
     }
 
-    public init(contentsOf url: URL) throws {
-        try self.init(data: Data(contentsOf: url))
-    }
-
     public init(bytes: [UInt8]) throws {
         guard bytes.count >= 0x7C else { throw BandError.invalidFaceFile("file too short") }
         guard Array(bytes[0..<2]) == FaceFile.signature else {
@@ -53,9 +49,6 @@ public struct FaceFile: Sendable {
     public var size: Int { data.count }
 
     public var md5: [UInt8] { BandCrypto.md5(data) }
-
-    /// Назва для показу: назва або ID.
-    public var displayName: String { name ?? id }
 
     private static func zeroTerminated(_ bytes: [UInt8], from start: Int, maxLength: Int) -> [UInt8] {
         let end = min(start + maxLength, bytes.count)

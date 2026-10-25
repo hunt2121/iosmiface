@@ -110,10 +110,6 @@ public enum BandCrypto {
         Array(Insecure.MD5.hash(data: data))
     }
 
-    public static func md5(_ data: Data) -> [UInt8] {
-        Array(Insecure.MD5.hash(data: data))
-    }
-
     /// HKDF-SHA256 (RFC 5869).
     public static func hkdfSHA256(inputKey: [UInt8], salt: [UInt8], info: [UInt8], length: Int) -> [UInt8] {
         let prk = hmacSHA256(key: salt, data: inputKey)
@@ -135,7 +131,7 @@ public struct SessionKeys: Sendable, Equatable {
     public let decryptionKey: [UInt8]
     /// Телефон → браслет.
     public let encryptionKey: [UInt8]
-    public let decryptionNonce: [UInt8]
+    /// Nonce для CCM на кроці 3 (байти 36–40; байти 32–36 протоколу не потрібні).
     public let encryptionNonce: [UInt8]
 
     public static let info = Array("miwear-auth".utf8)
@@ -149,7 +145,6 @@ public struct SessionKeys: Sendable, Equatable {
         )
         decryptionKey = Array(material[0..<16])
         encryptionKey = Array(material[16..<32])
-        decryptionNonce = Array(material[32..<36])
         encryptionNonce = Array(material[36..<40])
     }
 

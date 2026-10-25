@@ -46,8 +46,6 @@ public struct FrameParser: Sendable {
 
     public init() {}
 
-    public var bufferedByteCount: Int { buffer.count }
-
     public mutating func reset() { buffer.removeAll() }
 
     /// Дописує байти і повертає всі кадри, які вдалося зібрати.
@@ -104,7 +102,6 @@ public struct FrameParser: Sendable {
 public enum DataChannel: UInt8, Sendable {
     case protobuf = 1
     case file = 2
-    case activity = 5
 }
 
 /// Код операції у кадрі даних.

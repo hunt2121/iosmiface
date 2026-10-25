@@ -42,5 +42,5 @@ Push у репозиторій запускає workflow **Build IPA** (тако
 
 ## Ліцензія
 
-- Бібліотека `BandFaceKit/` — **MIT** (`BandFaceKit/LICENSE`).
-- Код застосунку (`Sources/`) поки що розповсюджується за **AGPL-3.0** (`LICENSE`): ранні версії містили порт протоколу з Gadgetbridge. Тепер цього коду в застосунку немає.
+**MIT**: застосунок — `LICENSE`, бібліотека `BandFaceKit/` — `BandFaceKit/LICENSE`.
+Версії до переходу на BandFaceKit (історія git до цього коміту) містили порт із Gadgetbridge і лишаються під AGPL-3.0.
