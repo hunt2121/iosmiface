@@ -154,7 +154,7 @@ struct DonationBar: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 RocketBadge()
                 VStack(alignment: .leading, spacing: 1) {
                     Group {
@@ -169,7 +169,10 @@ struct DonationBar: View {
                     .foregroundStyle(.secondary)
                 }
                 .lineLimit(1)
-                Spacer(minLength: 4)
+                // Заголовок не обрізається: за потреби трохи зменшується
+                .minimumScaleFactor(0.8)
+                .layoutPriority(1)
+                Spacer(minLength: 0)
                 if thanked {
                     Image(systemName: "heart.fill")
                         .foregroundStyle(Color.accentColor)
@@ -178,8 +181,9 @@ struct DonationBar: View {
                     Text("Підтримати")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 15)
+                        .padding(.horizontal, 13)
                         .frame(height: 40)
+                        .fixedSize()
                         .background(Capsule().fill(Color.accentColor))
                 }
             }
