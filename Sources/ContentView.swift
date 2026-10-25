@@ -400,7 +400,7 @@ struct ContentView: View {
             }
         } header: {
             // Невеликий відступ між заголовком «Журнал» і карткою
-            Color.clear.frame(height: 8)
+            Color.clear.frame(height: 1)
         }
     }
 
