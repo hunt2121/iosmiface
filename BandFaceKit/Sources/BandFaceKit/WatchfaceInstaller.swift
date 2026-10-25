@@ -131,9 +131,12 @@ public struct WatchfaceInstaller: Sendable {
                 // Резервний шлях: неактивну стару версію з тим самим ID видаляємо і пробуємо ще раз.
                 guard !removedOld else { throw BandError.installRejected(status: status) }
                 let list = try await session.watchfaces()
-                guard let old = list.first(where: { $0.id == face.id }), !old.isActive, old.canDelete else {
+                guard let old = list.first(where: { $0.id == face.id }) else {
                     throw BandError.installRejected(status: status)
                 }
+                // Циферблат з цим ID уже стоїть і зараз активний — встановлювати нічого
+                if old.isActive { return true }
+                guard old.canDelete else { throw BandError.installRejected(status: status) }
                 onPhase?(.removingOldVersion)
                 try await session.deleteWatchface(id: face.id)
                 removedOld = true
