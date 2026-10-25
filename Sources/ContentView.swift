@@ -224,7 +224,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 5) {
             Text(face.map { $0.name ?? String(localized: "Циферблат \($0.id)") } ?? String(localized: "Файл не вибрано"))
                 .font(.title3.bold())
-            Text(face.map { "ID \($0.id) · \($0.data.count / 1024) KB" } ?? String(localized: "Циферблат у форматі .bin або .face"))
+            Text(face.map { String(localized: "ID \($0.id) · \(String($0.data.count / 1024)) КБ") } ?? String(localized: "Циферблат у форматі .bin або .face"))
                 .font(.footnote).foregroundStyle(.secondary)
             Text(fileName ?? " ")
                 .font(.caption).foregroundStyle(.secondary)
