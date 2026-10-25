@@ -142,11 +142,9 @@ struct ContentView: View {
                     .foregroundStyle(keyValid ? Color.okText : Color.secondary)
                     .font(.title3)
             }
-            .listRowSeparator(.hidden)
             if !keyValid {
                 Text("Введіть ключ вручну або знайдіть його автоматично")
                     .font(.footnote).foregroundStyle(.secondary)
-                    .listRowSeparator(.hidden)
             }
             // Кнопка в тій самій картці, що й ключ, у стилі кнопок головного екрана
             Button {
@@ -157,7 +155,6 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .padding(.vertical, 4)
-            .listRowSeparator(.hidden)
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -355,7 +352,6 @@ struct ContentView: View {
     private var logSection: some View {
         Section {
             Toggle("Детальний журнал", isOn: $verboseLog)
-                .listRowSeparator(.hidden)
             HStack(spacing: 12) {
                 Button {
                     UIPasteboard.general.string = ble.log.joined(separator: "\n")
@@ -372,7 +368,6 @@ struct ContentView: View {
             }
             .buttonBorderShape(.capsule)
             .padding(.vertical, 4)
-            .listRowSeparator(.hidden)
             ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))
