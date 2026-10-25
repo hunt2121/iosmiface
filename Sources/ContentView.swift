@@ -155,6 +155,8 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .padding(.vertical, 4)
+            // Без лінії між кнопкою і повідомленням про знайдений ключ
+            .listRowSeparator(.hidden)
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -369,12 +371,18 @@ struct ContentView: View {
             .buttonBorderShape(.capsule)
             .padding(.top, 4)
             .padding(.bottom, 1)
-            ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
-                Text(line)
-                    .font(.system(.caption2, design: .monospaced))
-                    .textSelection(.enabled)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
+            // Усі записи в одному рядку списку — щільно, без стандартної висоти рядків
+            if !ble.log.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                    }
+                }
+                .font(.system(.caption2, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 2)
+                .listRowSeparator(.hidden)
             }
         } header: {
             // Невеликий відступ між заголовком «Журнал» і карткою
