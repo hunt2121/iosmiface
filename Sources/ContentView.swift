@@ -171,7 +171,7 @@ struct ContentView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36, alignment: .center)
-                    .padding(.bottom, 3)
+                    .padding(.bottom, 0)
             }
             .padding(.top, 6)
             if foundDevices.count > 1 {
