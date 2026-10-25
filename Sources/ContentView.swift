@@ -439,7 +439,7 @@ struct ContentView: View {
     /// Після першого вибору папки Mi Fitness ключ шукається сам при кожному вході.
     private func autoFindKey() {
         guard !busy, let folder = MiFitnessKey.savedFolder() else { return }
-        searchKey(in: folder, isNewFolder: false, quiet: true)
+        searchKey(in: folder, quiet: true)
     }
 
     private func findKey() {
@@ -448,7 +448,7 @@ struct ContentView: View {
             showKeyHelp = true
             return
         }
-        searchKey(in: folder, isNewFolder: false)
+        searchKey(in: folder)
     }
 
     private func folderPicked(_ result: Result<URL, Error>) {
@@ -458,12 +458,12 @@ struct ContentView: View {
             keyStatusIsError = true
         case .success(let url):
             MiFitnessKey.saveFolder(url)
-            searchKey(in: url, isNewFolder: true)
+            searchKey(in: url)
         }
     }
 
     /// `quiet`: автоматична перевірка, коли ключ уже є — показуємо лише зміни й помилки.
-    private func searchKey(in folder: URL, isNewFolder: Bool, quiet: Bool = false) {
+    private func searchKey(in folder: URL, quiet: Bool = false) {
         if !quiet {
             keyStatus = String(localized: "Пошук…")
             keyStatusIsError = false

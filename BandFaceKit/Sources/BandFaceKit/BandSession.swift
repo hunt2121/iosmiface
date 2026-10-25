@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 //
 // Сесія з браслетом поверх будь-якого транспорту: відкриття і закриття, автентифікація,
-// шифрування команд, сукупні підтвердження і передача файлу.
+// шифрування команд, підтвердження кадрів і передача файлу.
 
 import Foundation
 
@@ -13,23 +13,9 @@ public protocol BandTransport: AnyObject, Sendable {
 
 public actor BandSession {
     public struct Configuration: Sendable {
-        /// Скільки непідтверджених кадрів браслет надсилає до паузи.
-        public var bandWindow = 6
-        /// Затримка перед сукупним підтвердженням після надсилання команди.
-        public var cumulativeAckDelay: Duration = .milliseconds(500)
         public var sessionOpenTimeout: Duration = .seconds(4)
-        public var sessionOpenAttempts = 3
-        /// Пауза між закриттям старої сесії і повторним відкриттям.
-        public var sessionRetryPause: Duration = .milliseconds(500)
-        /// Перед повторним відкриттям закривати чужу сесію. Небезпечно, якщо з браслетом
-        /// працює інший застосунок на цьому телефоні (Mi Fitness): його сесія ламається.
-        public var closeOtherSessionOnRetry = true
-        /// Запити браслета («тип/підтип»), на які відповідати порожньою командою того самого типу.
-        /// Браслет надсилає їх застосунку-компаньйону (погода тощо) і без відповіді може зависнути.
-        public var emptyReplies: Set<String> = []
-        /// Підтверджувати кожен кадр браслета одразу, як офіційний застосунок (видно в записі HCI).
-        /// false — стара поведінка: одне сукупне підтвердження, коли вікно браслета заповнене.
-        public var ackEveryFrame = false
+        /// Спроби відкрити сесію. Чужу сесію (Mi Fitness) не закриваємо: це ламає їй зв'язок.
+        public var sessionOpenAttempts = 2
         /// Параметри відкриття сесії (TLV «ключ → значення»); nil — стандартні (версія, кадр, вікно, тайм-аут).
         public var openParameters: [(key: UInt8, value: [UInt8])]?
         /// Скільки частин файлу може бути в дорозі без підтвердження браслета.
@@ -67,9 +53,6 @@ public actor BandSession {
     private var parser = FrameParser()
     private var phoneSequence: UInt8 = 0
     private var expectedBandSequence: UInt8?
-    private var lastBandSequence: UInt8?
-    private var unacknowledged = 0
-    private var ackScheduled = false
     private var keys: SessionKeys?
     /// Надіслані частини файлу, яких браслет ще не підтвердив (у порядку надсилання).
     private var unackedFileFrames: [(sequence: UInt8, bytes: [UInt8])] = []
@@ -134,14 +117,7 @@ public actor BandSession {
     public func open() async throws {
         startPumpIfNeeded()
         state = .opening
-        for attempt in 1...max(configuration.sessionOpenAttempts, 1) {
-            if attempt > 1 && configuration.closeOtherSessionOnRetry {
-                // Сесію може тримати Mi Fitness: спершу просимо закрити.
-                log("session: retry \(attempt), sending close first")
-                try await transport.write(Frame(type: .session, sequence: 0, payload: SessionControl.closeRequest.payload).encoded())
-                // Даємо браслету закрити стару сесію, перш ніж просити нову.
-                try await Task.sleep(for: configuration.sessionRetryPause)
-            }
+        for _ in 1...max(configuration.sessionOpenAttempts, 1) {
             resetCounters()
             do {
                 _ = try await sessionExchange(
@@ -165,8 +141,6 @@ public actor BandSession {
     public func close() async {
         failAllWaiters(BandError.cancelled)
         if state == .open || state == .authenticated || state == .opening {
-            // Із заповненим вікном браслет не відповідає на закриття і потім не відкриває нову сесію
-            await acknowledgeReceived()
             _ = try? await sessionExchange(
                 SessionControl.closeRequest,
                 expecting: SessionControl.Code.closeResponse.rawValue,
@@ -197,9 +171,6 @@ public actor BandSession {
         resumeAckWaiters(false)
         phoneSequence = 0
         expectedBandSequence = nil
-        lastBandSequence = nil
-        unacknowledged = 0
-        ackScheduled = false
         keys = nil
     }
 
@@ -318,7 +289,6 @@ public actor BandSession {
             fail(id, error)
             return
         }
-        scheduleCumulativeAck()
         Task {
             try? await Task.sleep(for: timeout)
             await self.fail(id, BandError.timeout)
@@ -361,10 +331,7 @@ public actor BandSession {
             progress?(index + 1, parts.count)
         }
         log("file: all parts sent, waiting for the band to confirm")
-        // Свої підтвердження й сигнал «циферблат готовий» (4/5) браслет притримує,
-        // поки його вікно заповнене, — звільняємо його одразу
-        await acknowledgeReceived()
-        // Браслет має підтвердити всі частини, перш ніж активувати циферблат
+        // Браслет має підтвердити всі частини; після цього він сам вмикає циферблат і надсилає 4/5
         try await waitForFileAcks(below: 1)
         log("file: all parts confirmed")
     }
@@ -454,25 +421,16 @@ public actor BandSession {
     private func handleData(_ frame: Frame) {
         // Повтори (номер, що вже був або старший за пів кола назад) відкидаємо.
         // Пропуск номерів (втрачений кадр) не зупиняє сесію: приймаємо новіший кадр.
+        // Кожен кадр браслета підтверджуємо одразу, як офіційний застосунок.
+        // Повтор означає, що наше підтвердження загубилося, — підтверджуємо ще раз.
+        sendAck(frame.sequence)
         if let expected = expectedBandSequence, frame.sequence &- expected >= 128 {
-            log("← data \(frame.sequence) dropped (expected \(expected)), flags \(frame.flags)")
-            // Повтор означає, що наше підтвердження загубилося
-            if configuration.ackEveryFrame { sendAckNow(frame.sequence) }
+            log("← data \(frame.sequence) dropped (expected \(expected))")
             return
         }
         expectedBandSequence = frame.sequence &+ 1
-        lastBandSequence = frame.sequence
-        if configuration.ackEveryFrame {
-            sendAckNow(frame.sequence)
-        } else {
-            unacknowledged += 1
-        }
-
-        defer { scheduleCumulativeAck() }
 
         guard let packet = DataPacket(payload: frame.payload) else { return }
-        // Сирий заголовок — щоб бачити прапорці й канал кожного кадру браслета
-        log("← frame seq \(frame.sequence) flags \(frame.flags) channel \(frame.payload[0]) opcode \(packet.opcode)")
         guard packet.channel == DataChannel.protobuf.rawValue else {
             log("← data \(frame.sequence) channel \(packet.channel), \(packet.body.count) bytes")
             return
@@ -512,11 +470,6 @@ public actor BandSession {
             resumeAckWaiters(true) // розбудити передачу файлу, щоб вона перевірила статус
         }
         for (id, waiter) in eventWaiters where waiter.name == command.name { resumeEventWaiter(id, command) }
-        if configuration.emptyReplies.contains(command.name) {
-            // Запит браслета до застосунку: відповідаємо порожньою командою того самого типу
-            let reply = Command.build(command.type, command.subtype)
-            Task { await self.sendEmptyReply(reply, name: command.name) }
-        }
     }
 
     /// Чекає, поки браслет сам надішле команду «тип/підтип» (або вже надіслав після початку
@@ -540,48 +493,9 @@ public actor BandSession {
         eventWaiters.removeValue(forKey: id)?.continuation.resume(returning: command)
     }
 
-    private func sendEmptyReply(_ body: [UInt8], name: String) async {
-        guard let keys, state == .authenticated else { return }
-        log("→ empty reply \(name)")
-        try? await writeData(DataPacket(channel: .protobuf, opcode: .encrypted, body: keys.encryptCommand(body)))
-    }
-
-    private func sendAckNow(_ sequence: UInt8) {
+    private func sendAck(_ sequence: UInt8) {
         let bytes = Frame.ack(sequence).encoded()
         log("→ ack \(sequence)")
         Task { try? await self.transport.write(bytes) }
-    }
-
-    /// Одне сукупне підтвердження всіх уже отриманих кадрів браслета (якщо такі є).
-    /// Перед важливою командою: браслет із заповненим вікном може не прийняти її.
-    public func acknowledgeReceived() async {
-        guard unacknowledged > 0, let sequence = lastBandSequence else { return }
-        unacknowledged = 0
-        log("→ ack \(sequence) (before command)")
-        try? await transport.write(Frame.ack(sequence).encoded())
-    }
-
-    // MARK: - Сукупне підтвердження
-    //
-    // Band 10 не можна підтверджувати кожен кадр. Телефон мовчить, поки браслет не надіслав повне вікно
-    // (6 кадрів) і телефон чекає ще одну відповідь; тоді ~0,5 с після команди — одне підтвердження
-    // з номером останнього отриманого кадру.
-
-    private func scheduleCumulativeAck() {
-        guard !ackScheduled, !waiters.isEmpty, unacknowledged >= configuration.bandWindow else { return }
-        ackScheduled = true
-        let delay = configuration.cumulativeAckDelay
-        Task {
-            try? await Task.sleep(for: delay)
-            await self.sendCumulativeAckIfNeeded()
-        }
-    }
-
-    private func sendCumulativeAckIfNeeded() async {
-        ackScheduled = false
-        guard !waiters.isEmpty, unacknowledged >= configuration.bandWindow, let sequence = lastBandSequence else { return }
-        unacknowledged = 0
-        log("→ ack \(sequence) (cumulative)")
-        try? await transport.write(Frame.ack(sequence).encoded())
     }
 }

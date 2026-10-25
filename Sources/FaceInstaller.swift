@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 import BandFaceKit
 
 /// Встановлення циферблата через BandFaceKit поверх уже підключеного браслета.
@@ -34,17 +33,14 @@ final class FaceInstaller {
 
         let ble = self.ble
         var configuration = BandSession.Configuration()
-        // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»
-        configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
+        // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»; інакше рядки навіть не формуються
+        if UserDefaults.standard.bool(forKey: "verboseLog") {
+            configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
+        }
         // Окремий рядок у звичайному журналі, коли браслет почав працювати з Mi Fitness
         configuration.onOtherApp = { _ in
             DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з браслетом")) }
         }
-        // Чужу сесію не закриваємо і з'єднання не рвемо: це може зламати браслету зв'язок з Mi Fitness
-        configuration.closeOtherSessionOnRetry = false
-        configuration.sessionOpenAttempts = 2
-        // Як Mi Fitness (за записом HCI): кожен кадр браслета підтверджуємо одразу
-        configuration.ackEveryFrame = true
         // Параметри відкриття сесії — ті самі, що в Mi Fitness:
         // версія 1.0.0, 7 = 1B 02 00, макс. кадр 0xFFFF, 5 = 1, назва пристрою, вікно 16, тайм-аут 15 000 мс
         configuration.openParameters = [
@@ -71,17 +67,9 @@ final class FaceInstaller {
         guard await ble.subscribeBand() else { throw BandError.characteristicNotFound }
 
         var installer = WatchfaceInstaller()
-        installer.phoneModel = UIDevice.current.model
-        installer.region = Self.regionCode()
         installer.phoneInfo = Self.phoneInfo()
         // Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2)
         installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
-        // Відповіді 2/2 і 2/1 бібліотека вже дочекалася, тож довгі паузи не потрібні
-        installer.pauseAfterAuth = .milliseconds(500)
-        installer.pauseBeforeInstall = .milliseconds(300)
-        installer.activationTimeout = .seconds(4)
-        // Тест: без активації — після 4/1 браслет перестає приймати кадри й ламає зв'язок з Mi Fitness
-        installer.activateAfterInstall = false
 
         let reporter = PhaseReporter(face: face, ble: ble, progress: progress)
         do {
@@ -117,11 +105,6 @@ final class FaceInstaller {
         w.varint(4, UInt64(25_183_776))
         w.string(5, Locale.current.region?.identifier ?? "UA")
         return w.output
-    }
-
-    private static func regionCode() -> String {
-        let code = Locale.current.language.languageCode?.identifier.uppercased() ?? "EN"
-        return code.count == 2 ? code : "EN"
     }
 }
 

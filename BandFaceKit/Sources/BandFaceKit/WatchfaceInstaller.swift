@@ -14,7 +14,7 @@ extension BandSession {
     }
 
     /// Відповідь 4/1: 6.4 = 1 — активовано, 0 — браслет відмовив (бачили після перерваного прийому).
-    func activateWatchface(id: String, timeout: Duration = .seconds(30)) async throws {
+    func activateWatchface(id: String, timeout: Duration) async throws {
         let response = try await command(Command.activateWatchface(id: id), timeout: timeout)
         if let result = response.root.varint(at: [6, 4]), result != 1 { throw BandError.activationFailed }
     }
@@ -31,7 +31,9 @@ public enum InstallPhase: Sendable, Equatable {
     case done(alreadyInstalled: Bool)
 }
 
-/// Повний сценарій встановлення: відкриття сесії → автентифікація → 2/2, 2/1 → 4/4 → 22/0 → файл → 4/1 → закриття.
+/// Повний сценарій встановлення: відкриття сесії → автентифікація → 2/2, 2/1 → 4/4 → 22/0 → файл → закриття.
+/// Прийнявши файл, браслет сам вмикає новий циферблат і повідомляє 4/5; команда 4/1 потрібна
+/// лише тоді, коли такий циферблат уже був на браслеті, але неактивний.
 public struct WatchfaceInstaller: Sendable {
     public var phoneModel = "iPhone"
     public var region = "UK"
@@ -39,20 +41,12 @@ public struct WatchfaceInstaller: Sendable {
     public var phoneInfo: [UInt8]?
     /// Команди (тіла protobuf), які надіслати одразу після автентифікації; відповіді не обов'язкові.
     public var commandsAfterAuth: [[UInt8]] = []
-    /// Паузи, перевірені на Band 10 (чи вони обов'язкові — не перевірялося).
-    public var pauseAfterAuth: Duration = .milliseconds(1500)
-    public var pauseBeforeInstall: Duration = .milliseconds(1500)
-    /// Найдовше очікування після передачі файлу: браслет перевіряє циферблат і повідомляє 4/5.
-    public var pauseBeforeActivation: Duration = .milliseconds(1500)
+    public var pauseAfterAuth: Duration = .milliseconds(500)
+    public var pauseBeforeInstall: Duration = .milliseconds(300)
+    /// Найдовше очікування 4/5 після передачі файлу.
+    public var waitForInstallStatus: Duration = .milliseconds(1500)
     /// Скільки чекати відповідь на одну спробу активації (4/1).
-    public var activationTimeout: Duration = .seconds(5)
-    /// Скільки після активації чекати запити браслета до компаньйона (останній — погода 10/3).
-    public var waitForBandRequests: Duration = .seconds(2)
-    /// false — лише передати файл, без 4/1: циферблат користувач вибирає на браслеті.
-    /// Після 4/1 браслет надсилає компаньйону запити (2/42, 17/7, 10/3) і перестає приймати кадри.
-    public var activateAfterInstall = true
-    /// Якщо циферблат уже є на браслеті, файл не передається і браслет сам його не вмикає — тоді 4/1.
-    public var activateIfAlreadyInstalled = true
+    public var activationTimeout: Duration = .seconds(4)
     /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
     public var activationAttempts = 2
 
@@ -81,42 +75,26 @@ public struct WatchfaceInstaller: Sendable {
             try await Task.sleep(for: pauseBeforeInstall)
 
             let check = try await requestInstall(face, session: session, onPhase: onPhase)
-            let alreadyInstalled = check != .needsUpload
-            if !alreadyInstalled {
+            switch check {
+            case .needsUpload:
                 try await upload(face, session: session, onPhase: onPhase)
+                try await confirmInstalled(session: session)
+            case .alreadyInstalled:
+                onPhase?(.activating)
+                try await activate(face, session: session)
+            case .alreadyActive:
+                break
             }
 
-            guard activateAfterInstall else {
-                if !alreadyInstalled {
-                    try await confirmInstalled(session: session)
-                } else if activateIfAlreadyInstalled && check == .alreadyInstalled {
-                    onPhase?(.activating)
-                    try await activate(face, session: session, afterUpload: false)
-                }
-                onPhase?(.closing)
-                await session.close()
-                onPhase?(.done(alreadyInstalled: alreadyInstalled))
-                return
-            }
-
-            onPhase?(.activating)
-            try await activate(face, session: session, afterUpload: !alreadyInstalled)
-
-            // Після активації браслет надсилає запити (2/42, 17/7, погода 10/3). Якщо закрити сесію
-            // раніше, вони лишаються в черзі, і в наступній сесії браслет на них зависає.
             onPhase?(.closing)
-            if await session.waitFor(10, 3, timeout: waitForBandRequests) {
-                try? await Task.sleep(for: .milliseconds(300)) // встигнути відповісти на запити
-            }
             await session.close()
-            onPhase?(.done(alreadyInstalled: alreadyInstalled))
+            onPhase?(.done(alreadyInstalled: check != .needsUpload))
         } catch {
             await session.close()
             throw error
         }
     }
 
-    /// Крок 1 (4/4). Повертає true, якщо циферблат уже є на браслеті.
     /// Результат кроку 4/4: файл треба передати, циферблат уже є, або він уже є й активний.
     private enum InstallCheck { case needsUpload, alreadyInstalled, alreadyActive }
 
@@ -132,13 +110,13 @@ public struct WatchfaceInstaller: Sendable {
             case 2:
                 return .alreadyInstalled
             default:
-                // Резервний шлях: неактивну стару версію з тим самим ID видаляємо і пробуємо ще раз.
+                // Статус 5: циферблат з цим ID уже є. Активний — встановлювати нічого;
+                // неактивну стару версію видаляємо і пробуємо ще раз.
                 guard !removedOld else { throw BandError.installRejected(status: status) }
                 let list = try await session.watchfaces()
                 guard let old = list.first(where: { $0.id == face.id }) else {
                     throw BandError.installRejected(status: status)
                 }
-                // Циферблат з цим ID уже стоїть і зараз активний — встановлювати нічого
                 if old.isActive { return .alreadyActive }
                 guard old.canDelete else { throw BandError.installRejected(status: status) }
                 onPhase?(.removingOldVersion)
@@ -148,25 +126,17 @@ public struct WatchfaceInstaller: Sendable {
         }
     }
 
-    /// Без активації: чекаємо 4/5 і перевіряємо, що браслет прийняв циферблат.
+    /// Чекаємо 4/5 і перевіряємо, що браслет прийняв циферблат.
     private func confirmInstalled(session: BandSession) async throws {
-        _ = await session.waitFor(Command.Kind.watchface, 5, timeout: pauseBeforeActivation)
+        _ = await session.waitFor(Command.Kind.watchface, 5, timeout: waitForInstallStatus)
         if let status = await session.installStatus, status != BandSession.installedStatus {
             throw BandError.installAborted(status: status)
         }
     }
 
-    /// Крок 4 (4/1). Перед кожною спробою підтверджуємо все, що надіслав браслет.
-    private func activate(_ face: FaceFile, session: BandSession, afterUpload: Bool) async throws {
-        // Браслет повідомляє 4/5, щойно циферблат готовий; без нього чекаємо не довше паузи
-        if afterUpload {
-            _ = await session.waitFor(Command.Kind.watchface, 5, timeout: pauseBeforeActivation)
-            if let status = await session.installStatus, status != BandSession.installedStatus {
-                throw BandError.installAborted(status: status)
-            }
-        }
+    /// 4/1 для циферблата, який уже був на браслеті.
+    private func activate(_ face: FaceFile, session: BandSession) async throws {
         for attempt in 1...max(activationAttempts, 1) {
-            await session.acknowledgeReceived()
             do {
                 try await session.activateWatchface(id: face.id, timeout: activationTimeout)
                 return

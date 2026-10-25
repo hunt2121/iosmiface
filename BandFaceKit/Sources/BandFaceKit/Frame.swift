@@ -17,8 +17,6 @@ public struct Frame: Equatable, Sendable {
     public var type: FrameType
     public var sequence: UInt8
     public var payload: [UInt8]
-    /// Старші 4 біти байта типу (прапорці; телефон надсилає 0).
-    public var flags: UInt8 = 0
 
     public init(type: FrameType, sequence: UInt8, payload: [UInt8] = []) {
         self.type = type
@@ -81,14 +79,11 @@ public struct FrameParser: Sendable {
             }
 
             let typeNibble = buffer[2] & 0x0F
-            let flagsNibble = buffer[2] >> 4
             let sequence = buffer[3]
             buffer.removeFirst(Frame.headerLength + length)
 
             if let type = FrameType(rawValue: typeNibble) {
-                var frame = Frame(type: type, sequence: sequence, payload: payload)
-                frame.flags = flagsNibble
-                frames.append(frame)
+                frames.append(Frame(type: type, sequence: sequence, payload: payload))
             }
         }
         return frames

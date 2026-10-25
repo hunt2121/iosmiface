@@ -1358,29 +1358,6 @@
         }
       }
     },
-    "Помилка запису: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write error: %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ошибка записи: %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Помилка запису: %@"
-          }
-        }
-      }
-    },
     "Помилка підключення: %@": {
       "extractionState": "manual",
       "localizations": {

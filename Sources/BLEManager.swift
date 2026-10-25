@@ -47,8 +47,6 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     private var writeQueue: [PendingWrite] = []
-    private var awaitingResponse = false
-    private var responseCompletion: ((Bool) -> Void)?
     private var notifyCompletions: [CBUUID: (Bool) -> Void] = [:]
 
     override init() {
@@ -64,12 +62,9 @@ final class BLEManager: NSObject, ObservableObject {
     /// Технічний запис — лише коли увімкнено «Детальний журнал».
     /// Текст обчислюється тільки тоді, коли він справді потрібен.
     func debug(_ text: @autoclosure () -> String) {
-        if UserDefaults.standard.bool(forKey: "verboseLog") { addTimedLog(text()) }
-    }
-
-    /// Запис із часом (мілісекунди) — для детального журналу й режиму спостереження.
-    func addTimedLog(_ text: String) {
-        addLog(Self.timeFormatter.string(from: Date()) + " " + text)
+        if UserDefaults.standard.bool(forKey: "verboseLog") {
+            addLog(Self.timeFormatter.string(from: Date()) + " " + text())
+        }
     }
 
     /// Час у детальному журналі — щоб бачити, скільки триває кожен етап.
@@ -144,26 +139,6 @@ final class BLEManager: NSObject, ObservableObject {
         start(p)
     }
 
-    // MARK: - Сповіщення
-
-    func subscribe(to uuid: CBUUID, completion: @escaping (Bool) -> Void) {
-        guard let p = active, let c = characteristics[uuid] else {
-            completion(false)
-            return
-        }
-        if c.isNotifying {
-            completion(true)
-            return
-        }
-        notifyCompletions[uuid] = completion
-        p.setNotifyValue(true, for: c)
-    }
-
-    func unsubscribe(from uuid: CBUUID) {
-        guard let p = active, let c = characteristics[uuid], c.isNotifying else { return }
-        p.setNotifyValue(false, for: c)
-    }
-
     // MARK: - Запис
 
     /// Ставить дані в чергу. Дані розбиваються на фрагменти за MTU.
@@ -176,47 +151,26 @@ final class BLEManager: NSObject, ObservableObject {
         return true
     }
 
+    /// TX браслета (0x5F) приймає лише запис без відповіді: пишемо, поки стек Bluetooth приймає.
     private func pump() {
         guard let p = active else { return }
-        while let item = writeQueue.first {
-            let c = item.characteristic
-            let noResponse = c.properties.contains(.writeWithoutResponse)
-
-            if noResponse {
-                guard p.canSendWriteWithoutResponse else { return }
-            } else if awaitingResponse {
-                return
-            }
-
-            let maxLen = max(20, p.maximumWriteValueLength(for: noResponse ? .withoutResponse : .withResponse))
+        while let item = writeQueue.first, p.canSendWriteWithoutResponse {
+            let maxLen = max(20, p.maximumWriteValueLength(for: .withoutResponse))
             let end = min(item.offset + maxLen, item.data.count)
-            let chunk = item.data.subdata(in: item.offset..<end)
-            p.writeValue(chunk, for: c, type: noResponse ? .withoutResponse : .withResponse)
+            p.writeValue(item.data.subdata(in: item.offset..<end), for: item.characteristic, type: .withoutResponse)
             writeQueue[0].offset = end
-
-            let finished = end >= item.data.count
-            if finished {
+            if end >= item.data.count {
                 writeQueue.removeFirst()
-                if noResponse {
-                    if let cb = item.completion { DispatchQueue.main.async { cb(true) } }
-                } else {
-                    responseCompletion = item.completion
-                }
-            }
-            if !noResponse {
-                awaitingResponse = true
-                return
+                if let cb = item.completion { DispatchQueue.main.async { cb(true) } }
             }
         }
     }
 
     private func resetTransfer() {
         // Ті, хто чекає на запис, дізнаються, що він не відбувся
-        let pending = writeQueue.compactMap(\.completion) + [responseCompletion].compactMap { $0 }
+        let pending = writeQueue.compactMap(\.completion)
         let subscriptions = Array(notifyCompletions.values)
         writeQueue.removeAll()
-        awaitingResponse = false
-        responseCompletion = nil
         notifyCompletions.removeAll()
         pending.forEach { $0(false) }
         subscriptions.forEach { $0(false) }
@@ -293,7 +247,8 @@ extension BLEManager: CBPeripheralDelegate {
         if services.isEmpty { servicesReady = true }
         for s in services {
             debug("Сервіс \(s.uuid.uuidString)")
-            peripheral.discoverCharacteristics(nil, for: s)
+            // Потрібні лише RX (0x5E) і TX (0x5F)
+            peripheral.discoverCharacteristics([BandGATT.rx, BandGATT.tx], for: s)
         }
     }
 
@@ -319,16 +274,6 @@ extension BLEManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error { addLog(String(localized: "Сповіщення \(characteristic.uuid.uuidString): \(error.localizedDescription)")) }
         if let d = characteristic.value { onData?(characteristic.uuid, d) }
-    }
-
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error { addLog(String(localized: "Помилка запису: \(error.localizedDescription)")) }
-        awaitingResponse = false
-        if let cb = responseCompletion {
-            responseCompletion = nil
-            DispatchQueue.main.async { cb(error == nil) }
-        }
-        pump()
     }
 
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {

@@ -135,7 +135,6 @@ final class SessionTests: XCTestCase {
 
     private func makeSession(_ band: MockBand) -> BandSession {
         var configuration = BandSession.Configuration()
-        configuration.cumulativeAckDelay = .milliseconds(50)
         configuration.commandTimeout = .seconds(3)
         let session = BandSession(transport: band, configuration: configuration)
         band.session = session
@@ -146,8 +145,7 @@ final class SessionTests: XCTestCase {
         var installer = WatchfaceInstaller()
         installer.pauseAfterAuth = .zero
         installer.pauseBeforeInstall = .zero
-        installer.pauseBeforeActivation = .zero
-        installer.waitForBandRequests = .zero
+        installer.waitForInstallStatus = .zero
         return installer
     }
 
@@ -160,9 +158,10 @@ final class SessionTests: XCTestCase {
 
         try await makeInstaller().install(face, authKey: authKey, session: session)
 
-        XCTAssertEqual(band.commandsReceived, ["1/26", "1/27", "2/2", "2/1", "4/4", "22/0", "4/1"])
-        // Перед 4/1 — сукупне підтвердження шести відповідей, перед закриттям — відповіді на 4/1.
-        XCTAssertEqual(band.acksReceived, [5, 6])
+        // Після прийому файлу браслет сам вмикає циферблат — 4/1 не надсилається.
+        XCTAssertEqual(band.commandsReceived, ["1/26", "1/27", "2/2", "2/1", "4/4", "22/0"])
+        // Кожен кадр браслета (шість відповідей) підтверджено.
+        XCTAssertTrue(Set<UInt8>(0...5).isSubset(of: Set(band.acksReceived)))
         // Номери кадрів даних телефону йдуть підряд, включно зі шматками файлу.
         XCTAssertEqual(band.phoneSequences, Array(0..<UInt8(band.phoneSequences.count)))
 
