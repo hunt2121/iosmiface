@@ -131,19 +131,30 @@ struct ContentView: View {
 
     private var authSection: some View {
         Section {
-            TextField("32 hex-символи", text: $authKey)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .font(.system(.body, design: .monospaced))
-                .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
-            Text(keyValid ? String(localized: "Ключ виглядає коректно") : String(localized: "Введіть ключ вручну або знайдіть його автоматично"))
-                .font(.footnote)
-                .foregroundStyle(keyValid ? Color.okText : Color.secondary)
+            // Поле ключа з позначкою: зелена галочка — ключ коректний
+            HStack(spacing: 10) {
+                TextField("32 hex-символи", text: $authKey)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.system(.body, design: .monospaced))
+                    .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
+                Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
+                    .foregroundStyle(keyValid ? Color.okText : Color.secondary)
+                    .font(.title3)
+            }
+            if !keyValid {
+                Text("Введіть ключ вручну або знайдіть його автоматично")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             Button {
                 findKey()
             } label: {
-                Label("Знайти автоматично", systemImage: "key.viewfinder")
+                Text("Знайти автоматично").buttonText()
             }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 4, trailing: 0))
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -339,22 +350,24 @@ struct ContentView: View {
     }
 
     private var logSection: some View {
-        Section("Журнал") {
+        Section {
             Toggle("Детальний журнал", isOn: $verboseLog)
-            HStack {
-                Button("Копіювати") {
+            HStack(spacing: 12) {
+                Button {
                     UIPasteboard.general.string = ble.log.joined(separator: "\n")
+                } label: {
+                    Text("Копіювати").buttonText()
                 }
-                .buttonStyle(.borderless)
-                Spacer()
-                ShareLink(item: ble.log.joined(separator: "\n")) {
-                    Label("Поділитися", systemImage: "square.and.arrow.up")
+                .buttonStyle(.bordered)
+                Button(role: .destructive) {
+                    ble.log.removeAll()
+                } label: {
+                    Text("Очистити").buttonText()
                 }
-                .buttonStyle(.borderless)
-                Spacer()
-                Button("Очистити", role: .destructive) { ble.log.removeAll() }
-                    .buttonStyle(.borderless)
+                .buttonStyle(.bordered)
             }
+            .buttonBorderShape(.capsule)
+            .padding(.vertical, 4)
             ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.system(.caption2, design: .monospaced))

@@ -1151,29 +1151,6 @@
         }
       }
     },
-    "Ключ виглядає коректно": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The key looks valid"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ключ выглядит корректно"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ключ виглядає коректно"
-          }
-        }
-      }
-    },
     "Ключ для «%@» вибрано": {
       "extractionState": "manual",
       "localizations": {
@@ -1515,29 +1492,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Передача файлу (частин: %@)…"
-          }
-        }
-      }
-    },
-    "Поділитися": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Share"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поделиться"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поділитися"
           }
         }
       }
