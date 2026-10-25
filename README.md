@@ -39,10 +39,13 @@ BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files t
 
 ## Installation
 
-BandFace is not on the App Store yet. Every push builds an unsigned IPA with GitHub Actions:
+BandFace is not on the App Store yet, so it is installed by sideloading:
 
-1. Open **[Actions → Build IPA](https://github.com/hunt2121/iosmiface/actions/workflows/build.yml)**, choose the latest run and download the artifact named like the version, without dots — e.g. `BandFace-v1044` for 1.0.44 (you need to be signed in to GitHub).
-2. Unzip it and install the `.ipa` file with **[Sideloadly](https://sideloadly.io)** or **AltStore** using your Apple ID.
+1. Download `BandFace-v….ipa` from the **[latest release](https://github.com/hunt2121/iosmiface/releases/latest)**.
+2. Install it with **[Sideloadly](https://sideloadly.io)** or **AltStore** using your Apple ID.
+3. On the iPhone: *Settings › General › VPN & Device Management* → your Apple ID → *Trust*. On iOS 16+ also turn on *Settings › Privacy & Security › Developer Mode*.
+
+With a free Apple ID the app must be re-signed every 7 days. Test builds of every commit are in **[Actions → Build IPA](https://github.com/hunt2121/iosmiface/actions/workflows/build.yml)** (GitHub sign-in required).
 
 ## Usage
 
