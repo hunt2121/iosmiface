@@ -5,27 +5,103 @@ struct DonationService: Identifiable {
     let id: String
     let name: String
     let subtitle: String
-    let symbol: String
+    let icon: ServiceIcon
     /// Немає посилання — рядок видно, але він неактивний («Посилання незабаром»)
     let url: URL?
 
     static let all: [DonationService] = [
         DonationService(id: "monobank", name: String(localized: "Монобанка"),
                         subtitle: String(localized: "Банка · гривні, картка"),
-                        symbol: "banknote", url: nil),
+                        icon: .jar, url: nil),
         DonationService(id: "bmc", name: "Buy Me a Coffee",
                         subtitle: String(localized: "Разова підтримка · картка"),
-                        symbol: "cup.and.saucer", url: nil),
+                        icon: .cup, url: nil),
         DonationService(id: "kofi", name: "Ko-fi",
                         subtitle: String(localized: "Разова підтримка · PayPal, картка"),
-                        symbol: "gift", url: nil),
+                        icon: .cupHeart, url: nil),
         DonationService(id: "patreon", name: "Patreon",
                         subtitle: String(localized: "Щомісячна підтримка"),
-                        symbol: "repeat", url: nil),
+                        icon: .calendar, url: nil),
         DonationService(id: "github", name: "GitHub Sponsors",
                         subtitle: String(localized: "Разово або щомісяця"),
-                        symbol: "heart", url: nil),
+                        icon: .heart, url: nil),
     ]
+}
+
+// MARK: - Іконки сервісів
+
+/// Контурні іконки з макета (сітка 24×24): банка, чашка, чашка із серцем, календар, серце.
+enum ServiceIcon { case jar, cup, cupHeart, calendar, heart }
+
+struct ServiceIconShape: Shape {
+    let icon: ServiceIcon
+
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 24
+        let o = CGPoint(x: rect.midX - 12 * s, y: rect.midY - 12 * s)
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: o.x + x * s, y: o.y + y * s) }
+        func line(_ a: (CGFloat, CGFloat), _ b: (CGFloat, CGFloat), into path: inout Path) {
+            path.move(to: p(a.0, a.1)); path.addLine(to: p(b.0, b.1))
+        }
+        /// Чашка з ручкою; top — верхній край
+        func cup(top: CGFloat, into path: inout Path) {
+            path.move(to: p(4, top))
+            path.addLine(to: p(16, top))
+            path.addArc(tangent1End: p(16, 19), tangent2End: p(11, 19), radius: 5 * s)
+            path.addArc(tangent1End: p(4, 19), tangent2End: p(4, 14), radius: 5 * s)
+            path.closeSubpath()
+            path.move(to: p(16, top + 2))
+            path.addLine(to: p(17.5, top + 2))
+            path.addArc(center: p(17.5, top + 4.5), radius: 2.5 * s,
+                        startAngle: .degrees(-90), endAngle: .degrees(90), clockwise: false)
+            path.addLine(to: p(16, top + 7))
+        }
+        var path = Path()
+        switch icon {
+        case .jar:
+            path.move(to: p(7, 7.5))
+            path.addLine(to: p(17, 7.5))
+            path.addLine(to: p(17, 9.5))
+            path.addCurve(to: p(20, 15.5), control1: p(19, 10.8), control2: p(20, 12.8))
+            path.addArc(tangent1End: p(20, 21.5), tangent2End: p(17, 21.5), radius: 3 * s)
+            path.addArc(tangent1End: p(4, 21.5), tangent2End: p(4, 18.5), radius: 3 * s)
+            path.addLine(to: p(4, 15.5))
+            path.addCurve(to: p(7, 9.5), control1: p(4, 12.8), control2: p(5, 10.8))
+            path.closeSubpath()
+            path.addRoundedRect(in: CGRect(origin: p(6, 3.5), size: CGSize(width: 12 * s, height: 4 * s)),
+                                cornerSize: CGSize(width: 1.2 * s, height: 1.2 * s))
+            line((8.5, 15.5), (15.5, 15.5), into: &path)
+        case .cup:
+            cup(top: 9, into: &path)
+            path.move(to: p(8, 3.5)); path.addCurve(to: p(9, 6.5), control1: p(8, 5), control2: p(9, 5))
+            path.move(to: p(12, 3.5)); path.addCurve(to: p(13, 6.5), control1: p(12, 5), control2: p(13, 5))
+        case .cupHeart:
+            cup(top: 8, into: &path)
+            path.move(to: p(10, 15.5))
+            path.addCurve(to: p(7.2, 12), control1: p(8.6, 14.6), control2: p(7.2, 13.4))
+            path.addCurve(to: p(10, 11.2), control1: p(7.2, 10.4), control2: p(9.2, 10))
+            path.addCurve(to: p(12.8, 12), control1: p(10.8, 10), control2: p(12.8, 10.4))
+            path.addCurve(to: p(10, 15.5), control1: p(12.8, 13.4), control2: p(11.4, 14.6))
+            path.closeSubpath()
+        case .calendar:
+            path.addRoundedRect(in: CGRect(origin: p(4, 5), size: CGSize(width: 16 * s, height: 15 * s)),
+                                cornerSize: CGSize(width: 2.5 * s, height: 2.5 * s))
+            line((4, 9.5), (20, 9.5), into: &path)
+            line((8.5, 3), (8.5, 7), into: &path)
+            line((15.5, 3), (15.5, 7), into: &path)
+            path.move(to: p(9, 14.5)); path.addLine(to: p(11, 16.5)); path.addLine(to: p(15, 12.5))
+        case .heart:
+            path.move(to: p(12, 20))
+            path.addCurve(to: p(2.8, 10.7), control1: p(12, 20), control2: p(4.5, 15.4))
+            path.addCurve(to: p(7.2, 4), control1: p(1.6, 7.4), control2: p(3.8, 4))
+            path.addCurve(to: p(12, 6.8), control1: p(9.2, 4), control2: p(10.8, 5.1))
+            path.addCurve(to: p(16.8, 4), control1: p(13.2, 5.1), control2: p(14.8, 4))
+            path.addCurve(to: p(21.2, 10.7), control1: p(20.2, 4), control2: p(22.4, 7.4))
+            path.addCurve(to: p(12, 20), control1: p(19.5, 15.4), control2: p(12, 20))
+            path.closeSubpath()
+        }
+        return path
+    }
 }
 
 // MARK: - Ракета
@@ -249,9 +325,9 @@ struct DonationSheet: View {
             openURL(url)
         } label: {
             HStack(spacing: 13) {
-                Image(systemName: service.symbol)
-                    .font(.system(size: 18))
-                    .foregroundStyle(Color.accentColor)
+                ServiceIconShape(icon: service.icon)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1.65, lineCap: .round, lineJoin: .round))
+                    .frame(width: 22, height: 22)
                     .frame(width: 38, height: 38)
                     .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(Color.accentColor.opacity(0.15)))
