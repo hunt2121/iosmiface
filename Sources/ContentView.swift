@@ -129,6 +129,7 @@ struct ContentView: View {
 
     // MARK: - Розділи
 
+    @ViewBuilder
     private var authSection: some View {
         Section {
             // Поле ключа з позначкою: зелена галочка — ключ коректний
@@ -146,15 +147,6 @@ struct ContentView: View {
                 Text("Введіть ключ вручну або знайдіть його автоматично")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            Button {
-                findKey()
-            } label: {
-                Text("Знайти автоматично").buttonText()
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 4, trailing: 0))
             if foundDevices.count > 1 {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
@@ -181,6 +173,18 @@ struct ContentView: View {
             }
         } header: {
             Text("Auth key браслета")
+        }
+        // Кнопка окремо від картки з ключем — у стилі кнопок головного екрана
+        Section {
+            Button {
+                findKey()
+            } label: {
+                Text("Знайти автоматично").buttonText()
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         } footer: {
             Text(MiFitnessKey.hasSavedFolder
                  ? String(localized: "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок.")
