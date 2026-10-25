@@ -19,9 +19,9 @@ enum MiFitnessKey {
 
         var errorDescription: String? {
             switch self {
-            case .noAccess: return "Немає доступу до вибраної папки"
-            case .noDatabase: return "У папці не знайдено даних Mi Fitness (VirtualDevice_registerList). Виберіть папку Mi Fitness або MHWCahe"
-            case .noKey: return "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз"
+            case .noAccess: return String(localized: "Немає доступу до вибраної папки")
+            case .noDatabase: return String(localized: "У папці не знайдено даних Mi Fitness (VirtualDevice_registerList). Виберіть папку Mi Fitness або MHWCahe")
+            case .noKey: return String(localized: "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз")
             }
         }
     }

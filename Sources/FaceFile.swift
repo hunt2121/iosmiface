@@ -11,10 +11,10 @@ struct FaceFile {
 
         var errorDescription: String? {
             switch self {
-            case .tooSmall: return "файл замалий для циферблата"
-            case .badMagic: return "це не файл циферблата Xiaomi (немає заголовка 5A A5)"
-            case .noId: return "у заголовку немає ідентифікатора циферблата"
-            case .idNotNumeric(let s): return "ідентифікатор «\(s)» не є числом"
+            case .tooSmall: return String(localized: "файл замалий для циферблата")
+            case .badMagic: return String(localized: "це не файл циферблата Xiaomi (немає заголовка 5A A5)")
+            case .noId: return String(localized: "у заголовку немає ідентифікатора циферблата")
+            case .idNotNumeric(let s): return String(localized: "ідентифікатор «\(s)» не є числом")
             }
         }
     }

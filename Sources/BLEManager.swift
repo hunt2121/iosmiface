@@ -48,7 +48,6 @@ final class BLEManager: NSObject, ObservableObject {
     private var awaitingResponse = false
     private var responseCompletion: (() -> Void)?
     private var notifyCompletions: [CBUUID: (Bool) -> Void] = [:]
-    private var readCompletions: [CBUUID: (Data?, Error?) -> Void] = [:]
 
     override init() {
         super.init()
@@ -61,29 +60,31 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     /// Технічний запис — лише коли увімкнено «Детальний журнал».
-    func debug(_ text: String) {
-        if UserDefaults.standard.bool(forKey: "verboseLog") { addLog(text) }
+    /// Текст обчислюється тільки тоді, коли він справді потрібен.
+    func debug(_ text: @autoclosure () -> String) {
+        if UserDefaults.standard.bool(forKey: "verboseLog") { addLog(text()) }
     }
+
+    static let xiaomiService = CBUUID(string: "FE95")
 
     // MARK: - Пошук і підключення
 
     func startScan() {
         guard central.state == .poweredOn else {
-            addLog("Bluetooth вимкнено або недоступний")
+            addLog(String(localized: "Bluetooth вимкнено або недоступний"))
             return
         }
         devices.removeAll()
         peripherals.removeAll()
         // Пристрої, вже підключені до iPhone іншим застосунком (напр. Mi Fitness), не рекламуються
-        let fe95 = CBUUID(string: "FE95")
-        for p in central.retrieveConnectedPeripherals(withServices: [fe95]) {
+        for p in central.retrieveConnectedPeripherals(withServices: [Self.xiaomiService]) {
             peripherals[p.identifier] = p
-            devices.append(DiscoveredBand(id: p.identifier, name: (p.name ?? "?") + " (вже підключений до iPhone)", rssi: 0))
+            devices.append(DiscoveredBand(id: p.identifier, name: (p.name ?? "?") + " " + String(localized: "(вже підключений до iPhone)"), rssi: 0))
             debug("Уже підключений до системи: \(p.name ?? "?")")
         }
         isScanning = true
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
-        addLog("Пошук пристроїв…")
+        addLog(String(localized: "Пошук пристроїв…"))
     }
 
     func stopScan() {
@@ -103,7 +104,7 @@ final class BLEManager: NSObject, ObservableObject {
         p.delegate = self
         isConnecting = true
         connectingName = p.name
-        addLog("Підключення до \(p.name ?? "браслета")…")
+        addLog(String(localized: "Підключення до \(p.name ?? String(localized: "браслета"))…"))
         central.connect(p, options: nil)
     }
 
@@ -131,11 +132,6 @@ final class BLEManager: NSObject, ObservableObject {
         start(p)
     }
 
-    /// Забути браслет (більше не підключатися автоматично).
-    func forgetLastDevice() {
-        UserDefaults.standard.removeObject(forKey: lastDeviceKey)
-    }
-
     // MARK: - Сповіщення
 
     func subscribe(to uuid: CBUUID, completion: @escaping (Bool) -> Void) {
@@ -149,15 +145,6 @@ final class BLEManager: NSObject, ObservableObject {
         }
         notifyCompletions[uuid] = completion
         p.setNotifyValue(true, for: c)
-    }
-
-    func read(_ uuid: CBUUID, completion: @escaping (Data?, Error?) -> Void) {
-        guard let p = active, let c = characteristics[uuid], c.properties.contains(.read) else {
-            completion(nil, nil)
-            return
-        }
-        readCompletions[uuid] = completion
-        p.readValue(for: c)
     }
 
     func unsubscribe(from uuid: CBUUID) {
@@ -216,7 +203,6 @@ final class BLEManager: NSObject, ObservableObject {
         awaitingResponse = false
         responseCompletion = nil
         notifyCompletions.removeAll()
-        readCompletions.removeAll()
     }
 }
 
@@ -231,6 +217,12 @@ extension BLEManager: CBCentralManagerDelegate {
         let name = peripheral.name
             ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String)
         guard let name, !name.isEmpty else { return }
+        // Показуємо лише пристрої Xiaomi (сервіс FE95 або відома назва), без навушників тощо
+        let uuids = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
+        let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] ?? [:]
+        let lower = name.lowercased()
+        guard uuids.contains(Self.xiaomiService) || serviceData[Self.xiaomiService] != nil
+                || lower.contains("xiaomi") || lower.contains("band") || lower.contains("redmi") else { return }
         peripherals[peripheral.identifier] = peripheral
         let item = DiscoveredBand(id: peripheral.identifier, name: name, rssi: RSSI.intValue)
         if let i = devices.firstIndex(where: { $0.id == item.id }) {
@@ -250,19 +242,20 @@ extension BLEManager: CBCentralManagerDelegate {
         servicesReady = false
         characteristics.removeAll()
         resetTransfer()
-        addLog("Підключено")
-        peripheral.discoverServices(nil)
+        addLog(String(localized: "Підключено"))
+        // Шукаємо лише сервіс Xiaomi — так підключення швидше
+        peripheral.discoverServices([Self.xiaomiService])
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        addLog("Помилка підключення: \(error?.localizedDescription ?? "невідомо")")
+        addLog(String(localized: "Помилка підключення: \(error?.localizedDescription ?? String(localized: "невідомо"))"))
         active = nil
         isConnecting = false
         connectingName = nil
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        addLog("Відключено\(error.map { ": \($0.localizedDescription)" } ?? "")")
+        addLog(String(localized: "Відключено") + (error.map { ": \($0.localizedDescription)" } ?? ""))
         connectedID = nil
         connectedName = nil
         servicesReady = false
@@ -306,16 +299,12 @@ extension BLEManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let cb = readCompletions.removeValue(forKey: characteristic.uuid) {
-            cb(characteristic.value, error)
-            return
-        }
-        if let error { addLog("Сповіщення \(characteristic.uuid.uuidString): \(error.localizedDescription)") }
+        if let error { addLog(String(localized: "Сповіщення \(characteristic.uuid.uuidString): \(error.localizedDescription)")) }
         if let d = characteristic.value { onData?(characteristic.uuid, d) }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error { addLog("Помилка запису: \(error.localizedDescription)") }
+        if let error { addLog(String(localized: "Помилка запису: \(error.localizedDescription)")) }
         awaitingResponse = false
         if let cb = responseCompletion {
             responseCompletion = nil

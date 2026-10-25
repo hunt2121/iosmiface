@@ -136,7 +136,7 @@ struct ContentView: View {
                 .autocorrectionDisabled()
                 .font(.system(.body, design: .monospaced))
                 .onChange(of: authKey) { KeychainStore.save($0, account: "authKey") }
-            Text(keyValid ? "Ключ виглядає коректно" : "Введіть ключ вручну або знайдіть його автоматично")
+            Text(keyValid ? String(localized: "Ключ виглядає коректно") : String(localized: "Введіть ключ вручну або знайдіть його автоматично"))
                 .font(.footnote)
                 .foregroundStyle(keyValid ? Color.okText : Color.secondary)
             Button {
@@ -148,12 +148,12 @@ struct ContentView: View {
                 ForEach(foundDevices, id: \.self) { d in
                     Button {
                         authKey = d.key
-                        keyStatus = "Ключ для «\(d.name)» вибрано"
+                        keyStatus = String(localized: "Ключ для «\(d.name)» вибрано")
                         keyStatusIsError = false
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(d.name.isEmpty ? "Пристрій без назви" : d.name)
+                                Text(d.name.isEmpty ? String(localized: "Пристрій без назви") : d.name)
                                 if let mac = d.mac { Text(mac).font(.caption).foregroundStyle(.secondary) }
                             }
                             Spacer()
@@ -172,8 +172,8 @@ struct ContentView: View {
             Text("Auth key браслета")
         } footer: {
             Text(MiFitnessKey.hasSavedFolder
-                 ? "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок."
-                 : "«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам.")
+                 ? String(localized: "Папку Mi Fitness запам'ятовано: ключ перевіряється автоматично при кожному вході в застосунок.")
+                 : String(localized: "«Знайти автоматично» один раз попросить вибрати папку Mi Fitness, далі ключ шукатиметься сам."))
         }
     }
 
@@ -185,8 +185,8 @@ struct ContentView: View {
                     // Інформація про файл
                     VStack(alignment: .leading, spacing: 5) {
                         if let face {
-                            Text(face.name ?? "Циферблат \(face.id)").font(.title3.bold())
-                            Text("ID \(face.id) · \(face.data.count / 1024) КБ")
+                            Text(face.name ?? String(localized: "Циферблат \(face.id)")).font(.title3.bold())
+                            Text("ID \(face.id) · \(String(face.data.count / 1024)) КБ")
                                 .font(.footnote).foregroundStyle(.secondary)
                             if let fileName {
                                 Text(fileName).font(.caption).foregroundStyle(.secondary)
@@ -236,7 +236,7 @@ struct ContentView: View {
                             HStack {
                                 Text(progressText)
                                 Spacer()
-                                Text("\(Int(progress * 100))%")
+                                Text(verbatim: "\(Int(progress * 100))%")
                             }
                             .font(.caption).foregroundStyle(.secondary)
                         }
@@ -298,14 +298,14 @@ struct ContentView: View {
                 // Автоматичне (або ручне) підключення до браслета
                 HStack {
                     ProgressView()
-                    Text("Підключення до \(ble.connectingName ?? "браслета")…")
+                    Text("Підключення до \(ble.connectingName ?? String(localized: "браслета"))…")
                         .padding(.leading, 6)
                     Spacer()
                     Button("Скасувати") { ble.disconnect() }
                         .buttonStyle(.borderless)
                 }
             } else {
-                Button(ble.isScanning ? "Зупинити пошук" : "Шукати браслет") {
+                Button(ble.isScanning ? String(localized: "Зупинити пошук") : String(localized: "Шукати браслет")) {
                     ble.isScanning ? ble.stopScan() : ble.startScan()
                 }
                 ForEach(ble.devices) { d in
@@ -316,7 +316,7 @@ struct ContentView: View {
                             Text(d.name)
                             Spacer()
                             if d.rssi != 0 {
-                                Text("\(d.rssi) dBm").foregroundStyle(.secondary)
+                                Text(verbatim: "\(d.rssi) dBm").foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -374,7 +374,7 @@ struct ContentView: View {
                 face = nil
                 filePreview = nil
                 fileName = nil
-                show("Некоректний файл циферблата: \(error.localizedDescription)", error: true)
+                show(String(localized: "Некоректний файл циферблата: \(error.localizedDescription)"), error: true)
             }
         }
     }
@@ -408,7 +408,7 @@ struct ContentView: View {
     /// `quiet`: автоматична перевірка, коли ключ уже є — показуємо лише зміни й помилки.
     private func searchKey(in folder: URL, isNewFolder: Bool, quiet: Bool = false) {
         if !quiet {
-            keyStatus = "Пошук…"
+            keyStatus = String(localized: "Пошук…")
             keyStatusIsError = false
         }
         DispatchQueue.global(qos: .userInitiated).async {
@@ -428,10 +428,10 @@ struct ContentView: View {
                     authKey = match.key
                     if quiet && !changed { return }
                     keyStatus = devices.count == 1
-                        ? "Ключ знайдено\(match.name.isEmpty ? "" : " для «\(match.name)»")"
-                        : "Знайдено \(devices.count) пристрої, вибрано «\(match.name)». За потреби виберіть інший"
+                        ? (match.name.isEmpty ? String(localized: "Ключ знайдено") : String(localized: "Ключ знайдено для «\(match.name)»"))
+                        : String(localized: "Знайдено пристроїв: \(String(devices.count)), вибрано «\(match.name)». За потреби виберіть інший")
                     keyStatusIsError = false
-                    if changed { ble.addLog("Auth key оновлено з даних Mi Fitness") }
+                    if changed { ble.addLog(String(localized: "Auth key оновлено з даних Mi Fitness")) }
                 case .failure(let error):
                     let folderLost = (error as? MiFitnessKey.SearchError).map { $0 != .noKey } ?? false
                     if folderLost {
@@ -439,7 +439,7 @@ struct ContentView: View {
                         MiFitnessKey.forgetFolder()
                     }
                     if quiet && folderLost {
-                        keyStatus = "Доступ до папки Mi Fitness втрачено. Натисніть «Знайти автоматично», щоб вибрати її знову"
+                        keyStatus = String(localized: "Доступ до папки Mi Fitness втрачено. Натисніть «Знайти автоматично», щоб вибрати її знову")
                     } else {
                         keyStatus = error.localizedDescription
                     }
@@ -450,14 +450,14 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func run(_ operation: XiaomiBandSession.Operation, quiet: Bool = false) {
+    private func run(_ operation: XiaomiBandSession.Operation) {
         do {
             let s = try XiaomiBandSession(ble: ble, authKeyHex: authKey)
             session = s
             busy = true
             progress = 0
-            progressText = "Старт…"
-            if !quiet { message = nil }
+            progressText = String(localized: "Старт…")
+            message = nil
             s.run(operation, progress: { value, text in
                 progress = value
                 progressText = text
@@ -466,7 +466,7 @@ struct ContentView: View {
                 session = nil
                 switch result {
                 case .success(let text):
-                    if !quiet { show(text, error: false) }
+                    show(text, error: false)
                 case .failure(let error):
                     show(error.localizedDescription, error: true)
                 }

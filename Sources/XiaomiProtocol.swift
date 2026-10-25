@@ -19,14 +19,14 @@ enum BandError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConnected: return "Браслет не підключено"
-        case .badAuthKey: return "Auth key має бути 32 hex-символи (16 байт)"
-        case .badFaceFile(let why): return "Некоректний файл циферблата: \(why)"
+        case .notConnected: return String(localized: "Браслет не підключено")
+        case .badAuthKey: return String(localized: "Auth key має бути 32 hex-символи (16 байт)")
+        case .badFaceFile(let why): return String(localized: "Некоректний файл циферблата: \(why)")
         case .protocolUnsupported(let why): return why
-        case .authFailed: return "Автентифікація не вдалася: перевірте auth key"
-        case .timeout(let what): return "Браслет не відповів (\(what))"
-        case .device(let why): return "Браслет відхилив операцію: \(why)"
-        case .disconnected: return "З'єднання розірвано"
+        case .authFailed: return String(localized: "Автентифікація не вдалася: перевірте auth key")
+        case .timeout(let what): return String(localized: "Браслет не відповів (\(what))")
+        case .device(let why): return String(localized: "Браслет відхилив операцію: \(why)")
+        case .disconnected: return String(localized: "З'єднання розірвано")
         }
     }
 }
@@ -48,9 +48,6 @@ struct BandWatchface: Identifiable, Hashable {
 final class XiaomiBandSession {
     enum Operation {
         case install(FaceFile)
-        case list
-        case activate(String)
-        case delete(String)
     }
 
     static let rxUUID = CBUUID(string: "0000005e-0000-1000-8000-00805f9b34fb") // браслет → телефон
@@ -91,7 +88,7 @@ final class XiaomiBandSession {
     private let ble: BLEManager
     private let secretKey: Data
 
-    private var operation: Operation = .list
+    private var operation: Operation?
     private var stage: Stage = .idle
     private var progress: ((Double, String) -> Void)?
     private var completion: ((Result<String, Error>) -> Void)?
@@ -121,7 +118,7 @@ final class XiaomiBandSession {
     }
 
     private var face: FaceFile? {
-        if case .install(let f) = operation { return f }
+        if case .install(let f)? = operation { return f }
         return nil
     }
 
@@ -147,21 +144,21 @@ final class XiaomiBandSession {
         guard ble.characteristics[Self.rxUUID] != nil, ble.characteristics[Self.txUUID] != nil else {
             if ble.characteristics[Self.v1CommandUUID] != nil {
                 return fail(BandError.protocolUnsupported(
-                    "Браслет використовує протокол V1 (характеристики 0x51–0x55). Його ще не реалізовано."))
+                    String(localized: "Браслет використовує протокол V1 (характеристики 0x51–0x55). Його ще не реалізовано.")))
             }
             return fail(BandError.protocolUnsupported(
-                "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує."))
+                String(localized: "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.")))
         }
 
         ble.onData = { [weak self] uuid, data in self?.handleNotification(uuid, data) }
         ble.onDisconnect = { [weak self] in self?.fail(BandError.disconnected) }
 
         stage = .waitingSession
-        report(0, "Відкриття сесії…")
-        armTimeout(18, "відкриття сесії")
+        report(0, String(localized: "Відкриття сесії…"))
+        armTimeout(18, String(localized: "відкриття сесії"))
         ble.subscribe(to: Self.rxUUID) { [weak self] ok in
             guard let self, self.stage == .waitingSession else { return }
-            guard ok else { return self.fail(BandError.protocolUnsupported("Не вдалося підписатися на сповіщення 0x5E")) }
+            guard ok else { return self.fail(BandError.protocolUnsupported(String(localized: "Не вдалося підписатися на сповіщення 0x5E"))) }
             self.sendStartSession(attempt: 1)
         }
     }
@@ -260,8 +257,8 @@ final class XiaomiBandSession {
 
     private func startHandshake() {
         stage = .waitingWatchNonce
-        report(0, "Автентифікація…")
-        armTimeout(15, "автентифікація")
+        report(0, String(localized: "Автентифікація…"))
+        armTimeout(15, String(localized: "автентифікація"))
 
         var nonce = Data(count: 16)
         let status = nonce.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
@@ -290,7 +287,7 @@ final class XiaomiBandSession {
 
             let expected = XiaomiCrypto.hmacSHA256(key: decKey, data: watchNonce + phoneNonce)
             guard expected == watchHmac else {
-                ble.addLog("Браслет не прийняв ключ: неправильний auth key?")
+                ble.addLog(String(localized: "Браслет не прийняв ключ: неправильний auth key?"))
                 return fail(BandError.authFailed)
             }
             decryptionKey = decKey
@@ -314,12 +311,12 @@ final class XiaomiBandSession {
             auth.message(32, step3)
 
             stage = .waitingAuthResult
-            armTimeout(15, "підтвердження автентифікації")
+            armTimeout(15, String(localized: "підтвердження автентифікації"))
             sendCommand(type: Command.auth, subtype: Command.authStep3) { $0.message(3, auth) }
 
         case Command.authStep3, Command.authUserId:
             guard stage == .waitingAuthResult else { return }
-            ble.addLog("Підключено до браслета")
+            ble.addLog(String(localized: "Підключено до браслета"))
             afterAuth()
 
         default:
@@ -333,26 +330,17 @@ final class XiaomiBandSession {
     }
 
     private func afterAuth() {
-        switch operation {
-        case .install:
-            // Перевірений на Band 10 порядок: інформація про пристрій, заряд, потім встановлення
-            stage = .probing
-            armTimeout(20, "інформація про браслет")
+        // Перевірений на Band 10 порядок: інформація про пристрій, заряд, потім встановлення
+        stage = .probing
+        armTimeout(20, String(localized: "інформація про браслет"))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self, self.stage == .probing else { return }
+            self.sendCommand(type: Command.system, subtype: Command.systemDeviceInfo) { _ in }
+            self.sendCommand(type: Command.system, subtype: Command.systemBattery) { _ in }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 guard let self, self.stage == .probing else { return }
-                self.sendCommand(type: Command.system, subtype: Command.systemDeviceInfo) { _ in }
-                self.sendCommand(type: Command.system, subtype: Command.systemBattery) { _ in }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                    guard let self, self.stage == .probing else { return }
-                    self.beginInstall()
-                }
+                self.beginInstall()
             }
-        case .list:
-            requestList()
-        case .activate(let id):
-            activate(id, note: "Циферблат активовано")
-        case .delete(let id):
-            deleteFace(id)
         }
     }
 
@@ -363,11 +351,11 @@ final class XiaomiBandSession {
             if let info = system.message(3) {
                 let model = info.string(4) ?? "?"
                 let fw = info.string(2) ?? "?"
-                ble.addLog("Браслет: модель \(model), прошивка \(fw)")
+                ble.addLog(String(localized: "Браслет: модель \(model), прошивка \(fw)"))
             }
         case Command.systemBattery:
             if let level = system.message(2)?.message(1)?.uint(1) {
-                ble.addLog("Заряд: \(level)%")
+                ble.addLog(String(localized: "Заряд: \(String(level))") + "%")
             }
         default:
             break
@@ -379,8 +367,8 @@ final class XiaomiBandSession {
     private func beginInstall() {
         guard let face else { return }
         stage = .waitingInstallStatus
-        armTimeout(20, "запит на встановлення")
-        report(0, "Запит на встановлення…")
+        armTimeout(20, String(localized: "запит на встановлення"))
+        report(0, String(localized: "Запит на встановлення…"))
 
         var start = ProtoWriter()
         start.string(1, face.id)
@@ -388,21 +376,21 @@ final class XiaomiBandSession {
         var wf = ProtoWriter()
         wf.message(6, start)
         sendCommand(type: Command.watchface, subtype: Command.watchfaceInstall) { $0.message(6, wf) }
-        ble.addLog("Встановлення \(face.id) (\(face.data.count / 1024) КБ)…")
+        ble.addLog(String(localized: "Встановлення \(face.id) (\(String(face.data.count / 1024)) КБ)…"))
     }
 
     private func requestList() {
         stage = .listing
-        report(0, "Отримання списку…")
-        armTimeout(15, "список циферблатів")
+        report(0, String(localized: "Отримання списку…"))
+        armTimeout(15, String(localized: "список циферблатів"))
         sendCommand(type: Command.watchface, subtype: Command.watchfaceList) { _ in }
     }
 
     private func activate(_ id: String, note: String) {
         stage = .activating
         successNote = note
-        report(1, "Активація…")
-        armTimeout(12, "активація циферблата", softSuccess: note + " (підтвердження не отримано)")
+        report(1, String(localized: "Активація…"))
+        armTimeout(12, String(localized: "активація циферблата"), softSuccess: note + " " + String(localized: "(підтвердження не отримано)"))
         var wf = ProtoWriter()
         wf.string(2, id)
         sendCommand(type: Command.watchface, subtype: Command.watchfaceSet) { $0.message(6, wf) }
@@ -410,8 +398,8 @@ final class XiaomiBandSession {
 
     private func deleteFace(_ id: String) {
         stage = .deleting
-        report(0, "Видалення…")
-        armTimeout(15, "видалення циферблата")
+        report(0, String(localized: "Видалення…"))
+        armTimeout(15, String(localized: "видалення циферблата"))
         var wf = ProtoWriter()
         wf.string(2, id)
         sendCommand(type: Command.watchface, subtype: Command.watchfaceDelete) { $0.message(6, wf) }
@@ -435,32 +423,26 @@ final class XiaomiBandSession {
             case 0:
                 requestUpload()
             case 2:
-                ble.addLog("Цей циферблат уже є на браслеті")
-                activate(face?.id ?? "", note: "Циферблат уже був на браслеті, його активовано")
+                ble.addLog(String(localized: "Цей циферблат уже є на браслеті"))
+                activate(face?.id ?? "", note: String(localized: "Циферблат уже був на браслеті, його активовано"))
             default:
                 // Щоб зрозуміти причину, дивимось список циферблатів на браслеті
                 lastInstallStatus = status
-                ble.addLog("Браслет відмовив (статус \(status)), перевіряю список циферблатів")
+                ble.addLog(String(localized: "Браслет відмовив (статус \(String(status))), перевіряю список циферблатів"))
                 requestList()
             }
 
         case Command.watchfaceList:
             guard stage == .listing else { return }
             let list = Self.parseList(msg)
-            ble.addLog("На браслеті \(list.count) циферблатів")
-            guard let face else {
-                return succeed("Список оновлено")
-            }
+            ble.addLog(String(localized: "Циферблатів на браслеті: \(String(list.count))"))
+            guard let face else { return }
             explainInstallFailure(face: face, list: list)
 
         case Command.watchfaceDelete:
             guard stage == .deleting else { return }
-            if face != nil {
-                ble.addLog("Стару версію видалено, повторюю встановлення")
-                beginInstall()
-            } else {
-                succeed("Циферблат видалено")
-            }
+            ble.addLog(String(localized: "Стару версію видалено, повторюю встановлення"))
+            beginInstall()
 
         case Command.watchfaceSet:
             guard stage == .activating else { return }
@@ -475,18 +457,18 @@ final class XiaomiBandSession {
         let same = list.first { $0.id == face.id }
         if let same, same.canDelete, !retriedAfterDelete {
             if same.active {
-                return fail(BandError.device("на браслеті вже є стара версія цього циферблата, і вона зараз активна. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено"))
+                return fail(BandError.device(String(localized: "на браслеті вже є стара версія цього циферблата, і вона зараз активна. Перемкніть на браслеті інший циферблат і спробуйте ще раз — стару версію буде замінено")))
             }
-            ble.addLog("Знайдено стару версію цього циферблата — замінюю")
+            ble.addLog(String(localized: "Знайдено стару версію цього циферблата — замінюю"))
             retriedAfterDelete = true
             deleteFace(face.id)
             return
         }
         let userFaces = list.filter(\.canDelete).count
-        var why = "статус \(lastInstallStatus)"
-        if userFaces >= 10 { why += ". На браслеті \(userFaces) власних циферблатів — видаліть кілька (ліміт ≈10)" }
-        else if same != nil { why += ". Циферблат з таким ID уже є, і його не вдалося замінити" }
-        else { why += ". Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті" }
+        var why = String(localized: "статус \(String(lastInstallStatus))")
+        if userFaces >= 10 { why += ". " + String(localized: "Власних циферблатів на браслеті: \(String(userFaces)) — видаліть кілька (ліміт ≈10)") }
+        else if same != nil { why += ". " + String(localized: "Циферблат з таким ID уже є, і його не вдалося замінити") }
+        else { why += ". " + String(localized: "Можливо, файл не призначений для Band 10, завеликий або браслету бракує пам'яті") }
         fail(BandError.device(why))
     }
 
@@ -495,7 +477,7 @@ final class XiaomiBandSession {
     private func requestUpload() {
         guard let face else { return }
         stage = .waitingUploadAck
-        armTimeout(20, "запит на завантаження")
+        armTimeout(20, String(localized: "запит на завантаження"))
 
         var req = ProtoWriter()
         req.uint(1, Command.uploadTypeWatchface)
@@ -510,12 +492,12 @@ final class XiaomiBandSession {
         guard subtype == Command.uploadStart, stage == .waitingUploadAck else { return }
         let ack = msg.message(24)?.message(2)
         let unknown2 = ack?.uint(2) ?? 0
-        guard unknown2 == 0 else { return fail(BandError.device("несподівана відповідь на завантаження (\(unknown2))")) }
+        guard unknown2 == 0 else { return fail(BandError.device(String(localized: "несподівана відповідь на завантаження (\(String(unknown2)))"))) }
 
         let resume = Int(ack?.uint(4) ?? 0)
         let chunk = Int(ack?.uint(5) ?? 2048)
         guard let face, resume <= face.data.count, chunk > 4 else {
-            return fail(BandError.device("некоректні параметри завантаження"))
+            return fail(BandError.device(String(localized: "некоректні параметри завантаження")))
         }
         ble.debug("Завантаження: chunk=\(chunk), resume=\(resume)")
         startUpload(face: face, resume: resume, chunkSize: chunk)
@@ -531,7 +513,7 @@ final class XiaomiBandSession {
 
         let partSize = chunkSize - 4
         let total = (payload.count + partSize - 1) / partSize
-        guard total < 0x10000 else { return fail(BandError.badFaceFile("завеликий для передачі")) }
+        guard total < 0x10000 else { return fail(BandError.badFaceFile(String(localized: "завеликий для передачі"))) }
 
         uploadParts = (0..<total).map { i in
             let start = i * partSize
@@ -543,7 +525,7 @@ final class XiaomiBandSession {
             return part
         }
 
-        ble.addLog("Передача файлу (\(total) частин)…")
+        ble.addLog(String(localized: "Передача файлу (частин: \(String(total)))…"))
         stage = .uploading
         sendPart(0)
     }
@@ -552,18 +534,18 @@ final class XiaomiBandSession {
         guard stage == .uploading else { return }
         guard index < uploadParts.count else {
             uploadParts.removeAll()
-            ble.addLog("Файл передано")
-            activate(face?.id ?? "", note: "Циферблат встановлено й активовано")
+            ble.addLog(String(localized: "Файл передано"))
+            activate(face?.id ?? "", note: String(localized: "Циферблат встановлено й активовано"))
             return
         }
 
-        armTimeout(30, "передача даних")
+        armTimeout(30, String(localized: "передача даних"))
         let packet = XiaomiPacketV2.dataPacket(seq: nextSequence(), channel: .data,
                                                opcode: XiaomiPacketV2.opPlaintext, payload: uploadParts[index])
         let total = uploadParts.count
         let queued = ble.enqueue(packet, to: Self.txUUID) { [weak self] in
             guard let self, self.stage == .uploading else { return }
-            self.report(Double(index + 1) / Double(total), "Передача \(index + 1)/\(total)")
+            self.report(Double(index + 1) / Double(total), String(localized: "Передача \(String(index + 1))/\(String(total))"))
             self.sendPart(index + 1)
         }
         if !queued { fail(BandError.disconnected) }
@@ -603,7 +585,7 @@ final class XiaomiBandSession {
             payload: payload)
         // Вміст auth-команд не логуємо, щоб не світити матеріал для ключів
         ble.debug("→ \(type)/\(subtype) seq=\(seq)\(type == Command.auth ? "" : " " + Self.hex(w.data))")
-        if !ble.enqueue(packet, to: Self.txUUID) { ble.addLog("Не вдалося надіслати команду") }
+        if !ble.enqueue(packet, to: Self.txUUID) { ble.addLog(String(localized: "Не вдалося надіслати команду")) }
 
         // Вікно браслета заповнене — без сукупного ack він не надішле відповідь на цю команду
         if encrypted, unackedRx >= Self.bandWindow, let last = highestRx {
@@ -645,7 +627,7 @@ final class XiaomiBandSession {
         stage = .done
         timeoutWork?.cancel()
         cleanup()
-        ble.addLog("Готово: \(message)")
+        ble.addLog(String(localized: "Готово: \(message)"))
         let cb = completion
         completion = nil
         cb?(.success(message))
@@ -656,7 +638,7 @@ final class XiaomiBandSession {
         stage = .done
         timeoutWork?.cancel()
         cleanup()
-        ble.addLog("Помилка: \(error.localizedDescription)")
+        ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
         let cb = completion
         completion = nil
         cb?(.failure(error))

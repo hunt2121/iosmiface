@@ -1,6 +1,7 @@
 name: BandFace
 options:
   bundleIdPrefix: com.example
+  developmentLanguage: uk
   deploymentTarget:
     iOS: "16.0"
 targets:
@@ -13,6 +14,9 @@ targets:
       path: Sources/Info.plist
       properties:
         CFBundleDisplayName: BandFace
+        # Якщо мова iPhone не українська й не російська — показуємо англійську
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [uk, en, ru]
         CFBundleShortVersionString: "0.1"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."

@@ -1,0 +1,29 @@
+{
+  "sourceLanguage": "uk",
+  "strings": {
+    "NSBluetoothAlwaysUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth is needed to find your Xiaomi band and install watch faces."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth нужен, чтобы найти браслет Xiaomi и установить циферблат."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
