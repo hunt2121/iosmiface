@@ -235,16 +235,30 @@ struct ContentView: View {
                 showImporter = true
             }
             if let face {
-                HStack(spacing: 14) {
-                    if let filePreview {
-                        Image(uiImage: filePreview)
-                            .resizable().scaledToFit()
-                            .frame(height: 90)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                // Передогляд циферблата, який будемо встановлювати
+                VStack(spacing: 10) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color.black)
+                        if let filePreview {
+                            Image(uiImage: filePreview).resizable().scaledToFill()
+                        } else {
+                            VStack(spacing: 8) {
+                                Image("TabWatch").resizable().scaledToFit().frame(width: 36)
+                                Text("Передогляд недоступний").font(.caption2)
+                            }
+                            .foregroundStyle(.gray)
+                        }
                     }
-                    Text("ID \(face.id)\(face.name.map { " · \($0)" } ?? "") · \(face.data.count / 1024) КБ")
+                    .frame(width: 112, height: 275)
+                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .stroke(Color.gray.opacity(0.35), lineWidth: 1))
+                    Text(face.name ?? "Циферблат \(face.id)").font(.headline)
+                    Text("ID \(face.id) · \(face.data.count / 1024) КБ")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
             }
             Button("Встановити на браслет") {
                 if let face { run(.install(face)) }
