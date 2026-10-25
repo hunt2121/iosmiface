@@ -1174,25 +1174,25 @@
         }
       }
     },
-    "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для Band 10": {
+    "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perhaps an older version of this watch face is active right now (switch to another one), there are too many custom watch faces (limit ≈10), or the file is not for Band 10"
+            "value": "Perhaps an older version of this watch face is active right now (switch to another one), there are too many custom watch faces (limit ≈10), or the file is not meant for this band"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Возможно, старая версия этого циферблата сейчас активна (переключите на другой), собственных циферблатов слишком много (лимит ≈10) или файл не для Band 10"
+            "value": "Возможно, старая версия этого циферблата сейчас активна (переключите на другой), собственных циферблатов слишком много (лимит ≈10) или файл не для этого браслета"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для Band 10"
+            "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета"
           }
         }
       }

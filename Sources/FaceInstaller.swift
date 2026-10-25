@@ -197,7 +197,7 @@ extension BandError: LocalizedError {
             return String(localized: "Браслет не відповів (\(String(localized: "передача даних")))")
         case .installRejected(let status):
             let why = String(localized: "статус \(String(status))") + ". "
-                + String(localized: "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для Band 10")
+                + String(localized: "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета")
             return String(localized: "Браслет відхилив операцію: \(why)")
         case .uploadRejected(let status):
             return String(localized: "Браслет відхилив операцію: \(String(localized: "несподівана відповідь на завантаження (\(String(status)))"))")
