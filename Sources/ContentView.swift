@@ -398,13 +398,15 @@ struct ContentView: View {
                 .font(.system(.caption2, design: .monospaced))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, -10)
+                .padding(.top, -13)
                 .padding(.bottom, 2)
                 .listRowSeparator(.hidden)
             }
         } header: {
             // Невеликий відступ між заголовком «Журнал» і карткою
-            Color.clear.frame(height: 1)
+            // Від заголовка «Журнал» до картки — як від картки до блоку з версією (36 пт)
+            Color.clear.frame(height: 0)
+                .padding(.bottom, -1.3)
         }
     }
 
