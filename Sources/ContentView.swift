@@ -376,6 +376,9 @@ struct ContentView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
             }
+        } header: {
+            // Невеликий відступ між заголовком «Журнал» і карткою
+            Color.clear.frame(height: 10)
         }
     }
 
