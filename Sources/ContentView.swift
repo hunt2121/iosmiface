@@ -101,9 +101,9 @@ struct ContentView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .navigationTitle("Журнал")
+                .navigationTitle("Активність")
             }
-            .tabItem { Label("Журнал", image: "TabLog") }
+            .tabItem { Label("Активність", image: "TabLog") }
             .tag(Tab.log)
         }
         .onChange(of: scenePhase) { phase in
