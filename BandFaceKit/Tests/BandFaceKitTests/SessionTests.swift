@@ -147,6 +147,7 @@ final class SessionTests: XCTestCase {
         installer.pauseAfterAuth = .zero
         installer.pauseBeforeInstall = .zero
         installer.pauseBeforeActivation = .zero
+        installer.waitForBandRequests = .zero
         return installer
     }
 
