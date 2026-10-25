@@ -66,7 +66,6 @@ struct ContentView: View {
                     }
                     bandSection
                     installSection
-                    statusSection
                 }
                 .navigationTitle("Циферблати")
             }
@@ -180,62 +179,106 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
-            Button(fileName ?? "Вибрати файл .bin або .face") {
-                importingFolder = false
-                showImporter = true
-            }
-            if let face {
-                // Передогляд циферблата, який будемо встановлювати
-                VStack(spacing: 10) {
-                    ZStack {
-                        Capsule(style: .continuous).fill(Color.black)
-                        if let filePreview {
-                            Image(uiImage: filePreview).resizable().scaledToFill()
-                        } else {
-                            VStack(spacing: 8) {
-                                Image("TabWatch").resizable().scaledToFit().frame(width: 36)
-                                Text("Передогляд недоступний").font(.caption2)
+            HStack(alignment: .center, spacing: 18) {
+                previewCapsule
+                VStack(alignment: .leading, spacing: 8) {
+                    // Інформація про файл
+                    VStack(alignment: .leading, spacing: 5) {
+                        if let face {
+                            Text(face.name ?? "Циферблат \(face.id)").font(.title3.bold())
+                            Text("ID \(face.id) · \(face.data.count / 1024) КБ")
+                                .font(.footnote).foregroundStyle(.secondary)
+                            if let fileName {
+                                Text(fileName).font(.caption).foregroundStyle(.secondary)
+                                    .lineLimit(1).truncationMode(.middle)
                             }
-                            .foregroundStyle(.gray)
+                        } else {
+                            Text("Файл не вибрано").font(.title3.bold())
+                            Text("Циферблат у форматі .bin або .face")
+                                .font(.footnote).foregroundStyle(.secondary)
                         }
                     }
-                    .frame(width: 112, height: 275)
-                    .clipShape(Capsule(style: .continuous))
-                    // Рамка ззовні передогляду (картинка не перекривається), як корпус браслета
-                    .padding(3)
-                    .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.45)))
-                    Text(face.name ?? "Циферблат \(face.id)").font(.headline)
-                    Text("ID \(face.id) · \(face.data.count / 1024) КБ")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 6)
+
+                    // Кнопки: поки файлу немає, головна дія — вибрати файл
+                    if face == nil {
+                        Button { pickFace() } label: {
+                            Text("Вибрати файл").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    } else {
+                        Button { pickFace() } label: {
+                            Text("Вибрати інший файл").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(busy)
+                    }
+                    Button {
+                        if let face { run(.install(face)) }
+                    } label: {
+                        Text("Встановити на браслет").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canOperate || face == nil)
+
+                    // Прогрес або результат встановлення
+                    if busy {
+                        VStack(spacing: 4) {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Color.gray.opacity(0.3))
+                                    Capsule().fill(Color.accentColor)
+                                        .frame(width: max(12, geo.size.width * progress))
+                                }
+                            }
+                            .frame(height: 12)
+                            HStack {
+                                Text(progressText)
+                                Spacer()
+                                Text("\(Int(progress * 100))%")
+                            }
+                            .font(.caption).foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.top, 6)
+                    } else if let message {
+                        Text(message).font(.footnote)
+                            .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
+                            .padding(.horizontal, 14)
+                            .padding(.top, 4)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-                // Лінія над «Встановити на браслет» починається на рівні тексту кнопки,
-                // як інші роздільники, а не від тексту по центру
-                .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
+                .buttonBorderShape(.capsule)
+                .controlSize(.large)
             }
-            Button("Встановити на браслет") {
-                if let face { run(.install(face)) }
-            }
-            .disabled(!canOperate || face == nil)
+            .padding(.vertical, 8)
         }
     }
 
-    @ViewBuilder
-    private var statusSection: some View {
-        if busy || message != nil {
-            Section {
-                if busy {
-                    ProgressView(value: progress)
-                    Text(progressText).font(.footnote).foregroundStyle(.secondary)
-                }
-                if let message {
-                    Text(message).font(.footnote)
-                        .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
-                }
+    /// Передогляд циферблата в капсулі з рамкою ззовні, як корпус браслета.
+    private var previewCapsule: some View {
+        ZStack {
+            Capsule(style: .continuous).fill(Color.black)
+            if let filePreview {
+                Image(uiImage: filePreview).resizable().scaledToFill()
+            } else {
+                Image("TabWatch").resizable().scaledToFit()
+                    .frame(width: 30)
+                    .foregroundStyle(Color(white: 0.4))
             }
         }
+        .frame(width: 96, height: 236)
+        .clipShape(Capsule(style: .continuous))
+        .padding(3)
+        .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.45)))
     }
+
+    private func pickFace() {
+        importingFolder = false
+        showImporter = true
+    }
+
 
     private var bandSection: some View {
         Section("Браслет") {
