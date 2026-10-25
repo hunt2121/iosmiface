@@ -239,7 +239,7 @@ struct ContentView: View {
                 // Передогляд циферблата, який будемо встановлювати
                 VStack(spacing: 10) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color.black)
+                        Capsule(style: .continuous).fill(Color.black)
                         if let filePreview {
                             Image(uiImage: filePreview).resizable().scaledToFill()
                         } else {
@@ -251,8 +251,8 @@ struct ContentView: View {
                         }
                     }
                     .frame(width: 112, height: 275)
-                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .clipShape(Capsule(style: .continuous))
+                    .overlay(Capsule(style: .continuous)
                         .stroke(Color.gray.opacity(0.35), lineWidth: 1))
                     Text(face.name ?? "Циферблат \(face.id)").font(.headline)
                     Text("ID \(face.id) · \(face.data.count / 1024) КБ")
@@ -430,7 +430,7 @@ struct ContentView: View {
         } label: {
             VStack(spacing: 6) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Color.black)
+                    Capsule(style: .continuous).fill(Color.black)
                     if let img = previews[f.id] {
                         Image(uiImage: img).resizable().scaledToFill()
                     } else {
@@ -441,9 +441,9 @@ struct ContentView: View {
                     }
                 }
                 .aspectRatio(212.0 / 520.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .clipShape(Capsule(style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    Capsule(style: .continuous)
                         .stroke(f.active ? Color.okText : Color.gray.opacity(0.3), lineWidth: f.active ? 3 : 1)
                 )
                 Text(f.name.isEmpty ? "Без назви" : f.name)
