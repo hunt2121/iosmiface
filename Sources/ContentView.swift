@@ -204,12 +204,12 @@ struct ContentView: View {
                     // Кнопки: поки файлу немає, головна дія — вибрати файл
                     if face == nil {
                         Button { pickFace() } label: {
-                            Text("Вибрати файл").frame(maxWidth: .infinity)
+                            Text("Вибрати файл").buttonText()
                         }
                         .buttonStyle(.borderedProminent)
                     } else {
                         Button { pickFace() } label: {
-                            Text("Вибрати інший файл").frame(maxWidth: .infinity)
+                            Text("Вибрати інший файл").buttonText()
                         }
                         .buttonStyle(.bordered)
                         .disabled(busy)
@@ -217,7 +217,7 @@ struct ContentView: View {
                     Button {
                         if let face { run(.install(face)) }
                     } label: {
-                        Text("Встановити на браслет").frame(maxWidth: .infinity)
+                        Text("Встановити на браслет").buttonText()
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!canOperate || face == nil)
@@ -250,7 +250,7 @@ struct ContentView: View {
                     }
                 }
                 .buttonBorderShape(.capsule)
-                .controlSize(.large)
+                .controlSize(.regular)
             }
             .padding(.vertical, 8)
         }
@@ -479,5 +479,16 @@ struct ContentView: View {
     private func show(_ text: String, error: Bool) {
         message = text
         messageIsError = error
+    }
+}
+
+private extension Text {
+    /// Текст кнопки в блоці встановлення: один рядок, компактний шрифт, на всю ширину.
+    func buttonText() -> some View {
+        self.font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
     }
 }
