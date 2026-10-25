@@ -65,6 +65,8 @@ public actor BandSession {
     /// Надіслані частини файлу, яких браслет ще не підтвердив (у порядку надсилання).
     private var unackedFileFrames: [(sequence: UInt8, bytes: [UInt8])] = []
     private var ackWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
+    /// Команди браслета, яких ніхто не чекав (від початку передачі файлу), — для `waitFor`.
+    private var unsolicitedSeen: Set<String> = []
     private var waiters: [UUID: Waiter] = [:]
     private var sessionWaiter: (code: UInt8, continuation: CheckedContinuation<SessionControl, Error>)?
 
@@ -156,6 +158,7 @@ public actor BandSession {
     /// Викликайте, коли BLE-з'єднання розірвалося.
     public func connectionLost() {
         resumeAckWaiters(false)
+        for id in eventWaiters.keys { resumeEventWaiter(id, nil) }
         failAllWaiters(BandError.disconnected)
         if let waiter = sessionWaiter {
             sessionWaiter = nil
@@ -323,6 +326,7 @@ public actor BandSession {
         guard state == .authenticated else { throw BandError.notAuthenticated }
         log("file: sending \(parts.count) parts")
         unackedFileFrames.removeAll()
+        unsolicitedSeen.removeAll()
         for (index, part) in parts.enumerated() {
             try Task.checkCancellation()
             // Не випереджаємо браслет більше ніж на вікно: інакше він губить частини
@@ -331,6 +335,9 @@ public actor BandSession {
             progress?(index + 1, parts.count)
         }
         log("file: all parts sent, waiting for the band to confirm")
+        // Свої підтвердження й сигнал «циферблат готовий» (4/5) браслет притримує,
+        // поки його вікно заповнене, — звільняємо його одразу
+        await acknowledgeReceived()
         // Браслет має підтвердити всі частини, перш ніж активувати циферблат
         try await waitForFileAcks(below: 1)
         log("file: all parts confirmed")
@@ -453,11 +460,36 @@ public actor BandSession {
         if let entry = waiters.first(where: { $0.value.matches(command) }) {
             waiters.removeValue(forKey: entry.key)
             entry.value.continuation.resume(returning: command)
-        } else if configuration.emptyReplies.contains(command.name) {
+            return
+        }
+        unsolicitedSeen.insert(command.name)
+        for (id, waiter) in eventWaiters where waiter.name == command.name { resumeEventWaiter(id, command) }
+        if configuration.emptyReplies.contains(command.name) {
             // Запит браслета до застосунку: відповідаємо порожньою командою того самого типу
             let reply = Command.build(command.type, command.subtype)
             Task { await self.sendEmptyReply(reply, name: command.name) }
         }
+    }
+
+    /// Чекає, поки браслет сам надішле команду «тип/підтип» (або вже надіслав після початку
+    /// передачі файлу). true — дочекалися, false — минув тайм-аут.
+    public func waitFor(_ type: UInt64, _ subtype: UInt64, timeout: Duration) async -> Bool {
+        if unsolicitedSeen.contains("\(type)/\(subtype)") { return true }
+        let id = UUID()
+        let result: Command? = await withCheckedContinuation { (continuation: CheckedContinuation<Command?, Never>) in
+            eventWaiters[id] = (name: "\(type)/\(subtype)", continuation: continuation)
+            Task {
+                try? await Task.sleep(for: timeout)
+                await self.resumeEventWaiter(id, nil)
+            }
+        }
+        return result != nil
+    }
+
+    private var eventWaiters: [UUID: (name: String, continuation: CheckedContinuation<Command?, Never>)] = [:]
+
+    private func resumeEventWaiter(_ id: UUID, _ command: Command?) {
+        eventWaiters.removeValue(forKey: id)?.continuation.resume(returning: command)
     }
 
     private func sendEmptyReply(_ body: [UInt8], name: String) async {
