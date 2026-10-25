@@ -381,7 +381,8 @@ struct ContentView: View {
                 .font(.system(.caption2, design: .monospaced))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 2)
+                .padding(.top, -3)
+                .padding(.bottom, 2)
                 .listRowSeparator(.hidden)
             }
         } header: {
