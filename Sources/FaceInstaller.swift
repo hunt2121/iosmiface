@@ -15,14 +15,7 @@ final class FaceInstaller {
     /// Повертає текст для користувача; помилки — `BandError` з локалізованим описом.
     func install(_ face: FaceFile, authKey: [UInt8],
                  progress: @escaping (Double, String) -> Void) async throws -> String {
-        do {
-            let result = try await installOnce(face, authKey: authKey, progress: progress)
-            await ble.unsubscribeBand()
-            return result
-        } catch {
-            await ble.unsubscribeBand()
-            throw error
-        }
+        try await installOnce(face, authKey: authKey, progress: progress)
     }
 
     private func installOnce(_ face: FaceFile, authKey: [UInt8],
@@ -63,7 +56,7 @@ final class FaceInstaller {
         }
 
         progress(0, String(localized: "Відкриття сесії…"))
-        guard await ble.resubscribeBand() else { throw BandError.characteristicNotFound }
+        guard await ble.subscribeBand() else { throw BandError.characteristicNotFound }
 
         var installer = WatchfaceInstaller()
         installer.phoneModel = UIDevice.current.model

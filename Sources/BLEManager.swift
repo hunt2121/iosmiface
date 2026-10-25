@@ -383,22 +383,15 @@ extension BLEManager: BandTransport, @unchecked Sendable {
         }
     }
 
-    /// Як Mi Fitness (за записом HCI): перед сесією сповіщення на 5E і 5F вимикаємо (якщо ввімкнені)
-    /// і вмикаємо знову — так браслет розуміє, що попередню сесію завершено. true — 5E увімкнено.
+    /// Підписка на сповіщення 5E і 5F (як Mi Fitness) — один раз на з'єднання.
+    /// Не відписуємося між сесіями: якщо Mi Fitness теж підписаний (iOS будить його у фоні),
+    /// відписка повертає помилку, і після неї iOS перестає доставляти нам сповіщення.
+    /// Підписку iOS прибирає сама, коли застосунок відключається від браслета.
     @MainActor
-    func resubscribeBand() async -> Bool {
-        for uuid in [BandGATT.rx, BandGATT.tx] { _ = await setNotify(false, for: uuid) }
+    func subscribeBand() async -> Bool {
         let rx = await setNotify(true, for: BandGATT.rx)
         _ = await setNotify(true, for: BandGATT.tx)
         return rx
-    }
-
-    /// Після сесії вимикаємо сповіщення на обох характеристиках, як Mi Fitness.
-    @MainActor
-    func unsubscribeBand() async {
-        for uuid in [BandGATT.rx, BandGATT.tx] {
-            if !(await setNotify(false, for: uuid)) { debug("Сповіщення \(uuid.uuidString): не вдалося вимкнути") }
-        }
     }
 
     var hasBandCharacteristics: Bool {

@@ -39,7 +39,7 @@ final class BandMonitor: ObservableObject {
         guard isRunning else { return }
         isRunning = false
         ble.onData = nil
-        ble.unsubscribe(from: BandGATT.rx)
+        // Не відписуємося: відписка поруч із Mi Fitness ламає доставку сповіщень (див. BLEManager.subscribeBand)
         ble.addTimedLog("MON стоп")
     }
 
