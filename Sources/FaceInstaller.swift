@@ -28,8 +28,7 @@ final class FaceInstaller {
         var configuration = BandSession.Configuration()
         // Технічний журнал бібліотеки — лише в режимі «Детальний журнал»
         configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
-        // Чужу сесію (Mi Fitness) не закриваємо і з'єднання не рвемо: це ламає браслету зв'язок
-        // з Mi Fitness. Якщо браслет зайнятий — просимо закрити Mi Fitness.
+        // Чужу сесію не закриваємо і з'єднання не рвемо: це може зламати браслету зв'язок з Mi Fitness
         configuration.closeOtherSessionOnRetry = false
         configuration.sessionOpenAttempts = 2
         // Запити браслета до компаньйона (2/42, 17/7, погода 10/3): без відповіді він зависає
@@ -69,8 +68,7 @@ final class FaceInstaller {
             throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
         } catch BandError.timeout {
             // Кажемо, на якому саме етапі браслет замовк
-            throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))")
-                                 + " " + String(localized: "Якщо Mi Fitness відкритий, закрийте його в перемикачі застосунків"))
+            throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
         }
         return reporter.alreadyInstalled
             ? String(localized: "Циферблат уже був на браслеті, його активовано")
@@ -167,7 +165,7 @@ extension BandError: LocalizedError {
         case .authKeyMismatch, .notAuthenticated:
             return String(localized: "Автентифікація не вдалася: перевірте auth key")
         case .sessionOpenFailed, .sessionNotOpen:
-            return String(localized: "Браслет зайнятий — найімовірніше, з ним зараз працює Mi Fitness. Закрийте Mi Fitness у перемикачі застосунків і спробуйте ще раз")
+            return String(localized: "Браслет не відповів (\(String(localized: "відкриття сесії")))")
         case .timeout:
             return String(localized: "Браслет не відповів (\(String(localized: "передача даних")))")
         case .installRejected(let status):

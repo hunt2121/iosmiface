@@ -40,6 +40,8 @@ public struct WatchfaceInstaller: Sendable {
     public var pauseBeforeActivation: Duration = .milliseconds(1500)
     /// Скільки чекати відповідь на одну спробу активації (4/1).
     public var activationTimeout: Duration = .seconds(5)
+    /// Скільки після активації чекати запити браслета до компаньйона (останній — погода 10/3).
+    public var waitForBandRequests: Duration = .seconds(2)
     /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
     public var activationAttempts = 2
 
@@ -72,7 +74,12 @@ public struct WatchfaceInstaller: Sendable {
             onPhase?(.activating)
             try await activate(face, session: session, afterUpload: !alreadyInstalled)
 
+            // Після активації браслет надсилає запити (2/42, 17/7, погода 10/3). Якщо закрити сесію
+            // раніше, вони лишаються в черзі, і в наступній сесії браслет на них зависає.
             onPhase?(.closing)
+            if await session.waitFor(10, 3, timeout: waitForBandRequests) {
+                try? await Task.sleep(for: .milliseconds(300)) // встигнути відповісти на запити
+            }
             await session.close()
             onPhase?(.done(alreadyInstalled: alreadyInstalled))
         } catch {
