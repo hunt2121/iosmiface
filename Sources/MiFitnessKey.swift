@@ -140,8 +140,11 @@ enum MiFitnessKey {
             let key = raw.trimmingCharacters(in: .whitespaces).lowercased()
                 .replacingOccurrences(of: "0x", with: "")
             guard key.count == 32, key.allSatisfy(\.isHexDigit) else { continue }
-            let name = (resolve(dict["name"]) as? String) ?? ""
-            let mac = (resolve(dict["mac"]) as? String) ?? (resolve(dict["randomMac"]) as? String)
+            // Mi Fitness доповнює назву пробілами / нульовими символами — обрізаємо їх
+            let name = ((resolve(dict["name"]) as? String) ?? "")
+                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.controlCharacters))
+            let mac = ((resolve(dict["mac"]) as? String) ?? (resolve(dict["randomMac"]) as? String))?
+                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.controlCharacters))
             found.append(Device(name: name, mac: mac, key: key))
         }
         return found
