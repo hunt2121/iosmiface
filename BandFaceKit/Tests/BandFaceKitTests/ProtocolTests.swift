@@ -228,17 +228,20 @@ final class FaceFileTests: XCTestCase {
     }
 }
 
+/// Пристрій для архіву NSKeyedArchiver (клас NSCoding не може бути локальним).
+@objc(BandFaceKitTestDevice)
+private final class Device: NSObject, NSCoding {
+    func encode(with coder: NSCoder) {
+        coder.encode("Xiaomi Smart Band 10 ABCD  \0\0", forKey: "name")
+        coder.encode("0x00112233445566778899AABBCCDDEEFF", forKey: "encryptKey")
+        coder.encode("AA:BB:CC:DD:EE:FF", forKey: "mac")
+    }
+    override init() {}
+    required init?(coder: NSCoder) {}
+}
+
 final class AuthKeyStoreTests: XCTestCase {
     func testKeyedArchiveParsing() throws {
-        final class Device: NSObject, NSCoding {
-            func encode(with coder: NSCoder) {
-                coder.encode("Xiaomi Smart Band 10 ABCD  \0\0", forKey: "name")
-                coder.encode("0x00112233445566778899AABBCCDDEEFF", forKey: "encryptKey")
-                coder.encode("AA:BB:CC:DD:EE:FF", forKey: "mac")
-            }
-            override init() {}
-            required init?(coder: NSCoder) {}
-        }
         let archiver = NSKeyedArchiver(requiringSecureCoding: false)
         archiver.encode([Device()], forKey: "root")
         archiver.finishEncoding()
