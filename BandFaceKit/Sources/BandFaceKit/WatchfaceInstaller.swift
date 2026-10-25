@@ -36,8 +36,12 @@ public struct WatchfaceInstaller: Sendable {
     /// Паузи, перевірені на Band 10 (чи вони обов'язкові — не перевірялося).
     public var pauseAfterAuth: Duration = .milliseconds(1500)
     public var pauseBeforeInstall: Duration = .milliseconds(1500)
-    /// Скільки чекати підтвердження активації (4/1).
-    public var activationTimeout: Duration = .seconds(30)
+    /// Пауза після передачі файлу: браслет перевіряє й розпаковує циферблат.
+    public var pauseBeforeActivation: Duration = .milliseconds(1500)
+    /// Скільки чекати відповідь на одну спробу активації (4/1).
+    public var activationTimeout: Duration = .seconds(5)
+    /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
+    public var activationAttempts = 2
 
     public init() {}
 
@@ -66,7 +70,7 @@ public struct WatchfaceInstaller: Sendable {
             }
 
             onPhase?(.activating)
-            try await session.activateWatchface(id: face.id, timeout: activationTimeout)
+            try await activate(face, session: session, afterUpload: !alreadyInstalled)
 
             onPhase?(.closing)
             await session.close()
@@ -99,6 +103,20 @@ public struct WatchfaceInstaller: Sendable {
                 onPhase?(.removingOldVersion)
                 try await session.deleteWatchface(id: face.id)
                 removedOld = true
+            }
+        }
+    }
+
+    /// Крок 4 (4/1). Перед кожною спробою підтверджуємо все, що надіслав браслет.
+    private func activate(_ face: FaceFile, session: BandSession, afterUpload: Bool) async throws {
+        if afterUpload { try await Task.sleep(for: pauseBeforeActivation) }
+        for attempt in 1...max(activationAttempts, 1) {
+            await session.acknowledgeReceived()
+            do {
+                try await session.activateWatchface(id: face.id, timeout: activationTimeout)
+                return
+            } catch BandError.timeout where attempt < activationAttempts {
+                continue
             }
         }
     }

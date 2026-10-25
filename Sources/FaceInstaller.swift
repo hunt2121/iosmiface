@@ -44,8 +44,7 @@ final class FaceInstaller {
         // Відповіді 2/2 і 2/1 бібліотека вже дочекалася, тож довгі паузи не потрібні
         installer.pauseAfterAuth = .milliseconds(500)
         installer.pauseBeforeInstall = .milliseconds(300)
-        // Band 10 не відповідає на 4/1 (циферблат при цьому вмикається), тож довго не чекаємо
-        installer.activationTimeout = .milliseconds(1500)
+        installer.activationTimeout = .seconds(4)
 
         let reporter = PhaseReporter(face: face, ble: ble, progress: progress)
         do {
@@ -54,9 +53,9 @@ final class FaceInstaller {
                 DispatchQueue.main.async { reporter.show(phase) }
             }
         } catch BandError.timeout where reporter.reachedActivation {
-            // Файл уже на браслеті, просто не прийшло підтвердження активації (примітка — лише в журналі)
-            ble.debug("4/1: відповіді немає (для Band 10 це нормально)")
-            return String(localized: "Циферблат встановлено й активовано")
+            // Файл уже на браслеті, але команду активації браслет не підтвердив
+            ble.addLog(String(localized: "Браслет не підтвердив активацію"))
+            throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
         } catch BandError.timeout {
             // Кажемо, на якому саме етапі браслет замовк
             throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))

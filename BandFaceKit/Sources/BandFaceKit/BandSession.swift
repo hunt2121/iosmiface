@@ -379,6 +379,15 @@ public actor BandSession {
         }
     }
 
+    /// Одне сукупне підтвердження всіх уже отриманих кадрів браслета (якщо такі є).
+    /// Перед важливою командою: браслет із заповненим вікном може не прийняти її.
+    public func acknowledgeReceived() async {
+        guard unacknowledged > 0, let sequence = lastBandSequence else { return }
+        unacknowledged = 0
+        log("→ ack \(sequence) (before command)")
+        try? await transport.write(Frame.ack(sequence).encoded())
+    }
+
     // MARK: - Сукупне підтвердження
     //
     // Band 10 не можна підтверджувати кожен кадр. Телефон мовчить, поки браслет не надіслав повне вікно

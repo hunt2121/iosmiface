@@ -392,6 +392,29 @@
         }
       }
     },
+    "Браслет не підтвердив активацію": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band did not confirm activation"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не подтвердил активацию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не підтвердив активацію"
+          }
+        }
+      }
+    },
     "Введіть ключ вручну або знайдіть його автоматично": {
       "extractionState": "manual",
       "localizations": {
@@ -1745,6 +1768,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Циферблат встановлено й активовано"
+          }
+        }
+      }
+    },
+    "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The watch face was transferred, but the band did not confirm activation. Select it on the band manually"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Циферблат передан, но браслет не подтвердил активацию. Выберите его на браслете вручную"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"
           }
         }
       }
