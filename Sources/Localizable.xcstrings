@@ -254,29 +254,6 @@
         }
       }
     },
-    "Історія": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "History"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "История"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Історія"
-          }
-        }
-      }
-    },
     "Автентифікація не вдалася: перевірте auth key": {
       "extractionState": "manual",
       "localizations": {
@@ -342,6 +319,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Активація…"
+          }
+        }
+      }
+    },
+    "Активність": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активность"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активність"
           }
         }
       }
