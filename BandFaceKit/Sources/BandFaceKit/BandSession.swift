@@ -27,6 +27,9 @@ public actor BandSession {
         /// Запити браслета («тип/підтип»), на які відповідати порожньою командою того самого типу.
         /// Браслет надсилає їх застосунку-компаньйону (погода тощо) і без відповіді може зависнути.
         public var emptyReplies: Set<String> = []
+        /// Підтверджувати кожен кадр браслета одразу, як офіційний застосунок (видно в записі HCI).
+        /// false — стара поведінка: одне сукупне підтвердження, коли вікно браслета заповнене.
+        public var ackEveryFrame = false
         /// Скільки частин файлу може бути в дорозі без підтвердження браслета.
         /// Band 10 підтверджує кожні 6 кадрів; більше 12 у дорозі він може загубити.
         public var fileWindow = 12
@@ -428,11 +431,17 @@ public actor BandSession {
         // Пропуск номерів (втрачений кадр) не зупиняє сесію: приймаємо новіший кадр.
         if let expected = expectedBandSequence, frame.sequence &- expected >= 128 {
             log("← data \(frame.sequence) dropped (expected \(expected)), flags \(frame.flags)")
+            // Повтор означає, що наше підтвердження загубилося
+            if configuration.ackEveryFrame { sendAckNow(frame.sequence) }
             return
         }
         expectedBandSequence = frame.sequence &+ 1
         lastBandSequence = frame.sequence
-        unacknowledged += 1
+        if configuration.ackEveryFrame {
+            sendAckNow(frame.sequence)
+        } else {
+            unacknowledged += 1
+        }
 
         defer { scheduleCumulativeAck() }
 
@@ -510,6 +519,12 @@ public actor BandSession {
         guard let keys, state == .authenticated else { return }
         log("→ empty reply \(name)")
         try? await writeData(DataPacket(channel: .protobuf, opcode: .encrypted, body: keys.encryptCommand(body)))
+    }
+
+    private func sendAckNow(_ sequence: UInt8) {
+        let bytes = Frame.ack(sequence).encoded()
+        log("→ ack \(sequence)")
+        Task { try? await self.transport.write(bytes) }
     }
 
     /// Одне сукупне підтвердження всіх уже отриманих кадрів браслета (якщо такі є).
