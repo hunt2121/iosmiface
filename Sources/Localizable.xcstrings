@@ -852,29 +852,6 @@
         }
       }
     },
-    "Детальний журнал": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Detailed log"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подробный журнал"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Детальний журнал"
-          }
-        }
-      }
-    },
     "Додати ключ браслета": {
       "extractionState": "manual",
       "localizations": {
@@ -963,6 +940,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дякуємо за підтримку!"
+          }
+        }
+      }
+    },
+    "Діагностика": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Диагностика"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Діагностика"
           }
         }
       }
@@ -1611,29 +1611,6 @@
         }
       }
     },
-    "Події": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Events"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "События"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Події"
-          }
-        }
-      }
-    },
     "Помилка підключення: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2090,6 +2067,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сторінка відкриється в браузері. Застосунок не бачить і не зберігає твоїх платіжних даних."
+          }
+        }
+      }
+    },
+    "Технічні подробиці": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Technical details"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Технические подробности"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Технічні подробиці"
           }
         }
       }
