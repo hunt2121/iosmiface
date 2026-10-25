@@ -78,15 +78,6 @@ struct ContentView: View {
             .tag(Tab.faces)
 
             NavigationStack {
-                Form { authSection }
-                    .navigationTitle("Ключ")
-            }
-            // Ключа немає — на іконці червоний знак «!»
-            .tabItem { Label("Ключ", image: "TabKey") }
-            .badge(keyValid ? nil : Text("!"))
-            .tag(Tab.key)
-
-            NavigationStack {
                 galleryView
                     .navigationTitle("Циферблати")
                     .toolbar {
@@ -98,6 +89,15 @@ struct ContentView: View {
             }
             .tabItem { Label("Циферблати", image: "TabWatch") }
             .tag(Tab.gallery)
+
+            NavigationStack {
+                Form { authSection }
+                    .navigationTitle("Ключ")
+            }
+            // Ключа немає — на іконці червоний знак «!»
+            .tabItem { Label("Ключ", image: "TabKey") }
+            .badge(keyValid ? nil : Text("!"))
+            .tag(Tab.key)
 
             NavigationStack {
                 Form {
