@@ -80,7 +80,8 @@ public struct WatchfaceInstaller: Sendable {
             _ = try? await session.command(Command.batteryRequest())
             try await Task.sleep(for: pauseBeforeInstall)
 
-            let alreadyInstalled = try await requestInstall(face, session: session, onPhase: onPhase)
+            let check = try await requestInstall(face, session: session, onPhase: onPhase)
+            let alreadyInstalled = check != .needsUpload
             if !alreadyInstalled {
                 try await upload(face, session: session, onPhase: onPhase)
             }
@@ -88,7 +89,7 @@ public struct WatchfaceInstaller: Sendable {
             guard activateAfterInstall else {
                 if !alreadyInstalled {
                     try await confirmInstalled(session: session)
-                } else if activateIfAlreadyInstalled {
+                } else if activateIfAlreadyInstalled && check == .alreadyInstalled {
                     onPhase?(.activating)
                     try await activate(face, session: session, afterUpload: false)
                 }
@@ -116,7 +117,10 @@ public struct WatchfaceInstaller: Sendable {
     }
 
     /// Крок 1 (4/4). Повертає true, якщо циферблат уже є на браслеті.
-    private func requestInstall(_ face: FaceFile, session: BandSession, onPhase: (@Sendable (InstallPhase) -> Void)?) async throws -> Bool {
+    /// Результат кроку 4/4: файл треба передати, циферблат уже є, або він уже є й активний.
+    private enum InstallCheck { case needsUpload, alreadyInstalled, alreadyActive }
+
+    private func requestInstall(_ face: FaceFile, session: BandSession, onPhase: (@Sendable (InstallPhase) -> Void)?) async throws -> InstallCheck {
         onPhase?(.requestingInstall)
         var removedOld = false
         while true {
@@ -124,9 +128,9 @@ public struct WatchfaceInstaller: Sendable {
             let status = response.root.varint(at: [6, 5]) ?? 0
             switch status {
             case 0:
-                return false
+                return .needsUpload
             case 2:
-                return true
+                return .alreadyInstalled
             default:
                 // Резервний шлях: неактивну стару версію з тим самим ID видаляємо і пробуємо ще раз.
                 guard !removedOld else { throw BandError.installRejected(status: status) }
@@ -135,7 +139,7 @@ public struct WatchfaceInstaller: Sendable {
                     throw BandError.installRejected(status: status)
                 }
                 // Циферблат з цим ID уже стоїть і зараз активний — встановлювати нічого
-                if old.isActive { return true }
+                if old.isActive { return .alreadyActive }
                 guard old.canDelete else { throw BandError.installRejected(status: status) }
                 onPhase?(.removingOldVersion)
                 try await session.deleteWatchface(id: face.id)
