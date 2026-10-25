@@ -67,6 +67,10 @@ public actor BandSession {
     private var ackWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
     /// Команди браслета, яких ніхто не чекав (від початку передачі файлу), — для `waitFor`.
     private var unsolicitedSeen: Set<String> = []
+    /// Статус із 4/5 (6.7.2), який браслет надсилає після прийому файлу; nil — ще не надсилав.
+    public private(set) var installStatus: UInt64?
+    /// 4/5 зі статусом 3 — циферблат прийнято; 1 бачили, коли браслет перервав прийом.
+    public static let installedStatus: UInt64 = 3
     private var waiters: [UUID: Waiter] = [:]
     private var sessionWaiter: (code: UInt8, continuation: CheckedContinuation<SessionControl, Error>)?
 
@@ -327,6 +331,7 @@ public actor BandSession {
         log("file: sending \(parts.count) parts")
         unackedFileFrames.removeAll()
         unsolicitedSeen.removeAll()
+        installStatus = nil
         for (index, part) in parts.enumerated() {
             try Task.checkCancellation()
             // Не випереджаємо браслет більше ніж на вікно: інакше він губить частини
@@ -348,6 +353,10 @@ public actor BandSession {
     private func waitForFileAcks(below limit: Int) async throws {
         var resends = 0
         while unackedFileFrames.count >= limit {
+            // Браслет сам повідомив, що прийом перервано, — далі надсилати немає сенсу
+            if let status = installStatus, status != Self.installedStatus {
+                throw BandError.installAborted(status: status)
+            }
             if await waitForBandAck(timeout: configuration.fileAckTimeout) {
                 resends = 0
                 continue
@@ -463,6 +472,11 @@ public actor BandSession {
             return
         }
         unsolicitedSeen.insert(command.name)
+        if command.type == Command.Kind.watchface && command.subtype == 5 {
+            installStatus = command.root.varint(at: [6, 7, 2])
+            log("install status \(installStatus.map { "\($0)" } ?? "?")")
+            resumeAckWaiters(true) // розбудити передачу файлу, щоб вона перевірила статус
+        }
         for (id, waiter) in eventWaiters where waiter.name == command.name { resumeEventWaiter(id, command) }
         if configuration.emptyReplies.contains(command.name) {
             // Запит браслета до застосунку: відповідаємо порожньою командою того самого типу

@@ -17,6 +17,10 @@ public enum BandError: Error, Equatable, Sendable {
     case malformedProtobuf
     case installRejected(status: UInt64)
     case uploadRejected(status: UInt64)
+    /// Браслет сам перервав прийом файлу (4/5 зі статусом, відмінним від «встановлено»).
+    case installAborted(status: UInt64)
+    /// Браслет відповів на 4/1, що циферблат не активовано.
+    case activationFailed
     case invalidFaceFile(String)
     case invalidPreview(String)
     case database(String)

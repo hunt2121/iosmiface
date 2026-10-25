@@ -121,7 +121,7 @@ final class MockBand: BandTransport, @unchecked Sendable {
                 m.varint(2, UInt64(0)); m.varint(4, UInt64(0)); m.varint(5, UInt64(4096))
             } } }]
         case (4, 1):
-            return [Command.build(4, 1) { w in w.message(6) { $0.varint(4, UInt64(0)) } }]
+            return [Command.build(4, 1) { w in w.message(6) { $0.varint(4, UInt64(1)) } }]
         default:
             return []
         }

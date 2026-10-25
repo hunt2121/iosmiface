@@ -346,6 +346,29 @@
         }
       }
     },
+    "Браслет не активував циферблат. Спробуйте встановити ще раз": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band did not activate the watch face. Try installing again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не активировал циферблат. Попробуйте установить ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет не активував циферблат. Спробуйте встановити ще раз"
+          }
+        }
+      }
+    },
     "Браслет не відповів (%@)": {
       "extractionState": "manual",
       "localizations": {
@@ -411,6 +434,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Браслет не підтвердив активацію"
+          }
+        }
+      }
+    },
+    "Браслет перервав прийом файлу (статус %@). Спробуйте ще раз": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band stopped receiving the file (status %@). Try again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет прервал приём файла (статус %@). Попробуйте ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет перервав прийом файлу (статус %@). Спробуйте ще раз"
           }
         }
       }

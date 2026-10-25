@@ -13,8 +13,10 @@ extension BandSession {
         _ = try await command(Command.deleteWatchface(id: id))
     }
 
+    /// Відповідь 4/1: 6.4 = 1 — активовано, 0 — браслет відмовив (бачили після перерваного прийому).
     func activateWatchface(id: String, timeout: Duration = .seconds(30)) async throws {
-        _ = try await command(Command.activateWatchface(id: id), timeout: timeout)
+        let response = try await command(Command.activateWatchface(id: id), timeout: timeout)
+        if let result = response.root.varint(at: [6, 4]), result != 1 { throw BandError.activationFailed }
     }
 }
 
@@ -117,7 +119,12 @@ public struct WatchfaceInstaller: Sendable {
     /// Крок 4 (4/1). Перед кожною спробою підтверджуємо все, що надіслав браслет.
     private func activate(_ face: FaceFile, session: BandSession, afterUpload: Bool) async throws {
         // Браслет повідомляє 4/5, щойно циферблат готовий; без нього чекаємо не довше паузи
-        if afterUpload { _ = await session.waitFor(Command.Kind.watchface, 5, timeout: pauseBeforeActivation) }
+        if afterUpload {
+            _ = await session.waitFor(Command.Kind.watchface, 5, timeout: pauseBeforeActivation)
+            if let status = await session.installStatus, status != BandSession.installedStatus {
+                throw BandError.installAborted(status: status)
+            }
+        }
         for attempt in 1...max(activationAttempts, 1) {
             await session.acknowledgeReceived()
             do {

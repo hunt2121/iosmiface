@@ -174,6 +174,10 @@ extension BandError: LocalizedError {
             return String(localized: "Браслет відхилив операцію: \(why)")
         case .uploadRejected(let status):
             return String(localized: "Браслет відхилив операцію: \(String(localized: "несподівана відповідь на завантаження (\(String(status)))"))")
+        case .installAborted(let status):
+            return String(localized: "Браслет перервав прийом файлу (статус \(String(status))). Спробуйте ще раз")
+        case .activationFailed:
+            return String(localized: "Браслет не активував циферблат. Спробуйте встановити ще раз")
         case .malformedResponse, .malformedProtobuf:
             return String(localized: "Браслет відхилив операцію: \(String(localized: "некоректні параметри завантаження"))")
         case .invalidFaceFile(let why):
