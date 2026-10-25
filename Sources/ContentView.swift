@@ -76,7 +76,8 @@ struct ContentView: View {
                 .safeAreaInset(edge: .bottom) {
                     DonationBar(thanked: donationOpened) { showDonation = true }
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
+                        // Відступ від панелі вкладок
+                        .padding(.bottom, 16)
                 }
             }
             .tabItem { Label("Циферблати", image: "TabWatch") }
