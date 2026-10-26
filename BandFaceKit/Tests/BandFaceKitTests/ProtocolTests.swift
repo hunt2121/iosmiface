@@ -253,3 +253,73 @@ final class AuthKeyStoreTests: XCTestCase {
         XCTAssertEqual(credentials[0].authKeyHex, "00112233445566778899aabbccddeeff")
     }
 }
+
+final class AuthKeyScannerTests: XCTestCase {
+    private func makeFolder() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ScannerTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return url
+    }
+
+    func testFindsKeyInJSON() throws {
+        let folder = try makeFolder()
+        let nested = folder.appendingPathComponent("cn/devices", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let json = #"{"list":[{"name":"Xiaomi Smart Band 10","mac":"AA:BB:CC:DD:EE:FF","encryptKey":"00112233445566778899aabbccddeeff"}]}"#
+        try json.write(to: nested.appendingPathComponent("state.json"), atomically: true, encoding: .utf8)
+
+        let scan = AuthKeyScanner.scan(folder: folder)
+        XCTAssertEqual(scan.credentials.count, 1)
+        XCTAssertEqual(scan.credentials.first?.authKeyHex, "00112233445566778899aabbccddeeff")
+        XCTAssertEqual(scan.credentials.first?.name, "Xiaomi Smart Band 10")
+        XCTAssertEqual(scan.credentials.first?.mac, "AA:BB:CC:DD:EE:FF")
+    }
+
+    func testFindsKeyInLogText() throws {
+        let folder = try makeFolder()
+        let log = "12:00:01 bind ok {\\\"auth_key\\\":\\\"ffeeddccbbaa99887766554433221100\\\"} done\n"
+        try log.write(to: folder.appendingPathComponent("device.log"), atomically: true, encoding: .utf8)
+
+        let scan = AuthKeyScanner.scan(folder: folder)
+        XCTAssertEqual(scan.credentials.map(\.authKeyHex), ["ffeeddccbbaa99887766554433221100"])
+    }
+
+    func testFindsKeyInPlistWithoutExtension() throws {
+        let folder = try makeFolder()
+        let object: [String: Any] = ["devices": [["name": "Band", "encryptKey": "0x00112233445566778899AABBCCDDEEFF"]]]
+        let data = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+        try data.write(to: folder.appendingPathComponent("cache"))
+
+        let scan = AuthKeyScanner.scan(folder: folder)
+        XCTAssertEqual(scan.credentials.first?.authKeyHex, "00112233445566778899aabbccddeeff")
+    }
+
+    func testFindsKeyInArbitrarySQLiteTable() throws {
+        let folder = try makeFolder()
+        let path = folder.appendingPathComponent("any.db").path
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(path, &db), SQLITE_OK)
+        let sql = """
+        CREATE TABLE devices (name TEXT, mac TEXT, encrypt_key TEXT);
+        INSERT INTO devices VALUES ('Xiaomi Smart Band 10', '11:22:33:44:55:66', '00112233445566778899aabbccddeeff');
+        """
+        XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK)
+        sqlite3_close(db)
+
+        let scan = AuthKeyScanner.scan(folder: folder)
+        XCTAssertEqual(scan.report.databasesScanned, 1)
+        XCTAssertEqual(scan.credentials.count, 1)
+        XCTAssertEqual(scan.credentials.first?.name, "Xiaomi Smart Band 10")
+        XCTAssertEqual(scan.credentials.first?.mac, "11:22:33:44:55:66")
+    }
+
+    func testIgnoresUnrelatedFiles() throws {
+        let folder = try makeFolder()
+        try "just some text, key = 1234".write(to: folder.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
+        let scan = AuthKeyScanner.scan(folder: folder)
+        XCTAssertTrue(scan.credentials.isEmpty)
+        XCTAssertEqual(scan.report.filesScanned, 1)
+    }
+}

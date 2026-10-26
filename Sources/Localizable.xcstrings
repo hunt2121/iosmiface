@@ -2094,25 +2094,25 @@
         }
       }
     },
-    "У папці не знайдено даних Mi Fitness (VirtualDevice_registerList). Виберіть папку Mi Fitness або MHWCahe": {
+    "У папці не знайдено ключа браслета. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Mi Fitness data found in the folder (VirtualDevice_registerList). Choose the Mi Fitness or MHWCahe folder"
+            "value": "No band key found in this folder. Choose the Mi Fitness app folder (for the Chinese version, «小米运动健康»). If that doesn't help, turn on Developer mode in the Log tab, search again and send the log to the developer"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В папке не найдены данные Mi Fitness (VirtualDevice_registerList). Выберите папку Mi Fitness или MHWCahe"
+            "value": "В папке не найден ключ браслета. Выберите папку приложения Mi Fitness (для китайской версии — «小米运动健康»). Если не помогает, включите «Режим разработчика» в «Журнале», повторите поиск и отправьте журнал разработчику"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У папці не знайдено даних Mi Fitness (VirtualDevice_registerList). Виберіть папку Mi Fitness або MHWCahe"
+            "value": "У папці не знайдено ключа браслета. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику"
           }
         }
       }

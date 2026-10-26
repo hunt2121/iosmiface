@@ -8,6 +8,8 @@ import BandFaceKit
 /// бінарний plist (NSKeyedArchiver) зі списком пристроїв, у кожного є `encryptKey`.
 /// Розташування з'ясовано за проєктом github.com/artyomxx/xiaomi-band-ios-export.
 /// Саме читання бази робить BandFaceKit (AuthKeyStore).
+/// Якщо такої бази немає (китайська версія «小米运动健康» зберігає дані інакше), перегляд усіх
+/// файлів застосунку виконує AuthKeyScanner.
 enum MiFitnessKey {
     struct Device: Hashable {
         let name: String
@@ -20,7 +22,7 @@ enum MiFitnessKey {
 
         var errorDescription: String? {
             switch self {
-            case .noDatabase: return String(localized: "У папці не знайдено даних Mi Fitness (VirtualDevice_registerList). Виберіть папку Mi Fitness або MHWCahe")
+            case .noDatabase: return String(localized: "У папці не знайдено ключа браслета. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику")
             case .noKey: return String(localized: "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз")
             }
         }
@@ -52,21 +54,33 @@ enum MiFitnessKey {
         return resolved.url
     }
 
+    /// Журнал останнього повного сканування (порожній, якщо знайшлася стандартна база Mi Fitness).
+    /// Показується в журналі «Режиму розробника».
+    private(set) static var lastScanLines: [String] = []
+
     static func findDevices(in folder: URL) throws -> [Device] {
         let scoped = folder.startAccessingSecurityScopedResource()
         defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
+        lastScanLines = []
 
         let databases = AuthKeyStore.findManifests(in: folder)
-        guard !databases.isEmpty else { throw SearchError.noDatabase }
-
-        var result: [Device] = []
+        var credentials: [BandCredentials] = []
         for db in databases {
-            for band in (try? AuthKeyStore.credentials(fromManifest: db)) ?? [] {
-                let device = Device(name: clean(band.name), mac: band.mac.map(clean), key: band.authKeyHex)
-                if !result.contains(device) { result.append(device) }
+            for band in (try? AuthKeyStore.credentials(fromManifest: db)) ?? [] where !credentials.contains(band) {
+                credentials.append(band)
             }
         }
-        guard !result.isEmpty else { throw SearchError.noKey }
+
+        if credentials.isEmpty {
+            // Нестандартна структура даних (наприклад, китайська «小米运动健康»):
+            // переглядаємо всі файли застосунку
+            let scan = AuthKeyScanner.scan(folder: folder)
+            credentials = scan.credentials
+            lastScanLines = scan.report.lines
+        }
+
+        let result = credentials.map { Device(name: clean($0.name), mac: $0.mac.map(clean), key: $0.authKeyHex) }
+        guard !result.isEmpty else { throw databases.isEmpty ? SearchError.noDatabase : SearchError.noKey }
         return result
     }
 

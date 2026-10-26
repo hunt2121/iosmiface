@@ -485,7 +485,10 @@ struct ContentView: View {
         }
         DispatchQueue.global(qos: .userInitiated).async {
             let result = Result { try MiFitnessKey.findDevices(in: folder) }
+            let scanLines = MiFitnessKey.lastScanLines
             DispatchQueue.main.async {
+                // Повне сканування папки (нестандартна структура даних) — лише в «Режимі розробника»
+                for line in scanLines { ble.debug(line) }
                 switch result {
                 case .success(let devices):
                     foundDevices = devices
