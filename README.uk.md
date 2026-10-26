@@ -42,7 +42,7 @@ BandFace — невеликий застосунок на SwiftUI, який пе
 BandFace поки немає в App Store, тож його встановлюють через sideloading:
 
 1. Завантажте `BandFace-v….ipa` з **[останнього релізу](https://github.com/hunt2121/iosmiface/releases/latest)**.
-2. Установіть його через **[Sideloadly](https://sideloadly.io)** або **AltStore** зі своїм Apple ID.
+2. Установіть його через **[iloader](https://iloader.app)**, **[Sideloadly](https://sideloadly.io)** або **AltStore** зі своїм Apple ID.
 3. На iPhone: «Параметри › Загальні › VPN і керування пристроєм» → ваш Apple ID → «Довіряти». На iOS 16+ також увімкніть «Параметри › Приватність і безпека › Режим розробника».
 
 З безкоштовним Apple ID застосунок треба перепідписувати кожні 7 днів. Тестові збірки кожного коміту — в **[Actions → Build IPA](https://github.com/hunt2121/iosmiface/actions/workflows/build.yml)** (потрібно увійти в GitHub).
