@@ -12,13 +12,14 @@ struct DonationService: Identifiable {
     static let all: [DonationService] = [
         DonationService(id: "monobank", name: String(localized: "Монобанка"),
                         subtitle: String(localized: "Банка · гривні, картка"),
-                        icon: .jar, url: nil),
+                        icon: .jar, url: URL(string: "https://send.monobank.ua/jar/7kBaS3WjFu")),
         DonationService(id: "bmc", name: "Buy Me a Coffee",
                         subtitle: String(localized: "Разова підтримка · картка"),
                         icon: .cup, url: URL(string: "https://buymeacoffee.com/switchhandled")),
-        DonationService(id: "patreon", name: "Patreon",
-                        subtitle: String(localized: "Щомісячна підтримка"),
-                        icon: .calendar, url: nil),
+        // Patreon тимчасово прихований: повернути, коли буде посилання
+        // DonationService(id: "patreon", name: "Patreon",
+        //                 subtitle: String(localized: "Щомісячна підтримка"),
+        //                 icon: .calendar, url: nil),
     ]
 }
 
