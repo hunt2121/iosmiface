@@ -8,6 +8,10 @@ on:
         description: "Опублікувати IPA як GitHub Release"
         type: boolean
         default: false
+      sign:
+        description: "Підписати IPA власним сертифікатом (секрети IOS_P12_BASE64, IOS_P12_PASSWORD, IOS_PROFILE_BASE64) і покласти в чернетку релізу"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -74,6 +78,63 @@ jobs:
         with:
           name: ${{ env.IPA_NAME }}
           path: ${{ env.IPA_NAME }}.ipa
+
+      # Ручний запуск з sign=true: підпис рідним codesign сертифікатом і профілем із секретів.
+      # Підписаний IPA лягає в ЧЕРНЕТКУ релізу signed-<N> (не видна без входу); після завантаження її видаляють.
+      - name: Sign IPA
+        if: github.event_name == 'workflow_dispatch' && inputs.sign
+        env:
+          P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "$P12_BASE64" ] || [ -z "$PROFILE_BASE64" ]; then
+            echo "::error::Немає секретів IOS_P12_BASE64, IOS_P12_PASSWORD, IOS_PROFILE_BASE64"
+            exit 1
+          fi
+          KEYCHAIN="$RUNNER_TEMP/sign.keychain-db"
+          KC_PASS="$(uuidgen)"
+          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          security create-keychain -p "$KC_PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KC_PASS" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KC_PASS" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          APPID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" "$RUNNER_TEMP/profile.plist")
+          TEAM=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
+          BUNDLE="${APPID#*.}"
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | head -1 | awk '{print $2}')
+          echo "Bundle: $BUNDLE, team: $TEAM"
+
+          rm -rf signing && mkdir signing && cd signing
+          unzip -q "../$IPA_NAME.ipa"
+          APP=Payload/BandFace.app
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$APP/embedded.mobileprovision"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE" "$APP/Info.plist"
+          cat > ent.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>application-identifier</key><string>$APPID</string>
+          <key>com.apple.developer.team-identifier</key><string>$TEAM</string>
+          <key>keychain-access-groups</key><array><string>$APPID</string></array>
+          <key>get-task-allow</key><false/>
+          </dict></plist>
+          EOF
+          codesign --force --sign "$IDENTITY" --entitlements ent.plist --keychain "$KEYCHAIN" "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
+          zip -qr "../$IPA_NAME-signed.ipa" Payload
+          cd ..
+          gh release create "signed-$BUILD_NUM" "$IPA_NAME-signed.ipa" --draft \
+            --target "$GITHUB_SHA" --title "Signed $IPA_NAME" --notes "Temporary signed build"
+          security delete-keychain "$KEYCHAIN"
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/profile.mobileprovision"
 
       # Ручний запуск з release=true: IPA стає Release з тегом версії (v1.0.N) —
       # посилання …/releases/latest відкривається без входу в GitHub і не видаляється за 90 днів
