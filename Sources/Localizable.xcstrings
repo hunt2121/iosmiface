@@ -346,25 +346,25 @@
         }
       }
     },
-    "Банка · гривні, картка": {
+    "Банка · гроші, картка": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jar · hryvnias, card"
+            "value": "Jar · money, card"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Банка · гривны, карта"
+            "value": "Банка · деньги, карта"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Банка · гривні, картка"
+            "value": "Банка · гроші, картка"
           }
         }
       }

@@ -11,7 +11,7 @@ struct DonationService: Identifiable {
 
     static let all: [DonationService] = [
         DonationService(id: "monobank", name: String(localized: "Монобанка"),
-                        subtitle: String(localized: "Банка · гривні, картка"),
+                        subtitle: String(localized: "Банка · гроші, картка"),
                         icon: .jar, url: URL(string: "https://send.monobank.ua/jar/7kBaS3WjFu")),
         DonationService(id: "bmc", name: "Buy Me a Coffee",
                         subtitle: String(localized: "Разова підтримка · картка"),
