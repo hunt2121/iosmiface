@@ -16,22 +16,16 @@ struct DonationService: Identifiable {
         DonationService(id: "bmc", name: "Buy Me a Coffee",
                         subtitle: String(localized: "Разова підтримка · картка"),
                         icon: .cup, url: nil),
-        DonationService(id: "kofi", name: "Ko-fi",
-                        subtitle: String(localized: "Разова підтримка · PayPal, картка"),
-                        icon: .cupHeart, url: nil),
         DonationService(id: "patreon", name: "Patreon",
                         subtitle: String(localized: "Щомісячна підтримка"),
                         icon: .calendar, url: nil),
-        DonationService(id: "github", name: "GitHub Sponsors",
-                        subtitle: String(localized: "Разово або щомісяця"),
-                        icon: .heart, url: nil),
     ]
 }
 
 // MARK: - Іконки сервісів
 
-/// Контурні іконки з макета (сітка 24×24): банка, чашка, чашка із серцем, календар, серце.
-enum ServiceIcon { case jar, cup, cupHeart, calendar, heart }
+/// Контурні іконки з макета (сітка 24×24): банка, чашка, календар.
+enum ServiceIcon { case jar, cup, calendar }
 
 struct ServiceIconShape: Shape {
     let icon: ServiceIcon
@@ -75,14 +69,6 @@ struct ServiceIconShape: Shape {
             cup(top: 9, into: &path)
             path.move(to: p(8, 3.5)); path.addCurve(to: p(9, 6.5), control1: p(8, 5), control2: p(9, 5))
             path.move(to: p(12, 3.5)); path.addCurve(to: p(13, 6.5), control1: p(12, 5), control2: p(13, 5))
-        case .cupHeart:
-            cup(top: 8, into: &path)
-            path.move(to: p(10, 15.5))
-            path.addCurve(to: p(7.2, 12), control1: p(8.6, 14.6), control2: p(7.2, 13.4))
-            path.addCurve(to: p(10, 11.2), control1: p(7.2, 10.4), control2: p(9.2, 10))
-            path.addCurve(to: p(12.8, 12), control1: p(10.8, 10), control2: p(12.8, 10.4))
-            path.addCurve(to: p(10, 15.5), control1: p(12.8, 13.4), control2: p(11.4, 14.6))
-            path.closeSubpath()
         case .calendar:
             path.addRoundedRect(in: CGRect(origin: p(4, 5), size: CGSize(width: 16 * s, height: 15 * s)),
                                 cornerSize: CGSize(width: 2.5 * s, height: 2.5 * s))
@@ -90,15 +76,6 @@ struct ServiceIconShape: Shape {
             line((8.5, 3), (8.5, 7), into: &path)
             line((15.5, 3), (15.5, 7), into: &path)
             path.move(to: p(9, 14.5)); path.addLine(to: p(11, 16.5)); path.addLine(to: p(15, 12.5))
-        case .heart:
-            path.move(to: p(12, 20))
-            path.addCurve(to: p(2.8, 10.7), control1: p(12, 20), control2: p(4.5, 15.4))
-            path.addCurve(to: p(7.2, 4), control1: p(1.6, 7.4), control2: p(3.8, 4))
-            path.addCurve(to: p(12, 6.8), control1: p(9.2, 4), control2: p(10.8, 5.1))
-            path.addCurve(to: p(16.8, 4), control1: p(13.2, 5.1), control2: p(14.8, 4))
-            path.addCurve(to: p(21.2, 10.7), control1: p(20.2, 4), control2: p(22.4, 7.4))
-            path.addCurve(to: p(12, 20), control1: p(19.5, 15.4), control2: p(12, 20))
-            path.closeSubpath()
         }
         return path
     }

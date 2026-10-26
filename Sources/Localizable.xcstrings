@@ -1887,29 +1887,6 @@
         }
       }
     },
-    "Разова підтримка · PayPal, картка": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One-time support · PayPal, card"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разовая поддержка · PayPal, карта"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разова підтримка · PayPal, картка"
-          }
-        }
-      }
-    },
     "Разова підтримка · картка": {
       "extractionState": "manual",
       "localizations": {
@@ -1929,29 +1906,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Разова підтримка · картка"
-          }
-        }
-      }
-    },
-    "Разово або щомісяця": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One-time or monthly"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разово или ежемесячно"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разово або щомісяця"
           }
         }
       }
