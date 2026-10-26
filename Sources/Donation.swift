@@ -15,7 +15,7 @@ struct DonationService: Identifiable {
                         icon: .jar, url: nil),
         DonationService(id: "bmc", name: "Buy Me a Coffee",
                         subtitle: String(localized: "Разова підтримка · картка"),
-                        icon: .cup, url: nil),
+                        icon: .cup, url: URL(string: "https://buymeacoffee.com/switchhandled")),
         DonationService(id: "patreon", name: "Patreon",
                         subtitle: String(localized: "Щомісячна підтримка"),
                         icon: .calendar, url: nil),
