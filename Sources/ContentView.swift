@@ -72,13 +72,6 @@ struct ContentView: View {
                     installSection
                 }
                 .navigationTitle("Циферблати")
-                // Збір на App Store — капсула над панеллю вкладок; список прокручується під нею
-                .safeAreaInset(edge: .bottom) {
-                    DonationBar(thanked: donationOpened) { showDonation = true }
-                        .padding(.horizontal, 16)
-                        // Відступ від панелі вкладок
-                        .padding(.bottom, 16)
-                }
             }
             .tabItem { Label("Циферблати", image: "TabWatch") }
             .tag(Tab.faces)
@@ -120,11 +113,6 @@ struct ContentView: View {
         }
         .onAppear {
             autoFindKey()
-        }
-        .sheet(isPresented: $showDonation) {
-            DonationSheet { donationOpened = true }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in

@@ -82,8 +82,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
-          gh release create "$TAG" "$IPA_NAME.ipa" \
+          TAG="build-$BUILD_NUM"
+          gh release create "$TAG" "$IPA_NAME.ipa" --draft \
             --target "$GITHUB_SHA" \
             --title "BandFace $TAG" \
             --notes "Unsigned IPA for sideloading (Sideloadly / AltStore). See README for installation."
