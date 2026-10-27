@@ -35,7 +35,7 @@ jobs:
           name: BandFace-android
           path: android/app/build/outputs/apk/release/*.apk
       - name: Draft release
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release || github.ref == 'refs/heads/android' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
