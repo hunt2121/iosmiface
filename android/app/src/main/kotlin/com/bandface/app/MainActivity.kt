@@ -219,7 +219,7 @@ fun FacesTab(vm: MainViewModel) {
         }
 
         SectionCard(stringResource(R.string.install_card)) {
-            Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.width(96.dp).height(236.dp).clip(RoundedCornerShape(48.dp))
                         .background(Color(0xFF1F1F1F)).border(BorderStroke(3.dp, Color(0xFF7A7A7A)), RoundedCornerShape(48.dp)),
@@ -270,10 +270,9 @@ fun KeyTab(vm: MainViewModel) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.key_title)) {
-            Spacer(Modifier.height(6.dp))
             OutlinedTextField(
                 text, { text = it; vm.saveKey(it) }, Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.key_hint)) }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.key_hint)) }, singleLine = true,
                 textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 15.sp),
                 shape = RoundedCornerShape(8.dp),
             )
@@ -293,7 +292,7 @@ fun KeyTab(vm: MainViewModel) {
 fun LogTab(vm: MainViewModel) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.activity)) {
-            Row(Modifier.padding(top = 0.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)
                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
                     Switch(vm.devMode, { vm.setDev(it) })
