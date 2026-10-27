@@ -32,4 +32,17 @@
     <string name="err_disconnected">Connection lost</string>
     <string name="progress">Sending %1$d/%2$d</string>
     <string name="permission_needed">Allow Bluetooth access</string>
+    <string name="band_card">Band</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="install_card">Watch face installation</string>
+    <string name="pick_other">Choose another file</string>
+    <string name="install_band">Install on band</string>
+    <string name="transfer">Sending · %1$d%%</string>
+    <string name="find_auto">Find automatically</string>
+    <string name="paste">Paste from clipboard</string>
+    <string name="android_note">Android blocks access to other apps\u2019 data. Automatic search works by choosing the Mi Fitness data folder; otherwise paste the key manually.</string>
+    <string name="activity">Activity</string>
+    <string name="dev_mode">Developer mode</string>
+    <string name="copy">Copy</string>
+    <string name="face_label">Watch face · %1$s</string>
 </resources>

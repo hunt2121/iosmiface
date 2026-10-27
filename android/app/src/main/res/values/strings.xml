@@ -33,4 +33,17 @@
     <string name="err_disconnected">З’єднання розірвано</string>
     <string name="progress">Передача %1$d/%2$d</string>
     <string name="permission_needed">Дозвольте доступ до Bluetooth</string>
+    <string name="band_card">Браслет</string>
+    <string name="disconnect">Від\u2019єднати</string>
+    <string name="install_card">Встановлення циферблата</string>
+    <string name="pick_other">Вибрати інший файл</string>
+    <string name="install_band">Встановити на браслет</string>
+    <string name="transfer">Передача · %1$d%%</string>
+    <string name="find_auto">Знайти автоматично</string>
+    <string name="paste">Вставити з буфера</string>
+    <string name="android_note">Android закриває доступ до даних інших застосунків. Автопошук працює через вибір папки з даними Mi Fitness; якщо ні, ключ вставляється вручну.</string>
+    <string name="activity">Активність</string>
+    <string name="dev_mode">Режим розробника</string>
+    <string name="copy">Копіювати</string>
+    <string name="face_label">Циферблат · %1$s</string>
 </resources>

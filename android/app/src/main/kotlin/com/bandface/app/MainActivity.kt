@@ -8,36 +8,44 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Subject
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,13 +53,35 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+private val LightScheme = lightColorScheme(
+    primary = Color(0xFF2D5DA8), onPrimary = Color.White,
+    secondaryContainer = Color(0xFFD9E2FF), onSecondaryContainer = Color(0xFF001A41),
+    background = Color(0xFFFEFBFF), onBackground = Color(0xFF1B1B1F),
+    surface = Color(0xFFFEFBFF), onSurface = Color(0xFF1B1B1F),
+    surfaceVariant = Color(0xFFF1F1F7), onSurfaceVariant = Color(0xFF44474F),
+    outline = Color(0xFF74777F), error = Color(0xFFBA1A1A),
+)
+private val DarkScheme = darkColorScheme(
+    primary = Color(0xFFAEC6FF), onPrimary = Color(0xFF002E69),
+    secondaryContainer = Color(0xFF2F4578), onSecondaryContainer = Color(0xFFD9E2FF),
+    background = Color(0xFF121316), onBackground = Color(0xFFE3E2E6),
+    surface = Color(0xFF121316), onSurface = Color(0xFFE3E2E6),
+    surfaceVariant = Color(0xFF1E1F24), onSurfaceVariant = Color(0xFFC4C6D0),
+    outline = Color(0xFF8E9099), error = Color(0xFFFFB4AB),
+)
+private val Green = Color(0xFF1B7A3E)
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
@@ -62,26 +92,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(vm: MainViewModel) {
-    val dark = isSystemInDarkTheme()
-    val ctx = LocalContext.current
-    val scheme = if (Build.VERSION.SDK_INT >= 31) {
-        if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
-    } else if (dark) darkColorScheme() else lightColorScheme()
+    val scheme: ColorScheme = if (isSystemInDarkTheme()) DarkScheme else LightScheme
     MaterialTheme(colorScheme = scheme) {
         var tab by remember { mutableIntStateOf(0) }
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Filled.Schedule, null) }, label = { Text(stringResource(R.string.tab_faces)) })
-                    NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.Filled.Key, null) }, label = { Text(stringResource(R.string.tab_key)) })
-                    NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Filled.Subject, null) }, label = { Text(stringResource(R.string.tab_log)) })
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+                    val labels = listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)
+                    labels.forEachIndexed { i, l ->
+                        NavigationBarItem(
+                            selected = tab == i, onClick = { tab = i },
+                            icon = { Spacer(Modifier.size(1.dp)) },
+                            label = { Text(stringResource(l), fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.secondaryContainer),
+                        )
+                    }
                 }
             },
         ) { pad ->
-            Column(Modifier.padding(pad).fillMaxSize()) {
+            Column(Modifier.padding(pad).fillMaxSize().statusBarsPadding().padding(horizontal = 20.dp)) {
+                Text(
+                    stringResource(listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)[tab]),
+                    fontSize = 34.sp, modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
+                )
                 when (tab) {
                     0 -> FacesTab(vm)
                     1 -> KeyTab(vm)
@@ -90,6 +127,32 @@ fun App(vm: MainViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (title.isNotEmpty()) Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            content()
+        }
+    }
+}
+
+@Composable
+private fun Tonal(text: String, enabled: Boolean = true, color: Color? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    FilledTonalButton(
+        onClick, modifier, enabled = enabled,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = color ?: MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) { Text(text, fontWeight = FontWeight.Medium, fontSize = 15.sp) }
+}
+
+@Composable
+private fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Button(onClick, modifier.height(48.dp), enabled = enabled) { Text(text, fontWeight = FontWeight.Medium, fontSize = 16.sp) }
 }
 
 @Composable
@@ -104,59 +167,116 @@ fun FacesTab(vm: MainViewModel) {
         if (uri != null) vm.pickFace(uri)
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.band), style = MaterialTheme.typography.titleMedium)
-        Text(vm.connectedName?.let { stringResource(R.string.connected, it) } ?: stringResource(R.string.not_connected))
-        OutlinedButton({ permLauncher.launch(permissions) }, enabled = !vm.busy) { Text(stringResource(R.string.scan)) }
-        for (d in vm.devices) {
-            Card(Modifier.fillMaxWidth()) {
-                TextButton({ vm.connect(d) }, Modifier.fillMaxWidth(), enabled = !vm.busy) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(d.name)
-                        Text(d.address, style = MaterialTheme.typography.bodySmall)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        SectionCard(stringResource(R.string.band_card)) {
+            val name = vm.connectedName
+            if (name != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(name, fontSize = 20.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(9.dp).clip(CircleShape).background(Green))
+                            Text("  " + stringResource(R.string.connected, "").trimEnd(' ', ':').trim(), color = Green, fontSize = 14.sp)
+                        }
+                    }
+                    Tonal(stringResource(R.string.disconnect), enabled = !vm.busy) { vm.disconnect() }
+                }
+            } else {
+                Text(stringResource(R.string.not_connected), fontSize = 18.sp)
+                Tonal(stringResource(R.string.scan), enabled = !vm.busy) { permLauncher.launch(permissions) }
+                for (d in vm.devices) {
+                    Surface(
+                        Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.background, onClick = { vm.connect(d) }, enabled = !vm.busy,
+                    ) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(d.name, fontSize = 16.sp)
+                            Text(d.address, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
         }
 
-        Text(stringResource(R.string.tab_faces), style = MaterialTheme.typography.titleMedium)
-        OutlinedButton({ picker.launch(arrayOf("*/*")) }, enabled = !vm.busy) { Text(stringResource(R.string.pick_face)) }
-        Text(vm.faceName ?: stringResource(R.string.no_face))
-        Button({ vm.install() }, enabled = !vm.busy && vm.face != null) { Text(stringResource(R.string.install)) }
-        vm.progress?.let { LinearProgressIndicator(progress = { it }, modifier = Modifier.fillMaxWidth()) }
-        vm.status?.let { Text(it) }
+        SectionCard(stringResource(R.string.install_card)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(
+                    Modifier.width(76.dp).height(150.dp).clip(RoundedCornerShape(38.dp))
+                        .background(Color(0xFF1F1F1F)).border(BorderStroke(3.dp, Color(0xFF7A7A7A)), RoundedCornerShape(38.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val bmp = vm.preview
+                    if (bmp != null) Image(bmp.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 17.sp)
+                    if (vm.face != null) Text(stringResource(R.string.face_label, vm.faceInfo), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Tonal(stringResource(if (vm.face == null) R.string.pick_face else R.string.pick_other), enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) {
+                        picker.launch(arrayOf("*/*"))
+                    }
+                    Primary(stringResource(R.string.install_band), enabled = !vm.busy && vm.face != null, modifier = Modifier.fillMaxWidth()) { vm.install() }
+                }
+            }
+        }
+
+        vm.progress?.let { p ->
+            SectionCard("") {
+                Text(stringResource(R.string.transfer, (p * 100).toInt()), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        vm.status?.let { Text(it, Modifier.padding(horizontal = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
 fun KeyTab(vm: MainViewModel) {
     var text by remember { mutableStateOf(vm.keyText) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) { vm.importKey(uri); text = vm.keyText }
+    val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) vm.scanFolder(uri)
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.key_title), style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.key_hint)) }, singleLine = true)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button({ vm.saveKey(text) }) { Text(stringResource(R.string.tab_key)) }
-            OutlinedButton({ picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.key_import)) }
+    val file = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importKey(uri)
+    }
+    if (text != vm.keyText && vm.keyText.isNotEmpty()) text = vm.keyText
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        SectionCard(stringResource(R.string.key_title)) {
+            OutlinedTextField(
+                text, { text = it; vm.saveKey(it) }, Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.key_hint)) }, singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 15.sp),
+                shape = RoundedCornerShape(8.dp),
+            )
+            Primary(stringResource(R.string.find_auto), modifier = Modifier.fillMaxWidth().height(52.dp)) { folder.launch(null) }
+            Tonal(stringResource(R.string.paste), modifier = Modifier.fillMaxWidth().height(52.dp)) { vm.pasteKey(); text = vm.keyText }
+            Tonal(stringResource(R.string.key_import), modifier = Modifier.fillMaxWidth()) { file.launch(arrayOf("*/*")) }
+            vm.keyMessage?.let { Text(it, color = Green, fontSize = 14.sp) }
         }
-        vm.status?.let { Text(it) }
-        Text(stringResource(R.string.key_note), style = MaterialTheme.typography.bodySmall)
+        SectionCard("") {
+            Text(stringResource(R.string.android_note), fontSize = 14.sp)
+        }
     }
 }
 
 @Composable
 fun LogTab(vm: MainViewModel) {
-    val version = remember {
-        runCatching { "1.1 (" + (android.os.Build.VERSION.SDK_INT) + ")" }.getOrDefault("1.1")
-    }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(stringResource(R.string.version) + ": 1.1", style = MaterialTheme.typography.titleMedium)
-        TextButton({ vm.log.clear() }) { Text(stringResource(R.string.clear)) }
-        if (vm.log.isEmpty()) Text(stringResource(R.string.log_empty))
-        LazyColumn {
-            items(vm.log.reversed()) { Text(it, fontFamily = FontFamily.Monospace, fontSize = 12.sp) }
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        SectionCard(stringResource(R.string.activity)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)
+                Switch(vm.devMode, { vm.setDev(it) })
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Tonal(stringResource(R.string.copy), modifier = Modifier.weight(1f)) { vm.copyLog() }
+                Tonal(stringResource(R.string.clear), color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f)) { vm.log.clear() }
+            }
+            if (vm.log.isEmpty()) Text(stringResource(R.string.log_empty), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else Column {
+                for (line in vm.log.takeLast(40).reversed()) Text(line, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+            }
         }
+        SectionCard(stringResource(R.string.version)) { Text(vm.versionLabel, fontSize = 16.sp) }
     }
 }

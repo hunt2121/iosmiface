@@ -1,7 +1,11 @@
 package com.bandface.app
 
 import android.app.Application
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +28,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private val HEX32 = Regex("(?<![0-9a-fA-F])[0-9a-fA-F]{32}(?![0-9a-fA-F])")
+
 class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("bandface", 0)
     private val ctx = app
@@ -38,6 +44,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var progress by mutableStateOf<Float?>(null)
     var status by mutableStateOf<String?>(null)
     var connectedName by mutableStateOf<String?>(null)
+    var preview by mutableStateOf<Bitmap?>(null)
+    var faceInfo by mutableStateOf("")
+    var keyMessage by mutableStateOf<String?>(null)
+    var devMode by mutableStateOf(prefs.getBoolean("dev", false))
+
+    val versionLabel: String = runCatching {
+        val i = app.packageManager.getPackageInfo(app.packageName, 0)
+        "BandFace v${i.versionName}.${i.longVersionCode}"
+    }.getOrDefault("BandFace")
 
     private val ble = BleManager(app) { addLog(it) }
     private var job: Job? = null
@@ -46,6 +61,57 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     init {
         ble.onFound = { d -> if (devices.none { it.address == d.address }) devices.add(d) }
         ble.bonded().forEach { devices.add(it) }
+    }
+
+    fun setDev(v: Boolean) { devMode = v; prefs.edit().putBoolean("dev", v).apply() }
+
+    fun copyLog() {
+        val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("log", log.joinToString("\n")))
+    }
+
+    fun pasteKey() {
+        val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val t = cm.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
+        val m = HEX32.find(t)
+        if (m != null) { keyText = m.value.lowercase(); saveKey(keyText); keyMessage = s(R.string.key_saved) }
+        else keyMessage = s(R.string.key_not_found)
+    }
+
+    /** Обходить вибрану папку і шукає ключ у текстових файлах. */
+    fun scanFolder(tree: Uri) {
+        viewModelScope.launch {
+            val found = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                var result: String? = null
+                fun walk(docId: String, depth: Int) {
+                    if (result != null || depth > 6) return
+                    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId)
+                    ctx.contentResolver.query(children, arrayOf(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        DocumentsContract.Document.COLUMN_SIZE), null, null, null)?.use { c ->
+                        val list = ArrayList<Triple<String, String, Long>>()
+                        while (c.moveToNext()) list.add(Triple(c.getString(0), c.getString(1), c.getLong(2)))
+                        for ((id, mime, size) in list) {
+                            if (result != null) return
+                            if (mime == DocumentsContract.Document.MIME_TYPE_DIR) walk(id, depth + 1)
+                            else if (size in 1..4_000_000) {
+                                val text = runCatching {
+                                    ctx.contentResolver.openInputStream(DocumentsContract.buildDocumentUriUsingTree(tree, id))
+                                        ?.use { it.readBytes().toString(Charsets.ISO_8859_1) }
+                                }.getOrNull() ?: continue
+                                val m = Regex("encryptKey\\W{0,8}([0-9a-fA-F]{32})").find(text)
+                                if (m != null) { result = m.groupValues[1]; return }
+                            }
+                        }
+                    }
+                }
+                walk(DocumentsContract.getTreeDocumentId(tree), 0)
+                result
+            }
+            if (found != null) { keyText = found.lowercase(); saveKey(keyText); keyMessage = s(R.string.key_found) }
+            else keyMessage = s(R.string.key_not_found)
+        }
     }
 
     fun addLog(text: String) {
@@ -80,12 +146,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun saveKey(text: String): Boolean {
         val bytes = Hex.decode(text)
         if (bytes == null || bytes.size != 16) {
-            status = s(R.string.key_invalid)
+            keyMessage = s(R.string.key_invalid)
             return false
         }
         keyText = Hex.encode(bytes)
         prefs.edit().putString("key", keyText).apply()
-        status = s(R.string.key_saved)
+        keyMessage = s(R.string.key_saved)
         return true
     }
 
@@ -98,9 +164,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (m != null) {
             keyText = m.value.lowercase()
             saveKey(keyText)
-            status = s(R.string.key_found)
+            keyMessage = s(R.string.key_found)
         } else {
-            status = s(R.string.key_not_found)
+            keyMessage = s(R.string.key_not_found)
         }
     }
 
@@ -110,6 +176,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val f = FaceFile(bytes)
             face = f
             faceName = f.name ?: f.id
+            faceInfo = "${f.size / 1024} KB"
+            preview = runCatching {
+                f.decodePreview()?.let { Bitmap.createBitmap(it.argb, it.width, it.height, Bitmap.Config.ARGB_8888) }
+            }.getOrNull()
             status = null
             addLog("${f.id} (${f.size / 1024} KB)")
         } catch (e: Exception) {
@@ -118,6 +188,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             status = describe(e)
         }
     }
+
+    fun disconnect() { ble.disconnect(); connectedName = null }
 
     fun install() {
         val f = face ?: return
@@ -129,7 +201,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             status = null
             progress = 0f
             val config = SessionConfig()
-            config.log = { addLog(it) }
+            if (devMode) config.log = { addLog(it) }
             val session = BandSession(ble, config)
             ble.onData = { session.receive(it) }
             ble.onDisconnect = { session.connectionLost(); connectedName = null }
