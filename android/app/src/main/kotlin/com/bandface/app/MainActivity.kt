@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -298,8 +299,11 @@ fun LogTab(vm: MainViewModel) {
         SectionCard(stringResource(R.string.activity)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-                    Switch(vm.devMode, { vm.setDev(it) })
+                // Висоту рядка задає текст: перемикач виходить за його межі й не збільшує відступ від заголовка
+                Box(Modifier.width(52.dp).height(0.dp), contentAlignment = Alignment.Center) {
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Switch(vm.devMode, { vm.setDev(it) }, Modifier.requiredSize(52.dp, 32.dp))
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
