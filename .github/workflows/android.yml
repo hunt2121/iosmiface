@@ -10,6 +10,9 @@ on:
   push:
     branches: [android]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,5 +42,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk BandFace-android.apk
+          ls android/app/build/outputs/apk/release/; cp android/app/build/outputs/apk/release/*.apk BandFace-android.apk
           gh release create "android-${{ github.run_number }}" BandFace-android.apk --draft --title "Android build ${{ github.run_number }}" --notes "Android APK" --target "${{ github.sha }}"
