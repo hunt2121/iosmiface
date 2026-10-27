@@ -99,6 +99,8 @@ struct ContentView: View {
                         Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                    } header: {
+                        Text("Версія")
                     }
                 }
                 .navigationTitle("Журнал")
