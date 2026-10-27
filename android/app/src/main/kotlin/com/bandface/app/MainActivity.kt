@@ -72,6 +72,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 private val LightScheme = lightColorScheme(
@@ -98,7 +99,8 @@ private object Dim {
     val titleTop = 24.dp     // над заголовком екрана
     val titleBottom = 16.dp  // між заголовком і першою карткою
     val cardGap = 14.dp      // між картками
-    val cardPad = 20.dp      // всередині картки
+    val cardPad = 16.dp      // всередині картки з усіх боків
+    val titleGap = 16.dp     // малий заголовок: зверху від краю картки і знизу до вмісту однаково
     val innerGap = 10.dp     // між елементами всередині картки
     val bottom = 16.dp       // під останньою карткою
 }
@@ -116,6 +118,15 @@ class MainActivity : ComponentActivity() {
 fun App(vm: MainViewModel) {
     val scheme: ColorScheme = if (isSystemInDarkTheme()) DarkScheme else LightScheme
     MaterialTheme(colorScheme = scheme) {
+      androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.material3.LocalTextStyle provides androidx.compose.material3.LocalTextStyle.current.copy(
+            lineHeight = 1.2.em,
+            lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+            ),
+        ),
+      ) {
         var tab by remember { mutableIntStateOf(0) }
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -146,15 +157,19 @@ fun App(vm: MainViewModel) {
                 }
             }
         }
+      }
     }
 }
 
 @Composable
 private fun SectionCard(title: String, content: @Composable () -> Unit) {
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-        Column(Modifier.padding(Dim.cardPad), verticalArrangement = Arrangement.spacedBy(Dim.innerGap)) {
-            if (title.isNotEmpty()) Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            content()
+        Column(Modifier.padding(Dim.cardPad)) {
+            if (title.isNotEmpty()) {
+                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(Dim.titleGap))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(Dim.innerGap)) { content() }
         }
     }
 }
