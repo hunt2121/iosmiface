@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BandFace</string>
+    <string name="tab_faces">Циферблати</string>
+    <string name="tab_key">Ключ</string>
+    <string name="tab_log">Журнал</string>
+    <string name="pick_face">Вибрати файл циферблата</string>
+    <string name="install">Встановити</string>
+    <string name="no_face">Файл не вибрано</string>
+    <string name="band">Браслет</string>
+    <string name="scan">Шукати браслет</string>
+    <string name="connected">Підключено: %1$s</string>
+    <string name="not_connected">Не підключено</string>
+    <string name="key_title">Auth key браслета</string>
+    <string name="key_hint">32 hex-символи (16 байт)</string>
+    <string name="key_import">Знайти ключ у файлі</string>
+    <string name="key_saved">Ключ збережено</string>
+    <string name="key_invalid">Auth key має бути 32 hex-символи</string>
+    <string name="key_found">Ключ знайдено у файлі</string>
+    <string name="key_not_found">У файлі немає ключа</string>
+    <string name="key_note">Ключ зберігається лише на цьому телефоні й нікуди не надсилається.</string>
+    <string name="version">Версія</string>
+    <string name="log_empty">Журнал порожній</string>
+    <string name="clear">Очистити</string>
+    <string name="done_installed">Циферблат встановлено й активовано</string>
+    <string name="done_already">Циферблат уже був на браслеті, його активовано</string>
+    <string name="err_generic">Помилка: %1$s</string>
+    <string name="err_auth">Автентифікація не вдалася: перевірте auth key</string>
+    <string name="err_timeout">Браслет не відповів</string>
+    <string name="err_connect">Спочатку підключіть браслет</string>
+    <string name="err_face">Некоректний файл циферблата</string>
+    <string name="err_install">Браслет відхилив операцію (статус %1$d)</string>
+    <string name="err_disconnected">З’єднання розірвано</string>
+    <string name="progress">Передача %1$d/%2$d</string>
+    <string name="permission_needed">Дозвольте доступ до Bluetooth</string>
+</resources>

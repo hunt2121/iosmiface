@@ -1,3 +1,8 @@
 .DS_Store
 BandFace.xcodeproj/
 build/
+android/.gradle/
+android/build/
+android/**/build/
+*.iml
+local.properties

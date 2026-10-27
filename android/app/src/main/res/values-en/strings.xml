@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_faces">Watch faces</string>
+    <string name="tab_key">Key</string>
+    <string name="tab_log">Log</string>
+    <string name="pick_face">Choose a watch face file</string>
+    <string name="install">Install</string>
+    <string name="no_face">No file selected</string>
+    <string name="band">Band</string>
+    <string name="scan">Find band</string>
+    <string name="connected">Connected: %1$s</string>
+    <string name="not_connected">Not connected</string>
+    <string name="key_title">Band auth key</string>
+    <string name="key_hint">32 hex characters (16 bytes)</string>
+    <string name="key_import">Find key in a file</string>
+    <string name="key_saved">Key saved</string>
+    <string name="key_invalid">The auth key must be 32 hex characters</string>
+    <string name="key_found">Key found in the file</string>
+    <string name="key_not_found">No key in the file</string>
+    <string name="key_note">The key is stored only on this phone and is never sent anywhere.</string>
+    <string name="version">Version</string>
+    <string name="log_empty">The log is empty</string>
+    <string name="clear">Clear</string>
+    <string name="done_installed">Watch face installed and activated</string>
+    <string name="done_already">The watch face was already on the band; it is now active</string>
+    <string name="err_generic">Error: %1$s</string>
+    <string name="err_auth">Authentication failed: check the auth key</string>
+    <string name="err_timeout">The band did not respond</string>
+    <string name="err_connect">Connect to the band first</string>
+    <string name="err_face">Invalid watch face file</string>
+    <string name="err_install">The band rejected the operation (status %1$d)</string>
+    <string name="err_disconnected">Connection lost</string>
+    <string name="progress">Sending %1$d/%2$d</string>
+    <string name="permission_needed">Allow Bluetooth access</string>
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_faces">Циферблаты</string>
+    <string name="tab_key">Ключ</string>
+    <string name="tab_log">Журнал</string>
+    <string name="pick_face">Выбрать файл циферблата</string>
+    <string name="install">Установить</string>
+    <string name="no_face">Файл не выбран</string>
+    <string name="band">Браслет</string>
+    <string name="scan">Найти браслет</string>
+    <string name="connected">Подключено: %1$s</string>
+    <string name="not_connected">Не подключено</string>
+    <string name="key_title">Auth key браслета</string>
+    <string name="key_hint">32 hex-символа (16 байт)</string>
+    <string name="key_import">Найти ключ в файле</string>
+    <string name="key_saved">Ключ сохранён</string>
+    <string name="key_invalid">Auth key должен быть из 32 hex-символов</string>
+    <string name="key_found">Ключ найден в файле</string>
+    <string name="key_not_found">В файле нет ключа</string>
+    <string name="key_note">Ключ хранится только на этом телефоне и никуда не отправляется.</string>
+    <string name="version">Версия</string>
+    <string name="log_empty">Журнал пуст</string>
+    <string name="clear">Очистить</string>
+    <string name="done_installed">Циферблат установлен и активирован</string>
+    <string name="done_already">Циферблат уже был на браслете, он активирован</string>
+    <string name="err_generic">Ошибка: %1$s</string>
+    <string name="err_auth">Аутентификация не удалась: проверьте auth key</string>
+    <string name="err_timeout">Браслет не ответил</string>
+    <string name="err_connect">Сначала подключите браслет</string>
+    <string name="err_face">Некорректный файл циферблата</string>
+    <string name="err_install">Браслет отклонил операцию (статус %1$d)</string>
+    <string name="err_disconnected">Соединение разорвано</string>
+    <string name="progress">Передача %1$d/%2$d</string>
+    <string name="permission_needed">Разрешите доступ к Bluetooth</string>
+</resources>
