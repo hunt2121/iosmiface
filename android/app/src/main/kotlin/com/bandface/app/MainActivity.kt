@@ -186,8 +186,8 @@ fun FacesTab(vm: MainViewModel) {
                 Tonal(stringResource(R.string.scan), enabled = !vm.busy) { permLauncher.launch(permissions) }
                 for (d in vm.devices) {
                     Surface(
-                        Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.background, onClick = { vm.connect(d) }, enabled = !vm.busy,
+                        onClick = { vm.connect(d) }, modifier = Modifier.fillMaxWidth(), enabled = !vm.busy,
+                        shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.background,
                     ) {
                         Column(Modifier.padding(14.dp)) {
                             Text(d.name, fontSize = 16.sp)
