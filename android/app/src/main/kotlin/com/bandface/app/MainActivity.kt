@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,9 @@ import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.FilledTonalButton
@@ -158,17 +162,17 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun Tonal(text: String, enabled: Boolean = true, color: Color? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
     FilledTonalButton(
-        onClick, modifier, enabled = enabled,
+        onClick, modifier, enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = color ?: MaterialTheme.colorScheme.onSecondaryContainer,
         ),
-    ) { Text(text, fontWeight = FontWeight.Medium, fontSize = 15.sp) }
+    ) { Text(text, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1) }
 }
 
 @Composable
 private fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Button(onClick, modifier.height(48.dp), enabled = enabled) { Text(text, fontWeight = FontWeight.Medium, fontSize = 16.sp) }
+    Button(onClick, modifier.height(48.dp), enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) { Text(text, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1) }
 }
 
 @Composable
@@ -189,7 +193,7 @@ fun FacesTab(vm: MainViewModel) {
             if (name != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(name, fontSize = 20.sp)
+                        Text(name, fontSize = 17.sp, maxLines = 1)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(9.dp).clip(CircleShape).background(Green))
                             Text("  " + stringResource(R.string.connected, "").trimEnd(' ', ':').trim(), color = Green, fontSize = 14.sp)
@@ -266,6 +270,7 @@ fun KeyTab(vm: MainViewModel) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.key_title)) {
+            Spacer(Modifier.height(6.dp))
             OutlinedTextField(
                 text, { text = it; vm.saveKey(it) }, Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.key_hint)) }, singleLine = true,
@@ -283,13 +288,16 @@ fun KeyTab(vm: MainViewModel) {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun LogTab(vm: MainViewModel) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.activity)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.padding(top = 0.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)
-                Switch(vm.devMode, { vm.setDev(it) })
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                    Switch(vm.devMode, { vm.setDev(it) })
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Tonal(stringResource(R.string.copy), modifier = Modifier.weight(1f)) { vm.copyLog() }
