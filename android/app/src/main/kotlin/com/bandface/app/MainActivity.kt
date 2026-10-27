@@ -31,6 +31,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ColorScheme
@@ -105,7 +110,7 @@ fun App(vm: MainViewModel) {
                     labels.forEachIndexed { i, l ->
                         NavigationBarItem(
                             selected = tab == i, onClick = { tab = i },
-                            icon = { Spacer(Modifier.size(1.dp)) },
+                            icon = { Icon(listOf(Icons.Filled.Watch, Icons.Filled.Key, Icons.Filled.ListAlt)[i], null) },
                             label = { Text(stringResource(l), fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) },
                             alwaysShowLabel = true,
                             colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.secondaryContainer),
