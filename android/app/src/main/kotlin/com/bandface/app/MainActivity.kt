@@ -93,17 +93,6 @@ private val DarkScheme = darkColorScheme(
 )
 private val Green = Color(0xFF1B7A3E)
 
-/** Єдині відступи для всіх екранів. */
-private object Dim {
-    val screenH = 20.dp      // поля екрана зліва й справа
-    val titleTop = 24.dp     // над заголовком екрана
-    val titleBottom = 16.dp  // між заголовком і першою карткою
-    val cardGap = 14.dp      // між картками
-    val cardPad = 16.dp      // всередині картки з усіх боків
-    val titleGap = 16.dp     // малий заголовок: зверху від краю картки і знизу до вмісту однаково
-    val innerGap = 10.dp     // між елементами всередині картки
-    val bottom = 16.dp       // під останньою карткою
-}
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
@@ -148,7 +137,7 @@ fun App(vm: MainViewModel) {
             Column(Modifier.padding(pad).fillMaxSize().statusBarsPadding().padding(horizontal = Dim.screenH)) {
                 Text(
                     stringResource(listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)[tab]),
-                    fontSize = 34.sp, modifier = Modifier.padding(top = Dim.titleTop, bottom = Dim.titleBottom),
+                    fontSize = Type.screenTitle, modifier = Modifier.padding(top = Dim.titleTop, bottom = Dim.titleBottom),
                 )
                 when (tab) {
                     0 -> FacesTab(vm)
@@ -163,10 +152,10 @@ fun App(vm: MainViewModel) {
 
 @Composable
 private fun SectionCard(title: String, content: @Composable () -> Unit) {
-    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(Dim.radius), color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(Modifier.padding(Dim.cardPad)) {
             if (title.isNotEmpty()) {
-                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(title, fontSize = Type.cardTitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(Dim.titleGap))
             }
             Column(verticalArrangement = Arrangement.spacedBy(Dim.innerGap)) { content() }
@@ -182,12 +171,12 @@ private fun Tonal(text: String, enabled: Boolean = true, color: Color? = null, m
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = color ?: MaterialTheme.colorScheme.onSecondaryContainer,
         ),
-    ) { Text(text, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1) }
+    ) { Text(text, fontWeight = FontWeight.Medium, fontSize = Type.button, maxLines = 1) }
 }
 
 @Composable
 private fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Button(onClick, modifier.height(48.dp), enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) { Text(text, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1) }
+    Button(onClick, modifier.height(48.dp), enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) { Text(text, fontWeight = FontWeight.Medium, fontSize = Type.button, maxLines = 1) }
 }
 
 @Composable
@@ -208,7 +197,7 @@ fun FacesTab(vm: MainViewModel) {
             if (name != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(name, fontSize = 17.sp, maxLines = 1)
+                        Text(name, fontSize = Type.body, maxLines = 1)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(9.dp).clip(CircleShape).background(Green))
                             Text("  " + stringResource(R.string.connected, "").trimEnd(' ', ':').trim(), color = Green, fontSize = 14.sp)
