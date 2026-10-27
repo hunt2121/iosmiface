@@ -213,17 +213,17 @@ fun FacesTab(vm: MainViewModel) {
                     val bmp = vm.preview
                     if (bmp != null) Image(bmp.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Column(Modifier.fillMaxWidth().height(70.dp).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                        Text(if (vm.face != null) vm.faceInfo else stringResource(R.string.format_hint), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                        Text(if (vm.face != null) (vm.fileName ?: " ") else stringResource(R.string.pick_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.fillMaxWidth().height(70.dp).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text(if (vm.face != null) vm.faceInfo else stringResource(R.string.format_hint), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        Text(if (vm.face != null) (vm.fileName ?: " ") else stringResource(R.string.pick_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }
                     Tonal(stringResource(if (vm.face == null) R.string.pick_face else R.string.pick_other), enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) {
                         picker.launch(arrayOf("*/*"))
                     }
                     Primary(stringResource(R.string.install_band), enabled = !vm.busy && vm.face != null, modifier = Modifier.fillMaxWidth()) { vm.install() }
-                    Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 14.dp).padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
+                    Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 14.dp).padding(top = 8.dp), contentAlignment = Alignment.TopStart) {
                         val p = vm.progress
                         if (p != null) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -233,7 +233,7 @@ fun FacesTab(vm: MainViewModel) {
                                     Text("${(p * 100).toInt()}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
-                        } else vm.status?.let { Text(it, fontSize = 12.sp, color = Green, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
+                        } else vm.status?.let { Text(it, fontSize = 12.sp, color = Green, maxLines = 2) }
                     }
                 }
             }
