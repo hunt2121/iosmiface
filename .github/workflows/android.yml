@@ -32,7 +32,9 @@ jobs:
         working-directory: android
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-        run: gradle :app:assembleRelease --no-daemon
+        run: |
+          set -o pipefail
+          gradle :app:assembleRelease --no-daemon 2>&1 | tee build.log || { grep -E "^e: |error:" build.log | head -20 | sed 's/^/::error::/' ; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: BandFace-android
