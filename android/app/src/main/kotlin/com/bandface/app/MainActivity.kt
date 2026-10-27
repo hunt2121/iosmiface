@@ -88,6 +88,17 @@ private val DarkScheme = darkColorScheme(
 )
 private val Green = Color(0xFF1B7A3E)
 
+/** Єдині відступи для всіх екранів. */
+private object Dim {
+    val screenH = 20.dp      // поля екрана зліва й справа
+    val titleTop = 24.dp     // над заголовком екрана
+    val titleBottom = 16.dp  // між заголовком і першою карткою
+    val cardGap = 14.dp      // між картками
+    val cardPad = 20.dp      // всередині картки
+    val innerGap = 10.dp     // між елементами всередині картки
+    val bottom = 16.dp       // під останньою карткою
+}
+
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
 
@@ -119,10 +130,10 @@ fun App(vm: MainViewModel) {
                 }
             },
         ) { pad ->
-            Column(Modifier.padding(pad).fillMaxSize().statusBarsPadding().padding(horizontal = 20.dp)) {
+            Column(Modifier.padding(pad).fillMaxSize().statusBarsPadding().padding(horizontal = Dim.screenH)) {
                 Text(
                     stringResource(listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)[tab]),
-                    fontSize = 34.sp, modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
+                    fontSize = 34.sp, modifier = Modifier.padding(top = Dim.titleTop, bottom = Dim.titleBottom),
                 )
                 when (tab) {
                     0 -> FacesTab(vm)
@@ -137,7 +148,7 @@ fun App(vm: MainViewModel) {
 @Composable
 private fun SectionCard(title: String, content: @Composable () -> Unit) {
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(Dim.cardPad), verticalArrangement = Arrangement.spacedBy(Dim.innerGap)) {
             if (title.isNotEmpty()) Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             content()
         }
@@ -172,7 +183,7 @@ fun FacesTab(vm: MainViewModel) {
         if (uri != null) vm.pickFace(uri)
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.band_card)) {
             val name = vm.connectedName
             if (name != null) {
@@ -214,7 +225,7 @@ fun FacesTab(vm: MainViewModel) {
                     if (bmp != null) Image(bmp.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.fillMaxWidth().height(70.dp).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Column(Modifier.fillMaxWidth().height(62.dp).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                         Text(if (vm.face != null) vm.faceInfo else stringResource(R.string.format_hint), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         Text(if (vm.face != null) (vm.fileName ?: " ") else stringResource(R.string.pick_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
@@ -223,7 +234,7 @@ fun FacesTab(vm: MainViewModel) {
                         picker.launch(arrayOf("*/*"))
                     }
                     Primary(stringResource(R.string.install_band), enabled = !vm.busy && vm.face != null, modifier = Modifier.fillMaxWidth()) { vm.install() }
-                    Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 14.dp).padding(top = 8.dp), contentAlignment = Alignment.TopStart) {
+                    Box(Modifier.fillMaxWidth().height(30.dp).padding(horizontal = 14.dp), contentAlignment = Alignment.TopStart) {
                         val p = vm.progress
                         if (p != null) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -238,7 +249,7 @@ fun FacesTab(vm: MainViewModel) {
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Dim.bottom - Dim.cardGap))
     }
 }
 
@@ -253,7 +264,7 @@ fun KeyTab(vm: MainViewModel) {
     }
     if (text != vm.keyText && vm.keyText.isNotEmpty()) text = vm.keyText
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.key_title)) {
             OutlinedTextField(
                 text, { text = it; vm.saveKey(it) }, Modifier.fillMaxWidth(),
@@ -274,7 +285,7 @@ fun KeyTab(vm: MainViewModel) {
 
 @Composable
 fun LogTab(vm: MainViewModel) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.activity)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)
