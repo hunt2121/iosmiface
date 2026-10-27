@@ -46,4 +46,6 @@
     <string name="dev_mode">Режим розробника</string>
     <string name="copy">Копіювати</string>
     <string name="face_label">Циферблат · %1$s</string>
+    <string name="format_hint">Формат: .bin або .face</string>
+    <string name="pick_hint">Натисніть «Вибрати файл»</string>
 </resources>

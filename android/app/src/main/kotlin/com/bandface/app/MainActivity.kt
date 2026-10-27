@@ -201,31 +201,38 @@ fun FacesTab(vm: MainViewModel) {
         SectionCard(stringResource(R.string.install_card)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(
-                    Modifier.width(76.dp).height(150.dp).clip(RoundedCornerShape(38.dp))
-                        .background(Color(0xFF1F1F1F)).border(BorderStroke(3.dp, Color(0xFF7A7A7A)), RoundedCornerShape(38.dp)),
+                    Modifier.width(96.dp).height(236.dp).clip(RoundedCornerShape(48.dp))
+                        .background(Color(0xFF1F1F1F)).border(BorderStroke(3.dp, Color(0xFF7A7A7A)), RoundedCornerShape(48.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     val bmp = vm.preview
                     if (bmp != null) Image(bmp.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 17.sp)
-                    if (vm.face != null) Text(stringResource(R.string.face_label, vm.faceInfo), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(Modifier.height(70.dp).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(vm.faceName ?: stringResource(R.string.no_face), fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text(if (vm.face != null) vm.faceInfo else stringResource(R.string.format_hint), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        Text(if (vm.face != null) (vm.fileName ?: " ") else stringResource(R.string.pick_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    }
                     Tonal(stringResource(if (vm.face == null) R.string.pick_face else R.string.pick_other), enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) {
                         picker.launch(arrayOf("*/*"))
                     }
                     Primary(stringResource(R.string.install_band), enabled = !vm.busy && vm.face != null, modifier = Modifier.fillMaxWidth()) { vm.install() }
+                    Box(Modifier.height(44.dp).padding(horizontal = 14.dp).padding(top = 8.dp)) {
+                        val p = vm.progress
+                        if (p != null) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth().height(10.dp), strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                Row {
+                                    Text(vm.progressText, Modifier.weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                                    Text("${(p * 100).toInt()}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        } else vm.status?.let { Text(it, fontSize = 12.sp, color = Green, maxLines = 2) }
+                    }
                 }
             }
         }
-
-        vm.progress?.let { p ->
-            SectionCard("") {
-                Text(stringResource(R.string.transfer, (p * 100).toInt()), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                LinearProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth())
-            }
-        }
-        vm.status?.let { Text(it, Modifier.padding(horizontal = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         Spacer(Modifier.height(8.dp))
     }
 }

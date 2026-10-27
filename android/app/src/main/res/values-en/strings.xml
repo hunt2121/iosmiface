@@ -45,4 +45,6 @@
     <string name="dev_mode">Developer mode</string>
     <string name="copy">Copy</string>
     <string name="face_label">Watch face · %1$s</string>
+    <string name="format_hint">Format: .bin or .face</string>
+    <string name="pick_hint">Tap “Choose a watch face file”</string>
 </resources>

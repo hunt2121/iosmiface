@@ -46,6 +46,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var connectedName by mutableStateOf<String?>(null)
     var preview by mutableStateOf<Bitmap?>(null)
     var faceInfo by mutableStateOf("")
+    var fileName by mutableStateOf<String?>(null)
+    var progressText by mutableStateOf("")
     var keyMessage by mutableStateOf<String?>(null)
     var devMode by mutableStateOf(prefs.getBoolean("dev", false))
 
@@ -176,7 +178,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val f = FaceFile(bytes)
             face = f
             faceName = f.name ?: f.id
-            faceInfo = "${f.size / 1024} KB"
+            faceInfo = "ID ${f.id} · ${f.size / 1024} KB"
+            fileName = runCatching {
+                ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+            }.getOrNull()
             preview = runCatching {
                 f.decodePreview()?.let { Bitmap.createBitmap(it.argb, it.width, it.height, Bitmap.Config.ARGB_8888) }
             }.getOrNull()
@@ -214,7 +220,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     when (phase) {
                         is InstallPhase.Uploading -> {
                             if (phase.total > 0) progress = phase.sent.toFloat() / phase.total
-                            status = s(R.string.progress, phase.sent, phase.total)
+                            progressText = s(R.string.progress, phase.sent, phase.total)
                         }
                         is InstallPhase.Done -> already = phase.alreadyInstalled
                         else -> Unit
