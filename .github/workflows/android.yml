@@ -39,10 +39,16 @@ jobs:
         with:
           name: BandFace-android
           path: android/app/build/outputs/apk/release/*.apk
-      - name: Draft release
+      - name: Release
         if: ${{ inputs.release || github.ref == 'refs/heads/android' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          MSG: ${{ github.event.head_commit.message }}
         run: |
-          ls android/app/build/outputs/apk/release/; cp android/app/build/outputs/apk/release/*.apk BandFace-android.apk
-          gh release create "android-${{ github.run_number }}" BandFace-android.apk --draft --title "Android build ${{ github.run_number }}" --notes "Android APK" --target "${{ github.sha }}"
+          cp android/app/build/outputs/apk/release/*.apk BandFace-android.apk
+          VER="0.1.${{ github.run_number }}"
+          if [[ "$MSG" == *"[release]"* ]]; then
+            gh release create "android-v$VER" BandFace-android.apk --title "BandFace Android $VER" --notes "Android APK $VER" --target "${{ github.sha }}"
+          else
+            gh release create "android-$VER" BandFace-android.apk --draft --title "Android build $VER" --notes "Android APK" --target "${{ github.sha }}"
+          fi

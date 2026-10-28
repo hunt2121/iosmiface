@@ -53,7 +53,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val versionLabel: String = runCatching {
         val i = app.packageManager.getPackageInfo(app.packageName, 0)
-        "BandFace v${i.versionName}.${i.longVersionCode}"
+        "BandFace v${i.versionName}"
     }.getOrDefault("BandFace")
 
     private val ble = BleManager(app) { addLog(it) }
