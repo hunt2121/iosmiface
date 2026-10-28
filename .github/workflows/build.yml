@@ -87,3 +87,16 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "BandFace $TAG" \
             --notes "Unsigned IPA for sideloading (Sideloadly / AltStore). See README for installation."
+
+      # Дзеркало в публічний репозиторій з готовими збірками (потрібен секрет RELEASES_TOKEN)
+      - name: Mirror release to public repo
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          PUBLIC_REPO: hunt2121/bandface
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "RELEASES_TOKEN не задано — пропуск"; exit 0; fi
+          TAG="v$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
+          gh release create "ios-$TAG" "$IPA_NAME.ipa" --repo "$PUBLIC_REPO" \
+            --title "BandFace iOS $TAG" \
+            --notes "Unsigned IPA for sideloading (iloader / Sideloadly / AltStore). See README for installation."
