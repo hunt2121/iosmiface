@@ -151,7 +151,7 @@ fun App(vm: MainViewModel) {
 @Composable
 private fun FloatingTabBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val labels = listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)
-    val icons = listOf(Icons.Filled.Watch, Icons.Filled.Key, Icons.Filled.ListAlt)
+    val icons = listOf(R.drawable.ic_tab_watch, R.drawable.ic_tab_key, R.drawable.ic_tab_log)
     Surface(
         modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
         shape = CircleShape,
@@ -168,7 +168,7 @@ private fun FloatingTabBar(selected: Int, onSelect: (Int) -> Unit, modifier: Mod
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Icon(icons[i], null, tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(androidx.compose.ui.res.painterResource(icons[i]), null, tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         stringResource(l), fontSize = 12.sp, maxLines = 1,
                         fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
