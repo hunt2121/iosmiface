@@ -12,6 +12,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -106,48 +108,75 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App(vm: MainViewModel) {
-    val scheme: ColorScheme = if (isSystemInDarkTheme()) DarkScheme else LightScheme
+    val dark = isSystemInDarkTheme()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    // Material 3: динамічні кольори (Material You) на Android 12+, власна палітра на старіших
+    val scheme: ColorScheme = when {
+        Build.VERSION.SDK_INT >= 31 && dark -> androidx.compose.material3.dynamicDarkColorScheme(ctx)
+        Build.VERSION.SDK_INT >= 31 -> androidx.compose.material3.dynamicLightColorScheme(ctx)
+        dark -> DarkScheme
+        else -> LightScheme
+    }
     MaterialTheme(colorScheme = scheme) {
-      androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.material3.LocalTextStyle provides androidx.compose.material3.LocalTextStyle.current.copy(
-            lineHeight = 1.2.em,
-            lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
-                androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
-                androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalTextStyle provides androidx.compose.material3.LocalTextStyle.current.copy(
+                lineHeight = 1.2.em,
+                lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                    androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                    androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+                ),
             ),
-        ),
-      ) {
-        var tab by remember { mutableIntStateOf(0) }
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
-                    val labels = listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)
-                    labels.forEachIndexed { i, l ->
-                        NavigationBarItem(
-                            selected = tab == i, onClick = { tab = i },
-                            icon = { Icon(listOf(Icons.Filled.Watch, Icons.Filled.Key, Icons.Filled.ListAlt)[i], null) },
-                            label = { Text(stringResource(l), fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) },
-                            alwaysShowLabel = true,
-                            colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.secondaryContainer),
-                        )
+        ) {
+            var tab by remember { mutableIntStateOf(0) }
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = Dim.screenH)) {
+                    Text(
+                        stringResource(listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)[tab]),
+                        fontSize = Type.screenTitle, color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(top = Dim.titleTop, bottom = Dim.titleBottom),
+                    )
+                    when (tab) {
+                        0 -> FacesTab(vm)
+                        1 -> KeyTab(vm)
+                        else -> LogTab(vm)
                     }
                 }
-            },
-        ) { pad ->
-            Column(Modifier.padding(pad).fillMaxSize().statusBarsPadding().padding(horizontal = Dim.screenH)) {
-                Text(
-                    stringResource(listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)[tab]),
-                    fontSize = Type.screenTitle, modifier = Modifier.padding(top = Dim.titleTop, bottom = Dim.titleBottom),
-                )
-                when (tab) {
-                    0 -> FacesTab(vm)
-                    1 -> KeyTab(vm)
-                    else -> LogTab(vm)
+                FloatingTabBar(tab, { tab = it }, Modifier.align(Alignment.BottomCenter))
+            }
+        }
+    }
+}
+
+/** Плаваюче нижнє меню (капсула над вмістом), як у iOS. */
+@Composable
+private fun FloatingTabBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val labels = listOf(R.string.tab_faces, R.string.tab_key, R.string.tab_log)
+    val icons = listOf(Icons.Filled.Watch, Icons.Filled.Key, Icons.Filled.ListAlt)
+    Surface(
+        modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp, shadowElevation = 10.dp,
+    ) {
+        Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            labels.forEachIndexed { i, l ->
+                val on = selected == i
+                Column(
+                    Modifier.weight(1f).clip(CircleShape)
+                        .background(if (on) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                        .clickable { onSelect(i) }.padding(vertical = 8.dp, horizontal = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Icon(icons[i], null, tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(l), fontSize = 12.sp, maxLines = 1,
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
+                        color = if (on) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
-      }
     }
 }
 
@@ -258,7 +287,7 @@ fun FacesTab(vm: MainViewModel) {
                 }
             }
         }
-        Spacer(Modifier.height(Dim.bottom - Dim.cardGap))
+        Spacer(Modifier.height(Dim.tabBarInset))
     }
 }
 
@@ -273,7 +302,7 @@ fun KeyTab(vm: MainViewModel) {
     }
     if (text != vm.keyText && vm.keyText.isNotEmpty()) text = vm.keyText
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = Dim.tabBarInset), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.key_title)) {
             OutlinedTextField(
                 text, { text = it; vm.saveKey(it) }, Modifier.fillMaxWidth(),
@@ -295,7 +324,7 @@ fun KeyTab(vm: MainViewModel) {
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun LogTab(vm: MainViewModel) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = Dim.tabBarInset), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
         SectionCard(stringResource(R.string.activity)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dev_mode), Modifier.weight(1f), fontSize = 17.sp)

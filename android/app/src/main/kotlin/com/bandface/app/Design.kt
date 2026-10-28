@@ -14,6 +14,7 @@ object Dim {
     val innerGap = 10.dp
     val bottom = 16.dp
     val radius = 24.dp
+    val tabBarInset = 96.dp
 }
 
 object Type {
