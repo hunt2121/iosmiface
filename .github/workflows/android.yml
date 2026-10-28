@@ -52,3 +52,13 @@ jobs:
           else
             gh release create "android-$VER" BandFace-android.apk --draft --title "Android build $VER" --notes "Android APK" --target "${{ github.sha }}"
           fi
+      - name: Mirror release to public repo
+        if: ${{ contains(github.event.head_commit.message, '[release]') }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          PUBLIC_REPO: hunt2121/bandface
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "RELEASES_TOKEN не задано — пропуск"; exit 0; fi
+          VER="0.1.${{ github.run_number }}"
+          gh release create "android-v$VER" BandFace-android.apk --repo "$PUBLIC_REPO" \
+            --title "BandFace Android $VER" --notes "Android APK $VER"
