@@ -41,7 +41,7 @@ jobs:
           function Shot($name, $page) {
             $p = Start-Process -FilePath "$PWD\windows\out\BandFace.exe" -ArgumentList "--page=$page","--shot=$PWD\$name.png" -PassThru
             $p.WaitForExit(30000) | Out-Null
-            if (!$p.HasExited) { Stop-Process $p -Force }
+            if (!$p.HasExited) { Stop-Process $p -Force } else { Write-Output "::error::exit $($p.ExitCode) for $name" }
           }
           $k = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
           New-Item $k -Force | Out-Null
@@ -49,6 +49,7 @@ jobs:
           Shot "light-faces" "faces"; Shot "light-key" "key"; Shot "light-log" "log"
           Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
           Shot "dark-faces" "faces"
+          if (Test-Path "$env:TEMP\bandface-crash.txt") { Write-Output ("::error::" + ((Get-Content "$env:TEMP\bandface-crash.txt" -Raw) -replace "`r?`n"," | ").Substring(0,700)) }
           $info = (Get-ChildItem *.png,*.txt | ForEach-Object { "$($_.Name)=$($_.Length)" }) -join ", "
           Write-Output "::error::files: $info"
           foreach ($t in Get-ChildItem *.txt) { Write-Output ("::error::" + ((Get-Content $t -Raw) -replace "`r?`n"," | ").Substring(0,600)) }
