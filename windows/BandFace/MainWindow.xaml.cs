@@ -45,9 +45,35 @@ namespace BandFace
                 if (a == "--page=key") NavKey.IsChecked = true;
                 else if (a == "--page=log") NavLog.IsChecked = true;
             }
+            string shot = null;
+            foreach (var a in Environment.GetCommandLineArgs()) if (a.StartsWith("--shot=")) shot = a.Substring(7);
+            if (shot != null)
+                ContentRendered += async (s, e) =>
+                {
+                    await Task.Delay(1500);
+                    try { SaveShot(shot); } catch (Exception ex) { File.WriteAllText(shot + ".txt", ex.ToString()); }
+                    Application.Current.Shutdown();
+                };
             SourceInitialized += (s, e) => Theme.Apply(this);
             Microsoft.Win32.SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(() => Theme.Apply(this)));
             Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); };
+        }
+
+        void SaveShot(string path)
+        {
+            var root = (FrameworkElement)Content;
+            int w = (int)root.ActualWidth, h = (int)root.ActualHeight;
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                dc.DrawRectangle((Brush)FindResource("Bg"), null, new Rect(0, 0, w, h));
+                dc.DrawRectangle(new VisualBrush(root), null, new Rect(0, 0, w, h));
+            }
+            var bmp = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+            bmp.Render(dv);
+            var enc = new PngBitmapEncoder();
+            enc.Frames.Add(BitmapFrame.Create(bmp));
+            using (var f = File.Create(path)) enc.Save(f);
         }
 
         void ApplyTexts()
