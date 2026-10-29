@@ -27,7 +27,7 @@ public class ProtocolTests
     {
         var f1 = new Frame(FrameType.Data, 1, new byte[] { 1, 2, 3 }).Encoded();
         var f2 = Frame.Ack(2).Encoded();
-        var all = Bytes.Concat(new byte[] { 0x00, 0xA5 }, f1, f2);
+        var all = Bytes.Concat(new byte[] { 0x00, 0x13 }, f1, f2);
         var p = new FrameParser();
         var got = p.Append(all.Slice(0, 7)).Concat(p.Append(all.Slice(7, all.Length))).ToList();
         Assert.Equal(2, got.Count);
