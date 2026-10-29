@@ -110,20 +110,36 @@ namespace BandFace
                 if (_dev == null) throw new BandException(ErrorKind.NotConnected);
                 pairing = _dev.DeviceInformation.Pairing;
             }
+            // Спершу відкриваємо справжнє GATT-з'єднання: зв'язування має відбутися на живому каналі
+            var probe = await _dev.GetGattServicesAsync(BluetoothCacheMode.Uncached);
+            Info?.Invoke("connect link: " + probe.Status + " status=" + _dev.ConnectionStatus);
+            try { _session = await GattSession.FromDeviceIdAsync(_dev.BluetoothDeviceId); _session.MaintainConnection = true; } catch (Exception) { }
             if (!pairing.CanPair) throw new InvalidOperationException("Pairing is not supported");
             var custom = pairing.Custom;
-            TypedEventHandler<DeviceInformationCustomPairing, DevicePairingRequestedEventArgs> h = (s, a) => a.Accept();
+            TypedEventHandler<DeviceInformationCustomPairing, DevicePairingRequestedEventArgs> h = (s, a) =>
+            {
+                Info?.Invoke("connect pair request: " + a.PairingKind);
+                a.Accept();
+            };
             custom.PairingRequested += h;
-            DevicePairingResult r;
-            try { r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, DevicePairingProtectionLevel.Encryption); }
+            try
+            {
+                foreach (var level in new[] { DevicePairingProtectionLevel.Encryption, DevicePairingProtectionLevel.EncryptionAndAuthentication })
+                {
+                    var r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, level);
+                    Info?.Invoke("connect pair(" + level + "): " + r.Status + " used=" + r.ProtectionLevelUsed);
+                    if (r.Status == DevicePairingResultStatus.Paired && r.ProtectionLevelUsed != DevicePairingProtectionLevel.None) return;
+                    if (r.Status == DevicePairingResultStatus.Paired || r.Status == DevicePairingResultStatus.AlreadyPaired)
+                    {
+                        // «зв'язано» без шифрування — скидаємо й пробуємо суворіший рівень
+                        await pairing.UnpairAsync();
+                        await Task.Delay(500);
+                        continue;
+                    }
+                    throw new InvalidOperationException("Pairing: " + r.Status);
+                }
+            }
             finally { custom.PairingRequested -= h; }
-            Info?.Invoke("connect pair: " + r.Status + " level=" + r.ProtectionLevelUsed);
-            if (r.Status != DevicePairingResultStatus.Paired && r.Status != DevicePairingResultStatus.AlreadyPaired)
-                throw new InvalidOperationException("Pairing: " + r.Status);
-            // після зв'язування потрібно заново отримати пристрій і сервіси
-            try { _dev.Dispose(); } catch (Exception) { }
-            _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
-            if (_dev == null) throw new BandException(ErrorKind.NotConnected);
         }
 
         void OnValue(GattCharacteristic c, GattValueChangedEventArgs e)

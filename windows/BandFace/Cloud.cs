@@ -7,7 +7,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using BandFace.Protocol;
 
 namespace BandFace
@@ -38,7 +37,6 @@ namespace BandFace
         const string Callback = "https://sts-hlth.io.mi.com/healthapp/sts";
         const string HealthPath = "/app/v1/source/get_source_list";
         static readonly string[] Regions = { "", "sg", "de", "us", "i2", "ru", "in" };
-        static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
         static readonly Random Rnd = new Random();
 
         static HttpClient NewClient()
@@ -49,7 +47,7 @@ namespace BandFace
         }
 
         static Dictionary<string, object> Parse(string text) =>
-            (Dictionary<string, object>)Json.DeserializeObject(text.Replace("&&&START&&&", ""));
+            (Dictionary<string, object>)MiniJson.Parse(text.Replace("&&&START&&&", ""));
 
         static string Str(Dictionary<string, object> d, string k) => d.ContainsKey(k) && d[k] != null ? Convert.ToString(d[k]) : "";
 

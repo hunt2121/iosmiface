@@ -16,7 +16,6 @@
   <ItemGroup>
     <Reference Include="System.Security" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Web.Extensions" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
     <Resource Include="Assets\app.ico" />
   </ItemGroup>
