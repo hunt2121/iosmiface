@@ -49,8 +49,12 @@ jobs:
           Shot "light-faces" "faces"; Shot "light-key" "key"; Shot "light-log" "log"
           Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
           Shot "dark-faces" "faces"
-          Get-ChildItem *.png,*.txt | Select Name,Length
-          gh release create "shots-${{ github.run_number }}" light-faces.png light-key.png light-log.png dark-faces.png (Get-ChildItem *.txt -Name) --draft --title shots --notes shots
+          $info = (Get-ChildItem *.png,*.txt | ForEach-Object { "$($_.Name)=$($_.Length)" }) -join ", "
+          Write-Output "::error::files: $info"
+          foreach ($t in Get-ChildItem *.txt) { Write-Output ("::error::" + ((Get-Content $t -Raw) -replace "`r?`n"," | ").Substring(0,600)) }
+          $miss = @("light-faces","light-key","light-log","dark-faces") | Where-Object { !(Test-Path "$_.png") }
+          if ($miss) { exit 0 }
+          gh release create "shots-${{ github.run_number }}" light-faces.png light-key.png light-log.png dark-faces.png --draft --title shots --notes shots
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Package
