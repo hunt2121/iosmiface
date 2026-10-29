@@ -115,7 +115,7 @@ namespace BandFace
                 {
                     int n = Math.Min(_chunk, frame.Length - off);
                     var part = new byte[n];
-                    Buffer.BlockCopy(frame, off, part, 0, n);
+                    System.Buffer.BlockCopy(frame, off, part, 0, n);
                     var st = await tx.WriteValueAsync(part.AsBuffer(), GattWriteOption.WriteWithoutResponse);
                     if (st != GattCommunicationStatus.Success) throw new BandException(ErrorKind.Disconnected, "write");
                 }
