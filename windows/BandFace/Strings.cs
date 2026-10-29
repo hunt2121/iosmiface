@@ -57,6 +57,7 @@ namespace BandFace
             ["phInstall"] = new[] { "Запит на встановлення…", "Requesting install…", "Запрос на установку…" },
             ["phRemove"] = new[] { "Видалення старої версії…", "Removing old version…", "Удаление старой версии…" },
             ["phActivate"] = new[] { "Активація…", "Activating…", "Активация…" },
+            ["phPair"] = new[] { "Підтвердіть підключення на браслеті…", "Confirm the connection on the band…", "Подтвердите подключение на браслете…" },
             ["noBle"] = new[] { "Bluetooth недоступний на цьому комп'ютері", "Bluetooth is not available on this PC", "Bluetooth недоступен на этом компьютере" },
         };
 

@@ -1,4 +1,5 @@
 using System;
+using Windows.Foundation;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using BandFace.Protocol;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Devices.Enumeration;
 using Windows.Storage.Streams;
 
 namespace BandFace
@@ -63,6 +65,7 @@ namespace BandFace
             Disconnect();
             _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
             if (_dev == null) throw new BandException(ErrorKind.NotConnected);
+            await EnsurePaired(address);
             var svc = await _dev.GetGattServicesForUuidAsync(Service, BluetoothCacheMode.Uncached);
             if (svc.Status != GattCommunicationStatus.Success || svc.Services.Count == 0) throw new BandException(ErrorKind.CharacteristicNotFound);
             var s = svc.Services[0];
@@ -86,6 +89,29 @@ namespace BandFace
                 if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { ConnectedName = null; Disconnected?.Invoke(); }
             };
             ConnectedName = _dev.Name;
+        }
+
+        /// <summary>
+        /// Зв'язування на рівні BLE (LE Secure Connections, Just Works) — те саме, що робить Mi Fitness.
+        /// Браслет у цей момент показує запит «підключити новий пристрій».
+        /// </summary>
+        async Task EnsurePaired(ulong address)
+        {
+            var pairing = _dev.DeviceInformation.Pairing;
+            if (pairing.IsPaired) return;
+            if (!pairing.CanPair) throw new InvalidOperationException("Pairing is not supported");
+            var custom = pairing.Custom;
+            TypedEventHandler<DeviceInformationCustomPairing, DevicePairingRequestedEventArgs> h = (s, a) => a.Accept();
+            custom.PairingRequested += h;
+            DevicePairingResult r;
+            try { r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, DevicePairingProtectionLevel.Encryption); }
+            finally { custom.PairingRequested -= h; }
+            if (r.Status != DevicePairingResultStatus.Paired && r.Status != DevicePairingResultStatus.AlreadyPaired)
+                throw new InvalidOperationException("Pairing: " + r.Status);
+            // після зв'язування потрібно заново отримати пристрій і сервіси
+            try { _dev.Dispose(); } catch (Exception) { }
+            _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
+            if (_dev == null) throw new BandException(ErrorKind.NotConnected);
         }
 
         void OnValue(GattCharacteristic c, GattValueChangedEventArgs e)

@@ -141,6 +141,7 @@ namespace BandFace
             _ble.StopScan();
             DeviceList.Children.Clear();
             ScanBtn.Content = S.Get("phConnect");
+            SetStatus(S.Get("phPair"), false);
             try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); }
             catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
