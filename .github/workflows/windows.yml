@@ -24,7 +24,8 @@ jobs:
       - name: Unit tests
         shell: bash
         working-directory: windows
-        run: dotnet test BandFace.Tests/BandFace.Tests.csproj -c Release
+        run: |
+          dotnet test BandFace.Tests/BandFace.Tests.csproj -c Release 2>&1 | tee test.log || { grep -E "error [A-Z]+[0-9]+|\[FAIL\]|Assert|Expected|Actual|Exception" test.log | sort -u | head -25 | sed 's/^/::error::/'; exit 1; }
       - name: Build
         shell: bash
         working-directory: windows
