@@ -35,6 +35,7 @@ namespace BandFace
 
         public event Action<byte[]> Data;
         public event Action Disconnected;
+        public event Action<string> Info;
         public string ConnectedName { get; private set; }
         public bool IsConnected => _tx != null && _dev != null && _dev.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
@@ -98,7 +99,17 @@ namespace BandFace
         async Task EnsurePaired(ulong address)
         {
             var pairing = _dev.DeviceInformation.Pairing;
-            if (pairing.IsPaired) return;
+            Info?.Invoke("connect pairing: paired=" + pairing.IsPaired + " canPair=" + pairing.CanPair);
+            if (pairing.IsPaired)
+            {
+                // Застаріле зв'язування (браслет міг бути скинутий) — забуваємо його й зв'язуємо наново
+                var u = await pairing.UnpairAsync();
+                Info?.Invoke("connect unpair: " + u.Status);
+                try { _dev.Dispose(); } catch (Exception) { }
+                _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
+                if (_dev == null) throw new BandException(ErrorKind.NotConnected);
+                pairing = _dev.DeviceInformation.Pairing;
+            }
             if (!pairing.CanPair) throw new InvalidOperationException("Pairing is not supported");
             var custom = pairing.Custom;
             TypedEventHandler<DeviceInformationCustomPairing, DevicePairingRequestedEventArgs> h = (s, a) => a.Accept();
@@ -106,6 +117,7 @@ namespace BandFace
             DevicePairingResult r;
             try { r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, DevicePairingProtectionLevel.Encryption); }
             finally { custom.PairingRequested -= h; }
+            Info?.Invoke("connect pair: " + r.Status + " level=" + r.ProtectionLevelUsed);
             if (r.Status != DevicePairingResultStatus.Paired && r.Status != DevicePairingResultStatus.AlreadyPaired)
                 throw new InvalidOperationException("Pairing: " + r.Status);
             // після зв'язування потрібно заново отримати пристрій і сервіси

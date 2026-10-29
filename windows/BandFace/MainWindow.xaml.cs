@@ -38,6 +38,7 @@ namespace BandFace
             ApplyTexts();
             RefreshBand();
             RefreshFace();
+            _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
             foreach (var a in Environment.GetCommandLineArgs())
