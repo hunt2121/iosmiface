@@ -100,6 +100,19 @@
           <TextBlock x:Name="TitleKey" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
           <Border Style="{StaticResource CardBox}">
             <StackPanel>
+              <TextBlock x:Name="CloudLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+              <StackPanel Orientation="Horizontal">
+                <Button x:Name="CloudBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Cloud_Click"/>
+                <Button x:Name="CloudCancelBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Visibility="Collapsed" Click="CloudCancel_Click"/>
+              </StackPanel>
+              <Image x:Name="QrImage" Width="220" Height="220" HorizontalAlignment="Left" Margin="0,14,0,0" Visibility="Collapsed" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+              <TextBlock x:Name="CloudStatus" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" Foreground="{DynamicResource Sub}"/>
+              <StackPanel x:Name="CloudDevices" Margin="0,8,0,0"/>
+              <TextBlock x:Name="CloudNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource CardBox}">
+            <StackPanel>
               <TextBlock x:Name="KeyLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
               <Border BorderBrush="{DynamicResource BtnBorder}" BorderThickness="1" CornerRadius="5" Background="{DynamicResource Field}">
                 <TextBox x:Name="KeyBox" Height="36" Padding="10,0" FontFamily="Consolas" FontSize="14" BorderThickness="0" Background="Transparent" Foreground="{DynamicResource Text}" CaretBrush="{DynamicResource Text}" VerticalContentAlignment="Center" TextChanged="KeyBox_TextChanged"/>

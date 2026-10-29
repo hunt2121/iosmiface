@@ -58,6 +58,15 @@ namespace BandFace
             ["phRemove"] = new[] { "Видалення старої версії…", "Removing old version…", "Удаление старой версии…" },
             ["phActivate"] = new[] { "Активація…", "Activating…", "Активация…" },
             ["phPair"] = new[] { "Підтвердіть підключення на браслеті…", "Confirm the connection on the band…", "Подтвердите подключение на браслете…" },
+            ["cloudTitle"] = new[] { "Ключ з акаунта Xiaomi", "Key from Xiaomi account", "Ключ из аккаунта Xiaomi" },
+            ["cloudBtn"] = new[] { "Отримати ключ через QR", "Get key via QR", "Получить ключ через QR" },
+            ["cloudScan"] = new[] { "Скануйте QR у застосунку Mi Fitness і підтвердіть вхід", "Scan this QR in the Mi Fitness app and confirm the sign-in", "Сканируйте QR в приложении Mi Fitness и подтвердите вход" },
+            ["cloudGet"] = new[] { "Отримую ключ…", "Fetching the key…", "Получаю ключ…" },
+            ["cloudNone"] = new[] { "У акаунті не знайдено пристроїв із ключем", "No devices with a key were found in the account", "В аккаунте не найдено устройств с ключом" },
+            ["cloudFail"] = new[] { "Не вдалося: {0}", "Failed: {0}", "Не удалось: {0}" },
+            ["cloudPick"] = new[] { "Оберіть браслет:", "Choose your band:", "Выберите браслет:" },
+            ["cloudCancel"] = new[] { "Скасувати", "Cancel", "Отмена" },
+            ["cloudNote"] = new[] { "Вхід потрібен лише щоб прочитати ключ браслета. Дані входу не зберігаються й нікуди не надсилаються, крім серверів Xiaomi.", "Sign-in is only used to read the band key. Sign-in data is not stored and is sent nowhere except Xiaomi's servers.", "Вход нужен только чтобы прочитать ключ браслета. Данные входа не сохраняются и никуда не отправляются, кроме серверов Xiaomi." },
             ["noBle"] = new[] { "Bluetooth недоступний на цьому комп'ютері", "Bluetooth is not available on this PC", "Bluetooth недоступен на этом компьютере" },
         };
 

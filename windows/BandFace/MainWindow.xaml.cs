@@ -92,6 +92,10 @@ namespace BandFace
             PasteBtn.Content = S.Get("paste");
             FromFileBtn.Content = S.Get("fromFile");
             KeyNote.Text = S.Get("keyNote");
+            CloudLabel.Text = S.Get("cloudTitle").ToUpperInvariant();
+            CloudBtn.Content = S.Get("cloudBtn");
+            CloudCancelBtn.Content = S.Get("cloudCancel");
+            CloudNote.Text = S.Get("cloudNote");
             DevLabel.Text = S.Get("dev");
             CopyBtn.Content = S.Get("copy");
             ClearBtn.Content = S.Get("clear");
@@ -301,6 +305,61 @@ namespace BandFace
                 else { KeyMessage.Text = S.Get("keyNone"); KeyMessage.Foreground = (Brush)FindResource("Err"); }
             }
             catch (Exception) { KeyMessage.Text = S.Get("keyNone"); KeyMessage.Foreground = (Brush)FindResource("Err"); }
+        }
+
+        // ---------- Ключ з акаунта Xiaomi ----------
+        System.Threading.CancellationTokenSource _cloudCts;
+
+        void CloudCancel_Click(object sender, RoutedEventArgs e) { _cloudCts?.Cancel(); }
+
+        void CloudStatusSet(string t, bool err = false)
+        {
+            CloudStatus.Text = t;
+            CloudStatus.Foreground = (Brush)FindResource(err ? "Err" : "Sub");
+        }
+
+        async void Cloud_Click(object sender, RoutedEventArgs e)
+        {
+            if (_cloudCts != null) return;
+            _cloudCts = new System.Threading.CancellationTokenSource();
+            CloudBtn.IsEnabled = false; CloudCancelBtn.Visibility = Visibility.Visible;
+            CloudDevices.Children.Clear();
+            try
+            {
+                var qr = await XiaomiCloud.StartAsync();
+                var bmp = new BitmapImage();
+                using (var ms = new MemoryStream(qr.Image))
+                {
+                    bmp.BeginInit(); bmp.CacheOption = BitmapCacheOption.OnLoad; bmp.StreamSource = ms; bmp.EndInit();
+                }
+                bmp.Freeze();
+                QrImage.Source = bmp; QrImage.Visibility = Visibility.Visible;
+                CloudStatusSet(S.Get("cloudScan"));
+                var login = await XiaomiCloud.WaitAsync(qr, _cloudCts.Token);
+                QrImage.Visibility = Visibility.Collapsed;
+                CloudStatusSet(S.Get("cloudGet"));
+                var devs = await XiaomiCloud.DevicesAsync(login, m => Dispatcher.BeginInvoke(new Action(() => AddLog("cloud " + m))));
+                if (devs.Count == 0) CloudStatusSet(S.Get("cloudNone"), true);
+                else if (devs.Count == 1) { KeyBox.Text = devs[0].Key; CloudStatusSet(S.Get("keyFound")); }
+                else
+                {
+                    CloudStatusSet(S.Get("cloudPick"));
+                    foreach (var d in devs)
+                    {
+                        var dev = d;
+                        var b = new Button { Content = dev.ToString() + "  ·  " + dev.Model, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
+                        b.Click += (s2, a2) => { KeyBox.Text = dev.Key; CloudStatusSet(S.Get("keyFound")); CloudDevices.Children.Clear(); };
+                        CloudDevices.Children.Add(b);
+                    }
+                }
+            }
+            catch (OperationCanceledException) { CloudStatusSet(""); }
+            catch (Exception ex) { CloudStatusSet(S.Get("cloudFail", ex.Message), true); AddLog("cloud: " + ex.Message); }
+            finally
+            {
+                QrImage.Visibility = Visibility.Collapsed;
+                _cloudCts = null; CloudBtn.IsEnabled = true; CloudCancelBtn.Visibility = Visibility.Collapsed;
+            }
         }
 
         // ---------- Журнал ----------
