@@ -40,6 +40,11 @@ namespace BandFace
             RefreshFace();
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
+            foreach (var a in Environment.GetCommandLineArgs())
+            {
+                if (a == "--page=key") NavKey.IsChecked = true;
+                else if (a == "--page=log") NavLog.IsChecked = true;
+            }
             SourceInitialized += (s, e) => Theme.Apply(this);
             Microsoft.Win32.SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(() => Theme.Apply(this)));
             Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); };

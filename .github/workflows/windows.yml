@@ -34,6 +34,29 @@ jobs:
           echo "--- out ---"
           ls -l out
           du -sk out
+      - name: Screenshots
+        if: ${{ contains(github.event.head_commit.message, '[shot]') }}
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          function Shot($name, $page) {
+            $p = Start-Process -FilePath "$PWD\windows\out\BandFace.exe" -ArgumentList "--page=$page" -PassThru
+            Start-Sleep 6
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("$PWD\$name.png")
+            Stop-Process $p -Force
+          }
+          $k = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+          New-Item $k -Force | Out-Null
+          Set-ItemProperty $k AppsUseLightTheme 1 -Type DWord
+          Shot "light-faces" "faces"; Shot "light-key" "key"; Shot "light-log" "log"
+          Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
+          Shot "dark-faces" "faces"
+          gh release create "shots-${{ github.run_number }}" light-faces.png light-key.png light-log.png dark-faces.png --draft --title shots --notes shots
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Package
         shell: pwsh
         working-directory: windows
