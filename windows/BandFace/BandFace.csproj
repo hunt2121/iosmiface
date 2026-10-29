@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>BandFace</AssemblyName>
+    <RootNamespace>BandFace</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+</Project>

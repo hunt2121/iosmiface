@@ -1,0 +1,58 @@
+name: Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Створити чернетку релізу"
+        type: boolean
+        default: false
+  push:
+    branches: [windows]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Unit tests
+        shell: bash
+        working-directory: windows
+        run: dotnet test BandFace.Tests/BandFace.Tests.csproj -c Release
+      - name: Build
+        shell: bash
+        working-directory: windows
+        run: |
+          dotnet build BandFace/BandFace.csproj -c Release -p:Version=0.1.${{ github.run_number }} -o out 2>&1 | tee build.log || { grep -E "error [A-Z]+[0-9]+" build.log | sort -u | head -20 | sed 's/^/::error::/'; exit 1; }
+          echo "--- out ---"
+          ls -l out
+          du -sk out
+      - name: Package
+        shell: pwsh
+        working-directory: windows
+        run: |
+          Compress-Archive -Path out\* -DestinationPath ..\BandFace-windows.zip -CompressionLevel Optimal
+          (Get-Item ..\BandFace-windows.zip).Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BandFace-windows
+          path: BandFace-windows.zip
+      - name: Release
+        if: ${{ inputs.release || github.ref == 'refs/heads/windows' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          VER="0.1.${{ github.run_number }}"
+          if [[ "$MSG" == *"[release]"* ]]; then
+            gh release create "windows-v$VER" BandFace-windows.zip --title "BandFace Windows $VER" --notes "Windows $VER" --target "${{ github.sha }}"
+          else
+            gh release create "windows-$VER" BandFace-windows.zip --draft --title "Windows build $VER" --notes "Windows" --target "${{ github.sha }}"
+          fi

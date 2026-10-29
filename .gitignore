@@ -1,3 +1,6 @@
 .DS_Store
 BandFace.xcodeproj/
 build/
+windows/**/bin/
+windows/**/obj/
+windows/out/
