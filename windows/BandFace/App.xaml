@@ -34,7 +34,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
     </Style>
 
-    <Style x:Key="Card" TargetType="Border">
+    <Style x:Key="CardBox" TargetType="Border">
       <Setter Property="Background" Value="{DynamicResource Card}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
       <Setter Property="BorderThickness" Value="1"/>
