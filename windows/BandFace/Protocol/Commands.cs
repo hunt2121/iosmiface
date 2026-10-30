@@ -34,6 +34,10 @@ namespace BandFace.Protocol
         public static byte[] AuthPhoneNonce(byte[] nonce) =>
             Build(Auth, 26, w => w.WriteMessage(3, a => a.WriteMessage(30, m => m.WriteBytes(1, nonce))));
 
+        /// <summary>Підтвердження старту автентифікації: Mi Fitness шле його після відповіді «чекаю підтвердження».</summary>
+        public static byte[] AuthStatus(int status) =>
+            Build(Auth, 27, w => w.WriteMessage(3, a => a.WriteVarint(3, status)));
+
         public static byte[] AuthConfirm(byte[] confirmation, byte[] encryptedInfo) =>
             Build(Auth, 27, w => w.WriteMessage(3, a => a.WriteMessage(32, m => m.WriteBytes(1, confirmation).WriteBytes(2, encryptedInfo))));
 

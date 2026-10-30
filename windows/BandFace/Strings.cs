@@ -60,7 +60,7 @@ namespace BandFace
             ["phPair"] = new[] { "Підтвердіть підключення на браслеті…", "Confirm the connection on the band…", "Подтвердите подключение на браслете…" },
             ["cloudTitle"] = new[] { "Ключ з акаунта Xiaomi", "Key from Xiaomi account", "Ключ из аккаунта Xiaomi" },
             ["cloudBtn"] = new[] { "Отримати ключ через QR", "Get key via QR", "Получить ключ через QR" },
-            ["cloudScan"] = new[] { "Скануйте QR у застосунку Mi Fitness і підтвердіть вхід", "Scan this QR in the Mi Fitness app and confirm the sign-in", "Сканируйте QR в приложении Mi Fitness и подтвердите вход" },
+            ["cloudScan"] = new[] { "Відскануйте QR камерою телефона й увійдіть в акаунт Xiaomi", "Scan this QR with the phone camera and sign in to your Xiaomi account", "Отсканируйте QR камерой телефона и войдите в аккаунт Xiaomi" },
             ["cloudGet"] = new[] { "Отримую ключ…", "Fetching the key…", "Получаю ключ…" },
             ["cloudNone"] = new[] { "У акаунті не знайдено пристроїв із ключем", "No devices with a key were found in the account", "В аккаунте не найдено устройств с ключом" },
             ["cloudFail"] = new[] { "Не вдалося: {0}", "Failed: {0}", "Не удалось: {0}" },

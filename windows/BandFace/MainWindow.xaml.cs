@@ -60,6 +60,42 @@ namespace BandFace
             Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); };
         }
 
+        /// <summary>Параметри відкриття сесії, як у Mi Fitness (з назвою телефона).</summary>
+        SessionConfig NewConfig()
+        {
+            Func<int, byte[], KeyValuePair<int, byte[]>> kv = (k, v) => new KeyValuePair<int, byte[]>(k, v);
+            return new SessionConfig
+            {
+                Log = m => Dispatcher.BeginInvoke(new Action(() => AddLog(m))),
+                OpenParameters = new List<KeyValuePair<int, byte[]>>
+                {
+                    kv(1, new byte[] { 0x01, 0x00, 0x00 }), kv(7, new byte[] { 0x1b, 0x02, 0x00 }), kv(2, new byte[] { 0xff, 0xff }),
+                    kv(5, new byte[] { 0x01 }), kv(6, Encoding.ASCII.GetBytes("Windows PC")), kv(3, new byte[] { 0x10, 0x00 }), kv(4, new byte[] { 0x98, 0x3a }),
+                },
+            };
+        }
+
+        /// <summary>Одразу після зв'язування проходимо автентифікацію (на новому браслеті це дає запит підтвердження).</summary>
+        async Task ActivateAsync()
+        {
+            var key = Bytes.ParseHex(KeyBox.Text);
+            if (key == null || key.Length != 16 || !_ble.IsConnected) return;
+            SetStatus(S.Get("phPair"), false);
+            var session = new BandSession(_ble, NewConfig());
+            _session = session;
+            try
+            {
+                await session.OpenAsync();
+                await session.AuthenticateAsync(key, "Windows PC", "UK");
+                await Task.Delay(300);
+                await session.CloseAsync();
+                AddLog("connect activate: ok");
+                SetStatus("", false);
+            }
+            catch (Exception ex) { AddLog("connect activate: " + ex.Message); SetStatus(Describe(ex), true); }
+            finally { try { session.Dispose(); } catch (Exception) { } _session = null; }
+        }
+
         void SaveShot(string path)
         {
             var root = (FrameworkElement)Content;
@@ -147,7 +183,7 @@ namespace BandFace
             DeviceList.Children.Clear();
             ScanBtn.Content = S.Get("phConnect");
             SetStatus(S.Get("phPair"), false);
-            try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); }
+            try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
             catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
         }
@@ -211,7 +247,7 @@ namespace BandFace
             SetStatus("", false);
             ProgressPanel.Visibility = Visibility.Visible;
             Bar.Value = 0; ProgressPercent.Text = ""; ProgressText.Text = S.Get("phConnect");
-            var cfg = new SessionConfig { Log = m => Dispatcher.BeginInvoke(new Action(() => AddLog(m))) };
+            var cfg = NewConfig();
             _session = new BandSession(_ble, cfg);
             try
             {

@@ -158,24 +158,42 @@ namespace BandFace.Protocol
 
         // ---- Автентифікація
 
+        bool _awaitConfirm;
+
+        public Task SendPlainAsync(byte[] body) =>
+            WriteData(new DataPacket(DataChannel.Protobuf, DataOpcode.Plain, body), false);
+
         public async Task AuthenticateAsync(byte[] authKey, string model = "Windows", string region = "UK")
         {
             if (authKey.Length != 16) throw new BandException(ErrorKind.InvalidAuthKey);
             if (State != SessionState.Open) throw new BandException(ErrorKind.SessionNotOpen);
-            var phoneNonce = new byte[16];
-            using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(phoneNonce);
-
-            Log("auth: step 1");
-            var step2 = await RequestAsync(Command.AuthPhoneNonce(phoneNonce), false, null, true, c => c.Matches(Command.Auth, 26)).ConfigureAwait(false);
-            var bandNonce = step2.Root.BytesAt(3, 31, 1);
-            var bandHmac = step2.Root.BytesAt(3, 31, 2);
-            if (bandNonce == null || bandNonce.Length != 16 || bandHmac == null || bandHmac.Length != 32)
-                throw new BandException(ErrorKind.MalformedResponse, "auth step 2");
+            byte[] phoneNonce, bandNonce, bandHmac;
+            for (int round = 0; ; round++)
+            {
+                phoneNonce = new byte[16];
+                using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(phoneNonce);
+                _awaitConfirm = false;
+                Log("auth: step 1");
+                // Браслет у режимі очікування спершу чекає підтвердження користувача на екрані (до кількох десятків секунд)
+                var step2 = await RequestAsync(Command.AuthPhoneNonce(phoneNonce), false, 60000, true, c => c.Matches(Command.Auth, 26)).ConfigureAwait(false);
+                bandNonce = step2.Root.BytesAt(3, 31, 1);
+                bandHmac = step2.Root.BytesAt(3, 31, 2);
+                if (bandNonce == null || bandNonce.Length != 16 || bandHmac == null || bandHmac.Length != 32)
+                    throw new BandException(ErrorKind.MalformedResponse, "auth step 2");
+                if (_awaitConfirm && round < 2)
+                {
+                    // як Mi Fitness: після підтвердження на браслеті повідомляємо статус 7 і починаємо автентифікацію наново
+                    Log("auth: confirmed on the band, restarting");
+                    await SendPlainAsync(Command.AuthStatus(7)).ConfigureAwait(false);
+                    await Task.Delay(200).ConfigureAwait(false);
+                    continue;
+                }
+                if (!Bytes.ConstantTimeEqual(new SessionKeys(authKey, phoneNonce, bandNonce).ExpectedBandHmac(phoneNonce, bandNonce), bandHmac))
+                    throw new BandException(ErrorKind.AuthKeyMismatch);
+                break;
+            }
 
             var keys = new SessionKeys(authKey, phoneNonce, bandNonce);
-            if (!Bytes.ConstantTimeEqual(keys.ExpectedBandHmac(phoneNonce, bandNonce), bandHmac))
-                throw new BandException(ErrorKind.AuthKeyMismatch);
-
             var info = keys.EncryptPhoneInfo(Command.PhoneInfo(model, region));
             var confirmation = keys.PhoneConfirmation(phoneNonce, bandNonce);
             Log("auth: step 3");
@@ -342,6 +360,7 @@ namespace BandFace.Protocol
             try { cmd = new Command(body); } catch (Exception) { Log("← undecodable command"); return; }
             bool redact = cmd.Type == Command.Auth;
             Log("← cmd " + cmd.Name + (redact ? "" : " " + body.Hex()));
+            if (cmd.Type == Command.Auth && cmd.Subtype == 16) { _awaitConfirm = true; Log("auth: waiting for confirmation on the band"); }
 
             Waiter w = null;
             lock (_gate)
