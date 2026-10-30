@@ -1,4 +1,4 @@
-# BandFace: вимикає зламаний драйверний вузол браслета (Код 10) і не дає Windows вмикати його знову.
+﻿# BandFace: вимикає зламаний драйверний вузол браслета (Код 10) і не дає Windows вмикати його знову.
 # Запускати від імені адміністратора (краще через fix-band-driver.bat).
 # Скасування:  powershell -ExecutionPolicy Bypass -File fix-band-driver.ps1 -Undo
 param([switch]$Undo, [string]$Name = '*Xiaomi Smart Band*')
