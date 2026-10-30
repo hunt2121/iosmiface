@@ -1,50 +1,51 @@
-﻿# BandFace: вимикає зламаний драйверний вузол браслета (Код 10) і не дає Windows вмикати його знову.
-# Запускати від імені адміністратора (краще через fix-band-driver.bat).
-# Скасування:  powershell -ExecutionPolicy Bypass -File fix-band-driver.ps1 -Undo
-param([switch]$Undo, [string]$Name = '*Xiaomi Smart Band*')
+﻿# BandFace: disables Windows service nodes created for the band (HID-over-GATT etc.) that fail with Code 10
+# and stops Windows from enabling them again. Run as Administrator (use fix-band-driver.bat).
+# IMPORTANT: connect the band in BandFace first (pick it in the list), then run this script while it is connected,
+# because Windows creates these nodes only while the band is connected.
+# Undo:  fix-band-driver.bat -Undo
+param([switch]$Undo, [string]$Mac = '0434C369E3B4')
 
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 $policy = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions'
 $deny   = Join-Path $policy 'DenyInstanceIDs'
 
-function Get-BandNodes {
-    # усі вузли PnP браслета, які Windows створила (BTHLE\..., BTHLEDEVICE\..., HID\...)
-    Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object {
-        $_.FriendlyName -like $Name -or ($_.InstanceId -match 'BTHLE' -and $_.FriendlyName -like $Name)
-    }
+function Get-Nodes {
+    Get-PnpDevice | Where-Object { $_.InstanceId -match $Mac }
+}
+function Get-Problem($id) {
+    try { (Get-PnpDeviceProperty -InstanceId $id -KeyName 'DEVPKEY_Device_ProblemCode' -ErrorAction Stop).Data } catch { '?' }
 }
 
 if ($Undo) {
     if (Test-Path $deny) { Remove-Item $deny -Recurse -Force }
-    if (Test-Path $policy) {
-        Remove-ItemProperty -Path $policy -Name 'DenyInstanceIDs' -ErrorAction SilentlyContinue
-        Remove-ItemProperty -Path $policy -Name 'DenyDeviceIDs' -ErrorAction SilentlyContinue
-    }
-    foreach ($d in Get-BandNodes) { try { Enable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false } catch {} }
-    Write-Host 'Скасовано. Обмеження знято, пристрої увімкнено.'
+    Remove-ItemProperty -Path $policy -Name 'DenyInstanceIDs' -ErrorAction SilentlyContinue
+    foreach ($d in Get-Nodes) { try { Enable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false } catch {} }
+    Write-Host 'Undone: restriction removed, devices enabled.'
     exit 0
 }
 
-$nodes = @(Get-BandNodes)
-if ($nodes.Count -eq 0) {
-    Write-Host 'Вузлів браслета не знайдено. Спершу підключіть браслет у програмі BandFace, потім запустіть цей скрипт.'
-    exit 1
+$nodes = @(Get-Nodes)
+Write-Host ('Nodes for MAC ' + $Mac + ':')
+foreach ($d in $nodes) {
+    Write-Host ('  class=' + $d.Class + ' status=' + $d.Status + ' problem=' + (Get-Problem $d.InstanceId))
+    Write-Host ('    ' + $d.InstanceId)
 }
 
-Write-Host 'Знайдено вузли:'
-$nodes | ForEach-Object { Write-Host ('  ' + $_.Status + '  ' + $_.InstanceId) }
-
-# вузол із помилкою — той, що має проблемний код (CM_PROB_FAILED_START = 10)
-$bad = @($nodes | Where-Object { $_.Status -eq 'Error' -or $_.Problem -eq 10 -or $_.ConfigManagerErrorCode -eq 10 })
-if ($bad.Count -eq 0) { Write-Host 'Вузлів із кодом 10 немає, змінювати нічого не потрібно.'; exit 0 }
+# service nodes = everything except the two base nodes of the device itself
+$targets = @($nodes | Where-Object { $_.InstanceId -notmatch '^(BTHENUM|BTHLE)\\DEV_' })
+if ($targets.Count -eq 0) {
+    Write-Host ''
+    Write-Host 'No service nodes yet. Connect the band in BandFace (pick it in the list), then run this script again while it is connected.'
+    exit 1
+}
 
 New-Item -Path $deny -Force | Out-Null
 New-ItemProperty -Path $policy -Name 'DenyInstanceIDs' -Value 1 -PropertyType DWord -Force | Out-Null
 $i = 1
-foreach ($d in $bad) {
-    Write-Host ('Вимикаю: ' + $d.InstanceId)
+foreach ($d in $targets) {
+    Write-Host ('Disabling: ' + $d.InstanceId)
     New-ItemProperty -Path $deny -Name ([string]$i) -Value $d.InstanceId -PropertyType String -Force | Out-Null
     $i++
-    try { Disable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false } catch { Write-Host ('  не вдалося вимкнути: ' + $_.Exception.Message) }
+    try { Disable-PnpDevice -InstanceId $d.InstanceId -Confirm:$false } catch { Write-Host ('  failed: ' + $_.Exception.Message) }
 }
-Write-Host 'Готово. Тепер підключіть браслет у BandFace. Щоб скасувати: запустіть скрипт із параметром -Undo.'
+Write-Host 'Done. Now try installing a watch face in BandFace. Undo: fix-band-driver.bat -Undo'

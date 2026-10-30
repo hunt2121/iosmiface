@@ -2,7 +2,7 @@
 chcp 65001 >nul
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-  echo Потрібні права адміністратора. Запускаю знову...
+  echo Administrator rights are required. Restarting...
   powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -ArgumentList '%*' -Verb RunAs"
   exit /b
 )
