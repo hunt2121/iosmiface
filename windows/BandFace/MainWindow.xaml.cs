@@ -24,6 +24,7 @@ namespace BandFace
         FaceFile _face;
         string _faceFile = "";
         bool _busy, _dev;
+        DateTime _connectedAt = DateTime.MinValue;
 
         public MainWindow()
         {
@@ -40,7 +41,11 @@ namespace BandFace
             RefreshFace();
             _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
-            _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
+            _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand();
+                if ((DateTime.UtcNow - _connectedAt).TotalSeconds < 10) SetStatus(S.Get("errDriver"), true);
+            }));
             foreach (var a in Environment.GetCommandLineArgs())
             {
                 if (a == "--page=key") NavKey.IsChecked = true;
@@ -183,7 +188,7 @@ namespace BandFace
             DeviceList.Children.Clear();
             ScanBtn.Content = S.Get("phConnect");
             SetStatus(S.Get("phPair"), false);
-            try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
+            try { bool fresh = await _ble.ConnectAsync(f.Address); _connectedAt = DateTime.UtcNow; AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); if (fresh) await ActivateAsync(); }
             catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
         }

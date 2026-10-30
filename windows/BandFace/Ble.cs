@@ -61,12 +61,13 @@ namespace BandFace
             _watcher = null;
         }
 
-        public async Task ConnectAsync(ulong address)
+        /// <summary>Повертає true, якщо щойно створено нове зв'язування (нова активація).</summary>
+        public async Task<bool> ConnectAsync(ulong address)
         {
             Disconnect();
             _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
             if (_dev == null) throw new BandException(ErrorKind.NotConnected);
-            await EnsurePaired(address);
+            bool fresh = await EnsurePaired(address);
             var svc = await _dev.GetGattServicesForUuidAsync(Service, BluetoothCacheMode.Uncached);
             if (svc.Status != GattCommunicationStatus.Success || svc.Services.Count == 0) throw new BandException(ErrorKind.CharacteristicNotFound);
             var s = svc.Services[0];
@@ -90,26 +91,19 @@ namespace BandFace
                 if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { ConnectedName = null; Disconnected?.Invoke(); }
             };
             ConnectedName = _dev.Name;
+            return fresh;
         }
 
         /// <summary>
         /// Зв'язування на рівні BLE (LE Secure Connections, Just Works) — те саме, що робить Mi Fitness.
         /// Браслет у цей момент показує запит «підключити новий пристрій».
         /// </summary>
-        async Task EnsurePaired(ulong address)
+        async Task<bool> EnsurePaired(ulong address)
         {
             var pairing = _dev.DeviceInformation.Pairing;
             Info?.Invoke("connect pairing: paired=" + pairing.IsPaired + " canPair=" + pairing.CanPair);
-            if (pairing.IsPaired)
-            {
-                // Застаріле зв'язування (браслет міг бути скинутий) — забуваємо його й зв'язуємо наново
-                var u = await pairing.UnpairAsync();
-                Info?.Invoke("connect unpair: " + u.Status);
-                try { _dev.Dispose(); } catch (Exception) { }
-                _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
-                if (_dev == null) throw new BandException(ErrorKind.NotConnected);
-                pairing = _dev.DeviceInformation.Pairing;
-            }
+            // Існуюче зв'язування не чіпаємо: кожне нове перезапускає драйвер Windows і рве з'єднання
+            if (pairing.IsPaired) return false;
             // Спершу відкриваємо справжнє GATT-з'єднання: зв'язування має відбутися на живому каналі
             var probe = await _dev.GetGattServicesAsync(BluetoothCacheMode.Uncached);
             Info?.Invoke("connect link: " + probe.Status + " status=" + _dev.ConnectionStatus);
@@ -128,7 +122,7 @@ namespace BandFace
                 {
                     var r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, level);
                     Info?.Invoke("connect pair(" + level + "): " + r.Status + " used=" + r.ProtectionLevelUsed);
-                    if (r.Status == DevicePairingResultStatus.Paired && r.ProtectionLevelUsed != DevicePairingProtectionLevel.None) return;
+                    if (r.Status == DevicePairingResultStatus.Paired && r.ProtectionLevelUsed != DevicePairingProtectionLevel.None) return true;
                     if (r.Status == DevicePairingResultStatus.Paired || r.Status == DevicePairingResultStatus.AlreadyPaired)
                     {
                         // «зв'язано» без шифрування — скидаємо й пробуємо суворіший рівень
@@ -140,6 +134,7 @@ namespace BandFace
                 }
             }
             finally { custom.PairingRequested -= h; }
+            return true;
         }
 
         void OnValue(GattCharacteristic c, GattValueChangedEventArgs e)
