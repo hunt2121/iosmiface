@@ -88,7 +88,7 @@ namespace BandFace
             catch (Exception) { _chunk = 20; }
             _dev.ConnectionStatusChanged += (d, o) =>
             {
-                if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { ConnectedName = null; Disconnected?.Invoke(); }
+                if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { Info?.Invoke("connect link lost (Windows reports Disconnected)"); ConnectedName = null; Disconnected?.Invoke(); }
             };
             ConnectedName = _dev.Name;
             return fresh;

@@ -256,7 +256,7 @@ namespace BandFace
             _session = new BandSession(_ble, cfg);
             try
             {
-                var inst = new WatchfaceInstaller();
+                var inst = new WatchfaceInstaller { PauseAfterAuthMs = 0, PauseBeforeInstallMs = 100 };
                 bool already = false;
                 await inst.InstallAsync(_face, key, _session, p => Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -407,7 +407,7 @@ namespace BandFace
         void AddLog(string m)
         {
             if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc")) return;
-            _log.AppendLine(DateTime.Now.ToString("HH:mm:ss") + " " + m);
+            _log.AppendLine(DateTime.Now.ToString("HH:mm:ss.fff") + " " + m);
             if (_log.Length > 60000) _log.Remove(0, 20000);
             LogText.Text = _log.ToString();
         }
