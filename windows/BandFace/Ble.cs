@@ -55,6 +55,25 @@ namespace BandFace
             _watcher.Start();
         }
 
+        /// <summary>Уже зв'язані (та підключені Windows) браслети: вони не рекламуються, тому сканування їх не бачить.</summary>
+        public async Task<List<FoundBand>> PairedBandsAsync()
+        {
+            var list = new List<FoundBand>();
+            try
+            {
+                var found = await DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromPairingState(true));
+                foreach (var d in found)
+                {
+                    var name = d.Name ?? "";
+                    if (name.IndexOf("Band", StringComparison.OrdinalIgnoreCase) < 0 && name.IndexOf("Xiaomi", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    using (var dev = await BluetoothLEDevice.FromIdAsync(d.Id))
+                        if (dev != null) list.Add(new FoundBand { Name = name, Address = dev.BluetoothAddress });
+                }
+            }
+            catch (Exception) { }
+            return list;
+        }
+
         public void StopScan()
         {
             try { _watcher?.Stop(); } catch (Exception) { }

@@ -164,22 +164,26 @@ namespace BandFace
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
 
-        void Scan_Click(object sender, RoutedEventArgs e)
+        void AddDevice(FoundBand f)
+        {
+            if (!_seen.Add(f.Address)) return;
+            var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
+            b.Click += async (s, a) => await ConnectTo(f);
+            DeviceList.Children.Add(b);
+        }
+
+        async void Scan_Click(object sender, RoutedEventArgs e)
         {
             DeviceList.Children.Clear();
             _seen.Clear();
             ScanBtn.Content = S.Get("scanning");
             try
             {
-                _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (!_seen.Add(f.Address)) return;
-                    var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
-                    b.Click += async (s, a) => await ConnectTo(f);
-                    DeviceList.Children.Add(b);
-                })));
+                _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() => AddDevice(f))));
             }
-            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); }
+            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); return; }
+            // зв'язані браслети, що вже підключені до Windows, не рекламуються — беремо їх зі списку системи
+            foreach (var f in await _ble.PairedBandsAsync()) AddDevice(f);
         }
 
         async Task ConnectTo(FoundBand f)
