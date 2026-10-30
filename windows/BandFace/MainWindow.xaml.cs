@@ -24,7 +24,6 @@ namespace BandFace
         FaceFile _face;
         string _faceFile = "";
         bool _busy, _dev;
-        DateTime _connectedAt = DateTime.MinValue;
 
         public MainWindow()
         {
@@ -41,11 +40,7 @@ namespace BandFace
             RefreshFace();
             _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
-            _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand();
-                if ((DateTime.UtcNow - _connectedAt).TotalSeconds < 10) SetStatus(S.Get("errDriver"), true);
-            }));
+            _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
             foreach (var a in Environment.GetCommandLineArgs())
             {
                 if (a == "--page=key") NavKey.IsChecked = true;
@@ -164,26 +159,22 @@ namespace BandFace
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
 
-        void AddDevice(FoundBand f)
-        {
-            if (!_seen.Add(f.Address)) return;
-            var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
-            b.Click += async (s, a) => await ConnectTo(f);
-            DeviceList.Children.Add(b);
-        }
-
-        async void Scan_Click(object sender, RoutedEventArgs e)
+        void Scan_Click(object sender, RoutedEventArgs e)
         {
             DeviceList.Children.Clear();
             _seen.Clear();
             ScanBtn.Content = S.Get("scanning");
             try
             {
-                _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() => AddDevice(f))));
+                _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!_seen.Add(f.Address)) return;
+                    var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
+                    b.Click += async (s, a) => await ConnectTo(f);
+                    DeviceList.Children.Add(b);
+                })));
             }
-            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); return; }
-            // зв'язані браслети, що вже підключені до Windows, не рекламуються — беремо їх зі списку системи
-            foreach (var f in await _ble.PairedBandsAsync()) AddDevice(f);
+            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); }
         }
 
         async Task ConnectTo(FoundBand f)
@@ -192,7 +183,7 @@ namespace BandFace
             DeviceList.Children.Clear();
             ScanBtn.Content = S.Get("phConnect");
             SetStatus(S.Get("phPair"), false);
-            try { bool fresh = await _ble.ConnectAsync(f.Address); _connectedAt = DateTime.UtcNow; AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); if (fresh) await ActivateAsync(); }
+            try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
             catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
         }
@@ -260,7 +251,7 @@ namespace BandFace
             _session = new BandSession(_ble, cfg);
             try
             {
-                var inst = new WatchfaceInstaller { PauseAfterAuthMs = 0, PauseBeforeInstallMs = 100 };
+                var inst = new WatchfaceInstaller();
                 bool already = false;
                 await inst.InstallAsync(_face, key, _session, p => Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -411,7 +402,7 @@ namespace BandFace
         void AddLog(string m)
         {
             if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc")) return;
-            _log.AppendLine(DateTime.Now.ToString("HH:mm:ss.fff") + " " + m);
+            _log.AppendLine(DateTime.Now.ToString("HH:mm:ss") + " " + m);
             if (_log.Length > 60000) _log.Remove(0, 20000);
             LogText.Text = _log.ToString();
         }
