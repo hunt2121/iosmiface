@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import BandFaceKit
 
 struct ContentView: View {
-    enum Tab: Hashable { case store, faces, key }
+    enum Tab: Hashable { case store, faces, key, settings }
 
     @EnvironmentObject var ble: BLEManager
 
@@ -22,7 +22,6 @@ struct ContentView: View {
     @AppStorage("installedFaceIDs") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
-    @State private var showSettings = false
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -60,9 +59,8 @@ struct ContentView: View {
                       busy: busy,
                       progress: progress,
                       progressText: progressText,
-                      onInstall: { storeInstall($0) },
-                      onSettings: { showSettings = true })
-                .tabItem { Label("Магазин", systemImage: "bag") }
+                      onInstall: { storeInstall($0) })
+                .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
 
             NavigationStack {
@@ -109,6 +107,10 @@ struct ContentView: View {
             .tabItem { Label("Ключ", image: "TabKey") }
             .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
+
+            settingsTab
+                .tabItem { Label("Налаштування", image: "TabSettings") }
+                .tag(Tab.settings)
         }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
@@ -123,7 +125,6 @@ struct ContentView: View {
         .onAppear {
             autoFindKey()
         }
-        .sheet(isPresented: $showSettings) { settingsSheet }
         .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
                                                       set: { if !$0 { storeAlert = nil } })) {
             Button("Гаразд") {
@@ -157,7 +158,7 @@ struct ContentView: View {
 
     // MARK: - Магазин і налаштування
 
-    private var settingsSheet: some View {
+    private var settingsTab: some View {
         NavigationStack {
             Form {
                 Section {
@@ -186,12 +187,6 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Налаштування")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") { showSettings = false }
-                }
-            }
         }
     }
 

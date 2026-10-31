@@ -50,7 +50,6 @@ struct StoreView: View {
     let progress: Double
     let progressText: String
     let onInstall: (StoreFace) -> Void
-    let onSettings: () -> Void
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -68,14 +67,6 @@ struct StoreView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: onSettings) {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel(Text("Налаштування"))
-                }
-            }
         }
     }
 
