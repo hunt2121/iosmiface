@@ -75,6 +75,18 @@ jobs:
           name: ${{ env.IPA_NAME }}
           path: ${{ env.IPA_NAME }}.ipa
 
+      # Коміт з позначкою [draft]: непідписаний IPA лягає в ЧЕРНЕТКУ релізу (не видна без входу),
+      # щоб його можна було забрати й підписати власним сертифікатом
+      - name: Draft release with IPA
+        if: contains(github.event.head_commit.message, '[draft]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "draft-ios-$BUILD_NUM" "$IPA_NAME.ipa" --draft \
+            --target "$GITHUB_SHA" \
+            --title "iOS draft $BUILD_NUM" \
+            --notes "Unsigned IPA draft for signing"
+
       # Ручний запуск з release=true: IPA стає Release з тегом версії (v1.0.N) —
       # посилання …/releases/latest відкривається без входу в GitHub і не видаляється за 90 днів
       - name: Publish release
