@@ -4,7 +4,8 @@ import UniformTypeIdentifiers
 import BandFaceKit
 
 struct ContentView: View {
-    enum Tab: Hashable { case store, faces, key, settings }
+    enum Tab: Hashable { case faces, store, settings }
+    enum SettingsRoute: Hashable { case key, log }
 
     @EnvironmentObject var ble: BLEManager
 
@@ -15,13 +16,17 @@ struct ContentView: View {
     @State private var keyStatus: String?
     @State private var keyStatusIsError = false
     @State private var showKeyHelp = false
-    @State private var tab: Tab = .store
+    @State private var tab: Tab = .faces
+    @State private var settingsPath: [SettingsRoute] = []
+    @State private var confirmForget = false
+    @AppStorage("appTheme") private var appTheme = "system"
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.load()
     @State private var installingID: String?
-    @AppStorage("installedFaceIDs") private var installedRaw = ""
+    @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
+    @State private var storeAlertOpensKey = false
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -31,8 +36,6 @@ struct ContentView: View {
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
     @AppStorage("verboseLog") private var verboseLog = false
-    @AppStorage("donationOpened") private var donationOpened = false
-    @State private var showDonation = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var keyValid: Bool {
@@ -53,8 +56,12 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $tab) {
+            facesTab
+                .tabItem { Label("Циферблати", image: "TabWatch") }
+                .tag(Tab.faces)
+
             StoreView(faces: storeFaces,
-                      installedIDs: Set(installedRaw.split(separator: ",").map(String.init)),
+                      installed: InstalledFaces.parse(installedRaw),
                       installingID: installingID,
                       busy: busy,
                       progress: progress,
@@ -63,55 +70,13 @@ struct ContentView: View {
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
 
-            NavigationStack {
-                Form {
-                    if !keyValid {
-                        Section {
-                            Button {
-                                // Переходимо у вкладку «Ключ» і одразу починаємо пошук там
-                                tab = .key
-                                Task { @MainActor in
-                                    try? await Task.sleep(nanoseconds: 350_000_000)
-                                    findKey()
-                                }
-                            } label: {
-                                Label("Додати ключ браслета", systemImage: "key")
-                            }
-                        } header: {
-                            // Стандартний відступ першої секції — як «Браслет» і «Auth key» під заголовком екрана
-                            Text("Ключ")
-                        } footer: {
-                            Text("Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.")
-                        }
-                    }
-                    bandSection
-                    installSection
-                }
-                .navigationTitle("Циферблати")
-                // Збір на App Store — капсула над панеллю вкладок; список прокручується під нею
-                .safeAreaInset(edge: .bottom) {
-                    DonationBar(thanked: donationOpened) { showDonation = true }
-                        .padding(.horizontal, 16)
-                        // Відступ від панелі вкладок
-                        .padding(.bottom, 16)
-                }
-            }
-            .tabItem { Label("Циферблати", image: "TabWatch") }
-            .tag(Tab.faces)
-
-            NavigationStack {
-                Form { authSection }
-                    .navigationTitle("Ключ")
-            }
-            // Ключа немає — на іконці червоний знак «!»
-            .tabItem { Label("Ключ", image: "TabKey") }
-            .badge(keyValid ? nil : Text("!"))
-            .tag(Tab.key)
-
             settingsTab
                 .tabItem { Label("Налаштування", image: "TabSettings") }
+                // Ключа немає — на іконці червоний знак «!»
+                .badge(keyValid ? nil : Text("!"))
                 .tag(Tab.settings)
         }
+        .preferredColorScheme(appTheme == "light" ? .light : (appTheme == "dark" ? .dark : nil))
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
             if phase == .background && !busy && (ble.connectedID != nil || ble.isConnecting) {
@@ -128,14 +93,11 @@ struct ContentView: View {
         .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
                                                       set: { if !$0 { storeAlert = nil } })) {
             Button("Гаразд") {
-                if let target = storeAlertGoTo { tab = target }
+                if storeAlertOpensKey { openKey(search: false) }
+                else if let target = storeAlertGoTo { tab = target }
                 storeAlertGoTo = nil
+                storeAlertOpensKey = false
             }
-        }
-        .sheet(isPresented: $showDonation) {
-            DonationSheet { donationOpened = true }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: importingFolder ? [.folder] : [.data]) { result in
@@ -158,42 +120,128 @@ struct ContentView: View {
 
     // MARK: - Магазин і налаштування
 
-    private var settingsTab: some View {
+    private var facesTab: some View {
         NavigationStack {
             Form {
-                Section {
-                    NavigationLink {
-                        Form {
-                            logSection
-                            Section {
-                                Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            } header: {
-                                Text("Версія")
-                            }
+                if !keyValid {
+                    Section {
+                        Button {
+                            // Ключ додається в налаштуваннях: переходимо туди й одразу починаємо пошук
+                            openKey(search: true)
+                        } label: {
+                            Label("Додати ключ браслета", systemImage: "key")
                         }
-                        .navigationTitle("Журнал")
-                    } label: {
-                        Label("Журнал", systemImage: "list.bullet.rectangle")
+                    } header: {
+                        // Стандартний відступ першої секції — як «Браслет» і «Auth key» під заголовком екрана
+                        Text("Ключ")
+                    } footer: {
+                        Text("Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.")
                     }
                 }
-                Section {
-                    Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Версія")
+                bandSection
+                installSection
+            }
+            .navigationTitle("Циферблати")
+        }
+    }
+
+    private var settingsTab: some View {
+        NavigationStack(path: $settingsPath) {
+            Form {
+                Section("Браслет") {
+                    NavigationLink(value: SettingsRoute.key) {
+                        HStack {
+                            Text("Ключ")
+                            Spacer()
+                            if keyValid {
+                                Label("Додано", systemImage: "checkmark")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.okText)
+                            } else {
+                                Text("Не додано").foregroundStyle(Color.errorText)
+                            }
+                        }
+                    }
+                    NavigationLink("Журнал", value: SettingsRoute.log)
+                    Button("Забути браслет", role: .destructive) { confirmForget = true }
+                }
+                Section("Застосунок") {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Text("Мова").foregroundStyle(.primary)
+                            Spacer()
+                            Text(Self.languageName).foregroundStyle(.secondary)
+                            Image(systemName: "arrow.up.right")
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    Picker("Тема", selection: $appTheme) {
+                        Text("Системна").tag("system")
+                        Text("Світла").tag("light")
+                        Text("Темна").tag("dark")
+                    }
+                    HStack {
+                        Text("Про застосунок")
+                        Spacer()
+                        Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("Налаштування")
+            .navigationDestination(for: SettingsRoute.self) { route in
+                switch route {
+                case .key:
+                    Form { authSection }
+                        .navigationTitle("Ключ")
+                case .log:
+                    Form {
+                        logSection
+                        Section {
+                            Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } header: {
+                            Text("Версія")
+                        }
+                    }
+                    .navigationTitle("Журнал")
+                }
+            }
+            .alert("Забути браслет?", isPresented: $confirmForget) {
+                Button("Забути", role: .destructive) { ble.forgetBand() }
+                Button("Скасувати", role: .cancel) {}
+            } message: {
+                Text("Застосунок більше не підключатиметься до нього автоматично. Ключ залишиться збереженим.")
+            }
+        }
+    }
+
+    private static var languageName: String {
+        let code = Locale.preferredLanguages.first ?? "uk"
+        return (Locale.current.localizedString(forLanguageCode: code) ?? code).capitalized
+    }
+
+    /// Відкриває «Налаштування → Ключ»; `search` — одразу шукати ключ.
+    private func openKey(search: Bool) {
+        settingsPath = [.key]
+        tab = .settings
+        guard search else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            findKey()
         }
     }
 
     private func storeInstall(_ item: StoreFace) {
         guard keyValid else {
             storeAlert = String(localized: "Спершу додайте ключ браслета")
-            storeAlertGoTo = .key
+            storeAlertOpensKey = true
             return
         }
         guard ble.connectedID != nil && ble.servicesReady else {
@@ -201,7 +249,7 @@ struct ContentView: View {
             storeAlertGoTo = .faces
             return
         }
-        install(item.face, storeID: item.id)
+        install(item.face, store: item)
     }
 
     // MARK: - Розділи
@@ -373,22 +421,9 @@ struct ContentView: View {
         }
     }
 
-    /// Передогляд циферблата в капсулі з рамкою ззовні, як корпус браслета.
+    /// Передогляд циферблата: та сама капсула, що в магазині.
     private var previewCapsule: some View {
-        ZStack {
-            Capsule(style: .continuous).fill(Color.black)
-            if let filePreview {
-                Image(uiImage: filePreview).resizable().scaledToFill()
-            } else {
-                Image("TabWatch").resizable().scaledToFit()
-                    .frame(width: 30)
-                    .foregroundStyle(Color(white: 0.4))
-            }
-        }
-        .frame(width: 96, height: 236)
-        .clipShape(Capsule(style: .continuous))
-        .padding(3)
-        .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.45)))
+        FaceCapsule(image: filePreview)
     }
 
     private func pickFace() {
@@ -585,13 +620,13 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func install(_ face: FaceFile, storeID: String? = nil) {
+    private func install(_ face: FaceFile, store: StoreFace? = nil) {
         guard let key = Hex.decode(authKey), key.count == 16 else {
             show(BandError.invalidAuthKey.localizedDescription, error: true)
             return
         }
         busy = true
-        installingID = storeID
+        installingID = store?.id
         progress = 0
         progressText = String(localized: "Старт…")
         message = nil
@@ -603,15 +638,15 @@ struct ContentView: View {
                 }
                 ble.addLog(String(localized: "Готово: \(text)"))
                 show(text, error: false)
-                if let storeID {
-                    var ids = Set(installedRaw.split(separator: ",").map(String.init))
-                    ids.insert(storeID)
-                    installedRaw = ids.sorted().joined(separator: ",")
+                if let store {
+                    var map = InstalledFaces.parse(installedRaw)
+                    map[store.id] = store.version
+                    installedRaw = InstalledFaces.encode(map)
                 }
             } catch {
                 ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
                 show(error.localizedDescription, error: true)
-                if storeID != nil { storeAlert = error.localizedDescription }
+                if store != nil { storeAlert = error.localizedDescription }
             }
             busy = false
             installingID = nil

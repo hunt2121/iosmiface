@@ -129,6 +129,12 @@ final class BLEManager: NSObject, ObservableObject {
         }
     }
 
+    /// Забуває браслет: відключає й стирає запам'ятований пристрій.
+    func forgetBand() {
+        disconnect(byUser: true)
+        UserDefaults.standard.removeObject(forKey: lastDeviceKey)
+    }
+
     /// Автоматичне підключення до браслета, з яким працювали минулого разу.
     func reconnectLast() {
         guard central.state == .poweredOn, active == nil, !userDisconnected,
