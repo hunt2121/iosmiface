@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import BandFaceKit
 
 struct ContentView: View {
-    enum Tab: Hashable { case faces, key, log }
+    enum Tab: Hashable { case store, faces, key }
 
     @EnvironmentObject var ble: BLEManager
 
@@ -15,7 +15,14 @@ struct ContentView: View {
     @State private var keyStatus: String?
     @State private var keyStatusIsError = false
     @State private var showKeyHelp = false
-    @State private var tab: Tab = .faces
+    @State private var tab: Tab = .store
+    // Магазин
+    @State private var storeFaces: [StoreFace] = StoreCatalog.load()
+    @State private var installingID: String?
+    @AppStorage("installedFaceIDs") private var installedRaw = ""
+    @State private var storeAlert: String?
+    @State private var storeAlertGoTo: Tab?
+    @State private var showSettings = false
     @State private var face: FaceFile?
     @State private var fileName: String?
     @State private var progress: Double = 0
@@ -47,6 +54,17 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $tab) {
+            StoreView(faces: storeFaces,
+                      installedIDs: Set(installedRaw.split(separator: ",").map(String.init)),
+                      installingID: installingID,
+                      busy: busy,
+                      progress: progress,
+                      progressText: progressText,
+                      onInstall: { storeInstall($0) },
+                      onSettings: { showSettings = true })
+                .tabItem { Label("Магазин", systemImage: "bag") }
+                .tag(Tab.store)
+
             NavigationStack {
                 Form {
                     if !keyValid {
@@ -91,22 +109,6 @@ struct ContentView: View {
             .tabItem { Label("Ключ", image: "TabKey") }
             .badge(keyValid ? nil : Text("!"))
             .tag(Tab.key)
-
-            NavigationStack {
-                Form {
-                    logSection
-                    Section {
-                        Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    } header: {
-                        Text("Версія")
-                    }
-                }
-                .navigationTitle("Журнал")
-            }
-            .tabItem { Label("Журнал", image: "TabLog") }
-            .tag(Tab.log)
         }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
@@ -120,6 +122,14 @@ struct ContentView: View {
         }
         .onAppear {
             autoFindKey()
+        }
+        .sheet(isPresented: $showSettings) { settingsSheet }
+        .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
+                                                      set: { if !$0 { storeAlert = nil } })) {
+            Button("Гаразд") {
+                if let target = storeAlertGoTo { tab = target }
+                storeAlertGoTo = nil
+            }
         }
         .sheet(isPresented: $showDonation) {
             DonationSheet { donationOpened = true }
@@ -143,6 +153,60 @@ struct ContentView: View {
         } message: {
             Text("У вікні, що відкриється, перейдіть у розділ «На iPhone», виберіть папку «Mi Fitness» і натисніть «Відкрити». Застосунок сам знайде ключ і запам'ятає папку.")
         }
+    }
+
+    // MARK: - Магазин і налаштування
+
+    private var settingsSheet: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    NavigationLink {
+                        Form {
+                            logSection
+                            Section {
+                                Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } header: {
+                                Text("Версія")
+                            }
+                        }
+                        .navigationTitle("Журнал")
+                    } label: {
+                        Label("Журнал", systemImage: "list.bullet.rectangle")
+                    }
+                }
+                Section {
+                    Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Версія")
+                }
+            }
+            .navigationTitle("Налаштування")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Готово") { showSettings = false }
+                }
+            }
+        }
+    }
+
+    private func storeInstall(_ item: StoreFace) {
+        guard keyValid else {
+            storeAlert = String(localized: "Спершу додайте ключ браслета")
+            storeAlertGoTo = .key
+            return
+        }
+        guard ble.connectedID != nil && ble.servicesReady else {
+            storeAlert = String(localized: "Спершу підключіть браслет на вкладці «Циферблати»")
+            storeAlertGoTo = .faces
+            return
+        }
+        install(item.face, storeID: item.id)
     }
 
     // MARK: - Розділи
@@ -526,12 +590,13 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func install(_ face: FaceFile) {
+    private func install(_ face: FaceFile, storeID: String? = nil) {
         guard let key = Hex.decode(authKey), key.count == 16 else {
             show(BandError.invalidAuthKey.localizedDescription, error: true)
             return
         }
         busy = true
+        installingID = storeID
         progress = 0
         progressText = String(localized: "Старт…")
         message = nil
@@ -543,11 +608,18 @@ struct ContentView: View {
                 }
                 ble.addLog(String(localized: "Готово: \(text)"))
                 show(text, error: false)
+                if let storeID {
+                    var ids = Set(installedRaw.split(separator: ",").map(String.init))
+                    ids.insert(storeID)
+                    installedRaw = ids.sorted().joined(separator: ",")
+                }
             } catch {
                 ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
                 show(error.localizedDescription, error: true)
+                if storeID != nil { storeAlert = error.localizedDescription }
             }
             busy = false
+            installingID = nil
         }
     }
 

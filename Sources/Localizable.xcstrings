@@ -415,6 +415,29 @@
         }
       }
     },
+    "Безкоштовно": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бесплатно"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безкоштовно"
+          }
+        }
+      }
+    },
     "Браслет": {
       "extractionState": "manual",
       "localizations": {
@@ -714,6 +737,29 @@
         }
       }
     },
+    "Встановити": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановити"
+          }
+        }
+      }
+    },
     "Встановити на браслет": {
       "extractionState": "manual",
       "localizations": {
@@ -783,6 +829,29 @@
         }
       }
     },
+    "Встановлено": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установлено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлено"
+          }
+        }
+      }
+    },
     "Відключено": {
       "extractionState": "manual",
       "localizations": {
@@ -848,6 +917,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Відкриття сесії…"
+          }
+        }
+      }
+    },
+    "Гаразд": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хорошо"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Гаразд"
+          }
+        }
+      }
+    },
+    "Готово": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
           }
         }
       }
@@ -1358,6 +1473,29 @@
         }
       }
     },
+    "Магазин": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Store"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Магазин"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Магазин"
+          }
+        }
+      }
+    },
     "Мета": {
       "extractionState": "manual",
       "localizations": {
@@ -1423,6 +1561,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Монобанка"
+          }
+        }
+      }
+    },
+    "Налаштування": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Налаштування"
           }
         }
       }
@@ -1998,6 +2159,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Скасувати"
+          }
+        }
+      }
+    },
+    "Спершу додайте ключ браслета": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the band key first"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала добавьте ключ браслета"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спершу додайте ключ браслета"
+          }
+        }
+      }
+    },
+    "Спершу підключіть браслет на вкладці «Циферблати»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect the band on the Watch Faces tab first"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала подключите браслет на вкладке «Циферблаты»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спершу підключіть браслет на вкладці «Циферблати»"
           }
         }
       }
