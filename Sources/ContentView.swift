@@ -19,7 +19,8 @@ struct ContentView: View {
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
-    @AppStorage("storeIconVariant") private var storeIconVariant = 0
+    @AppStorage("storeIconVariant") private var storeIconVariant = 1
+    private var storeIconKey: Int { (1...4).contains(storeIconVariant) ? storeIconVariant : 1 }
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.load()
     @State private var installingID: String?
@@ -67,7 +68,7 @@ struct ContentView: View {
                       progress: progress,
                       progressText: progressText,
                       onInstall: { storeInstall($0) })
-                .tabItem { Label("Магазин", image: storeIconVariant == 0 ? "TabStore" : "TabStore\(storeIconVariant)") }
+                .tabItem { Label("Магазин", image: "TabStore\(storeIconKey)") }
                 .tag(Tab.store)
 
             settingsTab
@@ -151,7 +152,7 @@ struct ContentView: View {
                 Section("Браслет") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "key.fill", color: .orange)
+                            SettingsLabel("Ключ", icon: "TabKey", color: .orange)
                             Spacer()
                             if keyValid {
                                 Image(systemName: "checkmark")
@@ -164,7 +165,7 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "doc.text.fill", color: .gray)
+                        SettingsLabel("Журнал", icon: "TabLog", color: .gray)
                     }
                 }
                 Section("Застосунок") {
@@ -192,7 +193,7 @@ struct ContentView: View {
                         SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .purple)
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "info.circle.fill", color: .gray)
+                        SettingsLabel("Версія", icon: "info.circle", color: .gray)
                         Spacer()
                         Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -201,14 +202,12 @@ struct ContentView: View {
                 // Тимчасово: вибір іконки вкладки «Магазин»
                 Section {
                     Picker(selection: $storeIconVariant) {
-                        Text(verbatim: "0 · Сумка").tag(0)
-                        Text(verbatim: "1 · Магазин").tag(1)
-                        Text(verbatim: "2 · Каталог").tag(2)
-                        Text(verbatim: "3 · Ярлик").tag(3)
-                        Text(verbatim: "4 · Циферблат+").tag(4)
-                        Text(verbatim: "5 · Кошик").tag(5)
+                        Text(verbatim: "1 · Сумка").tag(1)
+                        Text(verbatim: "2 · Бирка").tag(2)
+                        Text(verbatim: "3 · Сумка з циферблатом").tag(3)
+                        Text(verbatim: "4 · Вітрина").tag(4)
                     } label: {
-                        SettingsLabel("Іконка магазину", icon: "sparkles", color: .teal)
+                        SettingsLabel("Іконка магазину", icon: "TabStore\(storeIconKey)", color: .teal)
                     }
                 } header: {
                     Text(verbatim: "Експеримент")
@@ -717,11 +716,15 @@ struct SettingsLabel: View {
         Label {
             Text(title)
         } icon: {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 29, height: 29)
-                .background(color, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Group {
+                if icon.hasPrefix("Tab") {
+                    Image(icon).renderingMode(.template)
+                } else {
+                    Image(systemName: icon).font(.system(size: 20, weight: .medium))
+                }
+            }
+            .foregroundStyle(.primary)
+            .frame(width: 30, height: 30)
         }
     }
 }
