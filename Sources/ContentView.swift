@@ -18,7 +18,6 @@ struct ContentView: View {
     @State private var showKeyHelp = false
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
-    @State private var confirmForget = false
     @AppStorage("appTheme") private var appTheme = "system"
     @AppStorage("storeIconVariant") private var storeIconVariant = 0
     // Магазин
@@ -167,10 +166,6 @@ struct ContentView: View {
                     NavigationLink(value: SettingsRoute.log) {
                         SettingsLabel("Журнал", icon: "doc.text.fill", color: .gray)
                     }
-                    Button(role: .destructive) { confirmForget = true } label: {
-                        SettingsLabel("Забути браслет", icon: "minus.circle.fill", color: .red)
-                            .foregroundStyle(.red)
-                    }
                 }
                 Section("Застосунок") {
                     Button {
@@ -225,6 +220,7 @@ struct ContentView: View {
                 case .key:
                     Form { authSection }
                         .navigationTitle("Ключ")
+                        .navigationBarTitleDisplayMode(.inline)
                 case .log:
                     Form {
                         logSection
@@ -237,15 +233,16 @@ struct ContentView: View {
                         }
                     }
                     .navigationTitle("Журнал")
+                    .navigationBarTitleDisplayMode(.inline)
                 }
             }
-            .alert("Забути браслет?", isPresented: $confirmForget) {
-                Button("Забути", role: .destructive) { ble.forgetBand() }
-                Button("Скасувати", role: .cancel) {}
-            } message: {
-                Text("Застосунок більше не підключатиметься до нього автоматично. Ключ залишиться збереженим.")
-            }
         }
+    }
+
+    /// «Xiaomi Smart Band 10 E3B4» → «Xiaomi Smart Band 10»: без службового суфікса.
+    static func bandModel(_ name: String) -> String {
+        if let r = name.range(of: #"^.*?Band\s*\d+"#, options: .regularExpression) { return String(name[r]) }
+        return name
     }
 
     private static var languageName: String {
@@ -273,6 +270,11 @@ struct ContentView: View {
         guard ble.connectedID != nil && ble.servicesReady else {
             storeAlert = String(localized: "Спершу підключіть браслет на вкладці «Циферблати»")
             storeAlertGoTo = .faces
+            return
+        }
+        if let n = ble.connectedName, let r = n.range(of: #"Band\s*(\d+)"#, options: .regularExpression),
+           let model = Int(n[r].filter(\.isNumber)), !item.bands.contains(model) {
+            storeAlert = String(localized: "Цей циферблат не підтримує ваш браслет")
             return
         }
         install(item.face, store: item)
@@ -462,12 +464,17 @@ struct ContentView: View {
         Section("Браслет") {
             if let name = ble.connectedName {
                 HStack {
-                    Label { Text(name) } icon: { Image("TabWatch").foregroundStyle(Color.accentColor) }
+                    Label { Text(Self.bandModel(name)) } icon: { Image("TabWatch").foregroundStyle(Color.accentColor) }
                     Spacer()
-                    Button("Відключити", role: .destructive) {
+                    Button(role: .destructive) {
                         ble.disconnect()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(Color.errorText)
                     }
                     .buttonStyle(.borderless)
+                    .accessibilityLabel(Text("Відключити"))
                 }
                 if !ble.servicesReady {
                     HStack { ProgressView(); Text("Підготовка…").font(.footnote) }
@@ -516,13 +523,14 @@ struct ContentView: View {
                 } label: {
                     Text("Копіювати").buttonText()
                 }
-                .glassSecondaryStyle()
+                .glassProminentStyle()
                 Button(role: .destructive) {
                     ble.log.removeAll()
                 } label: {
                     Text("Очистити").buttonText()
                 }
-                .glassSecondaryStyle()
+                .glassProminentStyle()
+                .tint(.red)
             }
             .buttonBorderShape(.capsule)
             .padding(.top, 4)

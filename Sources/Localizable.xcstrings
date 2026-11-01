@@ -3496,6 +3496,29 @@
           }
         }
       }
+    },
+    "Цей циферблат не підтримує ваш браслет": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This watch face doesn't support your band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот циферблат не поддерживает ваш браслет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей циферблат не підтримує ваш браслет"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

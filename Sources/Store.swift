@@ -12,9 +12,11 @@ struct StoreFace: Identifiable {
     let price: String?      // nil — безкоштовний
     let face: FaceFile
     let preview: UIImage?
+    var bands: [Int] = [10]   // підтримувані моделі Smart Band
 
     var isFree: Bool { price == nil }
     var sizeKB: Int { face.size / 1024 }
+    var bandsText: String { "Band " + bands.map(String.init).joined(separator: " · ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
 }
 
@@ -320,8 +322,9 @@ struct FaceActionButton: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .frame(height: height)
-                    .foregroundStyle(Color.accentColor)
-                    .capsuleGlass(tint: Color.accentColor.opacity(0.25))
+                    .foregroundStyle(.white)
+                    .background(Capsule().fill(Color.accentColor))
+                    .capsuleGlass(tint: Color.accentColor)
             }
             .buttonStyle(.plain)
             .disabled(busy)
@@ -347,8 +350,7 @@ struct StoreDetailView: View {
                         .fill(Color(.secondarySystemGroupedBackground))
                     FaceCapsule(image: item.preview)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    if item.isFree { FreeTag().padding(12) }
-                }
+                                    }
                 .frame(height: 330)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -362,7 +364,7 @@ struct StoreDetailView: View {
                 HStack(spacing: 0) {
                     info("Розмір", "\(item.sizeKB) KB")
                     Divider().frame(height: 34)
-                    info("Браслет", "Band 10")
+                    info("Браслет", item.bandsText)
                     Divider().frame(height: 34)
                     info("Тип", item.kind)
                 }
@@ -373,20 +375,16 @@ struct StoreDetailView: View {
                 Text(item.about)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                FaceActionButton(state: state, price: item.price, busy: busy,
+                                 progress: progress, progressText: progressText, height: 52) {
+                    onInstall(item)
+                }
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            FaceActionButton(state: state, price: item.price, busy: busy,
-                             progress: progress, progressText: progressText, height: 52) {
-                onInstall(item)
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-            .padding(.top, 8)
-        }
     }
 
     private func info(_ title: LocalizedStringKey, _ value: String) -> some View {
