@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @State private var confirmForget = false
     @AppStorage("appTheme") private var appTheme = "system"
+    @AppStorage("storeIconVariant") private var storeIconVariant = 0
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.load()
     @State private var installingID: String?
@@ -67,7 +68,7 @@ struct ContentView: View {
                       progress: progress,
                       progressText: progressText,
                       onInstall: { storeInstall($0) })
-                .tabItem { Label("Магазин", image: "TabStore") }
+                .tabItem { Label("Магазин", image: storeIconVariant == 0 ? "TabStore" : "TabStore\(storeIconVariant)") }
                 .tag(Tab.store)
 
             settingsTab
@@ -151,19 +152,25 @@ struct ContentView: View {
                 Section("Браслет") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            Text("Ключ")
+                            SettingsLabel("Ключ", icon: "key.fill", color: .orange)
                             Spacer()
                             if keyValid {
-                                Label("Додано", systemImage: "checkmark")
+                                Image(systemName: "checkmark")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color.okText)
+                                    .foregroundStyle(.primary)
                             } else {
-                                Text("Не додано").foregroundStyle(Color.errorText)
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundStyle(Color.errorText)
                             }
                         }
                     }
-                    NavigationLink("Журнал", value: SettingsRoute.log)
-                    Button("Забути браслет", role: .destructive) { confirmForget = true }
+                    NavigationLink(value: SettingsRoute.log) {
+                        SettingsLabel("Журнал", icon: "doc.text.fill", color: .gray)
+                    }
+                    Button(role: .destructive) { confirmForget = true } label: {
+                        SettingsLabel("Забути браслет", icon: "minus.circle.fill", color: .red)
+                            .foregroundStyle(.red)
+                    }
                 }
                 Section("Застосунок") {
                     Button {
@@ -172,25 +179,44 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            Text("Мова").foregroundStyle(.primary)
+                            SettingsLabel("Мова", icon: "globe", color: .blue)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
                             Image(systemName: "arrow.up.right")
                                 .font(.footnote)
                                 .foregroundStyle(.tertiary)
                         }
+                        .foregroundStyle(.primary)
                     }
-                    Picker("Тема", selection: $appTheme) {
+                    .buttonStyle(.plain)
+                    Picker(selection: $appTheme) {
                         Text("Системна").tag("system")
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
+                    } label: {
+                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .purple)
                     }
                     HStack {
-                        Text("Про застосунок")
+                        SettingsLabel("Версія", icon: "info.circle.fill", color: .gray)
                         Spacer()
                         Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
+                }
+                // Тимчасово: вибір іконки вкладки «Магазин»
+                Section {
+                    Picker(selection: $storeIconVariant) {
+                        Text(verbatim: "0 · Сумка").tag(0)
+                        Text(verbatim: "1 · Магазин").tag(1)
+                        Text(verbatim: "2 · Каталог").tag(2)
+                        Text(verbatim: "3 · Ярлик").tag(3)
+                        Text(verbatim: "4 · Циферблат+").tag(4)
+                        Text(verbatim: "5 · Кошик").tag(5)
+                    } label: {
+                        SettingsLabel("Іконка магазину", icon: "sparkles", color: .teal)
+                    }
+                } header: {
+                    Text(verbatim: "Експеримент")
                 }
             }
             .navigationTitle("Налаштування")
@@ -667,5 +693,27 @@ private extension Text {
             .minimumScaleFactor(0.75)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
+    }
+}
+
+
+/// Рядок налаштувань зі значком у кольоровому квадраті (фіксована ширина — однакові відступи й роздільники).
+struct SettingsLabel: View {
+    let title: LocalizedStringKey
+    let icon: String
+    let color: Color
+    init(_ title: LocalizedStringKey, icon: String, color: Color) {
+        self.title = title; self.icon = icon; self.color = color
+    }
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 29, height: 29)
+                .background(color, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
     }
 }
