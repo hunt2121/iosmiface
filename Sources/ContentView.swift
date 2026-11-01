@@ -314,7 +314,7 @@ struct ContentView: View {
                 } label: {
                     Text("Знайти автоматично").buttonText()
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentStyle()
                 .buttonBorderShape(.capsule)
                 // Статус — по центру місця між кнопкою і низом картки; висота фіксована
                 Text(keyStatusLine?.text ?? " ")
@@ -374,10 +374,10 @@ struct ContentView: View {
                     Group {
                         if face == nil {
                             Button { pickFace() } label: { Text("Вибрати файл").buttonText() }
-                                .buttonStyle(.borderedProminent)
+                                .glassProminentStyle()
                         } else {
                             Button { pickFace() } label: { Text("Вибрати інший файл").buttonText() }
-                                .buttonStyle(.bordered)
+                                .glassSecondaryStyle()
                                 .disabled(busy)
                         }
                     }
@@ -386,7 +386,7 @@ struct ContentView: View {
                     } label: {
                         Text("Встановити на браслет").buttonText()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentStyle()
                     .disabled(!canOperate || face == nil)
 
                     progressBlock
@@ -516,13 +516,13 @@ struct ContentView: View {
                 } label: {
                     Text("Копіювати").buttonText()
                 }
-                .buttonStyle(.bordered)
+                .glassSecondaryStyle()
                 Button(role: .destructive) {
                     ble.log.removeAll()
                 } label: {
                     Text("Очистити").buttonText()
                 }
-                .buttonStyle(.bordered)
+                .glassSecondaryStyle()
             }
             .buttonBorderShape(.capsule)
             .padding(.top, 4)

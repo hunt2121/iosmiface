@@ -165,8 +165,7 @@ struct StoreView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: Text("Пошук циферблатів"))
+            .storeSearchable(text: $query, prompt: Text("Пошук циферблатів"))
         }
     }
 
@@ -188,7 +187,8 @@ struct StoreView: View {
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
-                .background(Capsule().fill(on ? Color.accentColor : Color(.secondarySystemGroupedBackground)))
+                .background(Capsule().fill(on ? Color.accentColor : Color.clear))
+                .modifier(ChipGlass(on: on))
         }
         .buttonStyle(.plain)
     }
@@ -198,9 +198,6 @@ struct StoreView: View {
             ZStack(alignment: .topLeading) {
                 FaceCapsule(image: item.preview)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if item.isFree {
-                    FreeTag().padding(8)
-                }
             }
             .frame(height: 266)
 
@@ -208,7 +205,7 @@ struct StoreView: View {
                 Text(item.name)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                Text(subtitle(item))
+                subtitleView(item)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -221,9 +218,18 @@ struct StoreView: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+        .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
             .fill(Color(.secondarySystemGroupedBackground)))
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+    }
+
+    @ViewBuilder private func subtitleView(_ item: StoreFace) -> some View {
+        if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
+            (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okText)
+             + Text(verbatim: " · \(item.sizeKB) KB"))
+        } else {
+            Text(subtitle(item))
+        }
     }
 
     private func subtitle(_ item: StoreFace) -> String {
@@ -231,6 +237,13 @@ struct StoreView: View {
             return String(localized: "Оновлення \(v).0 → \(item.version).0")
         }
         return item.meta
+    }
+}
+
+private struct ChipGlass: ViewModifier {
+    let on: Bool
+    func body(content: Content) -> some View {
+        if on { content } else { content.capsuleGlass() }
     }
 }
 
@@ -297,6 +310,7 @@ struct FaceActionButton: View {
                 .frame(height: height)
                 .foregroundStyle(.white)
                 .background(Capsule().fill(Color.accentColor))
+                .capsuleGlass(tint: Color.accentColor)
             }
             .buttonStyle(.plain)
             .disabled(busy)
@@ -307,7 +321,7 @@ struct FaceActionButton: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: height)
                     .foregroundStyle(Color.accentColor)
-                    .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                    .capsuleGlass(tint: Color.accentColor.opacity(0.25))
             }
             .buttonStyle(.plain)
             .disabled(busy)
@@ -329,7 +343,7 @@ struct StoreDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
                         .fill(Color(.secondarySystemGroupedBackground))
                     FaceCapsule(image: item.preview)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -353,7 +367,7 @@ struct StoreDetailView: View {
                     info("Тип", item.kind)
                 }
                 .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
 
                 Text(item.about)
@@ -372,7 +386,6 @@ struct StoreDetailView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
             .padding(.top, 8)
-            .background(.bar)
         }
     }
 

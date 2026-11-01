@@ -16,3 +16,31 @@ extension Color {
             : UIColor(red: 0.78, green: 0.12, blue: 0.10, alpha: 1)
     })
 }
+
+/// Liquid Glass на iOS 26 і запасний вигляд на старіших версіях.
+extension View {
+    @ViewBuilder func capsuleGlass(tint: Color? = nil) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.tint(tint).interactive(), in: Capsule())
+        } else {
+            self.background(Capsule().fill((tint ?? Color.gray).opacity(0.15)))
+        }
+    }
+
+    @ViewBuilder func glassProminentStyle() -> some View {
+        if #available(iOS 26, *) { self.buttonStyle(.glassProminent) } else { self.buttonStyle(.borderedProminent) }
+    }
+
+    @ViewBuilder func glassSecondaryStyle() -> some View {
+        if #available(iOS 26, *) { self.buttonStyle(.glass) } else { self.buttonStyle(.bordered) }
+    }
+
+    /// Пошук: на iOS 26 — скляна капсула внизу екрана, раніше — у панелі зверху.
+    @ViewBuilder func storeSearchable(text: Binding<String>, prompt: Text) -> some View {
+        if #available(iOS 26, *) {
+            self.searchable(text: text, prompt: prompt)
+        } else {
+            self.searchable(text: text, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
+        }
+    }
+}
