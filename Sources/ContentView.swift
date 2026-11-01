@@ -20,7 +20,7 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
     @AppStorage("storeIconVariant") private var storeIconVariant = 1
-    private var storeIconKey: Int { (1...4).contains(storeIconVariant) ? storeIconVariant : 1 }
+    private var storeIconKey: Int { (1...5).contains(storeIconVariant) ? storeIconVariant : 1 }
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.load()
     @State private var installingID: String?
@@ -206,6 +206,7 @@ struct ContentView: View {
                         Text(verbatim: "2 · Бирка").tag(2)
                         Text(verbatim: "3 · Сумка з циферблатом").tag(3)
                         Text(verbatim: "4 · Вітрина").tag(4)
+                        Text(verbatim: "5 · Сумка із завантаженням").tag(5)
                     } label: {
                         SettingsLabel("Іконка магазину", icon: "TabStore\(storeIconKey)", color: .teal)
                     }
