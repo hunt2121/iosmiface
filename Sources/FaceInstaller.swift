@@ -32,32 +32,7 @@ final class FaceInstaller {
         guard authKey.count == 16 else { throw BandError.invalidAuthKey }
 
         let ble = self.ble
-        var configuration = BandSession.Configuration()
-        // Технічний журнал бібліотеки — лише в режимі «Режим розробника»; інакше рядки навіть не формуються
-        if UserDefaults.standard.bool(forKey: "verboseLog") {
-            configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
-        }
-        // Окремий рядок у звичайному журналі, коли браслет почав працювати з Mi Fitness
-        configuration.onOtherApp = { _ in
-            DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з браслетом")) }
-        }
-        // Параметри відкриття сесії — ті самі, що в Mi Fitness:
-        // версія 1.0.0, 7 = 1B 02 00, макс. кадр 0xFFFF, 5 = 1, назва пристрою, вікно 16, тайм-аут 15 000 мс
-        configuration.openParameters = [
-            (key: 1, value: [0x01, 0x00, 0x00]),
-            (key: 7, value: [0x1B, 0x02, 0x00]),
-            (key: 2, value: [0xFF, 0xFF]),
-            (key: 5, value: [0x01]),
-            (key: 6, value: Array("iPhone".utf8)),
-            (key: 3, value: [0x10, 0x00]),
-            (key: 4, value: [0x98, 0x3A]),
-        ]
-        let session = BandSession(transport: ble, configuration: configuration)
-
-        ble.onData = { uuid, data in
-            if uuid == BandGATT.rx { session.receive(data) }
-        }
-        ble.onDisconnect = { Task { await session.connectionLost() } }
+        let session = makeSession()
         defer {
             ble.onData = nil
             ble.onDisconnect = nil
@@ -93,6 +68,52 @@ final class FaceInstaller {
         return reporter.alreadyInstalled
             ? String(localized: "Циферблат уже був на браслеті, його активовано")
             : String(localized: "Циферблат встановлено й активовано")
+    }
+
+    /// Сесія з параметрами Mi Fitness; підписує обробники даних і розриву з'єднання.
+    private func makeSession() -> BandSession {
+        let ble = self.ble
+        var configuration = BandSession.Configuration()
+        if UserDefaults.standard.bool(forKey: "verboseLog") {
+            configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
+        }
+        configuration.onOtherApp = { _ in
+            DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з браслетом")) }
+        }
+        configuration.openParameters = [
+            (key: 1, value: [0x01, 0x00, 0x00]),
+            (key: 7, value: [0x1B, 0x02, 0x00]),
+            (key: 2, value: [0xFF, 0xFF]),
+            (key: 5, value: [0x01]),
+            (key: 6, value: Array("iPhone".utf8)),
+            (key: 3, value: [0x10, 0x00]),
+            (key: 4, value: [0x98, 0x3A]),
+        ]
+        let session = BandSession(transport: ble, configuration: configuration)
+        ble.onData = { uuid, data in
+            if uuid == BandGATT.rx { session.receive(data) }
+        }
+        ble.onDisconnect = { Task { await session.connectionLost() } }
+        return session
+    }
+
+    /// ID циферблатів, які зараз є на браслеті.
+    func listFaces(authKey: [UInt8]) async throws -> Set<String> {
+        guard ble.connectedID != nil else { throw BandError.notConnected }
+        guard ble.hasBandCharacteristics else { throw BandError.characteristicNotFound }
+        guard authKey.count == 16 else { throw BandError.invalidAuthKey }
+        let ble = self.ble
+        let session = makeSession()
+        defer {
+            ble.onData = nil
+            ble.onDisconnect = nil
+        }
+        guard await ble.subscribeBand() else { throw BandError.characteristicNotFound }
+        var installer = WatchfaceInstaller()
+        installer.phoneInfo = Self.phoneInfo()
+        installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
+        let list = try await installer.listWatchfaces(authKey: authKey, session: session)
+        return Set(list.map(\.id))
     }
 
     /// Дані про телефон як у Mi Fitness (з запису HCI): 1 = 1, 2 = 27.2, 3 = "Unknown",

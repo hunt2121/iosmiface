@@ -20,6 +20,12 @@ extension BandSession {
     }
 }
 
+/// Циферблат, який зараз є на браслеті.
+public struct WatchfaceInfo: Sendable, Equatable {
+    public var id: String
+    public var isActive: Bool
+}
+
 public enum InstallPhase: Sendable, Equatable {
     case connecting
     case authenticating
@@ -162,6 +168,26 @@ public struct WatchfaceInstaller: Sendable {
         onPhase?(.uploading(sent: 0, total: parts.count))
         try await session.sendFileParts(parts) { sent, total in
             onPhase?(.uploading(sent: sent, total: total))
+        }
+    }
+}
+
+extension WatchfaceInstaller {
+    /// Повертає циферблати, що зараз є на браслеті (команда 4/0). Сесію закриває завжди.
+    public func listWatchfaces(authKey: [UInt8], session: BandSession) async throws -> [WatchfaceInfo] {
+        try await session.open()
+        do {
+            try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region, phoneInfo: phoneInfo)
+            for body in commandsAfterAuth {
+                _ = try? await session.command(body, timeout: .seconds(3))
+            }
+            try await Task.sleep(for: pauseAfterAuth)
+            let list = try await session.watchfaces()
+            await session.close()
+            return list.map { WatchfaceInfo(id: $0.id, isActive: $0.isActive) }
+        } catch {
+            await session.close()
+            throw error
         }
     }
 }

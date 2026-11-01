@@ -3,6 +3,29 @@ import UIKit
 import BandFaceKit
 
 /// Циферблат у магазині. Поки каталог локальний: файли лежать у застосунку.
+/// Одне зображення в картці циферблата.
+struct FacePreview: Identifiable {
+    let id = UUID()
+    let title: String
+    let image: UIImage?
+}
+
+extension UIImage {
+    /// Наближений вигляд для режиму Always On: без кольору й приглушений.
+    /// Справжнє зображення режиму з'явиться, коли компілятор вміє його витягувати з файлу.
+    func alwaysOnApprox() -> UIImage? {
+        guard let input = CIImage(image: self),
+              let f = CIFilter(name: "CIColorControls") else { return nil }
+        f.setValue(input, forKey: kCIInputImageKey)
+        f.setValue(0.0, forKey: kCIInputSaturationKey)
+        f.setValue(-0.12, forKey: kCIInputBrightnessKey)
+        f.setValue(0.9, forKey: kCIInputContrastKey)
+        guard let out = f.outputImage,
+              let cg = CIContext().createCGImage(out, from: out.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+}
+
 struct StoreFace: Identifiable {
     let id: String          // ID циферблата з файла
     let name: String
@@ -13,10 +36,11 @@ struct StoreFace: Identifiable {
     let face: FaceFile
     let preview: UIImage?
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
+    var previews: [FacePreview] = []   // кілька зображень у картці: звичайний режим, Always On
 
     var isFree: Bool { price == nil }
     var sizeKB: Int { face.size / 1024 }
-    var bandsText: String { "Band " + bands.map(String.init).joined(separator: " · ") }
+    var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
 }
 
@@ -42,8 +66,13 @@ enum StoreCatalog {
                   let data = try? Data(contentsOf: url),
                   let face = try? FaceFile(data: data) else { return nil }
             let image = (try? face.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
-            return StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
-                             about: e.about, price: nil, face: face, preview: image)
+            var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
+                                 about: e.about, price: nil, face: face, preview: image)
+            item.previews = [
+                FacePreview(title: String(localized: "Звичайний"), image: image),
+                FacePreview(title: "Always On", image: image?.alwaysOnApprox())
+            ]
+            return item
         }
     }
 }
@@ -101,6 +130,7 @@ struct StoreView: View {
     let progress: Double
     let progressText: String
     let onInstall: (StoreFace) -> Void
+    let onRefresh: () async -> Void
 
     @State private var query = ""
     @State private var filter = "all"
@@ -165,6 +195,7 @@ struct StoreView: View {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
+            .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
             .storeSearchable(text: $query, prompt: Text("Пошук циферблатів"))
@@ -332,7 +363,7 @@ struct FaceActionButton: View {
     }
 }
 
-/// Сторінка циферблата: великий передогляд, відомості, опис і кнопка внизу.
+/// Сторінка циферблата: назва в панелі, кілька зображень, відомості, кнопка й опис.
 struct StoreDetailView: View {
     let item: StoreFace
     let state: StoreAction
@@ -345,52 +376,63 @@ struct StoreDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(Color(.secondarySystemGroupedBackground))
-                    FaceCapsule(image: item.preview)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    }
-                .frame(height: 330)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.name).font(.title.bold())
-                    if item.isFree {
-                        Text("Безкоштовний циферблат")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }
-                }
+                previews
 
                 HStack(spacing: 0) {
-                    info("Розмір", "\(item.sizeKB) KB")
+                    infoColumn("Розмір", "\(item.sizeKB) KB")
                     Divider().frame(height: 34)
-                    info("Браслет", item.bandsText)
+                    infoColumn("Пристрої", item.bandsText)
                     Divider().frame(height: 34)
-                    info("Тип", item.kind)
+                    infoColumn("Категорія", item.kind)
                 }
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
+                .padding(.horizontal, 8)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
-
-                Text(item.about)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
 
                 FaceActionButton(state: state, price: item.price, busy: busy,
                                  progress: progress, progressText: progressText, height: 52) {
                     onInstall(item)
                 }
+
+                Text(item.about)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
+        .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func info(_ title: LocalizedStringKey, _ value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.headline)
+    private var previews: some View {
+        HStack(alignment: .top, spacing: 28) {
+            ForEach(item.previews) { p in
+                VStack(spacing: 10) {
+                    FaceCapsule(image: p.image)
+                    Text(p.title)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 22)
+        .background(RoundedRectangle(cornerRadius: 30, style: .continuous)
+            .fill(Color(.secondarySystemGroupedBackground)))
+    }
+
+    private func infoColumn(_ title: LocalizedStringKey, _ value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
     }

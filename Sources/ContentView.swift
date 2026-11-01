@@ -24,6 +24,8 @@ struct ContentView: View {
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.load()
     @State private var installingID: String?
+    @State private var syncing = false
+    @State private var lastSync = Date.distantPast
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
@@ -67,7 +69,8 @@ struct ContentView: View {
                       busy: busy,
                       progress: progress,
                       progressText: progressText,
-                      onInstall: { storeInstall($0) })
+                      onInstall: { storeInstall($0) },
+                      onRefresh: { await syncDeviceFaces(force: true) })
                 .tabItem { Label("Магазин", image: "TabStore\(storeIconKey)") }
                 .tag(Tab.store)
 
@@ -78,6 +81,12 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         .preferredColorScheme(appTheme == "light" ? .light : (appTheme == "dark" ? .dark : nil))
+        .onChange(of: tab) { newTab in
+            if newTab == .store { Task { await syncDeviceFaces() } }
+        }
+        .onChange(of: ble.servicesReady) { ready in
+            if ready && tab == .store { Task { await syncDeviceFaces() } }
+        }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
             if phase == .background && !busy && (ble.connectedID != nil || ble.isConnecting) {
@@ -157,7 +166,7 @@ struct ContentView: View {
                             if keyValid {
                                 Image(systemName: "checkmark")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(.secondary)
                             } else {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .foregroundStyle(Color.errorText)
@@ -175,12 +184,12 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "globe", color: .blue)
+                            SettingsLabel("Мова", icon: "IconLanguage", color: .blue)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
                             Image(systemName: "arrow.up.right")
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(.secondary)
                         }
                         .foregroundStyle(.primary)
                     }
@@ -190,10 +199,10 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .purple)
+                        SettingsLabel("Тема", icon: "IconTheme", color: .purple)
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "info.circle", color: .gray)
+                        SettingsLabel("Версія", icon: "IconInfo", color: .gray)
                         Spacer()
                         Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -262,7 +271,33 @@ struct ContentView: View {
         }
     }
 
+    /// Звіряє циферблати магазину з тими, що зараз є на браслеті (за ID): видалений на браслеті
+    /// знову отримує кнопку «Встановити», а встановлений поза застосунком позначається як наявний.
+    @MainActor
+    private func syncDeviceFaces(force: Bool = false) async {
+        guard keyValid, ble.connectedID != nil, ble.servicesReady, !busy, !syncing,
+              let key = Hex.decode(authKey), key.count == 16 else { return }
+        if !force && Date().timeIntervalSince(lastSync) < 20 { return }
+        syncing = true
+        defer { syncing = false }
+        guard let ids = try? await FaceInstaller(ble: ble).listFaces(authKey: key) else { return }
+        lastSync = Date()
+        var map = InstalledFaces.parse(installedRaw)
+        for f in storeFaces {
+            if ids.contains(f.id) {
+                if map[f.id] == nil { map[f.id] = f.version }
+            } else {
+                map[f.id] = nil
+            }
+        }
+        installedRaw = InstalledFaces.encode(map)
+    }
+
     private func storeInstall(_ item: StoreFace) {
+        if syncing {
+            storeAlert = String(localized: "Йде перевірка циферблатів на браслеті. Спробуйте за кілька секунд")
+            return
+        }
         guard keyValid else {
             storeAlert = String(localized: "Спершу додайте ключ браслета")
             storeAlertOpensKey = true
@@ -462,20 +497,22 @@ struct ContentView: View {
 
 
     private var bandSection: some View {
-        Section("Браслет") {
+        Section("Пристрій") {
             if let name = ble.connectedName {
                 HStack {
-                    Label { Text(Self.bandModel(name)) } icon: { Image("TabWatch").foregroundStyle(Color.accentColor) }
+                    Label { Text(Self.bandModel(name)).lineLimit(1).minimumScaleFactor(0.75) } icon: { Image("TabWatch").foregroundStyle(Color.accentColor) }
                     Spacer()
                     Button(role: .destructive) {
                         ble.disconnect()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(Color.errorText)
+                        Image("IconDisconnect")
+                            .renderingMode(.template)
+                            .foregroundStyle(Color(red: 0.878, green: 0.267, blue: 0.227))
                     }
-                    .buttonStyle(.borderless)
                     .accessibilityLabel(Text("Відключити"))
+                    .buttonStyle(.plain)
+                    // Правий відступ такий самий, як зліва до значка браслета (в значку є власні поля)
+                    .padding(.trailing, 8)
                 }
                 if !ble.servicesReady {
                     HStack { ProgressView(); Text("Підготовка…").font(.footnote) }
@@ -524,13 +561,13 @@ struct ContentView: View {
                 } label: {
                     Text("Копіювати").buttonText()
                 }
-                .glassProminentStyle()
+                .glassSecondaryStyle()
                 Button(role: .destructive) {
                     ble.log.removeAll()
                 } label: {
                     Text("Очистити").buttonText()
                 }
-                .glassProminentStyle()
+                .glassSecondaryStyle()
                 .tint(.red)
             }
             .buttonBorderShape(.capsule)
@@ -719,7 +756,7 @@ struct SettingsLabel: View {
             Text(title)
         } icon: {
             Group {
-                if icon.hasPrefix("Tab") {
+                if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                     Image(icon).renderingMode(.template)
                 } else {
                     Image(systemName: icon).font(.system(size: 20, weight: .medium))
