@@ -202,7 +202,7 @@ struct StoreView: View, Equatable {
                         }
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    if searchMode != 2 && searchMode != 4 { chips }
+                    if ![2, 4, 6].contains(searchMode) { chips }
                     if items.isEmpty {
                         Text("Нічого не знайдено")
                             .foregroundStyle(.secondary)
@@ -569,10 +569,11 @@ private struct StoreSearchMode: ViewModifier {
             }
         case 3, 4:
             content
-        case 5:
-            // F: системний пошук угорі, завжди видимий (як у «Файлах»); заголовок ховається над ним при гортанні
-            content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                               prompt: Text("Пошук циферблатів"))
+        case 5, 6:
+            // F / G: власний скляний рядок угорі, завжди видимий; заголовок ховається над ним при гортанні
+            content.modifier(PinnedTopBar {
+                TopSearchBar(query: $query, filter: $filter, filters: filters, showFilter: mode == 6)
+            })
         default:
             if #available(iOS 26, *) {
                 content.searchable(text: $query, prompt: Text("Пошук циферблатів"))
@@ -733,6 +734,94 @@ struct CloseCircleButton: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Закрити"))
+        }
+    }
+}
+
+/// Панель, закріплена під заголовком. На iOS 26 — safeAreaBar: вміст під нею
+/// плавно розмивається (як під системною панеллю), а великий заголовок ховається над нею при гортанні.
+private struct PinnedTopBar<Bar: View>: ViewModifier {
+    @ViewBuilder let bar: Bar
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.safeAreaBar(edge: .top) {
+                bar.padding(.horizontal, 16).padding(.bottom, 8)
+            }
+        } else {
+            content.safeAreaInset(edge: .top) {
+                bar.padding(.horizontal, 16).padding(.vertical, 8)
+                    .background(.bar)
+            }
+        }
+    }
+}
+
+/// Варіанти F і G: скляний рядок пошуку (і кнопка фільтрів) — однаковий вигляд до й після натискання.
+struct TopSearchBar: View {
+    @Binding var query: String
+    @Binding var filter: String
+    let filters: [(String, String)]
+    let showFilter: Bool
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if showFilter { FilterMenuButton(filter: $filter, filters: filters, size: 44) }
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Color(.secondaryLabel))
+                TextField("Пошук циферблатів", text: $query)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .onSubmit { focused = false }
+                if !query.isEmpty {
+                    Button { query = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .modifier(FieldGlass())
+            .contentShape(Capsule())
+            .onTapGesture { focused = true }
+
+            if focused {
+                CloseCircleButton(size: 44) { focused = false }
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.snappy(duration: 0.3), value: focused)
+    }
+}
+
+/// Кругла кнопка фільтрів із меню. На iOS 26 — системна скляна кнопка.
+struct FilterMenuButton: View {
+    @Binding var filter: String
+    let filters: [(String, String)]
+    let size: CGFloat
+
+    var body: some View {
+        let menu = Menu {
+            Picker(selection: $filter) {
+                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+            } label: { EmptyView() }
+        } label: {
+            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                              : "line.3.horizontal.decrease.circle.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                .frame(width: size - 16, height: size - 16)
+        }
+        .accessibilityLabel(Text("Фільтр"))
+        if #available(iOS 26, *) {
+            menu.buttonStyle(.glass).buttonBorderShape(.circle)
+        } else {
+            menu.frame(width: size, height: size)
+                .background(Circle().fill(Color(.tertiarySystemFill)))
         }
     }
 }

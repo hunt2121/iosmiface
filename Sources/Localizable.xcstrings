@@ -2990,6 +2990,29 @@
           }
         }
       }
+    },
+    "Фільтр": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фильтр"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фільтр"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
