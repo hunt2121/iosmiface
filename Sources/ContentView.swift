@@ -185,8 +185,8 @@ struct ContentView: View {
                             SettingsLabel("Мова", icon: "globe", color: .purple)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
-                            // Стандартний індикатор переходу, як у системних рядках
-                            Image(systemName: "chevron.right")
+                            // Стрілка переходу назовні (у системні налаштування), в стилі Apple
+                            Image(systemName: "arrow.up.forward")
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(Color(.tertiaryLabel))
                         }
