@@ -150,6 +150,7 @@ struct StoreView: View, Equatable {
     /// Тимчасовий експеримент: 0 — кнопка пошуку біля заголовка, 1 — пошук унизу, 2 — пошук унизу з кнопкою фільтрів
     @AppStorage("storeSearchMode") private var searchMode = 0
     @State private var searchOpen = false
+    @Namespace private var searchSpace
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -188,6 +189,12 @@ struct StoreView: View, Equatable {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
                 VStack(alignment: .leading, spacing: 14) {
+                    if searchMode == 3 && !searchOpen {
+                        // D: рядок пошуку на звичному місці, у стилі iOS 26 ще до натискання
+                        SearchPill(text: query)
+                            .matchedGeometryEffect(id: "search", in: searchSpace)
+                            .onTapGesture { withAnimation(.snappy(duration: 0.35)) { searchOpen = true } }
+                    }
                     if searchMode == 0 && searchOpen {
                         StoreSearchField(text: $query) {
                             withAnimation(.snappy) { searchOpen = false }
@@ -229,6 +236,17 @@ struct StoreView: View, Equatable {
             .navigationTitle("Магазин")
             .modifier(StoreSearchMode(mode: searchMode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions))
+            // D: після натискання рядок пошуку переїжджає вниз, над клавіатуру
+            .safeAreaInset(edge: .bottom) {
+                if searchMode == 3 && searchOpen {
+                    StoreSearchField(text: $query) {
+                        withAnimation(.snappy(duration: 0.35)) { searchOpen = false }
+                    }
+                    .matchedGeometryEffect(id: "search", in: searchSpace)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                }
+            }
         }
     }
 
@@ -541,6 +559,8 @@ private struct StoreSearchMode: ViewModifier {
                 content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
                                    prompt: Text("Пошук циферблатів"))
             }
+        case 3:
+            content
         default:
             if #available(iOS 26, *) {
                 content.searchable(text: $query, prompt: Text("Пошук циферблатів"))
@@ -602,5 +622,25 @@ private struct FieldGlass: ViewModifier {
             if circle { content.background(Circle().fill(Color(.tertiarySystemFill))) }
             else { content.background(Capsule().fill(Color(.tertiarySystemFill))) }
         }
+    }
+}
+
+/// Рядок пошуку в спокої (варіант D): виглядає як поле, натискання відкриває пошук.
+struct SearchPill: View {
+    let text: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Color(.secondaryLabel))
+            Text(text.isEmpty ? String(localized: "Пошук циферблатів") : text)
+                .foregroundStyle(text.isEmpty ? Color(.placeholderText) : Color.primary)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .modifier(FieldGlass())
+        .contentShape(Capsule())
+        .accessibilityAddTraits(.isButton)
     }
 }

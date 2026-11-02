@@ -211,6 +211,7 @@ struct ContentView: View {
                         Text(verbatim: "A · Кнопка біля заголовка").tag(0)
                         Text(verbatim: "B · Пошук унизу").tag(1)
                         Text(verbatim: "C · Пошук унизу з фільтром").tag(2)
+                        Text(verbatim: "D · Угорі, над клавіатурою при пошуку").tag(3)
                     } label: {
                         Text(verbatim: "Пошук у магазині")
                     }
