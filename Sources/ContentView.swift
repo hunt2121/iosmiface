@@ -763,7 +763,7 @@ struct SettingsLabel: View {
                     if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
                     } else {
-                        Image(systemName: icon).font(.system(size: 17, weight: .semibold))
+                        Image(systemName: icon).font(.system(size: 20, weight: .semibold))
                     }
                 }
                 .foregroundStyle(.white)
