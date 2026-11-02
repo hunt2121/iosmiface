@@ -741,7 +741,7 @@ struct SettingsLabel: View {
                     )
                 Group {
                     if icon == "custom.globe" {
-                        GlobeGlyph().frame(width: 20, height: 20)
+                        GlobeGlyph().frame(width: 59.0 / 3, height: 59.0 / 3)  // 59 px на 3x — як «Тема» і «Версія»
                     } else if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
                     } else {
