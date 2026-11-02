@@ -780,6 +780,27 @@ struct SettingsLabel: View {
     }
 }
 
+/// Останні рядки журналу; сам стежить за змінами, тож решта екрана не перемальовується.
+struct LogLinesView: View {
+    @ObservedObject var store: BandLog
+
+    var body: some View {
+        if !store.lines.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(store.lines.suffix(200).enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                }
+            }
+            .font(.system(.caption2, design: .monospaced))
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, -14.6)
+            .padding(.bottom, 2)
+            .listRowSeparator(.hidden)
+        }
+    }
+}
+
 /// Суцільний глобус із прорізами (дві паралелі й меридіан) для плитки «Мова».
 struct GlobeGlyph: View {
     var body: some View {
