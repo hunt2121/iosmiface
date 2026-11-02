@@ -56,7 +56,8 @@ final class BLEManager: NSObject, ObservableObject {
 
     func addLog(_ text: String) {
         log.append(text)
-        if log.count > 3000 { log.removeFirst(log.count - 3000) }
+        // Обрізаємо пачкою, щоб не зсувати масив на кожному рядку
+        if log.count > 1500 { log.removeFirst(500) }
     }
 
     /// Технічний запис — лише коли увімкнено «Режим розробника».
@@ -127,12 +128,6 @@ final class BLEManager: NSObject, ObservableObject {
             isConnecting = false
             connectingName = nil
         }
-    }
-
-    /// Забуває браслет: відключає й стирає запам'ятований пристрій.
-    func forgetBand() {
-        disconnect(byUser: true)
-        UserDefaults.standard.removeObject(forKey: lastDeviceKey)
     }
 
     /// Автоматичне підключення до браслета, з яким працювали минулого разу.

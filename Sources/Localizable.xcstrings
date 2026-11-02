@@ -139,29 +139,6 @@
         }
       }
     },
-    "BandFace безкоштовний і з відкритим кодом. Щоб опублікувати його в App Store, потрібен акаунт розробника Apple. Усі зібрані кошти підуть саме на нього.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BandFace is free and open source. Publishing it on the App Store requires an Apple developer account. Everything raised goes toward exactly that."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BandFace бесплатный и с открытым кодом. Чтобы опубликовать его в App Store, нужен аккаунт разработчика Apple. Все собранные средства пойдут именно на него."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BandFace безкоштовний і з відкритим кодом. Щоб опублікувати його в App Store, потрібен акаунт розробника Apple. Усі зібрані кошти підуть саме на нього."
-          }
-        }
-      }
-    },
     "Bluetooth вимкнено або недоступний": {
       "extractionState": "manual",
       "localizations": {
@@ -346,52 +323,6 @@
         }
       }
     },
-    "Банка · гроші, картка": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jar · money, card"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Банка · деньги, карта"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Банка · гроші, картка"
-          }
-        }
-      }
-    },
-    "Без Sideloadly, без перепідписування й з автооновленнями": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Sideloadly, no re-signing, and automatic updates"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Без Sideloadly, без переподписи и с автообновлениями"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Без Sideloadly, без перепідписування й з автооновленнями"
-          }
-        }
-      }
-    },
     "Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.": {
       "extractionState": "manual",
       "localizations": {
@@ -411,29 +342,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness."
-          }
-        }
-      }
-    },
-    "Безкоштовний циферблат": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free watch face"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бесплатный циферблат"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Безкоштовний циферблат"
           }
         }
       }
@@ -1059,29 +967,6 @@
         }
       }
     },
-    "Додано": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Added"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавлен"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Додано"
-          }
-        }
-      }
-    },
     "Додати ключ браслета": {
       "extractionState": "manual",
       "localizations": {
@@ -1151,29 +1036,6 @@
         }
       }
     },
-    "Дякуємо за підтримку!": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thanks for your support!"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Спасибо за поддержку!"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дякуємо за підтримку!"
-          }
-        }
-      }
-    },
     "Журнал": {
       "extractionState": "manual",
       "localizations": {
@@ -1220,98 +1082,6 @@
         }
       }
     },
-    "Забути": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forget"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забыть"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забути"
-          }
-        }
-      }
-    },
-    "Забути браслет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forget band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забыть браслет"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забути браслет"
-          }
-        }
-      }
-    },
-    "Забути браслет?": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forget the band?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забыть браслет?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Забути браслет?"
-          }
-        }
-      }
-    },
-    "Закрити": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрыть"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрити"
-          }
-        }
-      }
-    },
     "Запит на встановлення…": {
       "extractionState": "manual",
       "localizations": {
@@ -1335,52 +1105,6 @@
         }
       }
     },
-    "Запустимо BandFace": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Let's launch BandFace"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запустим BandFace"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запустимо BandFace"
-          }
-        }
-      }
-    },
-    "Запустимо BandFace в App Store": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Let's launch BandFace on the App Store"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запустим BandFace в App Store"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запустимо BandFace в App Store"
-          }
-        }
-      }
-    },
     "Застосунок": {
       "extractionState": "manual",
       "localizations": {
@@ -1400,29 +1124,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Застосунок"
-          }
-        }
-      }
-    },
-    "Застосунок більше не підключатиметься до нього автоматично. Ключ залишиться збереженим.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The app will no longer connect to it automatically. The key stays saved."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Приложение больше не будет подключаться к нему автоматически. Ключ останется сохранённым."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Застосунок більше не підключатиметься до нього автоматично. Ключ залишиться збереженим."
           }
         }
       }
@@ -1680,29 +1381,6 @@
         }
       }
     },
-    "Мета": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Goal"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цель"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Мета"
-          }
-        }
-      }
-    },
     "Мова": {
       "extractionState": "manual",
       "localizations": {
@@ -1745,29 +1423,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета"
-          }
-        }
-      }
-    },
-    "Монобанка": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "monobank jar"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монобанка"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монобанка"
           }
         }
       }
@@ -1818,52 +1473,6 @@
         }
       }
     },
-    "Не додано": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not added"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не добавлен"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не додано"
-          }
-        }
-      }
-    },
-    "Не зараз": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not now"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не сейчас"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не зараз"
-          }
-        }
-      }
-    },
     "Некоректний файл циферблата: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1906,29 +1515,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нічого не знайдено"
-          }
-        }
-      }
-    },
-    "Обери зручний спосіб": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose a way to support"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбери удобный способ"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обери зручний спосіб"
           }
         }
       }
@@ -2140,29 +1726,6 @@
         }
       }
     },
-    "Посилання незабаром": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Link coming soon"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ссылка скоро появится"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Посилання незабаром"
-          }
-        }
-      }
-    },
     "Пошук ключа": {
       "extractionState": "manual",
       "localizations": {
@@ -2278,29 +1841,6 @@
         }
       }
     },
-    "Про застосунок": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "About"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "О приложении"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Про застосунок"
-          }
-        }
-      }
-    },
     "Підготовка…": {
       "extractionState": "manual",
       "localizations": {
@@ -2389,75 +1929,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Підключено до браслета"
-          }
-        }
-      }
-    },
-    "Підтримати": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Support"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поддержать"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Підтримати"
-          }
-        }
-      }
-    },
-    "Разова підтримка · картка": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One-time support · card"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разовая поддержка · карта"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разова підтримка · картка"
-          }
-        }
-      }
-    },
-    "Разом запустимо BandFace в App Store": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Together we'll get BandFace on the App Store"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вместе запустим BandFace в App Store"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разом запустимо BandFace в App Store"
           }
         }
       }
@@ -2669,29 +2140,6 @@
         }
       }
     },
-    "Сторінка відкриється в браузері. Застосунок не бачить і не зберігає твоїх платіжних даних.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The page opens in your browser. The app never sees or stores your payment details."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Страница откроется в браузере. Приложение не видит и не хранит твои платёжные данные."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сторінка відкриється в браузері. Застосунок не бачить і не зберігає твоїх платіжних даних."
-          }
-        }
-      }
-    },
     "Тема": {
       "extractionState": "manual",
       "localizations": {
@@ -2734,29 +2182,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Темна"
-          }
-        }
-      }
-    },
-    "Тип": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Type"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тип"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тип"
           }
         }
       }
@@ -3083,52 +2508,6 @@
         }
       }
     },
-    "Що це дасть": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What it brings"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что это даст"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Що це дасть"
-          }
-        }
-      }
-    },
-    "Щомісячна підтримка": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Monthly support"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ежемесячная поддержка"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щомісячна підтримка"
-          }
-        }
-      }
-    },
     "автентифікація": {
       "extractionState": "manual",
       "localizations": {
@@ -3198,29 +2577,6 @@
         }
       }
     },
-    "в App Store — разом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "on the App Store — together"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "в App Store — вместе"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "в App Store — разом"
-          }
-        }
-      }
-    },
     "видалення циферблата": {
       "extractionState": "manual",
       "localizations": {
@@ -3286,29 +2642,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "запит на встановлення"
-          }
-        }
-      }
-    },
-    "на рік": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "per year"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "в год"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "на рік"
           }
         }
       }

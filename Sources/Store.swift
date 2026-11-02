@@ -11,17 +11,19 @@ struct FacePreview: Identifiable {
 }
 
 extension UIImage {
+    private static let aoContext = CIContext()
+    private static let aoFilterName = "CIColorControls"
     /// Наближений вигляд для режиму Always On: без кольору й приглушений.
     /// Справжнє зображення режиму з'явиться, коли компілятор вміє його витягувати з файлу.
     func alwaysOnApprox() -> UIImage? {
         guard let input = CIImage(image: self),
-              let f = CIFilter(name: "CIColorControls") else { return nil }
+              let f = CIFilter(name: Self.aoFilterName) else { return nil }
         f.setValue(input, forKey: kCIInputImageKey)
         f.setValue(0.0, forKey: kCIInputSaturationKey)
         f.setValue(-0.12, forKey: kCIInputBrightnessKey)
         f.setValue(0.9, forKey: kCIInputContrastKey)
         guard let out = f.outputImage,
-              let cg = CIContext().createCGImage(out, from: out.extent) else { return nil }
+              let cg = Self.aoContext.createCGImage(out, from: out.extent) else { return nil }
         return UIImage(cgImage: cg)
     }
 }
@@ -60,7 +62,10 @@ enum StoreCatalog {
               about: "Цифровий час, дата та кроки на тлі відомого коміксу.")
     ]
 
-    static func load() -> [StoreFace] {
+    /// Каталог читається з файлів один раз за запуск.
+    static let cached: [StoreFace] = load()
+
+    private static func load() -> [StoreFace] {
         entries.compactMap { e in
             guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
                   let data = try? Data(contentsOf: url),
@@ -277,17 +282,6 @@ private struct ChipGlass: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
         if on { content } else { content.capsuleGlass() }
-    }
-}
-
-struct FreeTag: View {
-    var body: some View {
-        Text("Безкоштовно")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 9)
-            .frame(height: 22)
-            .background(Capsule().fill(Color(red: 0.19, green: 0.71, blue: 0.33)))
     }
 }
 

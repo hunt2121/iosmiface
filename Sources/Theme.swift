@@ -35,12 +35,8 @@ extension View {
         if #available(iOS 26, *) { self.buttonStyle(.glass) } else { self.buttonStyle(.bordered) }
     }
 
-    /// Пошук: на iOS 26 — скляна капсула внизу екрана, раніше — у панелі зверху.
-    @ViewBuilder func storeSearchable(text: Binding<String>, prompt: Text) -> some View {
-        if #available(iOS 26, *) {
-            self.searchable(text: text, prompt: prompt)
-        } else {
-            self.searchable(text: text, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
-        }
+    /// Пошук завжди видно під заголовком одразу після входу на екран.
+    func storeSearchable(text: Binding<String>, prompt: Text) -> some View {
+        searchable(text: text, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
     }
 }

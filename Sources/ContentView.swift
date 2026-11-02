@@ -20,7 +20,7 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
     // Магазин
-    @State private var storeFaces: [StoreFace] = StoreCatalog.load()
+    @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
     @State private var syncing = false
     @State private var lastSync = Date.distantPast
