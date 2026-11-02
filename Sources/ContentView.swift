@@ -159,8 +159,7 @@ struct ContentView: View {
                 Section("Пристрій") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "custom.key", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255),
-                                          gradient: [Color(red: 49 / 255, green: 208 / 255, blue: 89 / 255), Color(red: 49 / 255, green: 200 / 255, blue: 87 / 255), Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255)])  // профіль градієнта як у прикладі
+                            SettingsLabel("Ключ", tile: .key)
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
@@ -169,8 +168,7 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "custom.doc", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255),
-                                      gradient: [Color(red: 45 / 255, green: 148 / 255, blue: 255 / 255), Color(red: 38 / 255, green: 144 / 255, blue: 255 / 255), Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255)])
+                        SettingsLabel("Журнал", tile: .log)
                     }
                 }
                 Section("Застосунок") {
@@ -179,12 +177,7 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "custom.theme",
-                                      color: Color(red: 240 / 255, green: 165 / 255, blue: 63 / 255),
-                                      // Профіль виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
-                                      gradient: [Color(red: 252 / 255, green: 200 / 255, blue: 89 / 255),    // #FCC859
-                                                 Color(red: 249 / 255, green: 187 / 255, blue: 85 / 255),    // #F9BB55
-                                                 Color(red: 248 / 255, green: 165 / 255, blue: 53 / 255)])   // #F8A535 — на 10% насиченіше за приклад
+                        SettingsLabel("Тема", tile: .theme)
                     }
                     Button {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -192,8 +185,7 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "custom.globe", color: Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255),
-                                          gradient: [Color(red: 199 / 255, green: 119 / 255, blue: 239 / 255), Color(red: 196 / 255, green: 115 / 255, blue: 236 / 255), Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255)])
+                            SettingsLabel("Мова", tile: .language)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(Color(.secondaryLabel))
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
@@ -205,8 +197,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.plain)
                     HStack {
-                        SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255),
-                                      gradient: [Color(red: 157 / 255, green: 157 / 255, blue: 160 / 255), Color(red: 154 / 255, green: 154 / 255, blue: 156 / 255), Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255)])
+                        SettingsLabel("Версія", tile: .version)
                         Spacer()
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -590,8 +581,11 @@ struct ContentView: View {
     }
 
     /// Після першого вибору папки Mi Fitness ключ шукається сам при кожному вході.
+    /// Пошук ключа вже йде — при запуску onAppear і повернення в застосунок спрацьовують майже одночасно
+    private static var keyScanInFlight = false
+
     private func autoFindKey() {
-        guard !busy, let folder = MiFitnessKey.savedFolder() else { return }
+        guard !busy, !Self.keyScanInFlight, let folder = MiFitnessKey.savedFolder() else { return }
         searchKey(in: folder, quiet: true)
     }
 
@@ -621,10 +615,12 @@ struct ContentView: View {
             keyStatus = String(localized: "Пошук…")
             keyStatusIsError = false
         }
+        Self.keyScanInFlight = true
         DispatchQueue.global(qos: .userInitiated).async {
             let result = Result { try MiFitnessKey.findDevices(in: folder) }
             let scanLines = MiFitnessKey.lastScanLines
             DispatchQueue.main.async {
+                Self.keyScanInFlight = false
                 // Повне сканування папки (нестандартна структура даних) — лише в «Режимі розробника»
                 for line in scanLines { ble.debug(line) }
                 switch result {
@@ -674,7 +670,11 @@ struct ContentView: View {
         message = nil
         Task { @MainActor in
             do {
+                // Оновлюємо екран лише при зміні на 1% або зміні етапу:
+                // частин сотні-тисячі, і кожне оновлення перемальовує вкладки
+                let throttle = ProgressThrottle()
                 let text = try await FaceInstaller(ble: ble).install(face, authKey: key) { value, text in
+                    guard throttle.shouldUpdate(value: value, text: text) else { return }
                     progress = value
                     progressText = text
                 }
@@ -714,96 +714,68 @@ private extension Text {
 
 
 /// Рядок налаштувань зі значком у кольоровому квадраті (фіксована ширина — однакові відступи й роздільники).
-struct SettingsLabel: View {
-    let title: LocalizedStringKey
-    let icon: String
-    let color: Color
-    /// Сила градієнта: прозорість світлого верху і темного низу плитки
-    let lightTop: Double
-    let darkBottom: Double
-    /// Власні кольори градієнта згори донизу (тоді без білого шару)
-    let gradient: [Color]?
-    @Environment(\.displayScale) private var displayScale
-    init(_ title: LocalizedStringKey, icon: String, color: Color,
-         lightTop: Double = 0.22, darkBottom: Double = 0, gradient: [Color]? = nil) {
-        self.title = title; self.icon = icon; self.color = color
-        self.lightTop = lightTop; self.darkBottom = darkBottom; self.gradient = gradient
+/// Плитки налаштувань: колір (градієнт згори донизу) і значок.
+/// Профіль градієнта виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу.
+/// Кольори однакові для світлої й темної теми; масиви створюються один раз.
+enum SettingsTile {
+    case key, log, theme, language, version
+
+    private static func rgb(_ hex: UInt32) -> Color {
+        Color(red: Double(hex >> 16 & 0xFF) / 255, green: Double(hex >> 8 & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
     }
-    /// Видимий розмір значка в плитці 30 pt: ≈19–20 pt, як у системних налаштуваннях.
-    private var glyphBox: CGFloat {
-        switch icon {
-        case "key.fill", "doc.text.fill": return 19
-        default: return 20
+    private static let keyColors = [rgb(0x31D059), rgb(0x31C857), rgb(0x2BAD4C)]
+    private static let logColors = [rgb(0x2D94FF), rgb(0x2690FF), rgb(0x057FFF)]
+    private static let themeColors = [rgb(0xFCC859), rgb(0xF9BB55), rgb(0xF8A535)]   // на 10% насиченіше за приклад
+    private static let languageColors = [rgb(0xC777EF), rgb(0xC473EC), rgb(0xB756E8)]
+    private static let versionColors = [rgb(0x9D9DA0), rgb(0x9A9A9C), rgb(0x89898C)]
+
+    var colors: [Color] {
+        switch self {
+        case .key: return Self.keyColors
+        case .log: return Self.logColors
+        case .theme: return Self.themeColors
+        case .language: return Self.languageColors
+        case .version: return Self.versionColors
         }
     }
+
+    /// Значок у плитці 30 pt; розміри в пікселях (3x) парні, тож він стоїть рівно по центру
+    @ViewBuilder var glyph: some View {
+        switch self {
+        case .key: KeyGlyph().frame(width: 28.0 / 3, height: 58.0 / 3)
+        case .log: DocGlyph().frame(width: 46.0 / 3, height: 58.0 / 3)
+        case .theme: ThemeGlyph().frame(width: 20, height: 20)
+        case .language: GlobeGlyph().frame(width: 20, height: 20)
+        case .version: InfoGlyph().frame(width: 20, height: 20)
+        }
+    }
+}
+
+struct SettingsLabel: View {
+    let title: LocalizedStringKey
+    let tile: SettingsTile
+    @Environment(\.displayScale) private var displayScale
+
+    init(_ title: LocalizedStringKey, tile: SettingsTile) {
+        self.title = title; self.tile = tile
+    }
+
+    private static let strokeGradient = LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.22)],
+                                                       startPoint: .top, endPoint: .bottom)
+
     var body: some View {
         Label {
             Text(title)
         } icon: {
             ZStack {
-                // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
-                // і тонким світлим обведенням усередині, сильнішим зверху
-                RoundedRectangle(cornerRadius: 8.3, style: .continuous)
-                    .fill(LinearGradient(colors: gradient ?? [color, color],
-                                         startPoint: .top, endPoint: .bottom))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8.3, style: .continuous)
-                            .fill(LinearGradient(colors: [.white.opacity(gradient == nil ? lightTop : 0),
-                                                          .black.opacity(gradient == nil ? darkBottom : 0)],
-                                                 startPoint: .top, endPoint: .bottom))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8.3, style: .continuous)
-                            // Обводка в 1 фізичний піксель, майже рівномірна (як у прикладі)
-                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.22)],
-                                                         startPoint: .top, endPoint: .bottom),
-                                          lineWidth: 1 / displayScale)
-                    )
-                Group {
-                    if icon == "custom.key" {
-                        KeyGlyph().frame(width: 28.0 / 3, height: 58.0 / 3)  // 28×58 px, відступи 31/31 і 16/16
-                    } else if icon == "custom.doc" {
-                        DocGlyph().frame(width: 46.0 / 3, height: 58.0 / 3)  // 46×58 px, відступи 22/22 і 16/16
-                    } else if icon == "custom.theme" {
-                        ThemeGlyph().frame(width: 20, height: 20)
-                    } else if icon == "custom.info" {
-                        InfoGlyph().frame(width: 20, height: 20)
-                    } else if icon == "custom.globe" {
-                        GlobeGlyph().frame(width: 20, height: 20)  // 60 px на 3x, рівно по центру плитки 90 px
-                    } else if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
-                        Image(icon).renderingMode(.template)
-                    } else {
-                        Image(systemName: icon)
-                            .resizable()
-                            .scaledToFit()
-                            .fontWeight(.semibold)
-                            .frame(width: glyphBox, height: glyphBox)
-                    }
-                }
-                .foregroundStyle(.white)
+                let shape = RoundedRectangle(cornerRadius: 8.3, style: .continuous)
+                shape
+                    .fill(LinearGradient(colors: tile.colors, startPoint: .top, endPoint: .bottom))
+                    // Обводка в 1 фізичний піксель, майже рівномірна (як у прикладі)
+                    .overlay(shape.strokeBorder(Self.strokeGradient, lineWidth: 1 / displayScale))
+                tile.glyph
             }
             .frame(width: 30, height: 30)
-        }
-    }
-}
-
-/// Останні рядки журналу; сам стежить за змінами, тож решта екрана не перемальовується.
-struct LogLinesView: View {
-    @ObservedObject var store: BandLog
-
-    var body: some View {
-        if !store.lines.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(store.lines.suffix(200).enumerated()), id: \.offset) { _, line in
-                    Text(line)
-                }
-            }
-            .font(.system(.caption2, design: .monospaced))
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, -14.6)
-            .padding(.bottom, 2)
-            .listRowSeparator(.hidden)
         }
     }
 }
@@ -955,5 +927,19 @@ struct DocGlyph: View {
             .frame(width: w, height: h, alignment: .topLeading)
             .compositingGroup()
         }
+    }
+}
+
+/// Пропускає дрібні оновлення прогресу: лише нові відсотки або новий етап.
+final class ProgressThrottle {
+    private var lastPercent = -1
+    private var lastStage = ""
+
+    func shouldUpdate(value: Double, text: String) -> Bool {
+        let percent = Int(value * 100)
+        // Етап — текст без лічильника частин («Передача 12/400» → «Передача»)
+        let stage = text.split(separator: " ").first.map(String.init) ?? text
+        defer { lastPercent = percent; lastStage = stage }
+        return percent != lastPercent || stage != lastStage || value >= 1
     }
 }

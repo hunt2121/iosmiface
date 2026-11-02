@@ -154,16 +154,18 @@ struct StoreView: View {
         NavigationStack {
             GeometryReader { geo in
             ScrollView {
+                // Фільтр рахуємо один раз за оновлення екрана
+                let items = shown
                 VStack(alignment: .leading, spacing: 14) {
                     chips
-                    if shown.isEmpty {
+                    if items.isEmpty {
                         Text("Нічого не знайдено")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 40)
                     } else {
                         LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(shown) { item in
+                            ForEach(items) { item in
                                 NavigationLink {
                                     StoreDetailView(item: item,
                                                     state: state(item),
