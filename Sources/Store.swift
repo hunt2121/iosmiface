@@ -226,10 +226,12 @@ struct StoreView: View, Equatable {
                         .padding(.horizontal, 16)
                     } header: {
                         if mode == 5 || mode == 6 {
-                            TopSearchBar(query: $query, filter: $filter, filters: filterOptions, showFilter: mode == 6)
+                            TopSearchBar(query: $query, filter: $filter, filters: filterOptions,
+                                         showFilter: mode == 6, active: $searchOpen)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
-                                .background(Color(.systemGroupedBackground))
+                                // Прозорий фон: вміст під рядком м'яко розмивається й згасає донизу
+                                .background(PinnedHeaderFade())
                         }
                     }
                 }
@@ -242,6 +244,8 @@ struct StoreView: View, Equatable {
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions))
             .navigationBarTitleDisplayMode(mode == 0 ? .inline : .automatic)
+            // F/G: під час пошуку панель навігації з заголовком ховається — рядок піднімається вгору
+            .toolbar((mode == 5 || mode == 6) && searchOpen ? .hidden : .automatic, for: .navigationBar)
         }
     }
 
@@ -585,11 +589,17 @@ struct TopSearchBar: View {
     @Binding var filter: String
     let filters: [(String, String)]
     let showFilter: Bool
+    /// Пошук активний: сторінка ховає заголовок, і рядок піднімається вгору
+    @Binding var active: Bool
     @FocusState private var focused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
-            if showFilter { FilterMenuButton(filter: $filter, filters: filters, size: 44) }
+            // Під час пошуку кнопка фільтрів ховається, рядок займає її місце
+            if showFilter && !active {
+                FilterMenuButton(filter: $filter, filters: filters, size: 44)
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+            }
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -617,8 +627,12 @@ struct TopSearchBar: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        .animation(.snappy(duration: 0.3), value: focused)
+        .animation(.snappy(duration: 0.35), value: focused)
+        .animation(.snappy(duration: 0.35), value: active)
         .modifier(BlocksTouchesBehind())
+        .onChange(of: focused) { f in
+            withAnimation(.snappy(duration: 0.35)) { active = f }
+        }
     }
 }
 
@@ -786,5 +800,19 @@ private struct MorphGlass: ViewModifier {
             if circle { content.background(Circle().fill(Color(.tertiarySystemFill))) }
             else { content.background(Capsule().fill(Color(.tertiarySystemFill))) }
         }
+    }
+}
+
+/// Фон закріпленого рядка пошуку: розмиття, що плавно зникає донизу (замість суцільної заливки).
+struct PinnedHeaderFade: View {
+    var body: some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .mask(LinearGradient(stops: [.init(color: .black, location: 0),
+                                         .init(color: .black, location: 0.55),
+                                         .init(color: .clear, location: 1)],
+                                 startPoint: .top, endPoint: .bottom))
+            .padding(.bottom, -10)
+            .ignoresSafeArea(edges: .top)
     }
 }
