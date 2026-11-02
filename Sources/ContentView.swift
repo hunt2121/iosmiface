@@ -163,7 +163,7 @@ struct ContentView: View {
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundStyle(keyValid ? Color.okText : Color.errorText)
+                                .foregroundStyle(keyValid ? Color.okIcon : Color.errorText)
                                 .font(.title3)
                         }
                     }
@@ -315,7 +315,7 @@ struct ContentView: View {
                             if !foundDevices.contains(where: { $0.key == key.lowercased() }) { keyStatus = nil }
                         }
                     Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(keyValid ? Color.okText : Color.secondary)
+                        .foregroundStyle(keyValid ? Color.okIcon : Color.secondary)
                         .font(.title3)
                 }
                 // Відступ від ключа до кнопки такий самий, як від верху картки до ключа
@@ -351,7 +351,7 @@ struct ContentView: View {
                             }
                             Spacer()
                             if d.key == authKey.lowercased() {
-                                Image(systemName: "checkmark").foregroundStyle(Color.okText)
+                                Image(systemName: "checkmark").foregroundStyle(Color.okIcon)
                             }
                         }
                     }

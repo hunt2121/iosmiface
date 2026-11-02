@@ -4,6 +4,9 @@ import UIKit
 /// Кольори тексту з достатнім контрастом у світлій і темній темах.
 /// Системні .green / .red на білому фоні виглядають блідо, тож у світлій темі вони темніші.
 extension Color {
+    /// Галочки «готово»: один колір для обох тем — середина між okText світлої (#148033) і темної (#30D158)
+    static let okIcon = Color(red: 34 / 255, green: 168 / 255, blue: 70 / 255)
+
     static let okText = Color(UIColor { t in
         t.userInterfaceStyle == .dark
             ? UIColor.systemGreen
