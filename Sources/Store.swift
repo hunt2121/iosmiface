@@ -10,24 +10,6 @@ struct FacePreview: Identifiable {
     let image: UIImage?
 }
 
-extension UIImage {
-    private static let aoContext = CIContext()
-    private static let aoFilterName = "CIColorControls"
-    /// Наближений вигляд для режиму Always On: без кольору й приглушений.
-    /// Справжнє зображення режиму з'явиться, коли компілятор вміє його витягувати з файлу.
-    func alwaysOnApprox() -> UIImage? {
-        guard let input = CIImage(image: self),
-              let f = CIFilter(name: Self.aoFilterName) else { return nil }
-        f.setValue(input, forKey: kCIInputImageKey)
-        f.setValue(0.0, forKey: kCIInputSaturationKey)
-        f.setValue(-0.12, forKey: kCIInputBrightnessKey)
-        f.setValue(0.9, forKey: kCIInputContrastKey)
-        guard let out = f.outputImage,
-              let cg = Self.aoContext.createCGImage(out, from: out.extent) else { return nil }
-        return UIImage(cgImage: cg)
-    }
-}
-
 struct StoreFace: Identifiable {
     let id: String          // ID циферблата з файла
     let name: String
@@ -38,7 +20,7 @@ struct StoreFace: Identifiable {
     let face: FaceFile
     let preview: UIImage?
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
-    var previews: [FacePreview] = []   // кілька зображень у картці: звичайний режим, Always On
+    var previews: [FacePreview] = []   // зображення в картці (Always On додамо, коли буде справжній скріншот)
 
     var isFree: Bool { price == nil }
     var sizeKB: Int { face.size / 1024 }
@@ -74,8 +56,7 @@ enum StoreCatalog {
             var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
                                  about: e.about, price: nil, face: face, preview: image)
             item.previews = [
-                FacePreview(title: String(localized: "Звичайний"), image: image),
-                FacePreview(title: "Always On", image: image?.alwaysOnApprox())
+                FacePreview(title: String(localized: "Звичайний"), image: image)
             ]
             return item
         }

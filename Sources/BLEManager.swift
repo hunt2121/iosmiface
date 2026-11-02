@@ -20,7 +20,8 @@ final class BLEManager: NSObject, ObservableObject {
     /// Іде підключення до запам'ятованого браслета
     @Published var isConnecting = false
     @Published var connectingName: String?
-    @Published var log: [String] = []
+    /// Журнал лежить в окремому об'єкті: нові рядки не перемальовують увесь застосунок.
+    let logStore = BandLog()
 
     private var central: CBCentralManager!
     private var peripherals: [UUID: CBPeripheral] = [:]
@@ -55,9 +56,7 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     func addLog(_ text: String) {
-        log.append(text)
-        // Обрізаємо пачкою, щоб не зсувати масив на кожному рядку
-        if log.count > 1500 { log.removeFirst(500) }
+        logStore.append(text)
     }
 
     /// Технічний запис — лише коли увімкнено «Режим розробника».
@@ -353,4 +352,18 @@ extension BLEManager: BandTransport, @unchecked Sendable {
     var hasBandCharacteristics: Bool {
         characteristics[BandGATT.rx] != nil && characteristics[BandGATT.tx] != nil
     }
+}
+
+
+/// Журнал подій: окремий ObservableObject, щоб зміни не зачіпали решту інтерфейсу.
+final class BandLog: ObservableObject {
+    @Published private(set) var lines: [String] = []
+
+    func append(_ text: String) {
+        lines.append(text)
+        // Обрізаємо пачкою, щоб не зсувати масив на кожному рядку
+        if lines.count > 1500 { lines.removeFirst(500) }
+    }
+
+    func clear() { lines.removeAll() }
 }

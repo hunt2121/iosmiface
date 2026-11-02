@@ -534,13 +534,13 @@ struct ContentView: View {
             Toggle("Режим розробника", isOn: $verboseLog)
             HStack(spacing: 12) {
                 Button {
-                    UIPasteboard.general.string = ble.log.joined(separator: "\n")
+                    UIPasteboard.general.string = ble.logStore.lines.joined(separator: "\n")
                 } label: {
                     Text("Копіювати").buttonText()
                 }
                 .glassSecondaryStyle()
                 Button(role: .destructive) {
-                    ble.log.removeAll()
+                    ble.logStore.clear()
                 } label: {
                     Text("Очистити").buttonText()
                 }
@@ -551,19 +551,7 @@ struct ContentView: View {
             .padding(.top, 4)
             .padding(.bottom, 1)
             // Усі записи в одному рядку списку — щільно, без стандартної висоти рядків
-            if !ble.log.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(ble.log.suffix(200).enumerated()), id: \.offset) { _, line in
-                        Text(line)
-                    }
-                }
-                .font(.system(.caption2, design: .monospaced))
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, -14.6)
-                .padding(.bottom, 2)
-                .listRowSeparator(.hidden)
-            }
+            LogLinesView(store: ble.logStore)
         } header: {
             // Заголовок секції — на тій самій висоті й з тими самими параметрами, що «Браслет» і «Auth key браслета»
             Text("Активність")
@@ -757,6 +745,27 @@ struct SettingsLabel: View {
                 .foregroundStyle(.white)
             }
             .frame(width: 30, height: 30)
+        }
+    }
+}
+
+/// Останні рядки журналу; сам стежить за змінами, тож решта екрана не перемальовується.
+struct LogLinesView: View {
+    @ObservedObject var store: BandLog
+
+    var body: some View {
+        if !store.lines.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(store.lines.suffix(200).enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                }
+            }
+            .font(.system(.caption2, design: .monospaced))
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, -14.6)
+            .padding(.bottom, 2)
+            .listRowSeparator(.hidden)
         }
     }
 }
