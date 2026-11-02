@@ -187,7 +187,7 @@ struct ContentView: View {
                             Text(Self.languageName).foregroundStyle(.secondary)
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 18, weight: .regular))
+                                .font(.system(size: 19, weight: .light))
                                 .foregroundStyle(Color(.secondaryLabel))
                         }
                         .foregroundStyle(.primary)
