@@ -218,13 +218,6 @@ struct ContentView: View {
                 case .log:
                     Form {
                         logSection
-                        Section {
-                            Text(verbatim: "BandFace \(Self.versionString).\(Self.buildNumber)")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        } header: {
-                            Text("Версія")
-                        }
                     }
                     .navigationTitle("Журнал")
                     .navigationBarTitleDisplayMode(.inline)
