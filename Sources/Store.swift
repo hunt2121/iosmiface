@@ -176,7 +176,6 @@ struct StoreView: View {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
                 VStack(alignment: .leading, spacing: 14) {
-                    StoreSearchField(text: $query)
                     chips
                     if items.isEmpty {
                         Text("Нічого не знайдено")
@@ -213,15 +212,15 @@ struct StoreView: View {
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            // Власний рядок пошуку в самій сторінці: без системної анімації панелі навігації,
-            // яка йшла ривками й «блимала» підказкою. Їде вгору разом зі сторінкою.
-            .scrollDismissesKeyboard(.immediately)
+            // Системний пошук: скляним стає лише після натискання, ховається при гортанні
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
+                        prompt: Text("Пошук циферблатів"))
         }
     }
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            ChipRow {
                 chip("all", String(localized: "Усі"))
                 chip("new", String(localized: "Нові"))
                 chip("free", String(localized: "Безкоштовні"))
@@ -239,8 +238,11 @@ struct StoreView: View {
     private func chip(_ id: String, _ title: String) -> some View {
         let on = filter == id
         return Button { filter = id } label: {
+            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
             Text(title)
-                .font(.subheadline.weight(on ? .semibold : .medium))
+                .font(.subheadline.weight(.semibold))
+                .hidden()
+                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
@@ -456,47 +458,17 @@ struct StoreDetailView: View {
     }
 }
 
-/// Рядок пошуку магазину: скляна капсула з лупою, полем і кнопкою очищення.
-struct StoreSearchField: View {
-    @Binding var text: String
-    @FocusState private var focused: Bool
-
+/// Ряд міток. На iOS 26 — в одному GlassEffectContainer: скло малюється за один прохід,
+/// і анімації (пошук, вибір мітки) не втрачають кадрів.
+private struct ChipRow<Content: View>: View {
+    @ViewBuilder let content: Content
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.body.weight(.medium))
-                .foregroundStyle(Color(.secondaryLabel))
-            TextField("Пошук циферблатів", text: $text)
-                .focused($focused)
-                .submitLabel(.search)
-                .autocorrectionDisabled()
-                .onSubmit { focused = false }
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color(.tertiaryLabel))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Очистити"))
-            }
-        }
-        .padding(.horizontal, 14)
-        .frame(height: 44)
-        .modifier(SearchGlass())
-        .contentShape(Capsule())
-        .onTapGesture { focused = true }
-    }
-}
-
-/// Скло для рядка пошуку (без «пружинки» при дотику, як у системного поля)
-private struct SearchGlass: ViewModifier {
-    func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            content.glassEffect(.regular, in: Capsule())
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) { content }
+            }
         } else {
-            content.background(Capsule().fill(Color(.tertiarySystemFill)))
+            HStack(spacing: 8) { content }
         }
     }
 }
