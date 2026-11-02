@@ -224,15 +224,6 @@ struct StoreView: View, Equatable {
                             }
                         }
                         .padding(.horizontal, 16)
-                    } header: {
-                        if mode == 5 || mode == 6 {
-                            TopSearchBar(query: $query, filter: $filter, filters: filterOptions,
-                                         showFilter: mode == 6, active: $searchOpen)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
-                                // Прозорий фон: вміст під рядком м'яко розмивається й згасає донизу
-                                .background(PinnedHeaderFade())
-                        }
                     }
                 }
                 .padding(.top, 4)
@@ -243,9 +234,10 @@ struct StoreView: View, Equatable {
             .navigationTitle("Магазин")
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions))
-            .navigationBarTitleDisplayMode(mode == 0 ? .inline : .automatic)
-            // F/G: під час пошуку панель навігації з заголовком ховається — рядок піднімається вгору
-            // A: своя панель замість системної; F/G: під час пошуку панель ховається
+            // F/G: заголовок у системній панелі (малий), під ним — рядок пошуку з тим самим
+            // системним розмиттям краю, що й під іншими панелями
+            .navigationBarTitleDisplayMode(.inline)
+            // A: своя панель замість системної; F/G: під час пошуку панель ховається, рядок піднімається вгору
             .toolbar(mode == 0 || searchOpen ? .hidden : .automatic, for: .navigationBar)
         }
     }
@@ -531,7 +523,12 @@ private struct StoreSearchMode: ViewModifier {
                     MorphSearchBar(query: $query, open: $searchOpen, filter: $filter, filters: filters)
                 })
         } else {
+            // F / G: скляний рядок пошуку в панелі під заголовком
             content
+                .modifier(TopBar {
+                    TopSearchBar(query: $query, filter: $filter, filters: filters,
+                                 showFilter: mode == 6, active: $searchOpen)
+                })
         }
     }
 }
@@ -577,9 +574,9 @@ struct TopSearchBar: View {
                         .font(.body.weight(.semibold))
                         .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
                         .frame(width: 44, height: 44)
-                        .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
                         .contentShape(Circle())
                 }
+                .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
                 .accessibilityLabel(Text("Фільтр"))
             }
 
@@ -602,26 +599,31 @@ struct TopSearchBar: View {
             .frame(height: 44)
             .modifier(MorphGlass(id: "search", ns: glass, circle: false))
             .contentShape(Capsule())
-            .onTapGesture { focused = true }
+            .onTapGesture {
+                withAnimation(.bouncy(duration: 0.4)) { active = true }
+                focused = true
+            }
 
-            if focused {
-                Button { focused = false } label: {
+            if active {
+                Button {
+                    focused = false
+                    withAnimation(.bouncy(duration: 0.4)) { active = false }
+                } label: {
                     Image(systemName: "xmark")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(Color.primary)
                         .frame(width: 44, height: 44)
-                        .modifier(MorphGlass(id: "close", ns: glass, circle: true))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .modifier(MorphGlass(id: "close", ns: glass, circle: true))
                 .accessibilityLabel(Text("Закрити"))
             }
         }
-        .animation(.bouncy(duration: 0.4), value: focused)
-        .animation(.bouncy(duration: 0.4), value: active)
         .modifier(BlocksTouchesBehind())
         .onChange(of: focused) { f in
-            withAnimation(.bouncy(duration: 0.4)) { active = f }
+            // Клавіатуру сховали інакше (гортанням) — закриваємо пошук теж з анімацією
+            if !f && active && query.isEmpty { withAnimation(.bouncy(duration: 0.4)) { active = false } }
         }
     }
 }
@@ -687,9 +689,9 @@ struct MorphSearchBar: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
                     .frame(width: 44, height: 44)
-                    .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
                     .contentShape(Circle())
             }
+            .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
             .accessibilityLabel(Text("Фільтр"))
 
             if open {
@@ -720,10 +722,10 @@ struct MorphSearchBar: View {
                     Image(systemName: "xmark")
                         .font(.body.weight(.semibold))
                         .frame(width: 44, height: 44)
-                        .modifier(MorphGlass(id: "close", ns: glass, circle: true))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .modifier(MorphGlass(id: "close", ns: glass, circle: true))
                 .accessibilityLabel(Text("Закрити"))
             } else {
                 Spacer(minLength: 0)
@@ -734,10 +736,10 @@ struct MorphSearchBar: View {
                     Image(systemName: "magnifyingglass")
                         .font(.body.weight(.semibold))
                         .frame(width: 44, height: 44)
-                        .modifier(MorphGlass(id: "search", ns: glass, circle: true))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .modifier(MorphGlass(id: "search", ns: glass, circle: true))
                 .accessibilityLabel(Text("Пошук циферблатів"))
             }
         }
@@ -766,16 +768,3 @@ private struct MorphGlass: ViewModifier {
     }
 }
 
-/// Фон закріпленого рядка пошуку: розмиття, що плавно зникає донизу (замість суцільної заливки).
-struct PinnedHeaderFade: View {
-    var body: some View {
-        Rectangle()
-            .fill(.ultraThinMaterial)
-            .mask(LinearGradient(stops: [.init(color: .black, location: 0),
-                                         .init(color: .black, location: 0.55),
-                                         .init(color: .clear, location: 1)],
-                                 startPoint: .top, endPoint: .bottom))
-            .padding(.bottom, -10)
-            .ignoresSafeArea(edges: .top)
-    }
-}
