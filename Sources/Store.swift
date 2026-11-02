@@ -150,7 +150,6 @@ struct StoreView: View, Equatable {
     /// Тимчасовий експеримент: 0 — кнопка пошуку біля заголовка, 1 — пошук унизу, 2 — пошук унизу з кнопкою фільтрів
     @AppStorage("storeSearchMode") private var searchMode = 0
     @State private var searchOpen = false
-    @Namespace private var searchSpace
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -188,75 +187,59 @@ struct StoreView: View, Equatable {
             ScrollView {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
-                VStack(alignment: .leading, spacing: 14) {
-                    if searchMode == 3 && !searchOpen {
-                        // D: рядок пошуку на звичному місці, у стилі iOS 26 ще до натискання
-                        SearchPill(text: query)
-                            .matchedGeometryEffect(id: "search", in: searchSpace)
-                            .onTapGesture { withAnimation(.snappy(duration: 0.35)) { searchOpen = true } }
-                    }
-                    if searchMode == 0 && searchOpen {
-                        StoreSearchField(text: $query) {
-                            withAnimation(.snappy) { searchOpen = false }
-                            query = ""
-                        }
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                    if ![0, 2, 4, 6].contains(searchMode) { chips }
-                    if items.isEmpty {
-                        Text("Нічого не знайдено")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
-                    } else {
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(items) { item in
-                                NavigationLink {
-                                    StoreDetailView(item: item,
-                                                    state: state(item),
-                                                    installedVersion: installed[item.id],
-                                                    busy: busy,
-                                                    progress: progress,
-                                                    progressText: progressText,
-                                                    onInstall: onInstall)
-                                } label: {
-                                    card(item)
+                // Рядок пошуку F/G — закріплений заголовок секції: гортається разом із великим «Магазин»,
+                // а дійшовши до верху, залишається під панеллю навігації (як у «Файлах»)
+                LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        Group {
+                            if mode == 0 || mode == 5 { chips }
+                            if items.isEmpty {
+                                Text("Нічого не знайдено")
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 40)
+                            } else {
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(items) { item in
+                                        NavigationLink {
+                                            StoreDetailView(item: item,
+                                                            state: state(item),
+                                                            installedVersion: installed[item.id],
+                                                            busy: busy,
+                                                            progress: progress,
+                                                            progressText: progressText,
+                                                            onInstall: onInstall)
+                                        } label: {
+                                            card(item)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
-                                .buttonStyle(.plain)
                             }
+                        }
+                        .padding(.horizontal, 16)
+                    } header: {
+                        if mode == 5 || mode == 6 {
+                            TopSearchBar(query: $query, filter: $filter, filters: filterOptions, showFilter: mode == 6)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 6)
+                                .background(Color(.systemGroupedBackground))
                         }
                     }
                 }
-                .padding(.horizontal, 16)
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            .modifier(StoreSearchMode(mode: searchMode, query: $query, searchOpen: $searchOpen,
+            .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions))
-            // E: власна нижня панель — фільтр і пошук над вкладками; під час набору — над клавіатурою
-            .safeAreaInset(edge: .bottom) {
-                if searchMode == 4 {
-                    BottomSearchBar(query: $query, filter: $filter, filters: filterOptions)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
-                }
-            }
-            // D: після натискання рядок пошуку переїжджає вниз, над клавіатуру
-            .safeAreaInset(edge: .bottom) {
-                if searchMode == 3 && searchOpen {
-                    StoreSearchField(text: $query) {
-                        withAnimation(.snappy(duration: 0.35)) { searchOpen = false }
-                    }
-                    .matchedGeometryEffect(id: "search", in: searchSpace)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                }
-            }
         }
     }
+
+    /// Варіант пошуку (тимчасовий експеримент): 0 — A, 5 — F, 6 — G
+    private var mode: Int { [0, 5, 6].contains(searchMode) ? searchMode : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -528,9 +511,7 @@ private struct StoreSearchMode: ViewModifier {
     let filters: [(String, String)]
 
     func body(content: Content) -> some View {
-        switch mode {
-        case 0:
-            // Кнопка-лупа біля заголовка; рядок пошуку з'являється над мітками
+        if mode == 0 {
             content.toolbar {
                 // Кнопка фільтрів ліворуч (мітки під заголовком у цьому варіанті сховані)
                 ToolbarItem(placement: .topBarLeading) {
@@ -544,96 +525,17 @@ private struct StoreSearchMode: ViewModifier {
                     }
                     .accessibilityLabel(Text("Фільтр"))
                 }
-                if !searchOpen {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            withAnimation(.snappy) { searchOpen = true }
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                        }
-                        .accessibilityLabel(Text("Пошук циферблатів"))
-                    }
+                // Лупа праворуч; після натискання скляна капсула розгортається вліво в рядок пошуку
+                ToolbarItem(placement: .topBarTrailing) {
+                    ExpandingSearch(query: $query, open: $searchOpen)
                 }
             }
-        case 2:
-            if #available(iOS 26, *) {
-                // Пошук унизу і поруч кнопка фільтрів, як у системних застосунках
-                content
-                    .searchable(text: $query, prompt: Text("Пошук циферблатів"))
-                    .toolbar {
-                        ToolbarItem(placement: .bottomBar) {
-                            Menu {
-                                Picker(selection: $filter) {
-                                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                                } label: { EmptyView() }
-                            } label: {
-                                Image(systemName: filter == "all"
-                                      ? "line.3.horizontal.decrease"
-                                      : "line.3.horizontal.decrease.circle.fill")
-                            }
-                        }
-                        ToolbarSpacer(.fixed, placement: .bottomBar)
-                        DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                    }
-            } else {
-                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
-                                   prompt: Text("Пошук циферблатів"))
-            }
-        case 3, 4:
+        } else {
             content
-        case 5, 6:
-            // F / G: власний скляний рядок угорі, завжди видимий; заголовок ховається над ним при гортанні
-            content.modifier(PinnedTopBar {
-                TopSearchBar(query: $query, filter: $filter, filters: filters, showFilter: mode == 6)
-            })
-        default:
-            if #available(iOS 26, *) {
-                content.searchable(text: $query, prompt: Text("Пошук циферблатів"))
-            } else {
-                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
-                                   prompt: Text("Пошук циферблатів"))
-            }
         }
     }
 }
 
-/// Рядок пошуку для варіанта з кнопкою: скляний (iOS 26) з першої миті, одразу з клавіатурою.
-struct StoreSearchField: View {
-    @Binding var text: String
-    let onClose: () -> Void
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color(.secondaryLabel))
-                TextField("Пошук циферблатів", text: $text)
-                    .focused($focused)
-                    .submitLabel(.search)
-                    .autocorrectionDisabled()
-                    .onSubmit { focused = false }
-                if !text.isEmpty {
-                    Button { text = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 44)
-            .modifier(FieldGlass())
-
-            // Спершу ховаємо клавіатуру, потім закриваємо пошук — інакше анімації заважають одна одній
-            CloseCircleButton(size: 44) {
-                focused = false
-                onClose()
-            }
-        }
-        .onAppear { focused = true }
-        .modifier(BlocksTouchesBehind())
-    }
-}
 
 private struct FieldGlass: ViewModifier {
     var circle = false
@@ -648,68 +550,7 @@ private struct FieldGlass: ViewModifier {
     }
 }
 
-/// Рядок пошуку в спокої (варіант D): виглядає як поле, натискання відкриває пошук.
-struct SearchPill: View {
-    let text: String
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color(.secondaryLabel))
-            Text(text.isEmpty ? String(localized: "Пошук циферблатів") : text)
-                .foregroundStyle(text.isEmpty ? Color(.placeholderText) : Color.primary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .frame(height: 44)
-        .modifier(FieldGlass())
-        .contentShape(Capsule())
-        .accessibilityAddTraits(.isButton)
-    }
-}
 
-/// Варіант E: нижня скляна панель як у «Пошті» — кнопка фільтрів і рядок пошуку.
-/// Вигляд однаковий до й після натискання; під час набору панель стоїть над клавіатурою.
-struct BottomSearchBar: View {
-    @Binding var query: String
-    @Binding var filter: String
-    let filters: [(String, String)]
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            FilterMenuButton(filter: $filter, filters: filters, size: 48)
-
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color(.secondaryLabel))
-                TextField("Пошук циферблатів", text: $query)
-                    .focused($focused)
-                    .submitLabel(.search)
-                    .autocorrectionDisabled()
-                    .onSubmit { focused = false }
-                if !query.isEmpty {
-                    Button { query = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(height: 48)
-            .modifier(FieldGlass())
-            .contentShape(Capsule())
-            .onTapGesture { focused = true }
-
-            if focused {
-                CloseCircleButton(size: 48) { focused = false }
-                    .transition(.scale.combined(with: .opacity))
-            }
-        }
-        .animation(.snappy(duration: 0.3), value: focused)
-        .modifier(BlocksTouchesBehind())
-    }
-}
 
 /// Кругла кнопка закриття. На iOS 26 — системна скляна кнопка: iOS сама обробляє дотик,
 /// тож натискання не «провалюються» до того, що під кнопкою, і не губляться.
@@ -741,23 +582,6 @@ struct CloseCircleButton: View {
     }
 }
 
-/// Панель, закріплена під заголовком. На iOS 26 — safeAreaBar: вміст під нею
-/// плавно розмивається (як під системною панеллю), а великий заголовок ховається над нею при гортанні.
-private struct PinnedTopBar<Bar: View>: ViewModifier {
-    @ViewBuilder let bar: Bar
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.safeAreaBar(edge: .top) {
-                bar.padding(.horizontal, 16).padding(.bottom, 8)
-            }
-        } else {
-            content.safeAreaInset(edge: .top) {
-                bar.padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(.bar)
-            }
-        }
-    }
-}
 
 /// Варіанти F і G: скляний рядок пошуку (і кнопка фільтрів) — однаковий вигляд до й після натискання.
 struct TopSearchBar: View {
@@ -838,5 +662,49 @@ private struct BlocksTouchesBehind: ViewModifier {
                 .contentShape(Rectangle())
                 .onTapGesture {}
         )
+    }
+}
+
+/// Варіант A: лупа в панелі навігації. Після натискання скляна капсула кнопки
+/// розгортається вліво в рядок пошуку з хрестиком; клавіатура відкривається одразу.
+struct ExpandingSearch: View {
+    @Binding var query: String
+    @Binding var open: Bool
+    @FocusState private var focused: Bool
+
+    /// Ширина поля: екран мінус відступи, кнопка фільтрів, лупа й хрестик
+    private static let fieldWidth = max(120, UIScreen.main.bounds.width - 16 * 2 - 52 - 44 - 36)
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button {
+                if !open {
+                    withAnimation(.snappy(duration: 0.35)) { open = true }
+                    focused = true
+                }
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel(Text("Пошук циферблатів"))
+
+            if open {
+                TextField("Пошук циферблатів", text: $query)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .onSubmit { focused = false }
+                    .frame(width: Self.fieldWidth)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                Button {
+                    focused = false
+                    query = ""
+                    withAnimation(.snappy(duration: 0.35)) { open = false }
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel(Text("Закрити"))
+                .transition(.opacity)
+            }
+        }
     }
 }
