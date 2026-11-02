@@ -631,6 +631,7 @@ struct StoreSearchField: View {
             }
         }
         .onAppear { focused = true }
+        .modifier(BlocksTouchesBehind())
     }
 }
 
@@ -677,18 +678,7 @@ struct BottomSearchBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Menu {
-                Picker(selection: $filter) {
-                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                } label: { EmptyView() }
-            } label: {
-                Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                  : "line.3.horizontal.decrease.circle.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                    .frame(width: 48, height: 48)
-            }
-            .modifier(FieldGlass(circle: true))
+            FilterMenuButton(filter: $filter, filters: filters, size: 48)
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -717,6 +707,7 @@ struct BottomSearchBar: View {
             }
         }
         .animation(.snappy(duration: 0.3), value: focused)
+        .modifier(BlocksTouchesBehind())
     }
 }
 
@@ -807,6 +798,7 @@ struct TopSearchBar: View {
             }
         }
         .animation(.snappy(duration: 0.3), value: focused)
+        .modifier(BlocksTouchesBehind())
     }
 }
 
@@ -835,5 +827,16 @@ struct FilterMenuButton: View {
             menu.frame(width: size, height: size)
                 .background(Circle().fill(Color(.tertiarySystemFill)))
         }
+    }
+}
+
+/// Натискання в проміжках між кнопками панелі не проходять до карток під нею.
+private struct BlocksTouchesBehind: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {}
+        )
     }
 }
