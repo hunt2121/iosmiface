@@ -194,8 +194,9 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "custom.theme", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255),  // #44ADDB — середина systemCyan обох тем, темніша на 10%
-                                      lightTop: 0.31, darkBottom: 0.06)  // середина між звичайним (0.22/0) і посиленим (0.4/0.12)
+                        SettingsLabel("Тема", icon: "custom.theme",
+                                      color: Color(red: 242 / 255, green: 165 / 255, blue: 63 / 255),     // низ #F2A53F
+                                      topColor: Color(red: 246 / 255, green: 195 / 255, blue: 93 / 255))  // верх #F6C35D
                     }
                     HStack {
                         SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
@@ -713,10 +714,12 @@ struct SettingsLabel: View {
     /// Сила градієнта: прозорість світлого верху і темного низу плитки
     let lightTop: Double
     let darkBottom: Double
+    /// Власний колір верху градієнта (тоді `color` — низ, без білого шару)
+    let topColor: Color?
     init(_ title: LocalizedStringKey, icon: String, color: Color,
-         lightTop: Double = 0.22, darkBottom: Double = 0) {
+         lightTop: Double = 0.22, darkBottom: Double = 0, topColor: Color? = nil) {
         self.title = title; self.icon = icon; self.color = color
-        self.lightTop = lightTop; self.darkBottom = darkBottom
+        self.lightTop = lightTop; self.darkBottom = darkBottom; self.topColor = topColor
     }
     /// Видимий розмір значка в плитці 30 pt: ≈19–20 pt, як у системних налаштуваннях.
     private var glyphBox: CGFloat {
@@ -733,10 +736,12 @@ struct SettingsLabel: View {
                 // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
                 // і тонким світлим обведенням усередині, сильнішим зверху
                 RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                    .fill(color)
+                    .fill(LinearGradient(colors: [topColor ?? color, color],
+                                         startPoint: .top, endPoint: .bottom))
                     .overlay(
                         RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                            .fill(LinearGradient(colors: [.white.opacity(lightTop), .black.opacity(darkBottom)],
+                            .fill(LinearGradient(colors: [.white.opacity(topColor == nil ? lightTop : 0),
+                                                          .black.opacity(topColor == nil ? darkBottom : 0)],
                                                  startPoint: .top, endPoint: .bottom))
                     )
                     .overlay(
