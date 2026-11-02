@@ -212,6 +212,7 @@ struct ContentView: View {
                         Text(verbatim: "B · Пошук унизу").tag(1)
                         Text(verbatim: "C · Пошук унизу з фільтром").tag(2)
                         Text(verbatim: "D · Угорі, над клавіатурою при пошуку").tag(3)
+                        Text(verbatim: "E · Панель унизу: фільтр і пошук").tag(4)
                     } label: {
                         Text(verbatim: "Пошук у магазині")
                     }

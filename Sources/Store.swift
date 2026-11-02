@@ -202,7 +202,7 @@ struct StoreView: View, Equatable {
                         }
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    if searchMode != 2 { chips }
+                    if searchMode != 2 && searchMode != 4 { chips }
                     if items.isEmpty {
                         Text("Нічого не знайдено")
                             .foregroundStyle(.secondary)
@@ -236,6 +236,14 @@ struct StoreView: View, Equatable {
             .navigationTitle("Магазин")
             .modifier(StoreSearchMode(mode: searchMode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions))
+            // E: власна нижня панель — фільтр і пошук над вкладками; під час набору — над клавіатурою
+            .safeAreaInset(edge: .bottom) {
+                if searchMode == 4 {
+                    BottomSearchBar(query: $query, filter: $filter, filters: filterOptions)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                }
+            }
             // D: після натискання рядок пошуку переїжджає вниз, над клавіатуру
             .safeAreaInset(edge: .bottom) {
                 if searchMode == 3 && searchOpen {
@@ -559,7 +567,7 @@ private struct StoreSearchMode: ViewModifier {
                 content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
                                    prompt: Text("Пошук циферблатів"))
             }
-        case 3:
+        case 3, 4:
             content
         default:
             if #available(iOS 26, *) {
@@ -642,5 +650,67 @@ struct SearchPill: View {
         .modifier(FieldGlass())
         .contentShape(Capsule())
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// Варіант E: нижня скляна панель як у «Пошті» — кнопка фільтрів і рядок пошуку.
+/// Вигляд однаковий до й після натискання; під час набору панель стоїть над клавіатурою.
+struct BottomSearchBar: View {
+    @Binding var query: String
+    @Binding var filter: String
+    let filters: [(String, String)]
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Menu {
+                Picker(selection: $filter) {
+                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                } label: { EmptyView() }
+            } label: {
+                Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                  : "line.3.horizontal.decrease.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                    .frame(width: 48, height: 48)
+            }
+            .modifier(FieldGlass(circle: true))
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Color(.secondaryLabel))
+                TextField("Пошук циферблатів", text: $query)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .onSubmit { focused = false }
+                if !query.isEmpty {
+                    Button { query = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 48)
+            .modifier(FieldGlass())
+            .contentShape(Capsule())
+            .onTapGesture { focused = true }
+
+            if focused {
+                Button {
+                    focused = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 48, height: 48)
+                }
+                .buttonStyle(.plain)
+                .modifier(FieldGlass(circle: true))
+                .transition(.scale.combined(with: .opacity))
+                .accessibilityLabel(Text("Закрити"))
+            }
+        }
+        .animation(.snappy(duration: 0.3), value: focused)
     }
 }
