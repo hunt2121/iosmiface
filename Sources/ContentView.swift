@@ -725,7 +725,7 @@ enum SettingsTile {
     }
     private static let keyColors = [rgb(0x31D059), rgb(0x31C857), rgb(0x2BAD4C)]
     private static let logColors = [rgb(0x2D94FF), rgb(0x2690FF), rgb(0x057FFF)]
-    private static let themeColors = [rgb(0xFCC859), rgb(0xF9BB55), rgb(0xF8A535)]   // на 10% насиченіше за приклад
+    private static let themeColors = [rgb(0xFCBB30), rgb(0xF9AB2C), rgb(0xF89004)]   // яскравіший помаранчевий (насиченість +25%)
     private static let languageColors = [rgb(0xC777EF), rgb(0xC473EC), rgb(0xB756E8)]
     private static let versionColors = [rgb(0x9D9DA0), rgb(0x9A9A9C), rgb(0x89898C)]
 
