@@ -202,7 +202,7 @@ struct StoreView: View, Equatable {
                         }
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    if ![2, 4, 6].contains(searchMode) { chips }
+                    if ![0, 2, 4, 6].contains(searchMode) { chips }
                     if items.isEmpty {
                         Text("Нічого не знайдено")
                             .foregroundStyle(.secondary)
@@ -532,6 +532,18 @@ private struct StoreSearchMode: ViewModifier {
         case 0:
             // Кнопка-лупа біля заголовка; рядок пошуку з'являється над мітками
             content.toolbar {
+                // Кнопка фільтрів ліворуч (мітки під заголовком у цьому варіанті сховані)
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker(selection: $filter) {
+                            ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                        } label: { EmptyView() }
+                    } label: {
+                        Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                          : "line.3.horizontal.decrease.circle.fill")
+                    }
+                    .accessibilityLabel(Text("Фільтр"))
+                }
                 if !searchOpen {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
