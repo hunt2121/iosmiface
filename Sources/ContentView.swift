@@ -185,9 +185,10 @@ struct ContentView: View {
                             SettingsLabel("Мова", icon: "globe", color: .purple)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(.secondary)
+                            // Стандартний індикатор переходу, як у системних рядках
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Color(.tertiaryLabel))
                         }
                         .foregroundStyle(.primary)
                     }
