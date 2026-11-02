@@ -121,6 +121,7 @@ struct StoreView: View {
     let onRefresh: () async -> Void
 
     @State private var query = ""
+    private static let minContentHeight = UIScreen.main.bounds.height
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -152,7 +153,6 @@ struct StoreView: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { geo in
             ScrollView {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
@@ -185,11 +185,12 @@ struct StoreView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
                 .padding(.bottom, 16)
-                // Запас у висоті: навіть із двома картками сторінку можна гортати, і рядок пошуку ховається
-                .frame(minHeight: geo.size.height + 70, alignment: .top)
+                // Запас у висоті: навіть із двома картками сторінку можна гортати, і рядок пошуку ховається.
+                // Стала висота екрана, а не GeometryReader: інакше під час анімації пошуку
+                // сітка перераховувалась у кожному кадрі й анімація йшла ривками
+                .frame(minHeight: Self.minContentHeight, alignment: .top)
             }
             .refreshable { await onRefresh() }
-            }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
             .storeSearchable(text: $query, prompt: Text("Пошук циферблатів"))
