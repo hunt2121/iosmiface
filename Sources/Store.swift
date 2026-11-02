@@ -520,14 +520,15 @@ private struct StoreSearchMode: ViewModifier {
             // яка «перетікає» в рядок пошуку (Liquid Glass morph), як у «Пошті»
             content
                 .modifier(TopBar {
-                    MorphSearchBar(query: $query, open: $searchOpen, filter: $filter, filters: filters)
+                    LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
+                                    style: .collapsedButton)
                 })
         } else {
             // F / G: скляний рядок пошуку в панелі під заголовком
             content
                 .modifier(TopBar {
-                    TopSearchBar(query: $query, filter: $filter, filters: filters,
-                                 showFilter: mode == 6, active: $searchOpen)
+                    LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
+                                    style: mode == 6 ? .fieldWithFilter : .field)
                 })
         }
     }
@@ -539,94 +540,6 @@ private struct StoreSearchMode: ViewModifier {
 
 
 
-/// Варіанти F і G: скляний рядок пошуку (і кнопка фільтрів) — однаковий вигляд до й після натискання.
-struct TopSearchBar: View {
-    @Binding var query: String
-    @Binding var filter: String
-    let filters: [(String, String)]
-    let showFilter: Bool
-    /// Пошук активний: сторінка ховає заголовок, і рядок піднімається вгору
-    @Binding var active: Bool
-    @FocusState private var focused: Bool
-    @Namespace private var glass
-
-    var body: some View {
-        // На iOS 26 усе скло в одному контейнері: кнопка фільтрів «вливається» в рядок пошуку
-        // і з'являється з нього назад (Liquid Glass morph)
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 10) { row }
-        } else {
-            row
-        }
-    }
-
-    private var row: some View {
-        HStack(spacing: 10) {
-            // Під час пошуку кнопка фільтрів ховається, рядок займає її місце
-            if showFilter && !active {
-                Menu {
-                    Picker(selection: $filter) {
-                        ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                    } label: { EmptyView() }
-                } label: {
-                    Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                      : "line.3.horizontal.decrease.circle.fill")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
-                .accessibilityLabel(Text("Фільтр"))
-            }
-
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color(.secondaryLabel))
-                TextField("Пошук циферблатів", text: $query)
-                    .focused($focused)
-                    .submitLabel(.search)
-                    .autocorrectionDisabled()
-                    .onSubmit { focused = false }
-                if !query.isEmpty {
-                    Button { query = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 44)
-            .modifier(MorphGlass(id: "search", ns: glass, circle: false))
-            .contentShape(Capsule())
-            .onTapGesture {
-                withAnimation(.bouncy(duration: 0.4)) { active = true }
-                focused = true
-            }
-
-            if active {
-                Button {
-                    focused = false
-                    withAnimation(.bouncy(duration: 0.4)) { active = false }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .modifier(MorphGlass(id: "close", ns: glass, circle: true))
-                .accessibilityLabel(Text("Закрити"))
-            }
-        }
-        .modifier(BlocksTouchesBehind())
-        .onChange(of: focused) { f in
-            // Клавіатуру сховали інакше (гортанням) — закриваємо пошук теж з анімацією
-            if !f && active && query.isEmpty { withAnimation(.bouncy(duration: 0.4)) { active = false } }
-        }
-    }
-}
 
 
 /// Натискання в проміжках між кнопками панелі не проходять до карток під нею.
@@ -657,96 +570,6 @@ private struct TopBar<Bar: View>: ViewModifier {
     }
 }
 
-/// Варіант A: ліворуч кнопка фільтрів, праворуч лупа. Після натискання лупа плавно
-/// «перетікає» в скляний рядок пошуку, а поруч з'являється хрестик.
-struct MorphSearchBar: View {
-    @Binding var query: String
-    @Binding var open: Bool
-    @Binding var filter: String
-    let filters: [(String, String)]
-    @FocusState private var focused: Bool
-    @Namespace private var glass
-
-    var body: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 10) {
-                row
-            }
-        } else {
-            row
-        }
-    }
-
-    private var row: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Picker(selection: $filter) {
-                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                } label: { EmptyView() }
-            } label: {
-                Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                  : "line.3.horizontal.decrease.circle.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
-            }
-            .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
-            .accessibilityLabel(Text("Фільтр"))
-
-            if open {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(Color(.secondaryLabel))
-                    TextField("Пошук циферблатів", text: $query)
-                        .focused($focused)
-                        .submitLabel(.search)
-                        .autocorrectionDisabled()
-                        .onSubmit { focused = false }
-                    if !query.isEmpty {
-                        Button { query = "" } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .modifier(MorphGlass(id: "search", ns: glass, circle: false))
-
-                Button {
-                    focused = false
-                    query = ""
-                    withAnimation(.bouncy(duration: 0.4)) { open = false }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .modifier(MorphGlass(id: "close", ns: glass, circle: true))
-                .accessibilityLabel(Text("Закрити"))
-            } else {
-                Spacer(minLength: 0)
-                Button {
-                    withAnimation(.bouncy(duration: 0.4)) { open = true }
-                    focused = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .modifier(MorphGlass(id: "search", ns: glass, circle: true))
-                .accessibilityLabel(Text("Пошук циферблатів"))
-            }
-        }
-        .foregroundStyle(Color.primary)
-        .modifier(BlocksTouchesBehind())
-    }
-}
 
 /// Скло з ідентифікатором: однакові id у GlassEffectContainer плавно перетікають одне в одне.
 /// Без .interactive(), щоб скло не перехоплювало натискання кнопок.
@@ -768,3 +591,128 @@ private struct MorphGlass: ViewModifier {
     }
 }
 
+/// Панель пошуку з «рідким склом». Усі скляні форми в одному GlassEffectContainer:
+/// коли кнопки наближаються до рядка пошуку, скло притягується й зливається з ним,
+/// а при закритті так само роз'єднується.
+/// - collapsedButton (A): ліворуч фільтр, праворуч лупа, яка розтягується в рядок пошуку
+/// - field (F): лише рядок пошуку
+/// - fieldWithFilter (G): фільтр і рядок; під час пошуку фільтр вливається в рядок
+struct LiquidSearchBar: View {
+    enum Style { case collapsedButton, field, fieldWithFilter }
+
+    @Binding var query: String
+    @Binding var active: Bool
+    @Binding var filter: String
+    let filters: [(String, String)]
+    let style: Style
+    @FocusState private var focused: Bool
+    @Namespace private var glass
+
+    private let size: CGFloat = 44
+    /// Проміжок між склом у спокої більший за відстань злиття контейнера (10),
+    /// тож у спокої форми окремі, а під час руху назустріч — зливаються
+    private let gap: CGFloat = 12
+    private let animation = Animation.bouncy(duration: 0.5, extraBounce: 0.1)
+
+    private var showFilter: Bool {
+        style == .collapsedButton || (style == .fieldWithFilter && !active)
+    }
+    private var searchExpanded: Bool { style != .collapsedButton || active }
+
+    var body: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 10) { row }
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
+        HStack(spacing: 0) {
+            if style != .field {
+                filterButton
+                    .frame(width: showFilter ? size : 0, height: size)
+                    .opacity(showFilter ? 1 : 0)
+                    .padding(.trailing, showFilter ? gap : 0)
+                    .allowsHitTesting(showFilter)
+            }
+            if !searchExpanded { Spacer(minLength: 0) }
+            searchField
+            closeButton
+                .frame(width: active ? size : 0, height: size)
+                .opacity(active ? 1 : 0)
+                .padding(.leading, active ? gap : 0)
+                .allowsHitTesting(active)
+        }
+        .modifier(BlocksTouchesBehind())
+        .onChange(of: focused) { f in
+            // Клавіатуру сховали гортанням — порожній пошук закривається з тією ж анімацією
+            if !f && active && query.isEmpty { withAnimation(animation) { active = false } }
+        }
+    }
+
+    private var filterButton: some View {
+        Menu {
+            Picker(selection: $filter) {
+                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+            } label: { EmptyView() }
+        } label: {
+            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                              : "line.3.horizontal.decrease.circle.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                .frame(width: size, height: size)
+                .contentShape(Circle())
+        }
+        .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
+        .accessibilityLabel(Text("Фільтр"))
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(searchExpanded ? .body : .body.weight(.semibold))
+                .foregroundStyle(searchExpanded ? Color(.secondaryLabel) : Color.primary)
+            if searchExpanded {
+                TextField("Пошук циферблатів", text: $query)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .onSubmit { focused = false }
+                if !query.isEmpty {
+                    Button { query = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, searchExpanded ? 14 : 0)
+        .frame(width: searchExpanded ? nil : size, height: size)
+        .frame(maxWidth: searchExpanded ? .infinity : size)
+        .modifier(MorphGlass(id: "search", ns: glass, circle: false))
+        .contentShape(Capsule())
+        .onTapGesture {
+            if !active { withAnimation(animation) { active = true } }
+            focused = true
+        }
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var closeButton: some View {
+        Button {
+            focused = false
+            if style == .collapsedButton { query = "" }
+            withAnimation(animation) { active = false }
+        } label: {
+            Image(systemName: "xmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.primary)
+                .frame(width: size, height: size)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .modifier(MorphGlass(id: "close", ns: glass, circle: true))
+        .accessibilityLabel(Text("Закрити"))
+    }
+}
