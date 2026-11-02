@@ -399,7 +399,7 @@ struct ContentView: View {
                     Button {
                         if let face { install(face) }
                     } label: {
-                        Text("Встановити на браслет").buttonText()
+                        Text("Встановити").buttonText()
                     }
                     .glassProminentStyle()
                     .disabled(!canOperate || face == nil)
@@ -728,9 +728,21 @@ struct SettingsLabel: View {
             Text(title)
         } icon: {
             ZStack {
+                // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
+                // і тонким світлим обведенням усередині, сильнішим зверху
                 RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                    .fill(LinearGradient(colors: [color.opacity(0.78), color],
-                                         startPoint: .top, endPoint: .bottom))
+                    .fill(color)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                            .fill(LinearGradient(colors: [.white.opacity(0.2), .black.opacity(0.1)],
+                                                 startPoint: .top, endPoint: .bottom))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0.15)],
+                                                         startPoint: .top, endPoint: .bottom),
+                                          lineWidth: 0.6)
+                    )
                 Group {
                     if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
