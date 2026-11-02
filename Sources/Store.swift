@@ -195,7 +195,13 @@ struct StoreView: View {
                 chip("free", String(localized: "Безкоштовні"))
                 ForEach(kinds, id: \.self) { k in chip(k, k) }
             }
+            // Запас навколо міток: при натисканні скло розширюється й не обрізається краєм прокрутки
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
         }
+        // Компенсуємо запас, щоб розкладка залишилась тією самою
+        .padding(.horizontal, -16)
+        .padding(.vertical, -14)
     }
 
     private func chip(_ id: String, _ title: String) -> some View {

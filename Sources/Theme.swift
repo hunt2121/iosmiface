@@ -35,8 +35,8 @@ extension View {
         if #available(iOS 26, *) { self.buttonStyle(.glass) } else { self.buttonStyle(.bordered) }
     }
 
-    /// Пошук завжди видно під заголовком одразу після входу на екран.
+    /// Пошук видно під заголовком одразу, а при прокручуванні він їде вгору разом зі сторінкою.
     func storeSearchable(text: Binding<String>, prompt: Text) -> some View {
-        searchable(text: text, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
+        searchable(text: text, placement: .navigationBarDrawer(displayMode: .automatic), prompt: prompt)
     }
 }
