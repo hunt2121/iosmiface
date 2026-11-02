@@ -172,6 +172,18 @@ struct ContentView: View {
                     }
                 }
                 Section("Застосунок") {
+                    Picker(selection: $appTheme) {
+                        Text("Системна").tag("system")
+                        Text("Світла").tag("light")
+                        Text("Темна").tag("dark")
+                    } label: {
+                        SettingsLabel("Тема", icon: "custom.theme",
+                                      color: Color(red: 240 / 255, green: 165 / 255, blue: 63 / 255),
+                                      // Виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
+                                      gradient: [Color(red: 245 / 255, green: 197 / 255, blue: 96 / 255),    // #F5C560
+                                                 Color(red: 242 / 255, green: 185 / 255, blue: 92 / 255),    // #F2B95C
+                                                 Color(red: 239 / 255, green: 164 / 255, blue: 62 / 255)])   // #EFA43E
+                    }
                     Button {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
                             UIApplication.shared.open(url)
@@ -189,18 +201,6 @@ struct ContentView: View {
                         .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
-                    Picker(selection: $appTheme) {
-                        Text("Системна").tag("system")
-                        Text("Світла").tag("light")
-                        Text("Темна").tag("dark")
-                    } label: {
-                        SettingsLabel("Тема", icon: "custom.theme",
-                                      color: Color(red: 240 / 255, green: 165 / 255, blue: 63 / 255),
-                                      // Виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
-                                      gradient: [Color(red: 245 / 255, green: 197 / 255, blue: 96 / 255),    // #F5C560
-                                                 Color(red: 242 / 255, green: 185 / 255, blue: 92 / 255),    // #F2B95C
-                                                 Color(red: 239 / 255, green: 164 / 255, blue: 62 / 255)])   // #EFA43E
-                    }
                     HStack {
                         SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
                         Spacer()
