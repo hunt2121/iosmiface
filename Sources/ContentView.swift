@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
+    @AppStorage("searchBarMode") private var searchBarMode = 0  // тимчасовий експеримент
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
@@ -202,6 +203,18 @@ struct ContentView: View {
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
+                }
+                // Тимчасово: перевірка спалаху підказки в пошуку магазину
+                Section {
+                    Picker(selection: $searchBarMode) {
+                        Text(verbatim: "1 · Як зараз").tag(0)
+                        Text(verbatim: "2 · Без фону панелі").tag(1)
+                        Text(verbatim: "3 · Фон панелі завжди").tag(2)
+                    } label: {
+                        Text(verbatim: "Пошук у магазині")
+                    }
+                } header: {
+                    Text(verbatim: "Експеримент")
                 }
             }
             .navigationTitle("Налаштування")

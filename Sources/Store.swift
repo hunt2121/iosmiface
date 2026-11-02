@@ -139,6 +139,8 @@ struct StoreView: View {
     let onRefresh: () async -> Void
 
     @State private var query = ""
+    /// Тимчасово для перевірки спалаху підказки в пошуку: фон панелі навігації (0 — як зараз, 1 — прихований, 2 — завжди видимий)
+    @AppStorage("searchBarMode") private var searchBarMode = 0
     private static let minContentHeight = UIScreen.main.bounds.height
     @State private var filter = "all"
 
@@ -215,6 +217,7 @@ struct StoreView: View {
             // Системний пошук: скляним стає лише після натискання, ховається при гортанні
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: Text("Пошук циферблатів"))
+            .modifier(SearchBarBackground(mode: searchBarMode))
         }
     }
 
@@ -469,6 +472,18 @@ private struct ChipRow<Content: View>: View {
             }
         } else {
             HStack(spacing: 8) { content }
+        }
+    }
+}
+
+/// Тимчасовий експеримент: як фон панелі навігації впливає на анімацію пошуку.
+private struct SearchBarBackground: ViewModifier {
+    let mode: Int
+    func body(content: Content) -> some View {
+        switch mode {
+        case 1: content.toolbarBackground(.hidden, for: .navigationBar)
+        case 2: content.toolbarBackground(.visible, for: .navigationBar)
+        default: content
         }
     }
 }
