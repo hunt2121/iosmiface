@@ -714,29 +714,6 @@
         }
       }
     },
-    "Встановити на браслет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Install on band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Установить на браслет"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Встановити на браслет"
-          }
-        }
-      }
-    },
     "Встановлення %@ (%@ КБ)…": {
       "extractionState": "manual",
       "localizations": {

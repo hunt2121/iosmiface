@@ -161,14 +161,10 @@ struct ContentView: View {
                         HStack {
                             SettingsLabel("Ключ", icon: "key.fill", color: .orange)
                             Spacer()
-                            if keyValid {
-                                Image(systemName: "checkmark")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color(.secondaryLabel))
-                            } else {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                    .foregroundStyle(Color.errorText)
-                            }
+                            // Та сама позначка, що всередині сторінки «Ключ»
+                            Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                .foregroundStyle(keyValid ? Color.okText : Color.errorText)
+                                .font(.title3)
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
@@ -182,12 +178,12 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "globe", color: .purple)
+                            SettingsLabel("Мова", icon: "custom.globe", color: .purple)
                             Spacer()
-                            Text(Self.languageName).foregroundStyle(.secondary)
+                            Text(Self.languageName).foregroundStyle(Color(.secondaryLabel))
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 19, weight: .light))
+                                .font(.body)
                                 .foregroundStyle(Color(.secondaryLabel))
                         }
                         .foregroundStyle(.primary)
@@ -399,7 +395,7 @@ struct ContentView: View {
                     Button {
                         if let face { install(face) }
                     } label: {
-                        Text("Встановити на браслет").buttonText()
+                        Text("Встановити").buttonText()
                     }
                     .glassProminentStyle()
                     .disabled(!canOperate || face == nil)
@@ -728,11 +724,25 @@ struct SettingsLabel: View {
             Text(title)
         } icon: {
             ZStack {
+                // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
+                // і тонким світлим обведенням усередині, сильнішим зверху
                 RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                    .fill(LinearGradient(colors: [color.opacity(0.78), color],
-                                         startPoint: .top, endPoint: .bottom))
+                    .fill(color)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                            .fill(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0)],
+                                                 startPoint: .top, endPoint: .bottom))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.28), .white.opacity(0.1)],
+                                                         startPoint: .top, endPoint: .bottom),
+                                          lineWidth: 0.5)
+                    )
                 Group {
-                    if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
+                    if icon == "custom.globe" {
+                        GlobeGlyph().frame(width: 59.0 / 3, height: 59.0 / 3)  // 59 px на 3x — як «Тема» і «Версія»
+                    } else if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
                     } else {
                         Image(systemName: icon)
@@ -766,6 +776,33 @@ struct LogLinesView: View {
             .padding(.top, -14.6)
             .padding(.bottom, 2)
             .listRowSeparator(.hidden)
+        }
+    }
+}
+
+/// Суцільний глобус із прорізами (дві паралелі й меридіан) для плитки «Мова».
+struct GlobeGlyph: View {
+    var body: some View {
+        GeometryReader { geo in
+            let d = min(geo.size.width, geo.size.height)
+            let gap = d * 0.085
+            ZStack {
+                Circle().fill(Color.white)
+                // Паралелі
+                ForEach([-0.19, 0.19], id: \.self) { k in
+                    Rectangle()
+                        .frame(width: d, height: gap)
+                        .offset(y: d * k)
+                        .blendMode(.destinationOut)
+                }
+                // Меридіан: вузький еліпс, ширший за висоту кола, щоб дуги йшли майже прямо
+                Ellipse()
+                    .stroke(lineWidth: gap)
+                    .frame(width: d * 0.46, height: d * 1.16)
+                    .blendMode(.destinationOut)
+            }
+            .frame(width: d, height: d)
+            .compositingGroup()
         }
     }
 }
