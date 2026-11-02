@@ -159,7 +159,8 @@ struct ContentView: View {
                 Section("Пристрій") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "custom.key", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255))  // #2BAD4C — середина systemGreen обох тем, темніша на 15%
+                            SettingsLabel("Ключ", icon: "custom.key", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255),
+                                          gradient: [Color(red: 49 / 255, green: 208 / 255, blue: 89 / 255), Color(red: 49 / 255, green: 200 / 255, blue: 87 / 255), Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255)])  // профіль градієнта як у прикладі
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
@@ -168,7 +169,8 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "custom.doc", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255))  // #057FFF — середина systemBlue обох тем
+                        SettingsLabel("Журнал", icon: "custom.doc", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255),
+                                      gradient: [Color(red: 45 / 255, green: 148 / 255, blue: 255 / 255), Color(red: 38 / 255, green: 144 / 255, blue: 255 / 255), Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255)])
                     }
                 }
                 Section("Застосунок") {
@@ -179,10 +181,10 @@ struct ContentView: View {
                     } label: {
                         SettingsLabel("Тема", icon: "custom.theme",
                                       color: Color(red: 240 / 255, green: 165 / 255, blue: 63 / 255),
-                                      // Виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
-                                      gradient: [Color(red: 245 / 255, green: 197 / 255, blue: 96 / 255),    // #F5C560
-                                                 Color(red: 242 / 255, green: 185 / 255, blue: 92 / 255),    // #F2B95C
-                                                 Color(red: 239 / 255, green: 164 / 255, blue: 62 / 255)])   // #EFA43E
+                                      // Профіль виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
+                                      gradient: [Color(red: 252 / 255, green: 200 / 255, blue: 89 / 255),    // #FCC859
+                                                 Color(red: 249 / 255, green: 187 / 255, blue: 85 / 255),    // #F9BB55
+                                                 Color(red: 248 / 255, green: 165 / 255, blue: 53 / 255)])   // #F8A535 — на 10% насиченіше за приклад
                     }
                     Button {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -190,7 +192,8 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "custom.globe", color: Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255))  // #B756E8 — середина systemPurple обох тем
+                            SettingsLabel("Мова", icon: "custom.globe", color: Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255),
+                                          gradient: [Color(red: 199 / 255, green: 119 / 255, blue: 239 / 255), Color(red: 196 / 255, green: 115 / 255, blue: 236 / 255), Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255)])
                             Spacer()
                             Text(Self.languageName).foregroundStyle(Color(.secondaryLabel))
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
@@ -202,7 +205,8 @@ struct ContentView: View {
                     }
                     .buttonStyle(.plain)
                     HStack {
-                        SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
+                        SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255),
+                                      gradient: [Color(red: 157 / 255, green: 157 / 255, blue: 160 / 255), Color(red: 154 / 255, green: 154 / 255, blue: 156 / 255), Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255)])
                         Spacer()
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -738,17 +742,17 @@ struct SettingsLabel: View {
             ZStack {
                 // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
                 // і тонким світлим обведенням усередині, сильнішим зверху
-                RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                RoundedRectangle(cornerRadius: 8.3, style: .continuous)
                     .fill(LinearGradient(colors: gradient ?? [color, color],
                                          startPoint: .top, endPoint: .bottom))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8.3, style: .continuous)
                             .fill(LinearGradient(colors: [.white.opacity(gradient == nil ? lightTop : 0),
                                                           .black.opacity(gradient == nil ? darkBottom : 0)],
                                                  startPoint: .top, endPoint: .bottom))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                        RoundedRectangle(cornerRadius: 8.3, style: .continuous)
                             .strokeBorder(LinearGradient(colors: [.white.opacity(0.28), .white.opacity(0.1)],
                                                          startPoint: .top, endPoint: .bottom),
                                           lineWidth: 0.5)
