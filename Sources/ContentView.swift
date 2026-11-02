@@ -161,15 +161,10 @@ struct ContentView: View {
                         HStack {
                             SettingsLabel("Ключ", icon: "key.fill", color: .orange)
                             Spacer()
-                            if keyValid {
-                                // Той самий розмір, товщина й колір, що й сірі написи праворуч
-                                Image(systemName: "checkmark")
-                                    .font(.body)
-                                    .foregroundStyle(Color(.secondaryLabel))
-                            } else {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                    .foregroundStyle(Color.errorText)
-                            }
+                            // Та сама позначка, що всередині сторінки «Ключ»
+                            Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                .foregroundStyle(keyValid ? Color.okText : Color.errorText)
+                                .font(.title3)
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
