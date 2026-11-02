@@ -27,6 +27,8 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
         UILaunchScreen: {}
+        # Анімації на 120 Гц на iPhone з ProMotion (без цього — не більше 60 к/с)
+        CADisableMinimumFrameDurationOnPhone: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     settings:

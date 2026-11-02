@@ -52,7 +52,9 @@ enum StoreCatalog {
             guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
                   let data = try? Data(contentsOf: url),
                   let face = try? FaceFile(data: data) else { return nil }
-            let image = (try? face.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
+            // Зменшуємо превью один раз під розмір на екрані (3x), щоб прокрутка й анімації не витрачали час на великі зображення
+            let full = (try? face.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
+            let image = full.map { $0.preparingThumbnail(of: CGSize(width: 330, height: 780)) ?? $0 }
             var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
                                  about: e.about, price: nil, face: face, preview: image)
             item.previews = [
@@ -150,6 +152,7 @@ struct StoreView: View {
 
     var body: some View {
         NavigationStack {
+            GeometryReader { geo in
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     chips
@@ -180,8 +183,11 @@ struct StoreView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
                 .padding(.bottom, 16)
+                // Запас у висоті: навіть із двома картками сторінку можна гортати, і рядок пошуку ховається
+                .frame(minHeight: geo.size.height + 70, alignment: .top)
             }
             .refreshable { await onRefresh() }
+            }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
             .storeSearchable(text: $query, prompt: Text("Пошук циферблатів"))
