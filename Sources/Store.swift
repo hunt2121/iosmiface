@@ -245,7 +245,8 @@ struct StoreView: View, Equatable {
                                       filter: $filter, filters: filterOptions))
             .navigationBarTitleDisplayMode(mode == 0 ? .inline : .automatic)
             // F/G: під час пошуку панель навігації з заголовком ховається — рядок піднімається вгору
-            .toolbar((mode == 5 || mode == 6) && searchOpen ? .hidden : .automatic, for: .navigationBar)
+            // A: своя панель замість системної; F/G: під час пошуку панель ховається
+            .toolbar(mode == 0 || searchOpen ? .hidden : .automatic, for: .navigationBar)
         }
     }
 
@@ -526,7 +527,6 @@ private struct StoreSearchMode: ViewModifier {
             // A: своя верхня панель замість системної — кнопка фільтрів і лупа,
             // яка «перетікає» в рядок пошуку (Liquid Glass morph), як у «Пошті»
             content
-                .toolbar(.hidden, for: .navigationBar)
                 .modifier(TopBar {
                     MorphSearchBar(query: $query, open: $searchOpen, filter: $filter, filters: filters)
                 })
