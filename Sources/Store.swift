@@ -26,6 +26,12 @@ struct StoreFace: Identifiable {
     var sizeKB: Int { face.size / 1024 }
     var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
+    var added: Date?   // коли з'явився в магазині
+    /// Додано за останні 28 днів
+    var isNew: Bool {
+        guard let added else { return false }
+        return Date().timeIntervalSince(added) < 28 * 24 * 3600
+    }
 }
 
 enum StoreCatalog {
@@ -35,14 +41,25 @@ enum StoreCatalog {
         let kind: String
         let version: Int
         let about: String
+        let added: String   // дата додавання в магазин, «рррр-мм-дд»
     }
 
     private static let entries = [
         Entry(resource: "BigWatch_UA", name: "BigWatch", kind: "Цифровий", version: 1,
-              about: "Великий цифровий час на весь екран. Знизу дата та кількість кроків."),
+              about: "Великий цифровий час на весь екран. Знизу дата та кількість кроків.",
+              added: "2026-10-31"),
         Entry(resource: "WhatTime_UA", name: "WhatTime", kind: "Гумор", version: 1,
-              about: "Цифровий час, дата та кроки на тлі відомого коміксу.")
+              about: "Цифровий час, дата та кроки на тлі відомого коміксу.",
+              added: "2026-10-31")
     ]
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     /// Каталог читається з файлів один раз за запуск.
     static let cached: [StoreFace] = load()
@@ -57,6 +74,7 @@ enum StoreCatalog {
             let image = full.map { $0.preparingThumbnail(of: CGSize(width: 330, height: 780)) ?? $0 }
             var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
                                  about: e.about, price: nil, face: face, preview: image)
+            item.added = dayFormatter.date(from: e.added)
             item.previews = [
                 FacePreview(title: String(localized: "Звичайний"), image: image)
             ]
@@ -136,6 +154,7 @@ struct StoreView: View {
         faces.filter { f in
             switch filter {
             case "all": break
+            case "new": if !f.isNew { return false }
             case "free": if !f.isFree { return false }
             default: if f.kind != filter { return false }
             }
@@ -204,6 +223,7 @@ struct StoreView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 chip("all", String(localized: "Усі"))
+                chip("new", String(localized: "Нові"))
                 chip("free", String(localized: "Безкоштовні"))
                 ForEach(kinds, id: \.self) { k in chip(k, k) }
             }
