@@ -159,7 +159,7 @@ struct ContentView: View {
                 Section("Пристрій") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "key.fill", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255))  // #2BAD4C — середина systemGreen обох тем, темніша на 15%
+                            SettingsLabel("Ключ", icon: "custom.key", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255))  // #2BAD4C — середина systemGreen обох тем, темніша на 15%
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
@@ -168,7 +168,7 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "doc.text.fill", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255))  // #057FFF — середина systemBlue обох тем
+                        SettingsLabel("Журнал", icon: "custom.doc", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255))  // #057FFF — середина systemBlue обох тем
                     }
                 }
                 Section("Застосунок") {
@@ -740,7 +740,11 @@ struct SettingsLabel: View {
                                           lineWidth: 0.5)
                     )
                 Group {
-                    if icon == "custom.theme" {
+                    if icon == "custom.key" {
+                        KeyGlyph().frame(width: 28.0 / 3, height: 58.0 / 3)  // 28×58 px, відступи 31/31 і 16/16
+                    } else if icon == "custom.doc" {
+                        DocGlyph().frame(width: 46.0 / 3, height: 58.0 / 3)  // 46×58 px, відступи 22/22 і 16/16
+                    } else if icon == "custom.theme" {
                         ThemeGlyph().frame(width: 20, height: 20)
                     } else if icon == "custom.info" {
                         InfoGlyph().frame(width: 20, height: 20)
@@ -855,6 +859,80 @@ struct InfoGlyph: View {
                     .blendMode(.destinationOut)
             }
             .frame(width: d, height: d)
+            .compositingGroup()
+        }
+    }
+}
+
+/// Ключ: кругла головка з отвором, стрижень і два зубці. Малюється точно у своїй рамці.
+struct KeyGlyph: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let s = w * 0.36, th = h * 0.085
+            ZStack(alignment: .topLeading) {
+                Circle().frame(width: w, height: w)
+                RoundedRectangle(cornerRadius: s / 2)
+                    .frame(width: s, height: h - w * 0.8)
+                    .offset(x: w / 2 - s / 2, y: w * 0.8)
+                Capsule()
+                    .frame(width: w * 0.92 - w / 2, height: th)
+                    .offset(x: w / 2, y: h * 0.60)
+                Capsule()
+                    .frame(width: w * 0.80 - w / 2, height: th)
+                    .offset(x: w / 2, y: h * 0.77)
+                Circle()
+                    .frame(width: w * 0.34, height: w * 0.34)
+                    .offset(x: w / 2 - w * 0.17, y: w * 0.42 - w * 0.17)
+                    .blendMode(.destinationOut)
+            }
+            .foregroundStyle(Color.white)
+            .frame(width: w, height: h, alignment: .topLeading)
+            .compositingGroup()
+        }
+    }
+}
+
+/// Аркуш журналу: загнутий куточок і три рядки тексту. Малюється точно у своїй рамці.
+struct DocGlyph: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let f = w * 0.36, g = w * 0.07, r = w * 0.17
+            let lh = h * 0.068, lx = w * 0.24, lw = w * 0.52
+            ZStack(alignment: .topLeading) {
+                // Аркуш із вирізом під куточок
+                Path { p in
+                    p.move(to: CGPoint(x: r, y: 0))
+                    p.addLine(to: CGPoint(x: w - f - g, y: 0))
+                    p.addLine(to: CGPoint(x: w - f - g, y: f + g))
+                    p.addLine(to: CGPoint(x: w, y: f + g))
+                    p.addLine(to: CGPoint(x: w, y: h - r))
+                    p.addQuadCurve(to: CGPoint(x: w - r, y: h), control: CGPoint(x: w, y: h))
+                    p.addLine(to: CGPoint(x: r, y: h))
+                    p.addQuadCurve(to: CGPoint(x: 0, y: h - r), control: CGPoint(x: 0, y: h))
+                    p.addLine(to: CGPoint(x: 0, y: r))
+                    p.addQuadCurve(to: CGPoint(x: r, y: 0), control: CGPoint(x: 0, y: 0))
+                    p.closeSubpath()
+                }
+                // Загнутий куточок
+                Path { p in
+                    p.move(to: CGPoint(x: w - f, y: 0))
+                    p.addLine(to: CGPoint(x: w, y: f))
+                    p.addLine(to: CGPoint(x: w - f + r * 0.6, y: f))
+                    p.addQuadCurve(to: CGPoint(x: w - f, y: f - r * 0.6), control: CGPoint(x: w - f, y: f))
+                    p.closeSubpath()
+                }
+                // Рядки тексту
+                ForEach(Array([(0.5, 1.0), (0.66, 1.0), (0.82, 0.62)].enumerated()), id: \.offset) { _, line in
+                    Capsule()
+                        .frame(width: lw * line.1, height: lh)
+                        .offset(x: lx, y: h * line.0 - lh / 2)
+                        .blendMode(.destinationOut)
+                }
+            }
+            .foregroundStyle(Color.white)
+            .frame(width: w, height: h, alignment: .topLeading)
             .compositingGroup()
         }
     }
