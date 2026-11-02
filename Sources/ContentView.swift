@@ -156,7 +156,7 @@ struct ContentView: View {
     private var settingsTab: some View {
         NavigationStack(path: $settingsPath) {
             Form {
-                Section("Браслет") {
+                Section("Пристрій") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
                             SettingsLabel("Ключ", icon: "key.fill", color: .orange)
@@ -164,7 +164,7 @@ struct ContentView: View {
                             if keyValid {
                                 Image(systemName: "checkmark")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color(.secondaryLabel))
                             } else {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .foregroundStyle(Color.errorText)
@@ -203,7 +203,7 @@ struct ContentView: View {
                     HStack {
                         SettingsLabel("Версія", icon: "info.circle.fill", color: .green)
                         Spacer()
-                        Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
+                        Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -219,7 +219,7 @@ struct ContentView: View {
                     Form {
                         logSection
                         Section {
-                            Text(verbatim: "BandFace v\(Self.versionString).\(Self.buildNumber)")
+                            Text(verbatim: "BandFace \(Self.versionString).\(Self.buildNumber)")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         } header: {
