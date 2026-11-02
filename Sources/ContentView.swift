@@ -194,7 +194,8 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "custom.theme", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255))  // #44ADDB — середина systemCyan обох тем, темніша на 10%
+                        SettingsLabel("Тема", icon: "custom.theme", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255),  // #44ADDB — середина systemCyan обох тем, темніша на 10%
+                                      lightTop: 0.4, darkBottom: 0.12)  // помітніший градієнт
                     }
                     HStack {
                         SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
@@ -709,8 +710,13 @@ struct SettingsLabel: View {
     let title: LocalizedStringKey
     let icon: String
     let color: Color
-    init(_ title: LocalizedStringKey, icon: String, color: Color) {
+    /// Сила градієнта: прозорість світлого верху і темного низу плитки
+    let lightTop: Double
+    let darkBottom: Double
+    init(_ title: LocalizedStringKey, icon: String, color: Color,
+         lightTop: Double = 0.22, darkBottom: Double = 0) {
         self.title = title; self.icon = icon; self.color = color
+        self.lightTop = lightTop; self.darkBottom = darkBottom
     }
     /// Видимий розмір значка в плитці 30 pt: ≈19–20 pt, як у системних налаштуваннях.
     private var glyphBox: CGFloat {
@@ -730,7 +736,7 @@ struct SettingsLabel: View {
                     .fill(color)
                     .overlay(
                         RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                            .fill(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0)],
+                            .fill(LinearGradient(colors: [.white.opacity(lightTop), .black.opacity(darkBottom)],
                                                  startPoint: .top, endPoint: .bottom))
                     )
                     .overlay(
