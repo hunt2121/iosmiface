@@ -161,7 +161,7 @@ struct ContentView: View {
                 Section("Браслет") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "TabKey", color: .orange)
+                            SettingsLabel("Ключ", icon: "key.fill", color: .orange)
                             Spacer()
                             if keyValid {
                                 Image(systemName: "checkmark")
@@ -174,7 +174,7 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "TabLog", color: .gray)
+                        SettingsLabel("Журнал", icon: "doc.text.fill", color: .blue)
                     }
                 }
                 Section("Застосунок") {
@@ -184,7 +184,7 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "IconLanguage", color: .blue)
+                            SettingsLabel("Мова", icon: "globe", color: .purple)
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
                             Image(systemName: "arrow.up.right")
@@ -199,10 +199,10 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "IconTheme", color: .purple)
+                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .cyan)
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "IconInfo", color: .gray)
+                        SettingsLabel("Версія", icon: "info.circle.fill", color: .green)
                         Spacer()
                         Text(verbatim: "v\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -755,14 +755,19 @@ struct SettingsLabel: View {
         Label {
             Text(title)
         } icon: {
-            Group {
-                if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
-                    Image(icon).renderingMode(.template)
-                } else {
-                    Image(systemName: icon).font(.system(size: 20, weight: .medium))
+            ZStack {
+                RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                    .fill(LinearGradient(colors: [color.opacity(0.78), color],
+                                         startPoint: .top, endPoint: .bottom))
+                Group {
+                    if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
+                        Image(icon).renderingMode(.template)
+                    } else {
+                        Image(systemName: icon).font(.system(size: 17, weight: .semibold))
+                    }
                 }
+                .foregroundStyle(.white)
             }
-            .foregroundStyle(.primary)
             .frame(width: 30, height: 30)
         }
     }
