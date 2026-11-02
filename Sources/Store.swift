@@ -147,7 +147,6 @@ struct StoreView: View, Equatable {
     let onRefresh: () async -> Void
 
     @State private var query = ""
-    private static let minContentHeight = UIScreen.main.bounds.height
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -214,17 +213,11 @@ struct StoreView: View, Equatable {
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
                 .padding(.bottom, 16)
-                // Запас у висоті: навіть із двома картками сторінку можна гортати, і рядок пошуку ховається.
-                // Стала висота екрана, а не GeometryReader: інакше під час анімації пошуку
-                // сітка перераховувалась у кожному кадрі й анімація йшла ривками
-                .frame(minHeight: Self.minContentHeight, alignment: .top)
             }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            // Системний пошук: скляним стає лише після натискання, ховається при гортанні
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
-                        prompt: Text("Пошук циферблатів"))
+            .storeSearch(text: $query)
         }
     }
 
@@ -479,6 +472,20 @@ private struct ChipRow<Content: View>: View {
             }
         } else {
             HStack(spacing: 8) { content }
+        }
+    }
+}
+
+extension View {
+    /// Пошук магазину. На iOS 26 — рідний скляний рядок унизу екрана, над вкладками
+    /// (лише на цій сторінці, вигляд iOS 26 і до, і після натискання).
+    /// На старіших версіях — рядок під заголовком.
+    @ViewBuilder func storeSearch(text: Binding<String>) -> some View {
+        if #available(iOS 26, *) {
+            self.searchable(text: text, prompt: Text("Пошук циферблатів"))
+        } else {
+            self.searchable(text: text, placement: .navigationBarDrawer(displayMode: .automatic),
+                            prompt: Text("Пошук циферблатів"))
         }
     }
 }
