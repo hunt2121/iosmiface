@@ -735,12 +735,11 @@ struct SettingsLabel: View {
     init(_ title: LocalizedStringKey, icon: String, color: Color) {
         self.title = title; self.icon = icon; self.color = color
     }
-    /// Розмір значка в плитці 30 pt: видима частина ≈ 17 pt (як у системних налаштуваннях).
-    private var glyphSize: CGFloat {
+    /// Видимий розмір значка в плитці 30 pt: ≈19–20 pt, як у системних налаштуваннях.
+    private var glyphBox: CGFloat {
         switch icon {
-        case "key.fill": return 14
-        case "doc.text.fill": return 16
-        default: return 13
+        case "key.fill", "doc.text.fill": return 19
+        default: return 20
         }
     }
     var body: some View {
@@ -755,7 +754,11 @@ struct SettingsLabel: View {
                     if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
                     } else {
-                        Image(systemName: icon).font(.system(size: glyphSize, weight: .semibold))
+                        Image(systemName: icon)
+                            .resizable()
+                            .scaledToFit()
+                            .fontWeight(.semibold)
+                            .frame(width: glyphBox, height: glyphBox)
                     }
                 }
                 .foregroundStyle(.white)
