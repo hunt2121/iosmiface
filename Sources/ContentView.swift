@@ -195,7 +195,7 @@ struct ContentView: View {
                         Text("Темна").tag("dark")
                     } label: {
                         SettingsLabel("Тема", icon: "custom.theme", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255),  // #44ADDB — середина systemCyan обох тем, темніша на 10%
-                                      lightTop: 0.4, darkBottom: 0.12)  // помітніший градієнт
+                                      lightTop: 0.31, darkBottom: 0.06)  // середина між звичайним (0.22/0) і посиленим (0.4/0.12)
                     }
                     HStack {
                         SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
