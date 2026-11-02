@@ -580,9 +580,13 @@ private struct MorphGlass: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             if circle {
-                content.glassEffect(.regular, in: Circle()).glassEffectID(id, in: ns)
+                content.glassEffect(.regular, in: Circle())
+                    .glassEffectID(id, in: ns)
+                    .glassEffectTransition(.matchedGeometry)
             } else {
-                content.glassEffect(.regular, in: Capsule()).glassEffectID(id, in: ns)
+                content.glassEffect(.regular, in: Capsule())
+                    .glassEffectID(id, in: ns)
+                    .glassEffectTransition(.matchedGeometry)
             }
         } else {
             if circle { content.background(Circle().fill(Color(.tertiarySystemFill))) }
@@ -628,21 +632,19 @@ struct LiquidSearchBar: View {
     }
 
     private var row: some View {
-        HStack(spacing: 0) {
-            if style != .field {
+        // Кнопки додаються й прибираються цілком (а не стискаються до нуля):
+        // так GlassEffectContainer «видавлює» нове скло з сусіднього і вбирає його назад
+        HStack(spacing: gap) {
+            if showFilter {
                 filterButton
-                    .frame(width: showFilter ? size : 0, height: size)
-                    .opacity(showFilter ? 1 : 0)
-                    .padding(.trailing, showFilter ? gap : 0)
-                    .allowsHitTesting(showFilter)
+                    .transition(.identity)
             }
             if !searchExpanded { Spacer(minLength: 0) }
             searchField
-            closeButton
-                .frame(width: active ? size : 0, height: size)
-                .opacity(active ? 1 : 0)
-                .padding(.leading, active ? gap : 0)
-                .allowsHitTesting(active)
+            if active {
+                closeButton
+                    .transition(.identity)
+            }
         }
         .modifier(BlocksTouchesBehind())
         .onChange(of: focused) { f in
