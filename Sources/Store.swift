@@ -537,50 +537,9 @@ private struct StoreSearchMode: ViewModifier {
 }
 
 
-private struct FieldGlass: ViewModifier {
-    var circle = false
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            if circle { content.glassEffect(.regular.interactive(), in: Circle()) }
-            else { content.glassEffect(.regular, in: Capsule()) }
-        } else {
-            if circle { content.background(Circle().fill(Color(.tertiarySystemFill))) }
-            else { content.background(Capsule().fill(Color(.tertiarySystemFill))) }
-        }
-    }
-}
 
 
 
-/// Кругла кнопка закриття. На iOS 26 — системна скляна кнопка: iOS сама обробляє дотик,
-/// тож натискання не «провалюються» до того, що під кнопкою, і не губляться.
-struct CloseCircleButton: View {
-    let size: CGFloat
-    let action: () -> Void
-
-    var body: some View {
-        if #available(iOS 26, *) {
-            Button(action: action) {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .frame(width: size - 16, height: size - 16)
-            }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-            .accessibilityLabel(Text("Закрити"))
-        } else {
-            Button(action: action) {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .frame(width: size, height: size)
-                    .background(Circle().fill(Color(.tertiarySystemFill)))
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Закрити"))
-        }
-    }
-}
 
 
 /// Варіанти F і G: скляний рядок пошуку (і кнопка фільтрів) — однаковий вигляд до й після натискання.
@@ -667,33 +626,6 @@ struct TopSearchBar: View {
     }
 }
 
-/// Кругла кнопка фільтрів із меню. На iOS 26 — системна скляна кнопка.
-struct FilterMenuButton: View {
-    @Binding var filter: String
-    let filters: [(String, String)]
-    let size: CGFloat
-
-    var body: some View {
-        let menu = Menu {
-            Picker(selection: $filter) {
-                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-            } label: { EmptyView() }
-        } label: {
-            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                              : "line.3.horizontal.decrease.circle.fill")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                .frame(width: size - 16, height: size - 16)
-        }
-        .accessibilityLabel(Text("Фільтр"))
-        if #available(iOS 26, *) {
-            menu.buttonStyle(.glass).buttonBorderShape(.circle)
-        } else {
-            menu.frame(width: size, height: size)
-                .background(Circle().fill(Color(.tertiarySystemFill)))
-        }
-    }
-}
 
 /// Натискання в проміжках між кнопками панелі не проходять до карток під нею.
 private struct BlocksTouchesBehind: ViewModifier {
