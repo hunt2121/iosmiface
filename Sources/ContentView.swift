@@ -194,10 +194,10 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255))  // #44ADDB — середина systemCyan обох тем, темніша на 10%
+                        SettingsLabel("Тема", icon: "custom.theme", color: Color(red: 68 / 255, green: 173 / 255, blue: 219 / 255))  // #44ADDB — середина systemCyan обох тем, темніша на 10%
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "info.circle.fill", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
+                        SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
                         Spacer()
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -740,8 +740,12 @@ struct SettingsLabel: View {
                                           lineWidth: 0.5)
                     )
                 Group {
-                    if icon == "custom.globe" {
-                        GlobeGlyph().frame(width: 59.0 / 3, height: 59.0 / 3)  // 59 px на 3x — як «Тема» і «Версія»
+                    if icon == "custom.theme" {
+                        ThemeGlyph().frame(width: 20, height: 20)
+                    } else if icon == "custom.info" {
+                        InfoGlyph().frame(width: 20, height: 20)
+                    } else if icon == "custom.globe" {
+                        GlobeGlyph().frame(width: 20, height: 20)  // 60 px на 3x, рівно по центру плитки 90 px
                     } else if icon.hasPrefix("Tab") || icon.hasPrefix("Icon") {
                         Image(icon).renderingMode(.template)
                     } else {
@@ -807,3 +811,51 @@ struct GlobeGlyph: View {
     }
 }
 
+/// Коло з лівою зафарбованою половиною (тема), точно 20×20 pt.
+struct ThemeGlyph: View {
+    var body: some View {
+        GeometryReader { geo in
+            let d = min(geo.size.width, geo.size.height)
+            let ring = d * 0.1
+            let gap = d * 0.09
+            ZStack {
+                Circle().strokeBorder(Color.white, lineWidth: ring)
+                // Ліва половина внутрішнього кола
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: d - 2 * (ring + gap), height: d - 2 * (ring + gap))
+                    .mask(
+                        HStack(spacing: 0) {
+                            Rectangle()
+                            Color.clear
+                        }
+                    )
+            }
+            .frame(width: d, height: d)
+        }
+    }
+}
+
+/// Суцільне коло з прорізаною літерою «i» (версія), точно 20×20 pt.
+struct InfoGlyph: View {
+    var body: some View {
+        GeometryReader { geo in
+            let d = min(geo.size.width, geo.size.height)
+            ZStack {
+                Circle().fill(Color.white)
+                // Крапка
+                Circle()
+                    .frame(width: d * 0.14, height: d * 0.14)
+                    .offset(y: -d * 0.22)
+                    .blendMode(.destinationOut)
+                // Ніжка
+                Capsule()
+                    .frame(width: d * 0.12, height: d * 0.36)
+                    .offset(y: d * 0.1)
+                    .blendMode(.destinationOut)
+            }
+            .frame(width: d, height: d)
+            .compositingGroup()
+        }
+    }
+}
