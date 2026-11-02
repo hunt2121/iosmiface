@@ -147,6 +147,9 @@ struct StoreView: View, Equatable {
     let onRefresh: () async -> Void
 
     @State private var query = ""
+    /// Тимчасовий експеримент: 0 — кнопка пошуку біля заголовка, 1 — пошук унизу, 2 — пошук унизу з кнопкою фільтрів
+    @AppStorage("storeSearchMode") private var searchMode = 0
+    @State private var searchOpen = false
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -185,7 +188,14 @@ struct StoreView: View, Equatable {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
                 VStack(alignment: .leading, spacing: 14) {
-                    chips
+                    if searchMode == 0 && searchOpen {
+                        StoreSearchField(text: $query) {
+                            withAnimation(.snappy) { searchOpen = false }
+                            query = ""
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    if searchMode != 2 { chips }
                     if items.isEmpty {
                         Text("Нічого не знайдено")
                             .foregroundStyle(.secondary)
@@ -217,8 +227,15 @@ struct StoreView: View, Equatable {
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            .storeSearch(text: $query)
+            .modifier(StoreSearchMode(mode: searchMode, query: $query, searchOpen: $searchOpen,
+                                      filter: $filter, filters: filterOptions))
         }
+    }
+
+    /// Пункти фільтра: (ідентифікатор, назва)
+    private var filterOptions: [(String, String)] {
+        [("all", String(localized: "Усі")), ("new", String(localized: "Нові")),
+         ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
     }
 
     private var chips: some View {
@@ -476,16 +493,114 @@ private struct ChipRow<Content: View>: View {
     }
 }
 
-extension View {
-    /// Пошук магазину. На iOS 26 — рідний скляний рядок унизу екрана, над вкладками
-    /// (лише на цій сторінці, вигляд iOS 26 і до, і після натискання).
-    /// На старіших версіях — рядок під заголовком.
-    @ViewBuilder func storeSearch(text: Binding<String>) -> some View {
+/// Тимчасовий експеримент із пошуком магазину.
+private struct StoreSearchMode: ViewModifier {
+    let mode: Int
+    @Binding var query: String
+    @Binding var searchOpen: Bool
+    @Binding var filter: String
+    let filters: [(String, String)]
+
+    func body(content: Content) -> some View {
+        switch mode {
+        case 0:
+            // Кнопка-лупа біля заголовка; рядок пошуку з'являється над мітками
+            content.toolbar {
+                if !searchOpen {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            withAnimation(.snappy) { searchOpen = true }
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityLabel(Text("Пошук циферблатів"))
+                    }
+                }
+            }
+        case 2:
+            if #available(iOS 26, *) {
+                // Пошук унизу і поруч кнопка фільтрів, як у системних застосунках
+                content
+                    .searchable(text: $query, prompt: Text("Пошук циферблатів"))
+                    .toolbar {
+                        ToolbarItem(placement: .bottomBar) {
+                            Menu {
+                                Picker(selection: $filter) {
+                                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                                } label: { EmptyView() }
+                            } label: {
+                                Image(systemName: filter == "all"
+                                      ? "line.3.horizontal.decrease"
+                                      : "line.3.horizontal.decrease.circle.fill")
+                            }
+                        }
+                        ToolbarSpacer(.fixed, placement: .bottomBar)
+                        DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                    }
+            } else {
+                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
+                                   prompt: Text("Пошук циферблатів"))
+            }
+        default:
+            if #available(iOS 26, *) {
+                content.searchable(text: $query, prompt: Text("Пошук циферблатів"))
+            } else {
+                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
+                                   prompt: Text("Пошук циферблатів"))
+            }
+        }
+    }
+}
+
+/// Рядок пошуку для варіанта з кнопкою: скляний (iOS 26) з першої миті, одразу з клавіатурою.
+struct StoreSearchField: View {
+    @Binding var text: String
+    let onClose: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Color(.secondaryLabel))
+                TextField("Пошук циферблатів", text: $text)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .onSubmit { focused = false }
+                if !text.isEmpty {
+                    Button { text = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .modifier(FieldGlass())
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .modifier(FieldGlass(circle: true))
+            .accessibilityLabel(Text("Закрити"))
+        }
+        .onAppear { focused = true }
+    }
+}
+
+private struct FieldGlass: ViewModifier {
+    var circle = false
+    func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            self.searchable(text: text, prompt: Text("Пошук циферблатів"))
+            if circle { content.glassEffect(.regular.interactive(), in: Circle()) }
+            else { content.glassEffect(.regular, in: Capsule()) }
         } else {
-            self.searchable(text: text, placement: .navigationBarDrawer(displayMode: .automatic),
-                            prompt: Text("Пошук циферблатів"))
+            if circle { content.background(Circle().fill(Color(.tertiarySystemFill))) }
+            else { content.background(Capsule().fill(Color(.tertiarySystemFill))) }
         }
     }
 }

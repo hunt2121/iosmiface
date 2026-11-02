@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
+    @AppStorage("storeSearchMode") private var storeSearchMode = 0  // тимчасовий експеримент
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
@@ -203,6 +204,18 @@ struct ContentView: View {
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
+                }
+                // Тимчасово: варіанти пошуку в магазині
+                Section {
+                    Picker(selection: $storeSearchMode) {
+                        Text(verbatim: "A · Кнопка біля заголовка").tag(0)
+                        Text(verbatim: "B · Пошук унизу").tag(1)
+                        Text(verbatim: "C · Пошук унизу з фільтром").tag(2)
+                    } label: {
+                        Text(verbatim: "Пошук у магазині")
+                    }
+                } header: {
+                    Text(verbatim: "Експеримент")
                 }
             }
             .navigationTitle("Налаштування")
