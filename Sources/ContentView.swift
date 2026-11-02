@@ -755,7 +755,7 @@ struct SettingsLabel: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 8.3, style: .continuous)
                             // Обводка в 1 фізичний піксель, майже рівномірна (як у прикладі)
-                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0.2)],
+                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.22)],
                                                          startPoint: .top, endPoint: .bottom),
                                           lineWidth: 1 / displayScale)
                     )
