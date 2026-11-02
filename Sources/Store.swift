@@ -611,14 +611,11 @@ struct StoreSearchField: View {
             .frame(height: 44)
             .modifier(FieldGlass())
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 44, height: 44)
+            // Спершу ховаємо клавіатуру, потім закриваємо пошук — інакше анімації заважають одна одній
+            CloseCircleButton(size: 44) {
+                focused = false
+                onClose()
             }
-            .buttonStyle(.plain)
-            .modifier(FieldGlass(circle: true))
-            .accessibilityLabel(Text("Закрити"))
         }
         .onAppear { focused = true }
     }
@@ -702,19 +699,40 @@ struct BottomSearchBar: View {
             .onTapGesture { focused = true }
 
             if focused {
-                Button {
-                    focused = false
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 48, height: 48)
-                }
-                .buttonStyle(.plain)
-                .modifier(FieldGlass(circle: true))
-                .transition(.scale.combined(with: .opacity))
-                .accessibilityLabel(Text("Закрити"))
+                CloseCircleButton(size: 48) { focused = false }
+                    .transition(.scale.combined(with: .opacity))
             }
         }
         .animation(.snappy(duration: 0.3), value: focused)
+    }
+}
+
+/// Кругла кнопка закриття. На iOS 26 — системна скляна кнопка: iOS сама обробляє дотик,
+/// тож натискання не «провалюються» до того, що під кнопкою, і не губляться.
+struct CloseCircleButton: View {
+    let size: CGFloat
+    let action: () -> Void
+
+    var body: some View {
+        if #available(iOS 26, *) {
+            Button(action: action) {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
+                    .frame(width: size - 16, height: size - 16)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel(Text("Закрити"))
+        } else {
+            Button(action: action) {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
+                    .frame(width: size, height: size)
+                    .background(Circle().fill(Color(.tertiarySystemFill)))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Закрити"))
+        }
     }
 }
