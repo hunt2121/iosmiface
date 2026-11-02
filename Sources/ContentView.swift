@@ -186,8 +186,8 @@ struct ContentView: View {
                             Spacer()
                             Text(Self.languageName).foregroundStyle(.secondary)
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
-                            Image(systemName: "arrow.up.forward")
-                                .font(.system(size: 17, weight: .semibold))
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 18, weight: .regular))
                                 .foregroundStyle(Color(.secondaryLabel))
                         }
                         .foregroundStyle(.primary)
