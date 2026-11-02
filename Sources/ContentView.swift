@@ -197,7 +197,7 @@ struct ContentView: View {
                         SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .cyan)
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "info.circle.fill", color: Color(.systemGray2))
+                        SettingsLabel("Версія", icon: "info.circle.fill", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
                         Spacer()
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
