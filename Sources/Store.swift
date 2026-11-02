@@ -157,6 +157,7 @@ struct StoreView: View {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
                 VStack(alignment: .leading, spacing: 14) {
+                    StoreSearchField(text: $query)
                     chips
                     if items.isEmpty {
                         Text("Нічого не знайдено")
@@ -193,7 +194,9 @@ struct StoreView: View {
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
-            .storeSearchable(text: $query, prompt: Text("Пошук циферблатів"))
+            // Власний рядок пошуку в самій сторінці: без системної анімації панелі навігації,
+            // яка йшла ривками й «блимала» підказкою. Їде вгору разом зі сторінкою.
+            .scrollDismissesKeyboard(.immediately)
         }
     }
 
@@ -430,5 +433,50 @@ struct StoreDetailView: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// Рядок пошуку магазину: скляна капсула з лупою, полем і кнопкою очищення.
+struct StoreSearchField: View {
+    @Binding var text: String
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Color(.secondaryLabel))
+            TextField("Пошук циферблатів", text: $text)
+                .focused($focused)
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+                .onSubmit { focused = false }
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color(.tertiaryLabel))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Очистити"))
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .modifier(SearchGlass())
+        .contentShape(Capsule())
+        .onTapGesture { focused = true }
+    }
+}
+
+/// Скло для рядка пошуку (без «пружинки» при дотику, як у системного поля)
+private struct SearchGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content.background(Capsule().fill(Color(.tertiarySystemFill)))
+        }
     }
 }
