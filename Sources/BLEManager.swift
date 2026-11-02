@@ -50,9 +50,20 @@ final class BLEManager: NSObject, ObservableObject {
     private var writeQueue: [PendingWrite] = []
     private var notifyCompletions: [CBUUID: (Bool) -> Void] = [:]
 
+    /// Для діагностичних записів із місць, де немає доступу до екземпляра
+    private(set) static weak var shared: BLEManager?
+
     override init() {
         super.init()
         central = CBCentralManager(delegate: self, queue: .main)
+        Self.shared = self
+    }
+
+    /// Діагностика плавності: записує перемальовування екрана (лише в «Режимі розробника»).
+    /// Запис відкладається, щоб не змінювати дані під час оновлення інтерфейсу.
+    static func noteRedraw(_ screen: String) {
+        guard UserDefaults.standard.bool(forKey: "verboseLog") else { return }
+        DispatchQueue.main.async { shared?.debug("Перемальовування: \(screen)") }
     }
 
     func addLog(_ text: String) {
