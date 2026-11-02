@@ -723,6 +723,7 @@ struct SettingsLabel: View {
     let darkBottom: Double
     /// Власні кольори градієнта згори донизу (тоді без білого шару)
     let gradient: [Color]?
+    @Environment(\.displayScale) private var displayScale
     init(_ title: LocalizedStringKey, icon: String, color: Color,
          lightTop: Double = 0.22, darkBottom: Double = 0, gradient: [Color]? = nil) {
         self.title = title; self.icon = icon; self.color = color
@@ -753,9 +754,10 @@ struct SettingsLabel: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8.3, style: .continuous)
-                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.28), .white.opacity(0.1)],
+                            // Обводка в 1 фізичний піксель, майже рівномірна (як у прикладі)
+                            .strokeBorder(LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0.2)],
                                                          startPoint: .top, endPoint: .bottom),
-                                          lineWidth: 0.5)
+                                          lineWidth: 1 / displayScale)
                     )
                 Group {
                     if icon == "custom.key" {
