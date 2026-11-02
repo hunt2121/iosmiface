@@ -592,13 +592,36 @@ struct TopSearchBar: View {
     /// Пошук активний: сторінка ховає заголовок, і рядок піднімається вгору
     @Binding var active: Bool
     @FocusState private var focused: Bool
+    @Namespace private var glass
 
     var body: some View {
+        // На iOS 26 усе скло в одному контейнері: кнопка фільтрів «вливається» в рядок пошуку
+        // і з'являється з нього назад (Liquid Glass morph)
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 10) { row }
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 10) {
             // Під час пошуку кнопка фільтрів ховається, рядок займає її місце
             if showFilter && !active {
-                FilterMenuButton(filter: $filter, filters: filters, size: 44)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                Menu {
+                    Picker(selection: $filter) {
+                        ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                    } label: { EmptyView() }
+                } label: {
+                    Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                      : "line.3.horizontal.decrease.circle.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                        .frame(width: 44, height: 44)
+                        .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
+                        .contentShape(Circle())
+                }
+                .accessibilityLabel(Text("Фільтр"))
             }
 
             HStack(spacing: 8) {
@@ -618,20 +641,28 @@ struct TopSearchBar: View {
             }
             .padding(.horizontal, 14)
             .frame(height: 44)
-            .modifier(FieldGlass())
+            .modifier(MorphGlass(id: "search", ns: glass, circle: false))
             .contentShape(Capsule())
             .onTapGesture { focused = true }
 
             if focused {
-                CloseCircleButton(size: 44) { focused = false }
-                    .transition(.scale.combined(with: .opacity))
+                Button { focused = false } label: {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 44, height: 44)
+                        .modifier(MorphGlass(id: "close", ns: glass, circle: true))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Закрити"))
             }
         }
-        .animation(.snappy(duration: 0.35), value: focused)
-        .animation(.snappy(duration: 0.35), value: active)
+        .animation(.bouncy(duration: 0.4), value: focused)
+        .animation(.bouncy(duration: 0.4), value: active)
         .modifier(BlocksTouchesBehind())
         .onChange(of: focused) { f in
-            withAnimation(.snappy(duration: 0.35)) { active = f }
+            withAnimation(.bouncy(duration: 0.4)) { active = f }
         }
     }
 }
