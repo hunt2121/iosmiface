@@ -162,9 +162,13 @@ struct ContentView: View {
                             SettingsLabel("Ключ", icon: "key.fill", color: .orange)
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
-                            Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundStyle(keyValid ? Color.okText : Color.errorText)
-                                .font(.title3)
+                            if keyValid {
+                                OkBadge()
+                            } else {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundStyle(Color.errorText)
+                                    .font(.title3)
+                            }
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
@@ -197,7 +201,7 @@ struct ContentView: View {
                         SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .cyan)
                     }
                     HStack {
-                        SettingsLabel("Версія", icon: "info.circle.fill", color: .green)
+                        SettingsLabel("Версія", icon: "info.circle.fill", color: Color(.systemGray2))
                         Spacer()
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
@@ -314,9 +318,13 @@ struct ContentView: View {
                             // Ключ змінили вручну — старе «Ключ знайдено…» вже не про нього
                             if !foundDevices.contains(where: { $0.key == key.lowercased() }) { keyStatus = nil }
                         }
-                    Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(keyValid ? Color.okText : Color.secondary)
-                        .font(.title3)
+                    if keyValid {
+                        OkBadge()
+                    } else {
+                        Image(systemName: "exclamationmark.circle")
+                            .foregroundStyle(Color.secondary)
+                            .font(.title3)
+                    }
                 }
                 // Відступ від ключа до кнопки такий самий, як від верху картки до ключа
                 .padding(.bottom, 7)
@@ -804,5 +812,34 @@ struct GlobeGlyph: View {
             .frame(width: d, height: d)
             .compositingGroup()
         }
+    }
+}
+
+/// Зелена позначка «ключ є»: градієнт і скляний відблиск, як у плитках налаштувань.
+/// Колір на 15% темніший за системний зелений.
+struct OkBadge: View {
+    private static let green = Color(red: 0.204 * 0.85, green: 0.780 * 0.85, blue: 0.349 * 0.85)
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Self.green)
+            // М'який градієнт: світліше вгорі
+            Circle().fill(LinearGradient(colors: [.white.opacity(0.28), .white.opacity(0)],
+                                         startPoint: .top, endPoint: .bottom))
+            // Скляний відблиск у верхній половині
+            Ellipse()
+                .fill(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0)],
+                                     startPoint: .top, endPoint: .bottom))
+                .frame(width: 16, height: 9)
+                .offset(y: -5)
+            Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0.12)],
+                                                 startPoint: .top, endPoint: .bottom),
+                                  lineWidth: 0.5)
+            Image(systemName: "checkmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 23, height: 23)
+        .shadow(color: Self.green.opacity(0.35), radius: 2, y: 1)
     }
 }
