@@ -569,6 +569,10 @@ private struct StoreSearchMode: ViewModifier {
             }
         case 3, 4:
             content
+        case 5:
+            // F: системний пошук угорі, завжди видимий (як у «Файлах»); заголовок ховається над ним при гортанні
+            content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
+                               prompt: Text("Пошук циферблатів"))
         default:
             if #available(iOS 26, *) {
                 content.searchable(text: $query, prompt: Text("Пошук циферблатів"))
