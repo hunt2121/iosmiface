@@ -195,8 +195,11 @@ struct ContentView: View {
                         Text("Темна").tag("dark")
                     } label: {
                         SettingsLabel("Тема", icon: "custom.theme",
-                                      color: Color(red: 242 / 255, green: 165 / 255, blue: 63 / 255),     // низ #F2A53F
-                                      topColor: Color(red: 246 / 255, green: 195 / 255, blue: 93 / 255))  // верх #F6C35D
+                                      color: Color(red: 240 / 255, green: 165 / 255, blue: 63 / 255),
+                                      // Виміряно з прикладу: світлий довше тримається вгорі, темніє ближче до низу
+                                      gradient: [Color(red: 245 / 255, green: 197 / 255, blue: 96 / 255),    // #F5C560
+                                                 Color(red: 242 / 255, green: 185 / 255, blue: 92 / 255),    // #F2B95C
+                                                 Color(red: 239 / 255, green: 164 / 255, blue: 62 / 255)])   // #EFA43E
                     }
                     HStack {
                         SettingsLabel("Версія", icon: "custom.info", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
@@ -714,12 +717,12 @@ struct SettingsLabel: View {
     /// Сила градієнта: прозорість світлого верху і темного низу плитки
     let lightTop: Double
     let darkBottom: Double
-    /// Власний колір верху градієнта (тоді `color` — низ, без білого шару)
-    let topColor: Color?
+    /// Власні кольори градієнта згори донизу (тоді без білого шару)
+    let gradient: [Color]?
     init(_ title: LocalizedStringKey, icon: String, color: Color,
-         lightTop: Double = 0.22, darkBottom: Double = 0, topColor: Color? = nil) {
+         lightTop: Double = 0.22, darkBottom: Double = 0, gradient: [Color]? = nil) {
         self.title = title; self.icon = icon; self.color = color
-        self.lightTop = lightTop; self.darkBottom = darkBottom; self.topColor = topColor
+        self.lightTop = lightTop; self.darkBottom = darkBottom; self.gradient = gradient
     }
     /// Видимий розмір значка в плитці 30 pt: ≈19–20 pt, як у системних налаштуваннях.
     private var glyphBox: CGFloat {
@@ -736,12 +739,12 @@ struct SettingsLabel: View {
                 // Плитка: колір із м'яким градієнтом (світліше вгорі, темніше внизу)
                 // і тонким світлим обведенням усередині, сильнішим зверху
                 RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                    .fill(LinearGradient(colors: [topColor ?? color, color],
+                    .fill(LinearGradient(colors: gradient ?? [color, color],
                                          startPoint: .top, endPoint: .bottom))
                     .overlay(
                         RoundedRectangle(cornerRadius: 7.5, style: .continuous)
-                            .fill(LinearGradient(colors: [.white.opacity(topColor == nil ? lightTop : 0),
-                                                          .black.opacity(topColor == nil ? darkBottom : 0)],
+                            .fill(LinearGradient(colors: [.white.opacity(gradient == nil ? lightTop : 0),
+                                                          .black.opacity(gradient == nil ? darkBottom : 0)],
                                                  startPoint: .top, endPoint: .bottom))
                     )
                     .overlay(
