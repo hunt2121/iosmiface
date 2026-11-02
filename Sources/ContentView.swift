@@ -159,7 +159,7 @@ struct ContentView: View {
                 Section("Пристрій") {
                     NavigationLink(value: SettingsRoute.key) {
                         HStack {
-                            SettingsLabel("Ключ", icon: "key.fill", color: Color(red: 0.204 * 0.85, green: 0.780 * 0.85, blue: 0.349 * 0.85))  // зелений, на 15% темніший за системний
+                            SettingsLabel("Ключ", icon: "key.fill", color: Color(red: 43 / 255, green: 173 / 255, blue: 76 / 255))  // #2BAD4C — середина systemGreen обох тем, темніша на 15%
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
@@ -168,7 +168,7 @@ struct ContentView: View {
                         }
                     }
                     NavigationLink(value: SettingsRoute.log) {
-                        SettingsLabel("Журнал", icon: "doc.text.fill", color: .blue)
+                        SettingsLabel("Журнал", icon: "doc.text.fill", color: Color(red: 5 / 255, green: 127 / 255, blue: 255 / 255))  // #057FFF — середина systemBlue обох тем
                     }
                 }
                 Section("Застосунок") {
@@ -178,7 +178,7 @@ struct ContentView: View {
                         }
                     } label: {
                         HStack {
-                            SettingsLabel("Мова", icon: "custom.globe", color: .purple)
+                            SettingsLabel("Мова", icon: "custom.globe", color: Color(red: 183 / 255, green: 86 / 255, blue: 232 / 255))  // #B756E8 — середина systemPurple обох тем
                             Spacer()
                             Text(Self.languageName).foregroundStyle(Color(.secondaryLabel))
                             // Стрілка переходу назовні (у системні налаштування), в стилі Apple
@@ -194,7 +194,7 @@ struct ContentView: View {
                         Text("Світла").tag("light")
                         Text("Темна").tag("dark")
                     } label: {
-                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: .cyan)
+                        SettingsLabel("Тема", icon: "circle.lefthalf.filled", color: Color(red: 75 / 255, green: 192 / 255, blue: 243 / 255))  // #4BC0F3 — середина systemCyan обох тем
                     }
                     HStack {
                         SettingsLabel("Версія", icon: "info.circle.fill", color: Color(red: 137 / 255, green: 137 / 255, blue: 140 / 255))  // #89898C — середина між systemGray2 світлої й темної тем
