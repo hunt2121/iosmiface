@@ -221,7 +221,6 @@ struct StoreView: View {
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
-                .background(Capsule().fill(on ? Color.accentColor : Color.clear))
                 .modifier(ChipGlass(on: on))
         }
         .buttonStyle(.plain)
@@ -274,10 +273,16 @@ struct StoreView: View {
     }
 }
 
+/// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
+/// На старіших версіях вибрана зафарбована акцентним кольором.
 private struct ChipGlass: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
-        if on { content } else { content.capsuleGlass() }
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular.tint(on ? Color.accentColor : nil).interactive(), in: Capsule())
+        } else {
+            content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
+        }
     }
 }
 
