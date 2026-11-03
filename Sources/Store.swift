@@ -154,8 +154,9 @@ struct StoreView: View, Equatable {
     @State private var titleBottom: CGFloat = 1000
     /// Нижній край верхньої панелі на екрані (варіант A)
     @State private var barBottom: CGFloat = 0
-    /// Відкрита сторінка циферблата — панель B (поверх системної) тоді ховаємо
-    @State private var detailOpen = false
+    /// Шлях навігації: змінюється на самому початку переходу (і вперед, і назад),
+    /// тож панель B рушає синхронно зі сторінкою
+    @State private var path: [String] = []
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -189,7 +190,7 @@ struct StoreView: View, Equatable {
     var body: some View {
         // «Режим розробника»: у журнал пишеться кожне перемальовування сторінки магазину
         BLEManager.noteRedraw("Магазин")
-        return NavigationStack {
+        return NavigationStack(path: $path) {
             ScrollView {
                     // Фільтр рахуємо один раз за оновлення екрана
                     let items = shown
@@ -222,17 +223,7 @@ struct StoreView: View, Equatable {
                                 } else {
                                     LazyVGrid(columns: columns, spacing: 12) {
                                         ForEach(items) { item in
-                                            NavigationLink {
-                                                StoreDetailView(item: item,
-                                                                state: state(item),
-                                                                installedVersion: installed[item.id],
-                                                                busy: busy,
-                                                                progress: progress,
-                                                                progressText: progressText,
-                                                                onInstall: onInstall)
-                                                    .onAppear { detailOpen = true }
-                                                    .onDisappear { detailOpen = false }
-                                            } label: {
+                                            NavigationLink(value: item.id) {
                                                 card(item)
                                             }
                                             .buttonStyle(.plain)
@@ -250,6 +241,17 @@ struct StoreView: View, Equatable {
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
+            .navigationDestination(for: String.self) { id in
+                if let item = faces.first(where: { $0.id == id }) {
+                    StoreDetailView(item: item,
+                                    state: state(item),
+                                    installedVersion: installed[item.id],
+                                    busy: busy,
+                                    progress: progress,
+                                    progressText: progressText,
+                                    onInstall: onInstall)
+                }
+            }
             .onChange(of: searchMode) { _ in searchOpen = false; query = "" }
             .navigationBarTitleDisplayMode(mode == 0 ? .inline : .large)
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
@@ -266,9 +268,12 @@ struct StoreView: View, Equatable {
                                 style: .collapsedButton)
                     .padding(.horizontal, 16)
                     .padding(.top, 2)
-                    .opacity(detailOpen ? 0 : 1)
-                    .allowsHitTesting(!detailOpen)
-                    .animation(.easeInOut(duration: 0.25), value: detailOpen)
+                    // Перехід до картки: панель їде вліво разом зі сторінкою магазину (як системна,
+                    // на третину ширини) і згасає під новою сторінкою; при поверненні — виїжджає назад
+                    .offset(x: path.isEmpty ? 0 : -UIScreen.main.bounds.width * 0.3)
+                    .opacity(path.isEmpty ? 1 : 0)
+                    .allowsHitTesting(path.isEmpty)
+                    .animation(.smooth(duration: 0.42), value: path.isEmpty)
             }
         }
     }
