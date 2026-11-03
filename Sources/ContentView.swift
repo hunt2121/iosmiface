@@ -27,6 +27,8 @@ struct ContentView: View {
     @State private var lastSync = Date.distantPast
     /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
     @State private var activeFaceID: String?
+    /// Скільки на браслеті циферблатів не з магазину (з останньої перевірки)
+    @State private var otherFacesCount: Int?
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
@@ -75,7 +77,17 @@ struct ContentView: View {
                       activeID: activeFaceID,
                       onActivate: { await bandFaceAction($0, delete: false) },
                       onDelete: { await bandFaceAction($0, delete: true) },
-                      onCheck: { await syncDeviceFaces() })
+                      onCheck: { await syncDeviceFaces() },
+                      onPickFile: {
+                          tab = .faces
+                          Task { @MainActor in
+                              try? await Task.sleep(nanoseconds: 350_000_000)
+                              pickFace()
+                          }
+                      },
+                      otherFacesCount: otherFacesCount,
+                      bandStatus: ble.connectedName.map { String(localized: "\(Self.bandModel($0)) · підключено") }
+                          ?? String(localized: "Браслет не підключено"))
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -285,6 +297,8 @@ struct ContentView: View {
         lastSync = Date()
         activeFaceID = list.first(where: \.isActive)?.id
         let ids = Set(list.map(\.id))
+        let storeIDs = Set(storeFaces.map(\.id))
+        otherFacesCount = ids.subtracting(storeIDs).count
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
             if ids.contains(f.id) {

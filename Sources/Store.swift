@@ -138,6 +138,7 @@ struct StoreView: View, Equatable {
             && a.installingID == b.installingID && a.busy == b.busy
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID
+            && a.otherFacesCount == b.otherFacesCount && a.bandStatus == b.bandStatus
     }
 
     let faces: [StoreFace]
@@ -154,6 +155,12 @@ struct StoreView: View, Equatable {
     var onDelete: (StoreFace) async -> String? = { _ in nil }
     /// Звичайна (не примусова) перевірка браслета: пропускається, якщо була менш ніж 20 с тому
     var onCheck: () async -> Void = {}
+    /// F: «З файлу» — перейти до вибору файлу на вкладці «Циферблати»
+    var onPickFile: () -> Void = {}
+    /// F: скільки на браслеті інших циферблатів (не з магазину); nil — ще не перевіряли
+    var otherFacesCount: Int? = nil
+    /// F: «Smart Band 10 · підключено» / «Браслет не підключено»
+    var bandStatus: String = ""
 
     @State private var query = ""
     /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
@@ -170,6 +177,9 @@ struct StoreView: View, Equatable {
     @State private var refreshing = false
     /// D/E: відкрито вікно «Встановлені»
     @State private var installedShown = false
+    /// F: циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
+    @State private var menuDelete: StoreFace?
+    @State private var menuError: String?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -256,7 +266,23 @@ struct StoreView: View, Equatable {
                                        panel: { popover in installedPanel(popover: popover) },
                                        menuFaces: faces.filter { installed[$0.id] != nil },
                                        activeID: activeID,
-                                       onOpen: { path.append($0.id) }))
+                                       onOpen: { path.append($0.id) },
+                                       onSelect: { item in menuAction { await onActivate(item) } },
+                                       onDeleteRequest: { menuDelete = $0 },
+                                       onPickFile: onPickFile,
+                                       otherFacesCount: otherFacesCount,
+                                       bandStatus: bandStatus))
+            .alert(menuDelete.map { String(localized: "Видалити \($0.name) з браслета?") } ?? "",
+                   isPresented: Binding(get: { menuDelete != nil }, set: { if !$0 { menuDelete = nil } }),
+                   presenting: menuDelete) { item in
+                Button("Видалити", role: .destructive) { menuAction { await onDelete(item) } }
+                Button("Скасувати", role: .cancel) {}
+            } message: { _ in
+                Text("Встановити його знову можна з магазину.")
+            }
+            .alert(menuError ?? "", isPresented: Binding(get: { menuError != nil }, set: { if !$0 { menuError = nil } })) {
+                Button("OK", role: .cancel) {}
+            }
             // Щойно вікно «Встановлені» відкрилось — уточнюємо в браслета, що на ньому і що на екрані
             // Вікно «Встановлені» відкрилось: браслет перепитуємо лише після анімації появи
             // і лише якщо давно не перевіряли — сесія Bluetooth не гальмує відкриття й закриття
@@ -302,6 +328,13 @@ struct StoreView: View, Equatable {
     }
 
     /// C: кнопка оновлення — та сама перевірка браслета, що й потягування вниз
+    /// F: дія з меню (вибрати, видалити); помилку показуємо окремим вікном
+    private func menuAction(_ work: @escaping () async -> String?) {
+        Task { @MainActor in
+            if let error = await work() { menuError = error }
+        }
+    }
+
     private func refresh() {
         guard !refreshing else { return }
         refreshing = true
@@ -829,6 +862,11 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     let menuFaces: [StoreFace]
     let activeID: String?
     let onOpen: (StoreFace) -> Void
+    let onSelect: (StoreFace) -> Void
+    let onDeleteRequest: (StoreFace) -> Void
+    let onPickFile: () -> Void
+    let otherFacesCount: Int?
+    let bandStatus: String
 
     func body(content: Content) -> some View {
         content
@@ -864,22 +902,73 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                     // F: системне меню — анімацію відкриття робить iOS
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
+                            // Швидкі дії — ряд маленьких кнопок угорі меню
+                            ControlGroup {
+                                Button { onRefresh() } label: { Label("Оновити", systemImage: "arrow.clockwise") }
+                                Button { onPickFile() } label: { Label("З файлу", systemImage: "doc.badge.plus") }
+                            }
+
+                            // Вибір: системна галочка біля активного; натиск — увімкнути на браслеті
                             Section("Встановлено") {
                                 if menuFaces.isEmpty {
                                     Text("Циферблатів з магазину на браслеті немає")
-                                }
-                                ForEach(menuFaces) { item in
-                                    Button { onOpen(item) } label: {
-                                        Text(item.name)
-                                        if item.id == activeID {
-                                            Text("✓ На екрані")
-                                        } else {
-                                            Text(verbatim: item.meta)
+                                } else {
+                                    Picker(selection: Binding(
+                                        get: { activeID ?? "" },
+                                        set: { id in
+                                            if id != activeID, let item = menuFaces.first(where: { $0.id == id }) {
+                                                onSelect(item)
+                                            }
+                                        })) {
+                                        ForEach(menuFaces) { item in
+                                            Label {
+                                                Text(item.name)
+                                                Text(item.id == activeID ? String(localized: "Активний") : item.meta)
+                                            } icon: {
+                                                Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
+                                                    .renderingMode(.original)
+                                            }
+                                            .tag(item.id)
                                         }
-                                        Image(uiImage: MenuThumb.image(for: item))
-                                            .renderingMode(.original)
+                                    } label: { EmptyView() }
+                                    .pickerStyle(.inline)
+                                }
+                            }
+
+                            // Керування кожним циферблатом
+                            if !menuFaces.isEmpty {
+                                Section {
+                                    ForEach(menuFaces) { item in
+                                        Menu {
+                                            Button { onOpen(item) } label: {
+                                                Label("Відкрити сторінку", systemImage: "arrow.up.forward.app")
+                                            }
+                                            if item.id != activeID {
+                                                Button { onSelect(item) } label: {
+                                                    Label("Вибрати", systemImage: "checkmark.circle")
+                                                }
+                                            }
+                                            Button(role: .destructive) { onDeleteRequest(item) } label: {
+                                                Label("Видалити з браслета", systemImage: "trash")
+                                            }
+                                        } label: {
+                                            Label {
+                                                Text(item.name)
+                                            } icon: {
+                                                Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
+                                                    .renderingMode(.original)
+                                            }
+                                        }
                                     }
                                 }
+                            }
+
+                            // Довідка
+                            Section {
+                                if let other = otherFacesCount, other > 0 {
+                                    Text("Ще \(other) з Mi Fitness")
+                                }
+                                Text(verbatim: bandStatus)
                             }
                         } label: {
                             Image("IconInstalled")
@@ -911,26 +1000,46 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
 private enum MenuThumb {
     private static var cache: [String: UIImage] = [:]
 
-    static func image(for item: StoreFace) -> UIImage {
-        if let cached = cache[item.id] { return cached }
+    /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
+    static func image(for item: StoreFace, active: Bool = false) -> UIImage {
+        let key = item.id + (active ? ":a" : "")
+        if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 3
-        let image = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { _ in
+        let image = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { ctx in
+            let cg = ctx.cgContext
+            cg.saveGState()
             let path = UIBezierPath(roundedRect: capsule, cornerRadius: capsule.width / 2)
             UIColor.black.setFill()
             path.fill()
             path.addClip()
             if let preview = item.preview {
-                // scaledToFill у капсулу
                 let scale = max(capsule.width / preview.size.width, capsule.height / preview.size.height)
                 let size = CGSize(width: preview.size.width * scale, height: preview.size.height * scale)
                 preview.draw(in: CGRect(x: capsule.midX - size.width / 2, y: capsule.midY - size.height / 2,
                                         width: size.width, height: size.height))
             }
+            cg.restoreGState()
+            if active {
+                let badge = CGRect(x: side - 13, y: side - 13, width: 12, height: 12)
+                UIColor.systemBackground.setFill()
+                UIBezierPath(ovalIn: badge.insetBy(dx: -1.2, dy: -1.2)).fill()
+                UIColor(red: 0.133, green: 0.659, blue: 0.275, alpha: 1).setFill()
+                UIBezierPath(ovalIn: badge).fill()
+                let check = UIBezierPath()
+                check.move(to: CGPoint(x: badge.minX + 3.2, y: badge.midY + 0.2))
+                check.addLine(to: CGPoint(x: badge.minX + 5.3, y: badge.midY + 2.2))
+                check.addLine(to: CGPoint(x: badge.maxX - 2.9, y: badge.minY + 3.6))
+                check.lineWidth = 1.6
+                check.lineCapStyle = .round
+                check.lineJoinStyle = .round
+                UIColor.white.setStroke()
+                check.stroke()
+            }
         }.withRenderingMode(.alwaysOriginal)
-        cache[item.id] = image
+        cache[key] = image
         return image
     }
 }
