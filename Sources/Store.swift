@@ -154,6 +154,8 @@ struct StoreView: View, Equatable {
     @State private var titleBottom: CGFloat = 100
     /// H: системний пошук відкрито
     @State private var systemSearchShown = false
+    /// B: верх сторінки відносно видимої області (0 — на місці, від'ємне — прокручено)
+    @State private var contentTop: CGFloat = 0
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -238,6 +240,18 @@ struct StoreView: View, Equatable {
                             .padding(.horizontal, 16)
                         }
                     }
+                    // B: положення верху сторінки — щоб знати, коли системний великий заголовок згорнувся
+                    .background(alignment: .top) {
+                        if mode == 1 {
+                            GeometryReader { g in
+                                let top = g.frame(in: .named("storeScroll")).minY
+                                Color.clear
+                                    .onAppear { contentTop = top }
+                                    .onChange(of: top) { contentTop = $0 }
+                            }
+                            .frame(height: 0)
+                        }
+                    }
                     .padding(.top, 4)
                     .padding(.bottom, 16)
                 }
@@ -251,12 +265,12 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: titleBottom < 2,
+                                      smallTitle: mode == 1 ? contentTop < -40 : titleBottom < 2,
                                       systemShown: $systemSearchShown))
         }
     }
 
-    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 7 — H (системний)
+    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 1 — B (A + системний великий заголовок), 7 — H (системний)
     private var mode: Int { [1, 7].contains(searchMode) ? searchMode : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
@@ -546,35 +560,27 @@ private struct StoreSearchMode: ViewModifier {
                     }
             })
         case 1:
-            // B: як A, але великий заголовок системний (стає маленьким при гортанні, як в інших вкладках).
-            // Ліворуч кнопка фільтрів, праворуч наша лупа, що розгортається вліво в рядок пошуку
-            content
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Menu {
-                            Picker(selection: $filter) {
-                                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                            } label: { EmptyView() }
-                        } label: {
-                            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                              : "line.3.horizontal.decrease.circle.fill")
-                        }
-                        .accessibilityLabel(Text("Фільтр"))
+            // B: та сама панель, що в A (фільтр, лупа, що «перетікає» в рядок, хрестик),
+            // але в системній панелі навігації — великий заголовок під нею системний
+            // і згортається при гортанні, як в інших вкладках; маленький показуємо самі
+            content.modifier(PrincipalBar {
+                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
+                                style: .collapsedButton)
+                    .overlay {
+                        Text("Магазин")
+                            .font(.headline)
+                            .opacity(smallTitle && !searchOpen ? 1 : 0)
+                            .animation(.easeOut(duration: 0.2), value: smallTitle)
+                            .allowsHitTesting(false)
                     }
-                }
-                .modifier(TrailingSearchItem {
-                    LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
-                                    style: .toolbarSearch)
-                        .frame(width: searchOpen ? TrailingSearchItem<EmptyView>.expandedWidth : 44,
-                               alignment: .trailing)
-                })
+                    .frame(width: UIScreen.main.bounds.width - 32)
+            })
         case 7:
             // H: системний рядок пошуку iOS 26, який відкриває наша лупа в панелі навігації.
             // До натискання рядка не видно (лише лупа), тож немає перемикання старого стилю в новий;
             // закриття — системним хрестиком/«Скасувати», стан керується isPresented
             content
                 .modifier(SystemSearchPresented(query: $query, shown: $systemShown))
-                .onAppear(perform: SystemSearchKeyboard.enableReturnKey)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
@@ -672,7 +678,7 @@ private struct MorphGlass: ViewModifier {
 /// - field (F): лише рядок пошуку
 /// - fieldWithFilter (G): фільтр і рядок; під час пошуку фільтр вливається в рядок
 struct LiquidSearchBar: View {
-    enum Style { case collapsedButton, field, fieldWithFilter, toolbarSearch }
+    enum Style { case collapsedButton, field, fieldWithFilter }
 
     @Binding var query: String
     @Binding var active: Bool
@@ -777,7 +783,7 @@ struct LiquidSearchBar: View {
     private var closeButton: some View {
         Button {
             focused = false
-            if style == .collapsedButton || style == .toolbarSearch { query = "" }
+            if style == .collapsedButton { query = "" }
             withAnimation(animation) { active = false }
         } label: {
             Image(systemName: "xmark")
@@ -792,31 +798,20 @@ struct LiquidSearchBar: View {
     }
 }
 
-/// Системний рядок пошуку: клавіша «Пошук» на клавіатурі активна одразу, як у варіанті A
-/// (за замовчуванням iOS вмикає її лише після введення тексту).
-enum SystemSearchKeyboard {
-    static func enableReturnKey() {
-        UITextField.appearance(whenContainedInInstancesOf: [UISearchBar.self])
-            .enablesReturnKeyAutomatically = false
-    }
-}
 
-/// Наша лупа в правому куті панелі навігації (варіант B). На iOS 26 системне скло
-/// навколо пункту вимкнене, щоб працювало наше «рідке скло».
-private struct TrailingSearchItem<Item: View>: ViewModifier {
+/// Панель у центральному місці системної панелі навігації (варіант B).
+/// На iOS 26 системне скло навколо пункту вимкнене, щоб працювало наше «рідке скло».
+private struct PrincipalBar<Item: View>: ViewModifier {
     @ViewBuilder let item: Item
-    /// Ширина розгорнутого рядка: екран мінус поля й кнопка фільтрів ліворуч
-    static var expandedWidth: CGFloat { UIScreen.main.bounds.width - 16 * 2 - 44 - 24 }
-
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             content.toolbar {
-                ToolbarItem(placement: .topBarTrailing) { item }
+                ToolbarItem(placement: .principal) { item }
                     .sharedBackgroundVisibility(.hidden)
             }
         } else {
             content.toolbar {
-                ToolbarItem(placement: .topBarTrailing) { item }
+                ToolbarItem(placement: .principal) { item }
             }
         }
     }
