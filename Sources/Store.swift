@@ -257,12 +257,15 @@ struct StoreView: View, Equatable {
     }
 
     private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        // Усі мітки будує один цикл. «Вибрана» входить у дані кожної мітки, тож при виборі
+        // змінюються самі дані — і SwiftUI гарантовано перемальовує саме ті мітки, що змінились
+        let current = filter
+        let items = filterOptions.map { ChipItem(id: $0.0, title: $0.1, on: $0.0 == current) }
+        return ScrollView(.horizontal, showsIndicators: false) {
             ChipRow {
-                chip("all", String(localized: "Усі"))
-                chip("new", String(localized: "Нові"))
-                chip("free", String(localized: "Безкоштовні"))
-                ForEach(kinds, id: \.self) { k in chip(k, k) }
+                ForEach(items) { c in
+                    FilterChip(title: c.title, on: c.on) { filter = c.id }
+                }
             }
             // Запас навколо міток: при натисканні скло розширюється й не обрізається краєм прокрутки
             .padding(.horizontal, 16)
@@ -271,22 +274,6 @@ struct StoreView: View, Equatable {
         // Компенсуємо запас, щоб розкладка залишилась тією самою
         .padding(.horizontal, -16)
         .padding(.vertical, -14)
-    }
-
-    private func chip(_ id: String, _ title: String) -> some View {
-        let on = filter == id
-        return Button { filter = id } label: {
-            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .hidden()
-                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
-                .padding(.horizontal, 14)
-                .frame(height: 32)
-                .foregroundStyle(on ? Color.white : Color.primary)
-                .modifier(ChipGlass(on: on))
-        }
-        .buttonStyle(.plain)
     }
 
     private func card(_ item: StoreFace) -> some View {
@@ -680,19 +667,40 @@ private struct HideInlineTitle: ViewModifier {
     }
 }
 
+/// Мітка фільтра: дані для циклу
+private struct ChipItem: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let on: Bool
+}
+
+/// Мітка фільтра. Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
+private struct FilterChip: View {
+    let title: String
+    let on: Bool
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .hidden()
+                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .foregroundStyle(on ? Color.white : Color.primary)
+                .modifier(ChipGlass(on: on))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
 /// На старіших версіях вибрана зафарбована акцентним кольором.
-/// Вибрана й звичайна — різні гілки: скло перестворюється, і відтінок гарантовано оновлюється
-/// (інакше в GlassEffectContainer мітки категорій могли лишатися без підсвітки).
 private struct ChipGlass: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            if on {
-                content.glassEffect(.regular.tint(Color.accentColor).interactive(), in: Capsule())
-            } else {
-                content.glassEffect(.regular.interactive(), in: Capsule())
-            }
+            content.glassEffect(.regular.tint(on ? Color.accentColor : nil).interactive(), in: Capsule())
         } else {
             content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
         }
