@@ -210,6 +210,7 @@ struct ContentView: View {
                     Picker(selection: $storeLayout) {
                         Text(verbatim: "A · Кнопка фільтрів і пошук").tag(0)
                         Text(verbatim: "B · Мітки фільтрів без пошуку").tag(1)
+                        Text(verbatim: "C · Системна панель: фільтр і оновлення").tag(2)
                     } label: {
                         Text(verbatim: "Магазин")
                     }

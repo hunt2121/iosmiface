@@ -147,7 +147,8 @@ struct StoreView: View, Equatable {
     let onRefresh: () async -> Void
 
     @State private var query = ""
-    /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку)
+    /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
+    /// 2 — C (системна панель: фільтр зліва, оновлення справа)
     @AppStorage("storeLayout") private var layout = 0
     /// Пошук відкрито (лупа розгорнулась у рядок)
     @State private var searchOpen = false
@@ -155,6 +156,8 @@ struct StoreView: View, Equatable {
     /// тож панель пошуку згасає й з'являється синхронно зі сторінкою
     @State private var path: [String] = []
     @State private var filter = "all"
+    /// C: іде перевірка браслета, запущена кнопкою оновлення
+    @State private var refreshing = false
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -231,6 +234,9 @@ struct StoreView: View, Equatable {
             }
             // Поки відкритий пошук, маленький системний заголовок ховаємо; великий лишається
             .modifier(HideInlineTitle(hidden: layout == 0 && searchOpen))
+            // C: звичайні системні кнопки панелі — скло, перехід до картки й маленький заголовок робить iOS
+            .modifier(SystemBarButtons(enabled: layout == 2, filter: $filter, filters: filterOptions,
+                                       refreshing: refreshing, onRefresh: refresh))
             .onChange(of: layout) { _ in searchOpen = false; query = "" }
         }
         // Наша панель (фільтр, лупа, що «перетікає» в рядок пошуку, хрестик) — поверх системної панелі,
@@ -254,6 +260,16 @@ struct StoreView: View, Equatable {
     private var filterOptions: [(String, String)] {
         [("all", String(localized: "Усі")), ("new", String(localized: "Нові")),
          ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
+    }
+
+    /// C: кнопка оновлення — та сама перевірка браслета, що й потягування вниз
+    private func refresh() {
+        guard !refreshing else { return }
+        refreshing = true
+        Task {
+            await onRefresh()
+            refreshing = false
+        }
     }
 
     private var chips: some View {
@@ -642,6 +658,46 @@ struct LiquidSearchBar: View {
         .buttonStyle(.plain)
         .modifier(MorphGlass(id: "close", ns: glass, circle: true))
         .accessibilityLabel(Text("Закрити"))
+    }
+}
+
+/// C: системна панель із двома кнопками — фільтр (меню) зліва й оновлення справа.
+/// Поки браслет перевіряється, замість стрілки крутиться системний індикатор.
+private struct SystemBarButtons: ViewModifier {
+    let enabled: Bool
+    @Binding var filter: String
+    let filters: [(String, String)]
+    let refreshing: Bool
+    let onRefresh: () -> Void
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            if enabled {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Menu {
+                        Picker(selection: $filter) {
+                            ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                        } label: { EmptyView() }
+                    } label: {
+                        Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                          : "line.3.horizontal.decrease.circle.fill")
+                            .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                    }
+                    .accessibilityLabel(Text("Фільтр"))
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: onRefresh) {
+                        if refreshing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(refreshing)
+                    .accessibilityLabel(Text("Оновити"))
+                }
+            }
+        }
     }
 }
 
