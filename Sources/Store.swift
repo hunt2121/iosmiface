@@ -154,8 +154,8 @@ struct StoreView: View, Equatable {
     @State private var titleBottom: CGFloat = 1000
     /// Нижній край верхньої панелі на екрані (варіант A)
     @State private var barBottom: CGFloat = 0
-    /// B: верх сторінки на екрані — коли він доходить до низу панелі, великий заголовок уже згорнувся
-    @State private var contentTop: CGFloat = 1000
+    /// Відкрита сторінка циферблата — панель B (поверх системної) тоді ховаємо
+    @State private var detailOpen = false
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -230,6 +230,8 @@ struct StoreView: View, Equatable {
                                                                 progress: progress,
                                                                 progressText: progressText,
                                                                 onInstall: onInstall)
+                                                    .onAppear { detailOpen = true }
+                                                    .onDisappear { detailOpen = false }
                                             } label: {
                                                 card(item)
                                             }
@@ -239,19 +241,6 @@ struct StoreView: View, Equatable {
                                 }
                             }
                             .padding(.horizontal, 16)
-                        }
-                    }
-                    // B: положення верху сторінки — щоб знати, коли системний великий заголовок згорнувся
-                    .background(alignment: .top) {
-                        if mode == 1 {
-                            GeometryReader { g in
-                                // На екрані — у тих самих координатах, що й низ панелі навігації
-                                let top = g.frame(in: .global).minY
-                                Color.clear
-                                    .onAppear { contentTop = top }
-                                    .onChange(of: top) { contentTop = $0 }
-                            }
-                            .frame(height: 0)
                         }
                     }
                     .padding(.top, 4)
@@ -266,8 +255,21 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: mode == 1 ? contentTop <= barBottom + 2 : titleBottom <= barBottom + 2,
+                                      smallTitle: titleBottom <= barBottom + 2,
                                       barBottom: $barBottom))
+        }
+        // B: та сама панель, що в A, але поверх системної панелі навігації. Системна панель
+        // лишається порожньою, тож великий заголовок і маленький (з його анімацією) — справжні системні
+        .overlay(alignment: .top) {
+            if mode == 1 {
+                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filterOptions,
+                                style: .collapsedButton)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 2)
+                    .opacity(detailOpen ? 0 : 1)
+                    .allowsHitTesting(!detailOpen)
+                    .animation(.easeInOut(duration: 0.25), value: detailOpen)
+            }
         }
     }
 
@@ -569,31 +571,6 @@ private struct StoreSearchMode: ViewModifier {
                             .onChange(of: bottom) { barBottom = $0 }
                     })
             })
-        case 1:
-            // B: та сама панель, що в A (фільтр, лупа, що «перетікає» в рядок, хрестик),
-            // але в системній панелі навігації — великий заголовок під нею системний
-            // і згортається при гортанні, як в інших вкладках; маленький показуємо самі
-            content.modifier(PrincipalBar {
-                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
-                                style: .collapsedButton)
-                    .overlay {
-                        // Маленький заголовок з'являється, як системний: згасання з легким підйомом
-                        Text("Магазин")
-                            .font(.headline)
-                            .opacity(smallTitle && !searchOpen ? 1 : 0)
-                            .offset(y: smallTitle ? 0 : 6)
-                            .animation(.easeInOut(duration: 0.25), value: smallTitle)
-                            .allowsHitTesting(false)
-                    }
-                    .frame(width: UIScreen.main.bounds.width - 32)
-                    // Низ панелі навігації на екрані: наш рядок по центру панелі висотою 44 + поля
-                    .background(GeometryReader { g in
-                        let bottom = g.frame(in: .global).maxY + 8
-                        Color.clear
-                            .onAppear { barBottom = bottom }
-                            .onChange(of: bottom) { barBottom = $0 }
-                    })
-            })
         default:
             content
         }
@@ -798,21 +775,4 @@ struct LiquidSearchBar: View {
 }
 
 
-/// Панель у центральному місці системної панелі навігації (варіант B).
-/// На iOS 26 системне скло навколо пункту вимкнене, щоб працювало наше «рідке скло».
-private struct PrincipalBar<Item: View>: ViewModifier {
-    @ViewBuilder let item: Item
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.toolbar {
-                ToolbarItem(placement: .principal) { item }
-                    .sharedBackgroundVisibility(.hidden)
-            }
-        } else {
-            content.toolbar {
-                ToolbarItem(placement: .principal) { item }
-            }
-        }
-    }
-}
 
