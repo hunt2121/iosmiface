@@ -253,6 +253,9 @@ struct StoreView: View, Equatable {
                 }
             }
             .onChange(of: searchMode) { _ in searchOpen = false; query = "" }
+            // B: поки відкритий пошук, маленький системний заголовок ховаємо (порожній центральний пункт
+            // панелі заміняє його); великий заголовок лишається
+            .modifier(HideInlineTitle(hidden: mode == 1 && searchOpen))
             .navigationBarTitleDisplayMode(mode == 0 ? .inline : .large)
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
@@ -779,5 +782,24 @@ struct LiquidSearchBar: View {
     }
 }
 
-
-
+/// Ховає маленький (компактний) заголовок панелі навігації, не чіпаючи великого:
+/// порожній центральний пункт займає його місце.
+private struct HideInlineTitle: ViewModifier {
+    let hidden: Bool
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.toolbar {
+                if hidden {
+                    ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
+                        .sharedBackgroundVisibility(.hidden)
+                }
+            }
+        } else {
+            content.toolbar {
+                if hidden {
+                    ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
+                }
+            }
+        }
+    }
+}
