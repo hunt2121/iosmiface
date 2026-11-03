@@ -1070,10 +1070,10 @@ private struct InstalledBar<Panel: View>: View {
     let filters: [(String, String)]
     @Binding var shown: Bool
     @ViewBuilder let panel: () -> Panel
-    @Namespace private var glass
     private let size: CGFloat = 44
-    private let animation = Animation.bouncy(duration: 0.45, extraBounce: 0.05)
-    private let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+    private let animation = Animation.spring(response: 0.42, dampingFraction: 0.8)
+    /// Розмір вікна (вимірюється з вмісту)
+    @State private var panelSize = CGSize(width: 276, height: 420)
 
     var body: some View {
         HStack(alignment: .top) {
@@ -1110,45 +1110,38 @@ private struct InstalledBar<Panel: View>: View {
         .accessibilityLabel(Text("Фільтр"))
     }
 
-    @ViewBuilder private var installed: some View {
-        if #available(iOS 26, *) {
-            ZStack(alignment: .topTrailing) {
-                GlassEffectContainer(spacing: 20) {
-                    if shown {
-                        // Невидима копія вмісту задає розмір склу, щоб воно «виросло» саме до розміру вікна
-                        panel().hidden()
-                            .glassEffect(.regular, in: shape)
-                            .glassEffectID("installed", in: glass)
-                            .glassEffectTransition(.matchedGeometry)
-                    } else {
-                        Button { withAnimation(animation) { shown = true } } label: { icon }
-                            .buttonStyle(.plain)
-                            .glassEffect(.regular.interactive(), in: Circle())
-                            .glassEffectID("installed", in: glass)
-                            .glassEffectTransition(.matchedGeometry)
-                    }
-                }
-                if shown {
-                    // Вміст проступає, коли скло вже майже розкрилось, і зникає одразу при закритті
-                    panel()
-                        .transition(.asymmetric(
-                            insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.12)),
-                            removal: .opacity.animation(.easeIn(duration: 0.08))))
-                }
-            }
-        } else {
-            ZStack(alignment: .topTrailing) {
-                if shown {
-                    panel()
-                        .background(shape.fill(.regularMaterial))
-                        .transition(.scale(scale: 0.2, anchor: .topTrailing).combined(with: .opacity))
-                } else {
-                    Button { withAnimation(animation) { shown = true } } label: { icon }
-                        .buttonStyle(.plain)
-                        .background(Circle().fill(Color(.tertiarySystemFill)))
-                }
-            }
+    /// Одна скляна форма, що плавно росте з кола кнопки у вікно і стискається назад (як системні меню iOS 26):
+    /// вміст живе всередині скла, обрізаний його формою, і виростає з кута кнопки — розмитий і прозорий на
+    /// початку, чіткий у кінці. При закритті вміст зникає першим, потім скло стікає в кнопку і проступає іконка.
+    private var installed: some View {
+        let radius: CGFloat = shown ? 30 : size / 2
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return ZStack(alignment: .topTrailing) {
+            panel()
+                .fixedSize()
+                .background(GeometryReader { g in
+                    Color.clear
+                        .onAppear { panelSize = g.size }
+                        .onChange(of: g.size) { panelSize = $0 }
+                })
+                .scaleEffect(shown ? 1 : 0.3, anchor: .topTrailing)
+                .blur(radius: shown ? 0 : 12)
+                .opacity(shown ? 1 : 0)
+                .animation(shown ? .easeOut(duration: 0.28).delay(0.06) : .easeIn(duration: 0.12), value: shown)
+                .allowsHitTesting(shown)
+            icon
+                .blur(radius: shown ? 6 : 0)
+                .opacity(shown ? 0 : 1)
+                .animation(shown ? .easeOut(duration: 0.1) : .easeOut(duration: 0.22).delay(0.18), value: shown)
+                .allowsHitTesting(!shown)
         }
+        .frame(width: shown ? panelSize.width : size, height: shown ? panelSize.height : size,
+               alignment: .topTrailing)
+        .clipShape(shape)
+        .modifier(MorphingGlass(shape: shape, interactive: !shown))
+        .contentShape(shape)
+        .onTapGesture { if !shown { withAnimation(animation) { shown = true } } }
+        .accessibilityAddTraits(.isButton)
     }
 
     private var icon: some View {
@@ -1163,6 +1156,19 @@ private struct InstalledBar<Panel: View>: View {
 }
 
 /// Скляне коло без морфінгу (кнопка фільтра в D)
+/// Скло, форма якого анімується разом із розміром (D); на старіших iOS — матеріал
+private struct MorphingGlass<S: Shape>: ViewModifier {
+    let shape: S
+    let interactive: Bool
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular.interactive(interactive), in: shape)
+        } else {
+            content.background(shape.fill(.regularMaterial))
+        }
+    }
+}
+
 private struct PlainGlassCircle: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
