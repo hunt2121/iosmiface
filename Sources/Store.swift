@@ -190,11 +190,10 @@ struct StoreView: View, Equatable {
         // «Режим розробника»: у журнал пишеться кожне перемальовування сторінки магазину
         BLEManager.noteRedraw("Магазин")
         return NavigationStack {
-            ScrollViewReader { _ in
-                ScrollView {
+            ScrollView {
                     // Фільтр рахуємо один раз за оновлення екрана
                     let items = shown
-                    LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+                    VStack(alignment: .leading, spacing: 14) {
                         if mode == 0 {
                             // A: власний великий заголовок; коли він ховається під панель,
                             // у панелі з'являється маленький «Магазин»
@@ -259,7 +258,6 @@ struct StoreView: View, Equatable {
                     .padding(.bottom, 16)
                 }
                 .coordinateSpace(name: "storeScroll")
-            }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
@@ -268,7 +266,7 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: mode == 1 ? contentTop <= barBottom + 14 : titleBottom <= barBottom + 2,
+                                      smallTitle: mode == 1 ? contentTop <= barBottom + 2 : titleBottom <= barBottom + 2,
                                       barBottom: $barBottom))
         }
     }
@@ -555,10 +553,12 @@ private struct StoreSearchMode: ViewModifier {
                 LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
                                 style: .collapsedButton)
                     .overlay {
+                        // Маленький заголовок з'являється, як системний: згасання з легким підйомом
                         Text("Магазин")
                             .font(.headline)
                             .opacity(smallTitle && !searchOpen ? 1 : 0)
-                            .animation(.easeOut(duration: 0.2), value: smallTitle)
+                            .offset(y: smallTitle ? 0 : 6)
+                            .animation(.easeInOut(duration: 0.25), value: smallTitle)
                             .allowsHitTesting(false)
                     }
                     // Низ панелі на екрані (+ її нижній відступ 6) — межа, за якою великий заголовок ховається
@@ -577,10 +577,12 @@ private struct StoreSearchMode: ViewModifier {
                 LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
                                 style: .collapsedButton)
                     .overlay {
+                        // Маленький заголовок з'являється, як системний: згасання з легким підйомом
                         Text("Магазин")
                             .font(.headline)
                             .opacity(smallTitle && !searchOpen ? 1 : 0)
-                            .animation(.easeOut(duration: 0.2), value: smallTitle)
+                            .offset(y: smallTitle ? 0 : 6)
+                            .animation(.easeInOut(duration: 0.25), value: smallTitle)
                             .allowsHitTesting(false)
                     }
                     .frame(width: UIScreen.main.bounds.width - 32)
