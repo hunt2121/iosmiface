@@ -257,7 +257,7 @@ struct StoreView: View, Equatable {
     }
 
     /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 7 — H (системний)
-    private var mode: Int { searchMode == 7 ? 7 : 0 }
+    private var mode: Int { [7, 8].contains(searchMode) ? searchMode : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -545,14 +545,16 @@ private struct StoreSearchMode: ViewModifier {
                             .allowsHitTesting(false)
                     }
             })
-        case 7:
-            // H: системний пошук iOS 26 — лупа в панелі навігації, що сама розгортається
-            // в рядок із хрестиком; ліворуч кнопка фільтрів
+        case 7, 8:
+            // H / I: системний пошук iOS 26 — лупа в панелі навігації, що сама розгортається
+            // в рядок із хрестиком; у H ліворуч кнопка фільтрів, в I — без неї (перевірка, чи вона заважає)
             if #available(iOS 26, *) {
                 content
                     .searchable(text: $query, isPresented: $systemShown, prompt: Text("Пошук циферблатів"))
                     .searchToolbarBehavior(.minimize)
+                    .onAppear(perform: SystemSearchKeyboard.enableReturnKey)
                     .toolbar {
+                        if mode == 7 {
                         ToolbarItem(placement: .topBarLeading) {
                             Menu {
                                 Picker(selection: $filter) {
@@ -563,6 +565,7 @@ private struct StoreSearchMode: ViewModifier {
                                                                   : "line.3.horizontal.decrease.circle.fill")
                             }
                             .accessibilityLabel(Text("Фільтр"))
+                        }
                         }
                         DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
                     }
@@ -763,5 +766,14 @@ struct LiquidSearchBar: View {
         .buttonStyle(.plain)
         .modifier(MorphGlass(id: "close", ns: glass, circle: true))
         .accessibilityLabel(Text("Закрити"))
+    }
+}
+
+/// Системний рядок пошуку: клавіша «Пошук» на клавіатурі активна одразу, як у варіанті A
+/// (за замовчуванням iOS вмикає її лише після введення тексту).
+enum SystemSearchKeyboard {
+    static func enableReturnKey() {
+        UITextField.appearance(whenContainedInInstancesOf: [UISearchBar.self])
+            .enablesReturnKeyAutomatically = false
     }
 }
