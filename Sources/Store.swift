@@ -912,6 +912,7 @@ struct InstalledFacesPanel: View {
     let onSelect: (StoreFace) async -> String?
     let onOpen: (StoreFace) -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     /// ID циферблата, який зараз вмикається
     @State private var working: String?
     @State private var error: String?
@@ -1003,12 +1004,18 @@ struct InstalledFacesPanel: View {
         .onTapGesture { onOpen(item) }
     }
 
-    /// D: прозоре матове скло; E: звичайна картка
+    /// D: прозоре матове скло, світліше за фон вікна (у темній темі — світлий напівпрозорий шар,
+    /// бо системний матеріал там затемнює); E: звичайна картка
     @ViewBuilder private var cardBackground: some View {
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
         if popover {
-            shape.fill(.thinMaterial)
-                .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
+            if colorScheme == .dark {
+                shape.fill(Color.white.opacity(0.12))
+                    .overlay(shape.strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5))
+            } else {
+                shape.fill(.thinMaterial)
+                    .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
+            }
         } else {
             shape.fill(Color(.secondarySystemGroupedBackground))
         }
