@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
+    @AppStorage("storeLayout") private var storeLayout = 0  // тимчасовий експеримент
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
@@ -203,6 +204,17 @@ struct ContentView: View {
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
+                }
+                // Тимчасово: як фільтрувати циферблати в магазині
+                Section {
+                    Picker(selection: $storeLayout) {
+                        Text(verbatim: "A · Кнопка фільтрів і пошук").tag(0)
+                        Text(verbatim: "B · Мітки фільтрів без пошуку").tag(1)
+                    } label: {
+                        Text(verbatim: "Магазин")
+                    }
+                } header: {
+                    Text(verbatim: "Експеримент")
                 }
             }
             .navigationTitle("Налаштування")

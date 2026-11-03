@@ -147,6 +147,8 @@ struct StoreView: View, Equatable {
     let onRefresh: () async -> Void
 
     @State private var query = ""
+    /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку)
+    @AppStorage("storeLayout") private var layout = 0
     /// Пошук відкрито (лупа розгорнулась у рядок)
     @State private var searchOpen = false
     /// Шлях навігації: змінюється на самому початку переходу до картки й назад,
@@ -187,6 +189,8 @@ struct StoreView: View, Equatable {
             ScrollView {
                 // Фільтр рахуємо один раз за оновлення екрана
                 let items = shown
+                VStack(alignment: .leading, spacing: 14) {
+                if layout == 1 { chips }
                 Group {
                     if items.isEmpty {
                         Text("Нічого не знайдено")
@@ -203,6 +207,7 @@ struct StoreView: View, Equatable {
                             }
                         }
                     }
+                }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
@@ -225,17 +230,20 @@ struct StoreView: View, Equatable {
                 }
             }
             // Поки відкритий пошук, маленький системний заголовок ховаємо; великий лишається
-            .modifier(HideInlineTitle(hidden: searchOpen))
+            .modifier(HideInlineTitle(hidden: layout == 0 && searchOpen))
+            .onChange(of: layout) { _ in searchOpen = false; query = "" }
         }
         // Наша панель (фільтр, лупа, що «перетікає» в рядок пошуку, хрестик) — поверх системної панелі,
         // у рядку її кнопок. Під час переходу до картки згасає і з'являється при поверненні
         .overlay(alignment: .top) {
-            LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filterOptions)
-                .padding(.horizontal, Self.barMargin)
-                .padding(.top, 2)
-                .opacity(path.isEmpty ? 1 : 0)
-                .allowsHitTesting(path.isEmpty)
-                .animation(.easeInOut(duration: 0.25), value: path.isEmpty)
+            if layout == 0 {
+                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filterOptions)
+                    .padding(.horizontal, Self.barMargin)
+                    .padding(.top, 2)
+                    .opacity(path.isEmpty ? 1 : 0)
+                    .allowsHitTesting(path.isEmpty)
+                    .animation(.easeInOut(duration: 0.25), value: path.isEmpty)
+            }
         }
     }
 
@@ -246,6 +254,39 @@ struct StoreView: View, Equatable {
     private var filterOptions: [(String, String)] {
         [("all", String(localized: "Усі")), ("new", String(localized: "Нові")),
          ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
+    }
+
+    private var chips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            ChipRow {
+                chip("all", String(localized: "Усі"))
+                chip("new", String(localized: "Нові"))
+                chip("free", String(localized: "Безкоштовні"))
+                ForEach(kinds, id: \.self) { k in chip(k, k) }
+            }
+            // Запас навколо міток: при натисканні скло розширюється й не обрізається краєм прокрутки
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+        // Компенсуємо запас, щоб розкладка залишилась тією самою
+        .padding(.horizontal, -16)
+        .padding(.vertical, -14)
+    }
+
+    private func chip(_ id: String, _ title: String) -> some View {
+        let on = filter == id
+        return Button { filter = id } label: {
+            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .hidden()
+                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .foregroundStyle(on ? Color.white : Color.primary)
+                .modifier(ChipGlass(on: on))
+        }
+        .buttonStyle(.plain)
     }
 
     private func card(_ item: StoreFace) -> some View {
@@ -635,6 +676,34 @@ private struct HideInlineTitle: ViewModifier {
                     ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
                 }
             }
+        }
+    }
+}
+
+/// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
+/// На старіших версіях вибрана зафарбована акцентним кольором.
+private struct ChipGlass: ViewModifier {
+    let on: Bool
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular.tint(on ? Color.accentColor : nil).interactive(), in: Capsule())
+        } else {
+            content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
+        }
+    }
+}
+
+/// Ряд міток. На iOS 26 — в одному GlassEffectContainer: скло малюється за один прохід,
+/// і анімації (пошук, вибір мітки) не втрачають кадрів.
+private struct ChipRow<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) { content }
+            }
+        } else {
+            HStack(spacing: 8) { content }
         }
     }
 }
