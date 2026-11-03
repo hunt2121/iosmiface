@@ -972,8 +972,7 @@ struct InstalledFacesPanel: View {
     private func card(_ item: StoreFace) -> some View {
         let thumb = popover ? CGSize(width: 90, height: 213) : CGSize(width: 117, height: 278)
         return HStack(spacing: 16) {
-            MiniCapsule(image: item.preview)
-                .frame(width: thumb.width, height: thumb.height)
+            MiniCapsule(image: item.preview, size: thumb)
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
@@ -1046,13 +1045,17 @@ struct InstalledFacesPanel: View {
 /// Маленька капсула-мініатюра циферблата для списку «Встановлені»
 private struct MiniCapsule: View {
     let image: UIImage?
+    let size: CGSize
+    /// Обведення ззовні, як у капсул магазину: сама картинка має розмір `size`, рамка 3 pt навколо
     var body: some View {
         ZStack {
             Capsule(style: .continuous).fill(Color.black)
             if let image { Image(uiImage: image).resizable().scaledToFill() }
         }
+        .frame(width: size.width, height: size.height)
         .clipShape(Capsule(style: .continuous))
-        .overlay(Capsule(style: .continuous).strokeBorder(Color.gray.opacity(0.45), lineWidth: 2))
+        .padding(3)
+        .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.45)))
     }
 }
 
