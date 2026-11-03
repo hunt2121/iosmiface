@@ -154,8 +154,6 @@ struct StoreView: View, Equatable {
     @State private var titleBottom: CGFloat = 1000
     /// Нижній край верхньої панелі на екрані (варіант A)
     @State private var barBottom: CGFloat = 0
-    /// H: системний пошук відкрито
-    @State private var systemSearchShown = false
     /// B: верх сторінки на екрані — коли він доходить до низу панелі, великий заголовок уже згорнувся
     @State private var contentTop: CGFloat = 1000
     @State private var filter = "all"
@@ -271,13 +269,12 @@ struct StoreView: View, Equatable {
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
                                       smallTitle: mode == 1 ? contentTop <= barBottom + 14 : titleBottom <= barBottom + 2,
-                                      barBottom: $barBottom,
-                                      systemShown: $systemSearchShown))
+                                      barBottom: $barBottom))
         }
     }
 
-    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 1 — B (A + системний великий заголовок), 7 — H (системний)
-    private var mode: Int { [1, 7].contains(searchMode) ? searchMode : 0 }
+    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 1 — B (A + системний великий заголовок)
+    private var mode: Int { searchMode == 1 ? 1 : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -549,7 +546,6 @@ private struct StoreSearchMode: ViewModifier {
     let filters: [(String, String)]
     let smallTitle: Bool
     @Binding var barBottom: CGFloat
-    @Binding var systemShown: Bool
 
     func body(content: Content) -> some View {
         switch mode {
@@ -596,33 +592,6 @@ private struct StoreSearchMode: ViewModifier {
                             .onChange(of: bottom) { barBottom = $0 }
                     })
             })
-        case 7:
-            // H: системний рядок пошуку iOS 26, який відкриває наша лупа в панелі навігації.
-            // До натискання рядка не видно (лише лупа), тож немає перемикання старого стилю в новий;
-            // закриття — системним хрестиком/«Скасувати», стан керується isPresented
-            content
-                .modifier(SystemSearchPresented(query: $query, shown: $systemShown))
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Menu {
-                            Picker(selection: $filter) {
-                                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                            } label: { EmptyView() }
-                        } label: {
-                            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                              : "line.3.horizontal.decrease.circle.fill")
-                        }
-                        .accessibilityLabel(Text("Фільтр"))
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            systemShown = true
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                        }
-                        .accessibilityLabel(Text("Пошук циферблатів"))
-                    }
-                }
         default:
             content
         }
@@ -838,18 +807,3 @@ private struct PrincipalBar<Item: View>: ViewModifier {
     }
 }
 
-/// Системний пошук, який відкривається програмно (iOS 17+); на старіших — звичайний рядок під заголовком.
-private struct SystemSearchPresented: ViewModifier {
-    @Binding var query: String
-    @Binding var shown: Bool
-    func body(content: Content) -> some View {
-        if #available(iOS 17, *) {
-            content.searchable(text: $query, isPresented: $shown,
-                               placement: .navigationBarDrawer(displayMode: .automatic),
-                               prompt: Text("Пошук циферблатів"))
-        } else {
-            content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
-                               prompt: Text("Пошук циферблатів"))
-        }
-    }
-}
