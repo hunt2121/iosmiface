@@ -258,7 +258,7 @@ struct StoreView: View, Equatable {
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            ChipRow {
                 chip("all", String(localized: "Усі"))
                 chip("new", String(localized: "Нові"))
                 chip("free", String(localized: "Безкоштовні"))
@@ -284,7 +284,6 @@ struct StoreView: View, Equatable {
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
-                .background(Capsule().fill(on ? Color.accentColor : Color.clear))
                 .modifier(ChipGlass(on: on))
         }
         .buttonStyle(.plain)
@@ -681,11 +680,36 @@ private struct HideInlineTitle: ViewModifier {
     }
 }
 
-/// Мітки фільтра, як у збірці 125: вибрана — суцільна акцентна капсула, решта — скляні.
+/// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
+/// На старіших версіях вибрана зафарбована акцентним кольором.
+/// Вибрана й звичайна — різні гілки: скло перестворюється, і відтінок гарантовано оновлюється
+/// (інакше в GlassEffectContainer мітки категорій могли лишатися без підсвітки).
 private struct ChipGlass: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
-        if on { content } else { content.capsuleGlass() }
+        if #available(iOS 26, *) {
+            if on {
+                content.glassEffect(.regular.tint(Color.accentColor).interactive(), in: Capsule())
+            } else {
+                content.glassEffect(.regular.interactive(), in: Capsule())
+            }
+        } else {
+            content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
+        }
     }
 }
 
+/// Ряд міток. На iOS 26 — в одному GlassEffectContainer: скло малюється за один прохід,
+/// і анімації (пошук, вибір мітки) не втрачають кадрів.
+private struct ChipRow<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) { content }
+            }
+        } else {
+            HStack(spacing: 8) { content }
+        }
+    }
+}
