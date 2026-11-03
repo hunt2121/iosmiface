@@ -956,7 +956,7 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                             }
                                         } label: {
                                             Text(face.name)
-                                            Text(face.isActive ? String(localized: "Активний · Mi Fitness") : "Mi Fitness")
+                                            Text(face.isActive ? String(localized: "Активний · \(face.note)") : face.note)
                                             Image(uiImage: MenuThumb.image(key: "other", preview: nil, active: face.isActive))
                                                 .renderingMode(.original)
                                         }
@@ -1005,6 +1005,11 @@ struct BandFace: Identifiable, Equatable {
     let name: String
     let isActive: Bool
     let canDelete: Bool
+    /// Другий рядок у меню: «Mi Fitness» або «Вбудований»
+    var note: String = "Mi Fitness"
+
+    /// Стандартний циферблат Smart Band 10 (є на браслеті завжди, видалити не можна)
+    static let standardID = "120917353510"
 }
 
 private enum MenuThumb {

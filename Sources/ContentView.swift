@@ -298,9 +298,15 @@ struct ContentView: View {
         activeFaceID = list.first(where: \.isActive)?.id
         let ids = Set(list.map(\.id))
         let storeIDs = Set(storeFaces.map(\.id))
-        otherFaces = list.filter { !storeIDs.contains($0.id) }.map {
-            BandFace(id: $0.id, name: ($0.name?.isEmpty == false ? $0.name! : String(localized: "Циферблат \($0.id)")),
-                     isActive: $0.isActive, canDelete: $0.canDelete)
+        otherFaces = list.filter { !storeIDs.contains($0.id) }.map { f in
+            // Стандартний циферблат Smart Band 10 вбудований: назви браслет не передає, видалити його не можна.
+            // Решту видаляти можна (прапорцю з браслета не довіряємо — Band 10 його не надсилає)
+            if f.id == BandFace.standardID {
+                return BandFace(id: f.id, name: String(localized: "Стандартний"), isActive: f.isActive,
+                                canDelete: false, note: String(localized: "Вбудований"))
+            }
+            return BandFace(id: f.id, name: f.name?.isEmpty == false ? f.name! : String(localized: "Циферблат \(f.id)"),
+                            isActive: f.isActive, canDelete: true)
         }
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
