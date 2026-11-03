@@ -928,7 +928,7 @@ struct InstalledFacesPanel: View {
                 list
             }
             .padding(12)
-            .frame(width: 340)
+            .frame(width: 300)
         } else {
             ScrollView {
                 VStack(spacing: 12) { list }
@@ -956,7 +956,7 @@ struct InstalledFacesPanel: View {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        let thumb = popover ? CGSize(width: 60, height: 142) : CGSize(width: 78, height: 186)
+        let thumb = popover ? CGSize(width: 90, height: 213) : CGSize(width: 78, height: 186)
         return HStack(spacing: 16) {
             MiniCapsule(image: item.preview)
                 .frame(width: thumb.width, height: thumb.height)
