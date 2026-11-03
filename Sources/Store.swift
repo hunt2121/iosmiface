@@ -1071,7 +1071,6 @@ private struct InstalledBar<Panel: View>: View {
     @Binding var shown: Bool
     @ViewBuilder let panel: () -> Panel
     private let size: CGFloat = 44
-    private let animation = Animation.spring(response: 0.42, dampingFraction: 0.8)
     /// Розмір вікна (вимірюється з вмісту)
     @State private var panelSize = CGSize(width: 276, height: 420)
 
@@ -1091,7 +1090,7 @@ private struct InstalledBar<Panel: View>: View {
         }
     }
 
-    private func close() { withAnimation(animation) { shown = false } }
+    private func close() { shown = false }
 
     private var filterButton: some View {
         Menu {
@@ -1114,8 +1113,7 @@ private struct InstalledBar<Panel: View>: View {
     /// вміст живе всередині скла, обрізаний його формою, і виростає з кута кнопки — розмитий і прозорий на
     /// початку, чіткий у кінці. При закритті вміст зникає першим, потім скло стікає в кнопку і проступає іконка.
     private var installed: some View {
-        let radius: CGFloat = shown ? 30 : size / 2
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let shape = DropletShape(closed: size, open: panelSize)
         return ZStack(alignment: .topTrailing) {
             panel()
                 .fixedSize()
@@ -1127,20 +1125,26 @@ private struct InstalledBar<Panel: View>: View {
                 .scaleEffect(shown ? 1 : 0.3, anchor: .topTrailing)
                 .blur(radius: shown ? 0 : 12)
                 .opacity(shown ? 1 : 0)
-                .animation(shown ? .easeOut(duration: 0.28).delay(0.06) : .easeIn(duration: 0.12), value: shown)
+                .animation(shown ? .easeOut(duration: 0.3).delay(0.08) : .easeIn(duration: 0.12), value: shown)
                 .allowsHitTesting(shown)
             icon
                 .blur(radius: shown ? 6 : 0)
                 .opacity(shown ? 0 : 1)
-                .animation(shown ? .easeOut(duration: 0.1) : .easeOut(duration: 0.22).delay(0.18), value: shown)
+                .animation(shown ? .easeOut(duration: 0.1) : .easeOut(duration: 0.22).delay(0.2), value: shown)
                 .allowsHitTesting(!shown)
         }
-        .frame(width: shown ? panelSize.width : size, height: shown ? panelSize.height : size,
-               alignment: .topTrailing)
+        // Ширина й висота мають різні пружини: при відкритті скло спершу розтікається вшир, при закритті
+        // спершу стає вузьким — і форма в цей момент деформується в краплю (DropletShape)
+        .frame(width: shown ? panelSize.width : size, alignment: .trailing)
+        .animation(shown ? .spring(response: 0.34, dampingFraction: 0.78)
+                         : .spring(response: 0.26, dampingFraction: 0.9), value: shown)
+        .frame(height: shown ? panelSize.height : size, alignment: .top)
+        .animation(shown ? .spring(response: 0.46, dampingFraction: 0.8)
+                         : .spring(response: 0.42, dampingFraction: 0.86), value: shown)
         .clipShape(shape)
         .modifier(MorphingGlass(shape: shape, interactive: !shown))
         .contentShape(shape)
-        .onTapGesture { if !shown { withAnimation(animation) { shown = true } } }
+        .onTapGesture { if !shown { shown = true } }
         .accessibilityAddTraits(.isButton)
     }
 
@@ -1156,6 +1160,49 @@ private struct InstalledBar<Panel: View>: View {
 }
 
 /// Скляне коло без морфінгу (кнопка фільтра в D)
+/// Форма вікна D, що виводиться з поточного розміру: коло кнопки (closed) → прямокутник із заокругленнями (open).
+/// Поки ширина й висота «не встигають» одна за одною, форма деформується: при закритті — вузька крапля,
+/// що звужується до кнопки (верхній лівий кут з'їжджає вправо, низ повністю круглий); при відкритті — м'яка
+/// округла пляма. Повністю відкрита чи закрита — звичайна форма без деформації.
+private struct DropletShape: Shape {
+    let closed: CGFloat
+    let open: CGSize
+
+    func path(in r: CGRect) -> Path {
+        let w = r.width, h = r.height
+        func norm(_ v: CGFloat, _ a: CGFloat, _ b: CGFloat) -> CGFloat {
+            b - a < 1 ? 1 : min(1, max(0, (v - a) / (b - a)))
+        }
+        let pw = norm(w, closed, open.width), ph = norm(h, closed, open.height)
+        let lag = ph - pw                    // > 0: вузька й висока (закриття), < 0: широка й низька (відкриття)
+        let d = min(1, abs(lag) * 2.4)       // сила деформації
+        let base = min(30, w / 2, h / 2)
+        let round = min(w / 2, h / 2)
+        let soft = base + (round - base) * d
+        let taper = lag > 0 ? min(w * 0.42, lag * w * 0.6) : 0
+
+        let tl = CGPoint(x: r.minX + taper, y: r.minY)
+        let tr = CGPoint(x: r.maxX, y: r.minY)
+        let br = CGPoint(x: r.maxX, y: r.maxY)
+        let bl = CGPoint(x: r.minX, y: r.maxY)
+        func len(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
+        let top = len(tl, tr), right = len(tr, br), bottom = len(br, bl), left = len(bl, tl)
+        let rTR = min(base, top / 2, right / 2)
+        let rBR = min(soft, right / 2, bottom / 2)
+        let rBL = min(soft, bottom / 2, left / 2)
+        let rTL = min(soft, left / 2, top / 2)
+
+        var p = Path()
+        p.move(to: CGPoint(x: (tl.x + tr.x) / 2, y: r.minY))
+        p.addArc(tangent1End: tr, tangent2End: br, radius: max(0.1, rTR))
+        p.addArc(tangent1End: br, tangent2End: bl, radius: max(0.1, rBR))
+        p.addArc(tangent1End: bl, tangent2End: tl, radius: max(0.1, rBL))
+        p.addArc(tangent1End: tl, tangent2End: tr, radius: max(0.1, rTL))
+        p.closeSubpath()
+        return p
+    }
+}
+
 /// Скло, форма якого анімується разом із розміром (D); на старіших iOS — матеріал
 private struct MorphingGlass<S: Shape>: ViewModifier {
     let shape: S
