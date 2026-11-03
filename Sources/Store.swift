@@ -747,6 +747,13 @@ struct LiquidSearchBar: View {
             if searchExpanded {
                 TextField("Пошук циферблатів", text: $query)
                     .focused($focused)
+                    // Поле з'являється лише після натискання лупи; у панелі навігації (B) воно
+                    // вбудовується на мить пізніше, тож фокус ставимо, коли поле вже на екрані
+                    .onAppear {
+                        if active && style == .collapsedButton {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { focused = true }
+                        }
+                    }
                     .submitLabel(.search)
                     .autocorrectionDisabled()
                     .onSubmit { focused = false }
