@@ -152,6 +152,8 @@ struct StoreView: View, Equatable {
     @State private var searchOpen = false
     /// Нижній край великого заголовка (варіант A) — щоб показати маленький, коли великий сховався
     @State private var titleBottom: CGFloat = 100
+    /// H: системний пошук відкрито
+    @State private var systemSearchShown = false
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -186,7 +188,7 @@ struct StoreView: View, Equatable {
         // «Режим розробника»: у журнал пишеться кожне перемальовування сторінки магазину
         BLEManager.noteRedraw("Магазин")
         return NavigationStack {
-            ScrollViewReader { proxy in
+            ScrollViewReader { _ in
                 ScrollView {
                     // Фільтр рахуємо один раз за оновлення екрана
                     let items = shown
@@ -207,7 +209,6 @@ struct StoreView: View, Equatable {
                         }
                         Section {
                             Group {
-                                if mode == 5 { chips }
                                 if items.isEmpty {
                                     Text("Нічого не знайдено")
                                         .foregroundStyle(.secondary)
@@ -233,35 +234,12 @@ struct StoreView: View, Equatable {
                                 }
                             }
                             .padding(.horizontal, 16)
-                            // F/G: запас, щоб сторінку можна було підняти й закріпити рядок пошуку вгорі
-                            if mode == 5 || mode == 6 {
-                                Color.clear.frame(height: Self.scrollRoom)
-                            }
-                        } header: {
-                            // F/G: рядок пошуку — закріплений заголовок секції: спершу під великим
-                            // «Магазин», а при гортанні лишається вгорі, де заголовок стає маленьким
-                            if mode == 5 || mode == 6 {
-                                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter,
-                                                filters: filterOptions,
-                                                style: mode == 6 ? .fieldWithFilter : .field)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 6)
-                                    .background(PinnedFade())
-                                    .id("searchHeader")
-                            }
                         }
                     }
                     .padding(.top, 4)
                     .padding(.bottom, 16)
                 }
                 .coordinateSpace(name: "storeScroll")
-                .onChange(of: searchOpen) { open in
-                    // F/G: при натисканні сторінка плавно піднімається, рядок пошуку стає вгорі,
-                    // а великий заголовок сам перетворюється на маленький (без стрибків панелі)
-                    if open && (mode == 5 || mode == 6) {
-                        withAnimation(.snappy(duration: 0.45)) { proxy.scrollTo("searchHeader", anchor: .top) }
-                    }
-                }
             }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
@@ -271,13 +249,13 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: titleBottom < 60))
+                                      smallTitle: titleBottom < 2,
+                                      systemShown: $systemSearchShown))
         }
     }
 
-    /// Варіант пошуку (тимчасовий експеримент): 0 — A, 5 — F, 6 — G, 7 — H (системний)
-    private var mode: Int { [0, 5, 6, 7].contains(searchMode) ? searchMode : 0 }
-    private static let scrollRoom = UIScreen.main.bounds.height * 0.5
+    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 7 — H (системний)
+    private var mode: Int { searchMode == 7 ? 7 : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -548,6 +526,7 @@ private struct StoreSearchMode: ViewModifier {
     @Binding var filter: String
     let filters: [(String, String)]
     let smallTitle: Bool
+    @Binding var systemShown: Bool
 
     func body(content: Content) -> some View {
         switch mode {
@@ -565,11 +544,12 @@ private struct StoreSearchMode: ViewModifier {
                     }
             })
         case 7:
-            // H: повністю системний пошук iOS 26 — кнопка-лупа в панелі навігації,
-            // що сама розгортається в рядок пошуку
+            // H: системний пошук iOS 26 — лупа в панелі навігації, що сама розгортається
+            // в рядок із хрестиком; ліворуч кнопка фільтрів
             if #available(iOS 26, *) {
                 content
-                    .searchable(text: $query, prompt: Text("Пошук циферблатів"))
+                    .searchable(text: $query, isPresented: $systemShown, prompt: Text("Пошук циферблатів"))
+                    .searchToolbarBehavior(.minimize)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Menu {
@@ -595,17 +575,6 @@ private struct StoreSearchMode: ViewModifier {
 }
 
 
-/// Фон закріпленого рядка пошуку: колір сторінки, що м'яко згасає донизу,
-/// як край під системними панелями
-private struct PinnedFade: View {
-    var body: some View {
-        LinearGradient(stops: [.init(color: Color(.systemGroupedBackground), location: 0),
-                               .init(color: Color(.systemGroupedBackground), location: 0.6),
-                               .init(color: Color(.systemGroupedBackground).opacity(0), location: 1)],
-                       startPoint: .top, endPoint: .bottom)
-            .padding(.bottom, -14)
-    }
-}
 
 
 
