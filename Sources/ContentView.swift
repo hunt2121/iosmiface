@@ -74,7 +74,8 @@ struct ContentView: View {
                       onRefresh: { await syncDeviceFaces(force: true) },
                       activeID: activeFaceID,
                       onActivate: { await bandFaceAction($0, delete: false) },
-                      onDelete: { await bandFaceAction($0, delete: true) })
+                      onDelete: { await bandFaceAction($0, delete: true) },
+                      onCheck: { await syncDeviceFaces() })
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)

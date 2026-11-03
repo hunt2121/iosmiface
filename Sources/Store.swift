@@ -152,6 +152,8 @@ struct StoreView: View, Equatable {
     var activeID: String? = nil
     var onActivate: (StoreFace) async -> String? = { _ in nil }
     var onDelete: (StoreFace) async -> String? = { _ in nil }
+    /// Звичайна (не примусова) перевірка браслета: пропускається, якщо була менш ніж 20 с тому
+    var onCheck: () async -> Void = {}
 
     @State private var query = ""
     /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
@@ -253,7 +255,15 @@ struct StoreView: View, Equatable {
                                        panelShown: $installedShown,
                                        panel: { popover in installedPanel(popover: popover) }))
             // Щойно вікно «Встановлені» відкрилось — уточнюємо в браслета, що на ньому і що на екрані
-            .onChange(of: installedShown) { shown in if shown { Task { await onRefresh() } } }
+            // Вікно «Встановлені» відкрилось: браслет перепитуємо лише після анімації появи
+            // і лише якщо давно не перевіряли — сесія Bluetooth не гальмує відкриття й закриття
+            .onChange(of: installedShown) { shown in
+                guard shown else { return }
+                Task {
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    await onCheck()
+                }
+            }
             .onChange(of: layout) { _ in searchOpen = false; query = "" }
         }
         // Наша панель (фільтр, лупа, що «перетікає» в рядок пошуку, хрестик) — поверх системної панелі,
@@ -970,7 +980,7 @@ struct InstalledFacesPanel: View {
                         .foregroundStyle(Color.okText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
-                        .background(Capsule().fill(Color(.systemGroupedBackground)))
+                        .background(Capsule().fill(popover ? Color(.tertiarySystemFill) : Color(.systemGroupedBackground)))
                 } else {
                     Button { select(item) } label: {
                         Text("Вибрати")
@@ -988,10 +998,20 @@ struct InstalledFacesPanel: View {
             }
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
-            .fill(Color(.secondarySystemGroupedBackground)))
+        .background(cardBackground)
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .onTapGesture { onOpen(item) }
+    }
+
+    /// D: прозоре матове скло; E: звичайна картка
+    @ViewBuilder private var cardBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        if popover {
+            shape.fill(.thinMaterial)
+                .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
+        } else {
+            shape.fill(Color(.secondarySystemGroupedBackground))
+        }
     }
 
     private func select(_ item: StoreFace) {
