@@ -257,7 +257,7 @@ struct StoreView: View, Equatable {
     }
 
     /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 7 — H (системний)
-    private var mode: Int { [7, 8].contains(searchMode) ? searchMode : 0 }
+    private var mode: Int { searchMode == 7 ? 7 : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -545,34 +545,36 @@ private struct StoreSearchMode: ViewModifier {
                             .allowsHitTesting(false)
                     }
             })
-        case 7, 8:
-            // H / I: системний пошук iOS 26 — лупа в панелі навігації, що сама розгортається
-            // в рядок із хрестиком; у H ліворуч кнопка фільтрів, в I — без неї (перевірка, чи вона заважає)
-            if #available(iOS 26, *) {
-                content
-                    .searchable(text: $query, isPresented: $systemShown, prompt: Text("Пошук циферблатів"))
-                    .searchToolbarBehavior(.minimize)
-                    .onAppear(perform: SystemSearchKeyboard.enableReturnKey)
-                    .toolbar {
-                        if mode == 7 {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Menu {
-                                Picker(selection: $filter) {
-                                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                                } label: { EmptyView() }
-                            } label: {
-                                Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                                  : "line.3.horizontal.decrease.circle.fill")
-                            }
-                            .accessibilityLabel(Text("Фільтр"))
+        case 7:
+            // H: системний рядок пошуку iOS 26, який відкриває наша лупа в панелі навігації.
+            // До натискання рядка не видно (лише лупа), тож немає перемикання старого стилю в новий;
+            // закриття — системним хрестиком/«Скасувати», стан керується isPresented
+            content
+                .searchable(text: $query, isPresented: $systemShown,
+                            placement: .navigationBarDrawer(displayMode: .automatic),
+                            prompt: Text("Пошук циферблатів"))
+                .onAppear(perform: SystemSearchKeyboard.enableReturnKey)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Picker(selection: $filter) {
+                                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                            } label: { EmptyView() }
+                        } label: {
+                            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                              : "line.3.horizontal.decrease.circle.fill")
                         }
-                        }
-                        DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                        .accessibilityLabel(Text("Фільтр"))
                     }
-            } else {
-                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
-                                   prompt: Text("Пошук циферблатів"))
-            }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            systemShown = true
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityLabel(Text("Пошук циферблатів"))
+                    }
+                }
         default:
             content
         }
