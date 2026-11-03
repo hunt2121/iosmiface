@@ -257,7 +257,7 @@ struct StoreView: View, Equatable {
     }
 
     /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 7 — H (системний)
-    private var mode: Int { searchMode == 7 ? 7 : 0 }
+    private var mode: Int { [1, 7].contains(searchMode) ? searchMode : 0 }
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
@@ -545,6 +545,29 @@ private struct StoreSearchMode: ViewModifier {
                             .allowsHitTesting(false)
                     }
             })
+        case 1:
+            // B: як A, але великий заголовок системний (стає маленьким при гортанні, як в інших вкладках).
+            // Ліворуч кнопка фільтрів, праворуч наша лупа, що розгортається вліво в рядок пошуку
+            content
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Picker(selection: $filter) {
+                                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                            } label: { EmptyView() }
+                        } label: {
+                            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                              : "line.3.horizontal.decrease.circle.fill")
+                        }
+                        .accessibilityLabel(Text("Фільтр"))
+                    }
+                }
+                .modifier(TrailingSearchItem {
+                    LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
+                                    style: .toolbarSearch)
+                        .frame(width: searchOpen ? TrailingSearchItem<EmptyView>.expandedWidth : 44,
+                               alignment: .trailing)
+                })
         case 7:
             // H: системний рядок пошуку iOS 26, який відкриває наша лупа в панелі навігації.
             // До натискання рядка не видно (лише лупа), тож немає перемикання старого стилю в новий;
@@ -651,7 +674,7 @@ private struct MorphGlass: ViewModifier {
 /// - field (F): лише рядок пошуку
 /// - fieldWithFilter (G): фільтр і рядок; під час пошуку фільтр вливається в рядок
 struct LiquidSearchBar: View {
-    enum Style { case collapsedButton, field, fieldWithFilter }
+    enum Style { case collapsedButton, field, fieldWithFilter, toolbarSearch }
 
     @Binding var query: String
     @Binding var active: Bool
@@ -670,7 +693,7 @@ struct LiquidSearchBar: View {
     private var showFilter: Bool {
         style == .collapsedButton || (style == .fieldWithFilter && !active)
     }
-    private var searchExpanded: Bool { style != .collapsedButton || active }
+    private var searchExpanded: Bool { style == .field || style == .fieldWithFilter || active }
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -756,7 +779,7 @@ struct LiquidSearchBar: View {
     private var closeButton: some View {
         Button {
             focused = false
-            if style == .collapsedButton { query = "" }
+            if style == .collapsedButton || style == .toolbarSearch { query = "" }
             withAnimation(animation) { active = false }
         } label: {
             Image(systemName: "xmark")
@@ -777,5 +800,26 @@ enum SystemSearchKeyboard {
     static func enableReturnKey() {
         UITextField.appearance(whenContainedInInstancesOf: [UISearchBar.self])
             .enablesReturnKeyAutomatically = false
+    }
+}
+
+/// Наша лупа в правому куті панелі навігації (варіант B). На iOS 26 системне скло
+/// навколо пункту вимкнене, щоб працювало наше «рідке скло».
+private struct TrailingSearchItem<Item: View>: ViewModifier {
+    @ViewBuilder let item: Item
+    /// Ширина розгорнутого рядка: екран мінус поля й кнопка фільтрів ліворуч
+    static var expandedWidth: CGFloat { UIScreen.main.bounds.width - 16 * 2 - 44 - 24 }
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.toolbar {
+                ToolbarItem(placement: .topBarTrailing) { item }
+                    .sharedBackgroundVisibility(.hidden)
+            }
+        } else {
+            content.toolbar {
+                ToolbarItem(placement: .topBarTrailing) { item }
+            }
+        }
     }
 }

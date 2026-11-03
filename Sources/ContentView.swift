@@ -209,6 +209,7 @@ struct ContentView: View {
                 Section {
                     Picker(selection: $storeSearchMode) {
                         Text(verbatim: "A · Кнопка біля заголовка").tag(0)
+                        Text(verbatim: "B · Як A, системний великий заголовок").tag(1)
                         Text(verbatim: "H · Системний: лупа, хрестик, фільтр").tag(7)
                     } label: {
                         Text(verbatim: "Пошук у магазині")
