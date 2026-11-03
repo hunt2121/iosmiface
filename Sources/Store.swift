@@ -388,7 +388,8 @@ struct FaceActionButton: View {
     var body: some View {
         switch state {
         case .installing:
-            // На сторінці циферблата (велика кнопка) смужка така сама, як на головній: 12 pt, відступи 14 pt
+            // На сторінці циферблата (велика кнопка) смужка й текст такі самі, як на головній:
+            // смужка 12 pt, текст footnote на 4 pt нижче, відступи 14 pt. У картці магазину — 8 pt і відступи 6 pt
             let large = height >= 50
             VStack(spacing: 4) {
                 GeometryReader { geo in
@@ -398,7 +399,7 @@ struct FaceActionButton: View {
                             .frame(width: max(large ? 12 : 8, geo.size.width * progress))
                     }
                 }
-                .frame(height: large ? 12 : 6)
+                .frame(height: large ? 12 : 8)
                 HStack {
                     Text(progressText).lineLimit(1)
                     Spacer()
@@ -407,7 +408,7 @@ struct FaceActionButton: View {
                 .font(large ? .footnote : .caption2)
                 .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, large ? 14 : 0)
+            .padding(.horizontal, large ? 14 : 6)
             .frame(height: height)
         case .installed:
             HStack(spacing: 6) {
