@@ -147,15 +147,10 @@ struct StoreView: View, Equatable {
     let onRefresh: () async -> Void
 
     @State private var query = ""
-    /// Тимчасовий експеримент: 0 — кнопка пошуку біля заголовка, 1 — пошук унизу, 2 — пошук унизу з кнопкою фільтрів
-    @AppStorage("storeSearchMode") private var searchMode = 0
+    /// Пошук відкрито (лупа розгорнулась у рядок)
     @State private var searchOpen = false
-    /// Нижній край великого заголовка (варіант A) — щоб показати маленький, коли великий сховався
-    @State private var titleBottom: CGFloat = 1000
-    /// Нижній край верхньої панелі на екрані (варіант A)
-    @State private var barBottom: CGFloat = 0
-    /// Шлях навігації: змінюється на самому початку переходу (і вперед, і назад),
-    /// тож панель B рушає синхронно зі сторінкою
+    /// Шлях навігації: змінюється на самому початку переходу до картки й назад,
+    /// тож панель пошуку згасає й з'являється синхронно зі сторінкою
     @State private var path: [String] = []
     @State private var filter = "all"
 
@@ -188,59 +183,36 @@ struct StoreView: View, Equatable {
     }
 
     var body: some View {
-        // «Режим розробника»: у журнал пишеться кожне перемальовування сторінки магазину
-        BLEManager.noteRedraw("Магазин")
-        return NavigationStack(path: $path) {
+        NavigationStack(path: $path) {
             ScrollView {
-                    // Фільтр рахуємо один раз за оновлення екрана
-                    let items = shown
-                    VStack(alignment: .leading, spacing: 14) {
-                        if mode == 0 {
-                            // A: власний великий заголовок; коли він ховається під панель,
-                            // у панелі з'являється маленький «Магазин»
-                            Text("Магазин")
-                                .font(.largeTitle.bold())
-                                .padding(.horizontal, 16)
-                                .padding(.top, 2)
-                                // Згасає, заходячи під панель (за висоту самого заголовка),
-                                // і повністю зникає саме тоді, коли з'являється маленький
-                                .opacity(min(1, max(0, Double(titleBottom - barBottom) / 41)))
-                                .background(GeometryReader { g in
-                                    // Позиція на екрані — як і низ панелі, тож порівнюємо в одних координатах
-                                    let bottom = g.frame(in: .global).maxY
-                                    Color.clear
-                                        .onAppear { titleBottom = bottom }
-                                        .onChange(of: bottom) { titleBottom = $0 }
-                                })
-                        }
-                        Section {
-                            Group {
-                                if items.isEmpty {
-                                    Text("Нічого не знайдено")
-                                        .foregroundStyle(.secondary)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.top, 40)
-                                } else {
-                                    LazyVGrid(columns: columns, spacing: 12) {
-                                        ForEach(items) { item in
-                                            NavigationLink(value: item.id) {
-                                                card(item)
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
+                // Фільтр рахуємо один раз за оновлення екрана
+                let items = shown
+                Group {
+                    if items.isEmpty {
+                        Text("Нічого не знайдено")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 40)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(items) { item in
+                                NavigationLink(value: item.id) {
+                                    card(item)
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 16)
                         }
                     }
-                    .padding(.top, 4)
-                    .padding(.bottom, 16)
                 }
-                .coordinateSpace(name: "storeScroll")
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 16)
+            }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
+            // Великий і маленький заголовки — системні: системна панель навігації лишається порожньою
             .navigationTitle("Магазин")
+            .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.id == id }) {
                     StoreDetailView(item: item,
@@ -252,75 +224,28 @@ struct StoreView: View, Equatable {
                                     onInstall: onInstall)
                 }
             }
-            .onChange(of: searchMode) { _ in searchOpen = false; query = "" }
-            // B: поки відкритий пошук, маленький системний заголовок ховаємо (порожній центральний пункт
-            // панелі заміняє його); великий заголовок лишається
-            .modifier(HideInlineTitle(hidden: mode == 1 && searchOpen))
-            .navigationBarTitleDisplayMode(mode == 0 ? .inline : .large)
-            .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
-            .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
-                                      filter: $filter, filters: filterOptions,
-                                      smallTitle: titleBottom <= barBottom + 2,
-                                      barBottom: $barBottom))
+            // Поки відкритий пошук, маленький системний заголовок ховаємо; великий лишається
+            .modifier(HideInlineTitle(hidden: searchOpen))
         }
-        // B: та сама панель, що в A, але поверх системної панелі навігації. Системна панель
-        // лишається порожньою, тож великий заголовок і маленький (з його анімацією) — справжні системні
+        // Наша панель (фільтр, лупа, що «перетікає» в рядок пошуку, хрестик) — поверх системної панелі,
+        // у рядку її кнопок. Під час переходу до картки згасає і з'являється при поверненні
         .overlay(alignment: .top) {
-            if mode == 1 {
-                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filterOptions,
-                                style: .collapsedButton)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 2)
-                    // Перехід до картки: панель їде вліво разом зі сторінкою магазину (як системна,
-                    // на третину ширини) і згасає під новою сторінкою; при поверненні — виїжджає назад
-                    .offset(x: path.isEmpty ? 0 : -UIScreen.main.bounds.width * 0.3)
-                    .opacity(path.isEmpty ? 1 : 0)
-                    .allowsHitTesting(path.isEmpty)
-                    .animation(.smooth(duration: 0.42), value: path.isEmpty)
-            }
+            LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filterOptions)
+                .padding(.horizontal, Self.barMargin)
+                .padding(.top, 2)
+                .opacity(path.isEmpty ? 1 : 0)
+                .allowsHitTesting(path.isEmpty)
+                .animation(.easeInOut(duration: 0.25), value: path.isEmpty)
         }
     }
 
-    /// Варіант пошуку (тимчасовий експеримент): 0 — A (свій), 1 — B (A + системний великий заголовок)
-    private var mode: Int { searchMode == 1 ? 1 : 0 }
+    /// Бічні відступи, як у системної панелі навігації: 20 pt на великих iPhone (Plus, Pro Max), інакше 16
+    private static let barMargin: CGFloat = UIScreen.main.bounds.width >= 414 ? 20 : 16
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
         [("all", String(localized: "Усі")), ("new", String(localized: "Нові")),
          ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
-    }
-
-    private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            ChipRow {
-                chip("all", String(localized: "Усі"))
-                chip("new", String(localized: "Нові"))
-                chip("free", String(localized: "Безкоштовні"))
-                ForEach(kinds, id: \.self) { k in chip(k, k) }
-            }
-            // Запас навколо міток: при натисканні скло розширюється й не обрізається краєм прокрутки
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-        }
-        // Компенсуємо запас, щоб розкладка залишилась тією самою
-        .padding(.horizontal, -16)
-        .padding(.vertical, -14)
-    }
-
-    private func chip(_ id: String, _ title: String) -> some View {
-        let on = filter == id
-        return Button { filter = id } label: {
-            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .hidden()
-                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
-                .padding(.horizontal, 14)
-                .frame(height: 32)
-                .foregroundStyle(on ? Color.white : Color.primary)
-                .modifier(ChipGlass(on: on))
-        }
-        .buttonStyle(.plain)
     }
 
     private func card(_ item: StoreFace) -> some View {
@@ -370,18 +295,6 @@ struct StoreView: View, Equatable {
     }
 }
 
-/// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
-/// На старіших версіях вибрана зафарбована акцентним кольором.
-private struct ChipGlass: ViewModifier {
-    let on: Bool
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.glassEffect(.regular.tint(on ? Color.accentColor : nil).interactive(), in: Capsule())
-        } else {
-            content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
-        }
-    }
-}
 
 /// Кнопка внизу картки: «Встановити», прогрес, «Встановлено», «Оновити».
 struct FaceActionButton: View {
@@ -530,60 +443,7 @@ struct StoreDetailView: View {
     }
 }
 
-/// Ряд міток. На iOS 26 — в одному GlassEffectContainer: скло малюється за один прохід,
-/// і анімації (пошук, вибір мітки) не втрачають кадрів.
-private struct ChipRow<Content: View>: View {
-    @ViewBuilder let content: Content
-    var body: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 8) {
-                HStack(spacing: 8) { content }
-            }
-        } else {
-            HStack(spacing: 8) { content }
-        }
-    }
-}
 
-/// Тимчасовий експеримент із пошуком магазину.
-private struct StoreSearchMode: ViewModifier {
-    let mode: Int
-    @Binding var query: String
-    @Binding var searchOpen: Bool
-    @Binding var filter: String
-    let filters: [(String, String)]
-    let smallTitle: Bool
-    @Binding var barBottom: CGFloat
-
-    func body(content: Content) -> some View {
-        switch mode {
-        case 0:
-            // A: своя верхня панель — фільтр, лупа, що «перетікає» в рядок пошуку, і маленький заголовок
-            content.modifier(TopBar {
-                LiquidSearchBar(query: $query, active: $searchOpen, filter: $filter, filters: filters,
-                                style: .collapsedButton)
-                    .overlay {
-                        // Маленький заголовок з'являється, як системний: згасання з легким підйомом
-                        Text("Магазин")
-                            .font(.headline)
-                            .opacity(smallTitle && !searchOpen ? 1 : 0)
-                            .offset(y: smallTitle ? 0 : 6)
-                            .animation(.easeInOut(duration: 0.25), value: smallTitle)
-                            .allowsHitTesting(false)
-                    }
-                    // Низ панелі на екрані (+ її нижній відступ 6) — межа, за якою великий заголовок ховається
-                    .background(GeometryReader { g in
-                        let bottom = g.frame(in: .global).maxY + 6
-                        Color.clear
-                            .onAppear { barBottom = bottom }
-                            .onChange(of: bottom) { barBottom = $0 }
-                    })
-            })
-        default:
-            content
-        }
-    }
-}
 
 
 
@@ -606,22 +466,6 @@ private struct BlocksTouchesBehind: ViewModifier {
     }
 }
 
-/// Панель угорі сторінки. На iOS 26 — safeAreaBar (вміст під нею розмивається, як під системною панеллю).
-private struct TopBar<Bar: View>: ViewModifier {
-    @ViewBuilder let bar: Bar
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.safeAreaBar(edge: .top) {
-                bar.padding(.horizontal, 16).padding(.top, 2).padding(.bottom, 6)
-            }
-        } else {
-            content.safeAreaInset(edge: .top) {
-                bar.padding(.horizontal, 16).padding(.top, 2).padding(.bottom, 6)
-                    .background(.bar)
-            }
-        }
-    }
-}
 
 
 /// Скло з ідентифікатором: однакові id у GlassEffectContainer плавно перетікають одне в одне.
@@ -655,13 +499,10 @@ private struct MorphGlass: ViewModifier {
 /// - field (F): лише рядок пошуку
 /// - fieldWithFilter (G): фільтр і рядок; під час пошуку фільтр вливається в рядок
 struct LiquidSearchBar: View {
-    enum Style { case collapsedButton, field, fieldWithFilter }
-
     @Binding var query: String
     @Binding var active: Bool
     @Binding var filter: String
     let filters: [(String, String)]
-    let style: Style
     @FocusState private var focused: Bool
     @Namespace private var glass
 
@@ -671,10 +512,7 @@ struct LiquidSearchBar: View {
     private let gap: CGFloat = 12
     private let animation = Animation.bouncy(duration: 0.5, extraBounce: 0.1)
 
-    private var showFilter: Bool {
-        style == .collapsedButton || (style == .fieldWithFilter && !active)
-    }
-    private var searchExpanded: Bool { style == .field || style == .fieldWithFilter || active }
+    private var searchExpanded: Bool { active }
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -688,10 +526,7 @@ struct LiquidSearchBar: View {
         // Кнопки додаються й прибираються цілком (а не стискаються до нуля):
         // так GlassEffectContainer «видавлює» нове скло з сусіднього і вбирає його назад
         HStack(spacing: gap) {
-            if showFilter {
-                filterButton
-                    .transition(.identity)
-            }
+            filterButton
             if !searchExpanded { Spacer(minLength: 0) }
             searchField
             if active {
@@ -737,7 +572,7 @@ struct LiquidSearchBar: View {
                     // Поле з'являється лише після натискання лупи; у панелі навігації (B) воно
                     // вбудовується на мить пізніше, тож фокус ставимо, коли поле вже на екрані
                     .onAppear {
-                        if active && style == .collapsedButton {
+                        if active {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { focused = true }
                         }
                     }
@@ -767,7 +602,7 @@ struct LiquidSearchBar: View {
     private var closeButton: some View {
         Button {
             focused = false
-            if style == .collapsedButton { query = "" }
+            query = ""
             withAnimation(animation) { active = false }
         } label: {
             Image(systemName: "xmark")
