@@ -358,11 +358,7 @@ struct StoreView: View, Equatable {
     }
 
     @ViewBuilder private func subtitleView(_ item: StoreFace) -> some View {
-        if item.id == activeID {
-            (Text(Image(systemName: "checkmark")) + Text(verbatim: " ") + Text("На екрані"))
-                .fontWeight(.semibold).foregroundColor(Color.okText)
-            + Text(verbatim: " · \(item.sizeKB) KB")
-        } else if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
+        if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
             (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okText)
              + Text(verbatim: " · \(item.sizeKB) KB"))
         } else {
@@ -392,23 +388,26 @@ struct FaceActionButton: View {
     var body: some View {
         switch state {
         case .installing:
+            // На сторінці циферблата (велика кнопка) смужка така сама, як на головній: 12 pt, відступи 14 pt
+            let large = height >= 50
             VStack(spacing: 4) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.gray.opacity(0.3))
                         Capsule().fill(Color.accentColor)
-                            .frame(width: max(8, geo.size.width * progress))
+                            .frame(width: max(large ? 12 : 8, geo.size.width * progress))
                     }
                 }
-                .frame(height: 6)
+                .frame(height: large ? 12 : 6)
                 HStack {
                     Text(progressText).lineLimit(1)
                     Spacer()
                     Text(verbatim: "\(Int(progress * 100))%")
                 }
-                .font(.caption2)
+                .font(large ? .footnote : .caption2)
                 .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, large ? 14 : 0)
             .frame(height: height)
         case .installed:
             HStack(spacing: 6) {
