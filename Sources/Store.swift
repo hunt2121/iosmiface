@@ -573,9 +573,7 @@ private struct StoreSearchMode: ViewModifier {
             // До натискання рядка не видно (лише лупа), тож немає перемикання старого стилю в новий;
             // закриття — системним хрестиком/«Скасувати», стан керується isPresented
             content
-                .searchable(text: $query, isPresented: $systemShown,
-                            placement: .navigationBarDrawer(displayMode: .automatic),
-                            prompt: Text("Пошук циферблатів"))
+                .modifier(SystemSearchPresented(query: $query, shown: $systemShown))
                 .onAppear(perform: SystemSearchKeyboard.enableReturnKey)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -820,6 +818,22 @@ private struct TrailingSearchItem<Item: View>: ViewModifier {
             content.toolbar {
                 ToolbarItem(placement: .topBarTrailing) { item }
             }
+        }
+    }
+}
+
+/// Системний пошук, який відкривається програмно (iOS 17+); на старіших — звичайний рядок під заголовком.
+private struct SystemSearchPresented: ViewModifier {
+    @Binding var query: String
+    @Binding var shown: Bool
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.searchable(text: $query, isPresented: $shown,
+                               placement: .navigationBarDrawer(displayMode: .automatic),
+                               prompt: Text("Пошук циферблатів"))
+        } else {
+            content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
+                               prompt: Text("Пошук циферблатів"))
         }
     }
 }
