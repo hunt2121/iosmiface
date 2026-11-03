@@ -258,7 +258,7 @@ struct StoreView: View, Equatable {
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            ChipRow {
+            HStack(spacing: 8) {
                 chip("all", String(localized: "Усі"))
                 chip("new", String(localized: "Нові"))
                 chip("free", String(localized: "Безкоштовні"))
@@ -693,17 +693,3 @@ private struct ChipGlass: ViewModifier {
     }
 }
 
-/// Ряд міток. На iOS 26 — в одному GlassEffectContainer: скло малюється за один прохід,
-/// і анімації (пошук, вибір мітки) не втрачають кадрів.
-private struct ChipRow<Content: View>: View {
-    @ViewBuilder let content: Content
-    var body: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 8) {
-                HStack(spacing: 8) { content }
-            }
-        } else {
-            HStack(spacing: 8) { content }
-        }
-    }
-}
