@@ -253,7 +253,10 @@ struct StoreView: View, Equatable {
             .modifier(SystemBarButtons(mode: layout, filter: $filter, filters: filterOptions,
                                        refreshing: refreshing, onRefresh: refresh,
                                        panelShown: $installedShown,
-                                       panel: { popover in installedPanel(popover: popover) }))
+                                       panel: { popover in installedPanel(popover: popover) },
+                                       menuFaces: faces.filter { installed[$0.id] != nil },
+                                       activeID: activeID,
+                                       onOpen: { path.append($0.id) }))
             // Щойно вікно «Встановлені» відкрилось — уточнюємо в браслета, що на ньому і що на екрані
             // Вікно «Встановлені» відкрилось: браслет перепитуємо лише після анімації появи
             // і лише якщо давно не перевіряли — сесія Bluetooth не гальмує відкриття й закриття
@@ -822,11 +825,15 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     let onRefresh: () -> Void
     @Binding var panelShown: Bool
     let panel: (_ popover: Bool) -> Panel
+    /// F: системне меню «Встановлено»
+    let menuFaces: [StoreFace]
+    let activeID: String?
+    let onOpen: (StoreFace) -> Void
 
     func body(content: Content) -> some View {
         content
             .toolbar {
-                if mode == 2 || mode == 4 {
+                if mode == 2 || mode == 4 || mode == 5 {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Menu {
                             Picker(selection: $filter) {
@@ -853,6 +860,35 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                         .accessibilityLabel(Text("Оновити"))
                     }
                 }
+                if mode == 5 {
+                    // F: системне меню — анімацію відкриття робить iOS
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Section("Встановлено") {
+                                if menuFaces.isEmpty {
+                                    Text("Циферблатів з магазину на браслеті немає")
+                                }
+                                ForEach(menuFaces) { item in
+                                    Button { onOpen(item) } label: {
+                                        Text(item.name)
+                                        if item.id == activeID {
+                                            Text("✓ На екрані")
+                                        } else {
+                                            Text(verbatim: item.meta)
+                                        }
+                                        Image(uiImage: MenuThumb.image(for: item))
+                                            .renderingMode(.original)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Image("IconInstalled")
+                                .resizable()
+                                .frame(width: 23, height: 23)
+                        }
+                        .accessibilityLabel(Text("Встановлені"))
+                    }
+                }
                 if mode == 4 {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button { panelShown = true } label: {
@@ -868,6 +904,34 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
             .sheet(isPresented: Binding(get: { mode == 4 && panelShown }, set: { panelShown = $0 })) {
                 InstalledSheet { panel(false) }
             }
+    }
+}
+
+/// F: мініатюра циферблата для рядка системного меню — капсула в квадраті, щоб iOS не розтягувала її
+private enum MenuThumb {
+    private static var cache: [String: UIImage] = [:]
+
+    static func image(for item: StoreFace) -> UIImage {
+        if let cached = cache[item.id] { return cached }
+        let side: CGFloat = 30
+        let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 3
+        let image = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { _ in
+            let path = UIBezierPath(roundedRect: capsule, cornerRadius: capsule.width / 2)
+            UIColor.black.setFill()
+            path.fill()
+            path.addClip()
+            if let preview = item.preview {
+                // scaledToFill у капсулу
+                let scale = max(capsule.width / preview.size.width, capsule.height / preview.size.height)
+                let size = CGSize(width: preview.size.width * scale, height: preview.size.height * scale)
+                preview.draw(in: CGRect(x: capsule.midX - size.width / 2, y: capsule.midY - size.height / 2,
+                                        width: size.width, height: size.height))
+            }
+        }.withRenderingMode(.alwaysOriginal)
+        cache[item.id] = image
+        return image
     }
 }
 

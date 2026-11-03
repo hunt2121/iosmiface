@@ -219,6 +219,7 @@ struct ContentView: View {
                         Text(verbatim: "C · Системна панель: фільтр і оновлення").tag(2)
                         Text(verbatim: "D · Встановлені: спливаюче вікно").tag(3)
                         Text(verbatim: "E · Встановлені: аркуш знизу").tag(4)
+                        Text(verbatim: "F · Встановлені: системне меню").tag(5)
                     } label: {
                         Text(verbatim: "Магазин")
                     }
