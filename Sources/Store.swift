@@ -104,6 +104,8 @@ enum InstalledFaces {
 /// Той самий вигляд на вкладці «Циферблати», в магазині й на сторінці циферблата.
 struct FaceCapsule: View {
     let image: UIImage?
+    /// Циферблат зараз на екрані браслета — рамка зелена
+    var active = false
 
     var body: some View {
         ZStack {
@@ -119,7 +121,7 @@ struct FaceCapsule: View {
         .frame(width: 96, height: 236)
         .clipShape(Capsule(style: .continuous))
         .padding(3)
-        .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.45)))
+        .background(Capsule(style: .continuous).fill(active ? Color.okIcon : Color.gray.opacity(0.45)))
     }
 }
 
@@ -237,7 +239,10 @@ struct StoreView: View, Equatable {
                                     busy: busy,
                                     progress: progress,
                                     progressText: progressText,
-                                    onInstall: onInstall)
+                                    onInstall: onInstall,
+                                    isActive: item.id == activeID,
+                                    onSelect: { await onActivate(item) },
+                                    onDelete: { await onDelete(item) })
                 }
             }
             // Поки відкритий пошук, маленький системний заголовок ховаємо; великий лишається
@@ -289,8 +294,17 @@ struct StoreView: View, Equatable {
         InstalledFacesPanel(faces: faces.filter { installed[$0.id] != nil },
                             activeID: activeID,
                             popover: popover,
-                            onActivate: onActivate,
-                            onDelete: onDelete)
+                            onSelect: onActivate,
+                            onOpen: openFromPanel)
+    }
+
+    /// Картка у вікні «Встановлені»: вікно закривається, відкривається сторінка циферблата
+    private func openFromPanel(_ item: StoreFace) {
+        installedShown = false
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            path.append(item.id)
+        }
     }
 
     private var chips: some View {
@@ -316,7 +330,7 @@ struct StoreView: View, Equatable {
     private func card(_ item: StoreFace) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack(alignment: .topLeading) {
-                FaceCapsule(image: item.preview)
+                FaceCapsule(image: item.preview, active: item.id == activeID)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(height: 266)
@@ -344,7 +358,11 @@ struct StoreView: View, Equatable {
     }
 
     @ViewBuilder private func subtitleView(_ item: StoreFace) -> some View {
-        if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
+        if item.id == activeID {
+            (Text(Image(systemName: "checkmark")) + Text(verbatim: " ") + Text("На екрані"))
+                .fontWeight(.semibold).foregroundColor(Color.okText)
+            + Text(verbatim: " · \(item.sizeKB) KB")
+        } else if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
             (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okText)
              + Text(verbatim: " · \(item.sizeKB) KB"))
         } else {
@@ -442,6 +460,16 @@ struct StoreDetailView: View {
     let progress: Double
     let progressText: String
     let onInstall: (StoreFace) -> Void
+    /// Циферблат зараз на екрані браслета
+    var isActive = false
+    /// «Вибрати» (зробити активним) і «Видалити з браслета»: nil — успіх, інакше текст помилки
+    var onSelect: () async -> String? = { nil }
+    var onDelete: () async -> String? = { nil }
+
+    private enum Work { case select, delete }
+    @State private var working: Work?
+    @State private var askDelete = false
+    @State private var error: String?
 
     var body: some View {
         ScrollView {
@@ -460,21 +488,104 @@ struct StoreDetailView: View {
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
 
-                FaceActionButton(state: state, price: item.price, busy: busy,
-                                 progress: progress, progressText: progressText, height: 52) {
-                    onInstall(item)
+                actions
+
+                if let error {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(Color.errorText)
+                        .padding(.horizontal, 4)
                 }
 
                 Text(item.about)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
+
+                // Видалення — окремо внизу, далеко від основних кнопок; лише для встановленого
+                if installedVersion != nil && state != .installing {
+                    deleteRow
+                }
             }
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        .alert(String(localized: "Видалити \(item.name) з браслета?"), isPresented: $askDelete) {
+            Button("Видалити", role: .destructive) { run(.delete) }
+            Button("Скасувати", role: .cancel) {}
+        } message: {
+            Text("Встановити його знову можна з магазину.")
+        }
+    }
+
+    /// Не встановлено — «Встановити»; встановлено — «✓ Встановлено» і поруч «Вибрати» або «✓ На екрані»
+    @ViewBuilder private var actions: some View {
+        if state == .installed {
+            HStack(spacing: 10) {
+                slot(Label("Встановлено", systemImage: "checkmark"))
+                    .foregroundStyle(.secondary)
+                if isActive {
+                    slot(Label("На екрані", systemImage: "checkmark"))
+                        .foregroundStyle(Color.okText)
+                } else {
+                    Button { run(.select) } label: {
+                        Text("Вибрати")
+                            .font(.subheadline.weight(.semibold))
+                            .opacity(working == .select ? 0 : 1)
+                            .overlay { if working == .select { ProgressView().tint(.white) } }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .foregroundStyle(.white)
+                            .background(Capsule().fill(Color.accentColor))
+                            .capsuleGlass(tint: Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(working != nil || busy)
+                }
+            }
+        } else {
+            FaceActionButton(state: state, price: item.price, busy: busy,
+                             progress: progress, progressText: progressText, height: 52) {
+                onInstall(item)
+            }
+        }
+    }
+
+    private func slot(_ label: some View) -> some View {
+        label
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+    }
+
+    private var deleteRow: some View {
+        Button { askDelete = true } label: {
+            Text("Видалити з браслета")
+                .opacity(working == .delete ? 0 : 1)
+                .overlay { if working == .delete { ProgressView() } }
+                .foregroundStyle(Color(.systemRed))
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground)))
+                .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(working != nil || busy)
+    }
+
+    private func run(_ work: Work) {
+        guard working == nil else { return }
+        working = work
+        error = nil
+        Task {
+            let result = work == .select ? await onSelect() : await onDelete()
+            working = nil
+            error = result
+        }
     }
 
     private var previews: some View {
@@ -781,128 +892,114 @@ private struct InstalledSheet<Panel: View>: View {
     }
 }
 
-/// Тестова функція: циферблати магазину на браслеті з кнопками «Встановити» (зробити активним) і «Видалити».
+/// Вікно «Встановлені»: циферблати магазину, що зараз є на браслеті. Картка відкриває сторінку циферблата
+/// (там «Видалити з браслета»); на самій картці одна дія — «Вибрати» або позначка «✓ На екрані».
 struct InstalledFacesPanel: View {
     let faces: [StoreFace]
     let activeID: String?
-    /// true — компактне спливаюче вікно, false — список на аркуші
+    /// true — компактне спливаюче вікно, false — аркуш знизу
     let popover: Bool
-    let onActivate: (StoreFace) async -> String?
-    let onDelete: (StoreFace) async -> String?
+    let onSelect: (StoreFace) async -> String?
+    let onOpen: (StoreFace) -> Void
 
-    /// Яка дія зараз виконується: «id:a» — увімкнення, «id:d» — видалення
+    /// ID циферблата, який зараз вмикається
     @State private var working: String?
-    @State private var askDelete: StoreFace?
     @State private var error: String?
 
     var body: some View {
-        content
-            .alert(askDelete.map { String(localized: "Видалити \($0.name)?") } ?? "",
-                   isPresented: Binding(get: { askDelete != nil }, set: { if !$0 { askDelete = nil } }),
-                   presenting: askDelete) { item in
-                Button("Видалити", role: .destructive) { run(item, delete: true) }
-                Button("Скасувати", role: .cancel) {}
-            } message: { _ in
-                Text("Циферблат буде видалено з браслета. Встановити його знову можна з магазину.")
-            }
-    }
-
-    @ViewBuilder private var content: some View {
         if popover {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("На браслеті · \(faces.count)")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 14)
-                    .padding(.bottom, 4)
-                if faces.isEmpty { empty.padding(18) }
-                ForEach(Array(faces.enumerated()), id: \.element.id) { i, item in
-                    row(item, thumb: CGSize(width: 34, height: 80))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                    if i < faces.count - 1 { Divider().padding(.leading, 64) }
-                }
-                if let error { errorText(error).padding(.horizontal, 18).padding(.bottom, 12) }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 4)
+                list
             }
-            .padding(.bottom, 6)
-            .frame(width: 330)
+            .padding(12)
+            .frame(width: 340)
         } else {
-            List {
-                Section {
-                    if faces.isEmpty { empty }
-                    ForEach(faces) { item in
-                        row(item, thumb: CGSize(width: 40, height: 96))
-                            .padding(.vertical, 4)
-                    }
-                } footer: {
-                    if let error { errorText(error) }
-                }
+            ScrollView {
+                VStack(spacing: 12) { list }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
             }
-            .listStyle(.insetGrouped)
+            .background(Color(.systemGroupedBackground))
         }
     }
 
-    private var empty: some View {
-        Text("Циферблатів з магазину на браслеті немає")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+    @ViewBuilder private var list: some View {
+        if faces.isEmpty {
+            Text("Циферблатів з магазину на браслеті немає")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(8)
+        }
+        ForEach(faces) { item in card(item) }
+        if let error {
+            Text(error)
+                .font(.footnote)
+                .foregroundStyle(Color.errorText)
+                .padding(.horizontal, 8)
+        }
     }
 
-    private func errorText(_ text: String) -> some View {
-        Text(text).font(.footnote).foregroundStyle(Color.errorText)
-    }
-
-    private func row(_ item: StoreFace, thumb: CGSize) -> some View {
-        HStack(spacing: 14) {
+    private func card(_ item: StoreFace) -> some View {
+        let thumb = popover ? CGSize(width: 60, height: 142) : CGSize(width: 78, height: 186)
+        return HStack(spacing: 16) {
             MiniCapsule(image: item.preview)
                 .frame(width: thumb.width, height: thumb.height)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.name).font(.headline)
-                Text(verbatim: item.meta).font(.footnote).foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    if item.id == activeID {
-                        Label("На екрані", systemImage: "checkmark")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(Color.okText)
-                            .padding(.horizontal, 14)
-                            .frame(height: 34)
-                            .background(Capsule().fill(Color(.tertiarySystemFill)))
-                    } else {
-                        actionButton(String(localized: "Встановити"), busy: working == item.id + ":a", tint: .accentColor) {
-                            run(item, delete: false)
-                        }
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(item.name)
+                            .font(popover ? .headline : .title3.bold())
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Color(.tertiaryLabel))
                     }
-                    actionButton(String(localized: "Видалити"), busy: working == item.id + ":d", tint: .red) {
-                        askDelete = item
-                    }
+                    Text(verbatim: item.meta)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.top, 8)
+                if item.id == activeID {
+                    Label("На екрані", systemImage: "checkmark")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.okText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(Capsule().fill(Color(.systemGroupedBackground)))
+                } else {
+                    Button { select(item) } label: {
+                        Text("Вибрати")
+                            .font(.subheadline.weight(.semibold))
+                            .opacity(working == item.id ? 0 : 1)
+                            .overlay { if working == item.id { ProgressView().tint(.white) } }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                            .foregroundStyle(.white)
+                            .background(Capsule().fill(Color.accentColor))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(working != nil)
+                }
             }
-            Spacer(minLength: 0)
         }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+            .fill(Color(.secondarySystemGroupedBackground)))
+        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .onTapGesture { onOpen(item) }
     }
 
-    private func actionButton(_ title: String, busy: Bool, tint: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            // Ширину тримає текст; поки йде дія, замість нього крутиться індикатор
-            Text(title)
-                .font(.subheadline.weight(.bold))
-                .opacity(busy ? 0 : 1)
-                .overlay { if busy { ProgressView().controlSize(.small) } }
-        }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
-        .tint(tint)
-        .disabled(working != nil)
-    }
-
-    private func run(_ item: StoreFace, delete: Bool) {
+    private func select(_ item: StoreFace) {
         guard working == nil else { return }
-        working = item.id + (delete ? ":d" : ":a")
+        working = item.id
         error = nil
         Task {
-            let result = delete ? await onDelete(item) : await onActivate(item)
+            let result = await onSelect(item)
             working = nil
             error = result
         }
