@@ -199,13 +199,15 @@ struct StoreView: View, Equatable {
                                 .padding(.horizontal, 16)
                                 .padding(.top, 2)
                                 .background(GeometryReader { g in
-                                    Color.clear.preference(key: TitleBottomKey.self,
-                                                           value: g.frame(in: .named("storeScroll")).maxY)
+                                    let bottom = g.frame(in: .named("storeScroll")).maxY
+                                    Color.clear
+                                        .onAppear { titleBottom = bottom }
+                                        .onChange(of: bottom) { titleBottom = $0 }
                                 })
                         }
                         Section {
                             Group {
-                                if mode == 5 || mode == 7 { chips }
+                                if mode == 5 { chips }
                                 if items.isEmpty {
                                     Text("Нічого не знайдено")
                                         .foregroundStyle(.secondary)
@@ -253,7 +255,6 @@ struct StoreView: View, Equatable {
                     .padding(.bottom, 16)
                 }
                 .coordinateSpace(name: "storeScroll")
-                .onPreferenceChange(TitleBottomKey.self) { titleBottom = $0 }
                 .onChange(of: searchOpen) { open in
                     // F/G: при натисканні сторінка плавно піднімається, рядок пошуку стає вгорі,
                     // а великий заголовок сам перетворюється на маленький (без стрибків панелі)
@@ -265,6 +266,7 @@ struct StoreView: View, Equatable {
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Магазин")
+            .onChange(of: searchMode) { _ in searchOpen = false; query = "" }
             .navigationBarTitleDisplayMode(mode == 0 ? .inline : .large)
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
@@ -568,8 +570,20 @@ private struct StoreSearchMode: ViewModifier {
             if #available(iOS 26, *) {
                 content
                     .searchable(text: $query, prompt: Text("Пошук циферблатів"))
-                    .searchToolbarBehavior(.minimize)
-                    .toolbar { DefaultToolbarItem(kind: .search, placement: .topBarTrailing) }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Menu {
+                                Picker(selection: $filter) {
+                                    ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                                } label: { EmptyView() }
+                            } label: {
+                                Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                                  : "line.3.horizontal.decrease.circle.fill")
+                            }
+                            .accessibilityLabel(Text("Фільтр"))
+                        }
+                        DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                    }
             } else {
                 content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic),
                                    prompt: Text("Пошук циферблатів"))
@@ -580,11 +594,6 @@ private struct StoreSearchMode: ViewModifier {
     }
 }
 
-/// Нижній край великого заголовка в просторі прокрутки
-private struct TitleBottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 100
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
 
 /// Фон закріпленого рядка пошуку: колір сторінки, що м'яко згасає донизу,
 /// як край під системними панелями
@@ -718,6 +727,7 @@ struct LiquidSearchBar: View {
     }
 
     private var filterButton: some View {
+        ZStack {
         Menu {
             Picker(selection: $filter) {
                 ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
@@ -730,6 +740,8 @@ struct LiquidSearchBar: View {
                 .frame(width: size, height: size)
                 .contentShape(Circle())
         }
+        }
+        .frame(width: size, height: size)
         .modifier(MorphGlass(id: "filter", ns: glass, circle: true))
         .accessibilityLabel(Text("Фільтр"))
     }
