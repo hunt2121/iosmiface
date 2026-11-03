@@ -1073,6 +1073,9 @@ private struct InstalledBar<Panel: View>: View {
     private let size: CGFloat = 44
     /// Розмір вікна (вимірюється з вмісту)
     @State private var panelSize = CGSize(width: 276, height: 420)
+    @State private var morph = Morph()
+    /// Поки йде рух, TimelineView перемальовує кожен кадр
+    @State private var animating = false
 
     var body: some View {
         HStack(alignment: .top) {
@@ -1112,7 +1115,72 @@ private struct InstalledBar<Panel: View>: View {
     /// Одна скляна форма, що плавно росте з кола кнопки у вікно і стискається назад (як системні меню iOS 26):
     /// вміст живе всередині скла, обрізаний його формою, і виростає з кута кнопки — розмитий і прозорий на
     /// початку, чіткий у кінці. При закритті вміст зникає першим, потім скло стікає в кнопку і проступає іконка.
+    // MARK: Морфінг кнопки у вікно
+    //
+    // SwiftUI-анімація розміру тут не спрацьовувала (скло стрибало одразу до кінцевого розміру), тому рух
+    // рахується власноруч: TimelineView перемальовує кожен кадр (до 120 Гц), а ширина, висота, прозорість і
+    // розмиття вмісту — це функції часу від окремих пружин. Скло й обрізання щокадру отримують новий розмір
+    // і форму (DropletShape), тож деформація в краплю видна по-справжньому.
+
+    private struct Morph {
+        var start = Date.distantPast
+        var opening = false
+        var fromW: Double = 0
+        var fromH: Double = 0
+    }
+
+    /// Крок пружини від 0 до 1 (response — період, damping — загасання, як у SwiftUI .spring)
+    private static func spring(_ t: Double, _ response: Double, _ damping: Double) -> Double {
+        guard t > 0 else { return 0 }
+        let w0 = 2 * Double.pi / response
+        if damping < 1 {
+            let wd = w0 * (1 - damping * damping).squareRoot()
+            return 1 - exp(-damping * w0 * t) * (cos(wd * t) + damping * w0 / wd * sin(wd * t))
+        }
+        return 1 - exp(-w0 * t) * (1 + w0 * t)
+    }
+
+    private static func clamp(_ v: Double) -> Double { min(1, max(0, v)) }
+
+    /// Стан у момент `date`: прогрес ширини й висоти (0 — кнопка, 1 — вікно) і час від початку руху
+    private func state(at date: Date) -> (pw: Double, ph: Double, t: Double) {
+        let t = date.timeIntervalSince(morph.start)
+        let to: Double = morph.opening ? 1 : 0
+        // Відкриття: вшир швидше, ніж униз; закриття: спершу вузьке, потім коротке — звідси крапля
+        let (rw, dw, rh, dh) = morph.opening ? (0.34, 0.76, 0.48, 0.80) : (0.24, 0.92, 0.40, 0.88)
+        let pw = morph.fromW + (to - morph.fromW) * Self.spring(t, rw, dw)
+        let ph = morph.fromH + (to - morph.fromH) * Self.spring(t, rh, dh)
+        return (pw, ph, t)
+    }
+
+    private func startMorph(opening: Bool) {
+        let now = Date()
+        let current = state(at: now)
+        morph = Morph(start: now, opening: opening, fromW: current.pw, fromH: current.ph)
+        animating = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_100_000_000)
+            if morph.start == now { animating = false }
+        }
+    }
+
     private var installed: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: !animating)) { context in
+            let st = state(at: animating ? context.date : .distantFuture)
+            morphView(pw: st.pw, ph: st.ph, t: st.t)
+        }
+        .onChange(of: shown) { open in
+            if open != morph.opening { startMorph(opening: open) }
+        }
+    }
+
+    private func morphView(pw: Double, ph: Double, t: Double) -> some View {
+        let w = max(size * 0.7, size + (panelSize.width - size) * pw)
+        let h = max(size * 0.7, size + (panelSize.height - size) * ph)
+        let p = Self.clamp((pw + ph) / 2)
+        // Вміст проступає, коли скло вже розтеклось, і гасне першим при закритті; іконка — навпаки
+        let content = morph.opening ? Self.clamp((t - 0.1) / 0.26) : Self.clamp(1 - t / 0.11)
+        let iconAlpha = morph.opening ? Self.clamp(1 - t / 0.09) : Self.clamp((t - 0.22) / 0.2)
         let shape = DropletShape(closed: size, open: panelSize)
         return ZStack(alignment: .topTrailing) {
             panel()
@@ -1122,25 +1190,16 @@ private struct InstalledBar<Panel: View>: View {
                         .onAppear { panelSize = g.size }
                         .onChange(of: g.size) { panelSize = $0 }
                 })
-                .scaleEffect(shown ? 1 : 0.3, anchor: .topTrailing)
-                .blur(radius: shown ? 0 : 12)
-                .opacity(shown ? 1 : 0)
-                .animation(shown ? .easeOut(duration: 0.3).delay(0.08) : .easeIn(duration: 0.12), value: shown)
+                .scaleEffect(0.35 + 0.65 * p, anchor: .topTrailing)
+                .blur(radius: 10 * (1 - content))
+                .opacity(content)
                 .allowsHitTesting(shown)
             icon
-                .blur(radius: shown ? 6 : 0)
-                .opacity(shown ? 0 : 1)
-                .animation(shown ? .easeOut(duration: 0.1) : .easeOut(duration: 0.22).delay(0.2), value: shown)
+                .blur(radius: 6 * (1 - iconAlpha))
+                .opacity(iconAlpha)
                 .allowsHitTesting(!shown)
         }
-        // Ширина й висота мають різні пружини: при відкритті скло спершу розтікається вшир, при закритті
-        // спершу стає вузьким — і форма в цей момент деформується в краплю (DropletShape)
-        .frame(width: shown ? panelSize.width : size, alignment: .trailing)
-        .animation(shown ? .spring(response: 0.34, dampingFraction: 0.78)
-                         : .spring(response: 0.26, dampingFraction: 0.9), value: shown)
-        .frame(height: shown ? panelSize.height : size, alignment: .top)
-        .animation(shown ? .spring(response: 0.46, dampingFraction: 0.8)
-                         : .spring(response: 0.42, dampingFraction: 0.86), value: shown)
+        .frame(width: w, height: h, alignment: .topTrailing)
         .clipShape(shape)
         .modifier(MorphingGlass(shape: shape, interactive: !shown))
         .contentShape(shape)
