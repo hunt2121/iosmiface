@@ -97,8 +97,32 @@ final class FaceInstaller {
         return session
     }
 
-    /// ID циферблатів, які зараз є на браслеті.
-    func listFaces(authKey: [UInt8]) async throws -> Set<String> {
+    /// Циферблати, які зараз є на браслеті (ID і чи активний).
+    func listFaces(authKey: [UInt8]) async throws -> [WatchfaceInfo] {
+        try await run(authKey: authKey) { installer, session, key in
+            try await installer.listWatchfaces(authKey: key, session: session)
+        }
+    }
+
+    /// Робить циферблат активним; повертає оновлений список.
+    func activateFace(id: String, authKey: [UInt8]) async throws -> [WatchfaceInfo] {
+        try await run(authKey: authKey) { installer, session, key in
+            try await installer.activateWatchface(id: id, authKey: key, session: session)
+        }
+    }
+
+    /// Видаляє циферблат з браслета; повертає оновлений список.
+    func deleteFace(id: String, authKey: [UInt8]) async throws -> [WatchfaceInfo] {
+        try await run(authKey: authKey) { installer, session, key in
+            try await installer.deleteWatchface(id: id, authKey: key, session: session)
+        }
+    }
+
+    /// Коротка операція в окремій сесії з параметрами Mi Fitness.
+    private func run(
+        authKey: [UInt8],
+        _ body: (WatchfaceInstaller, BandSession, [UInt8]) async throws -> [WatchfaceInfo]
+    ) async throws -> [WatchfaceInfo] {
         guard ble.connectedID != nil else { throw BandError.notConnected }
         guard ble.hasBandCharacteristics else { throw BandError.characteristicNotFound }
         guard authKey.count == 16 else { throw BandError.invalidAuthKey }
@@ -112,8 +136,7 @@ final class FaceInstaller {
         var installer = WatchfaceInstaller()
         installer.phoneInfo = Self.phoneInfo()
         installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
-        let list = try await installer.listWatchfaces(authKey: authKey, session: session)
-        return Set(list.map(\.id))
+        return try await body(installer, session, authKey)
     }
 
     /// Дані про телефон як у Mi Fitness (з запису HCI): 1 = 1, 2 = 27.2, 3 = "Unknown",

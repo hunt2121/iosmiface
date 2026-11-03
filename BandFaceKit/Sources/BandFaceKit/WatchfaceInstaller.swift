@@ -24,6 +24,8 @@ extension BandSession {
 public struct WatchfaceInfo: Sendable, Equatable {
     public var id: String
     public var isActive: Bool
+    /// Браслет дозволяє видалити (вбудовані циферблати — ні).
+    public var canDelete: Bool = true
 }
 
 public enum InstallPhase: Sendable, Equatable {
@@ -184,10 +186,57 @@ extension WatchfaceInstaller {
             try await Task.sleep(for: pauseAfterAuth)
             let list = try await session.watchfaces()
             await session.close()
-            return list.map { WatchfaceInfo(id: $0.id, isActive: $0.isActive) }
+            return list.map(WatchfaceInfo.init(entry:))
         } catch {
             await session.close()
             throw error
         }
+    }
+
+    /// Робить циферблат активним (4/1) і повертає оновлений список. Сесію закриває завжди.
+    public func activateWatchface(id: String, authKey: [UInt8], session: BandSession) async throws -> [WatchfaceInfo] {
+        let timeout = activationTimeout
+        return try await withSession(authKey: authKey, session: session) { s in
+            try await s.activateWatchface(id: id, timeout: timeout)
+            return try await s.watchfaces()
+        }
+    }
+
+    /// Видаляє циферблат (4/2) і повертає оновлений список: за ним видно, чи браслет справді його видалив.
+    /// Сесію закриває завжди.
+    public func deleteWatchface(id: String, authKey: [UInt8], session: BandSession) async throws -> [WatchfaceInfo] {
+        try await withSession(authKey: authKey, session: session) { s in
+            // Відповідь на 4/2 не обов'язкова: результат перевіряємо новим списком
+            _ = try? await s.command(Command.deleteWatchface(id: id), timeout: .seconds(4))
+            return try await s.watchfaces()
+        }
+    }
+
+    /// Відкриття, автентифікація, дія, закриття — як у `listWatchfaces`.
+    private func withSession(
+        authKey: [UInt8],
+        session: BandSession,
+        _ body: @Sendable (BandSession) async throws -> [WatchfaceEntry]
+    ) async throws -> [WatchfaceInfo] {
+        try await session.open()
+        do {
+            try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region, phoneInfo: phoneInfo)
+            for command in commandsAfterAuth {
+                _ = try? await session.command(command, timeout: .seconds(3))
+            }
+            try await Task.sleep(for: pauseAfterAuth)
+            let list = try await body(session)
+            await session.close()
+            return list.map(WatchfaceInfo.init(entry:))
+        } catch {
+            await session.close()
+            throw error
+        }
+    }
+}
+
+extension WatchfaceInfo {
+    init(entry: WatchfaceEntry) {
+        self.init(id: entry.id, isActive: entry.isActive, canDelete: entry.canDelete)
     }
 }

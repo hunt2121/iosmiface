@@ -25,6 +25,8 @@ struct ContentView: View {
     @State private var installingID: String?
     @State private var syncing = false
     @State private var lastSync = Date.distantPast
+    /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
+    @State private var activeFaceID: String?
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
@@ -69,7 +71,10 @@ struct ContentView: View {
                       progress: progress,
                       progressText: progressText,
                       onInstall: { storeInstall($0) },
-                      onRefresh: { await syncDeviceFaces(force: true) })
+                      onRefresh: { await syncDeviceFaces(force: true) },
+                      activeID: activeFaceID,
+                      onActivate: { await bandFaceAction($0, delete: false) },
+                      onDelete: { await bandFaceAction($0, delete: true) })
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -211,6 +216,8 @@ struct ContentView: View {
                         Text(verbatim: "A · Кнопка фільтрів і пошук").tag(0)
                         Text(verbatim: "B · Мітки фільтрів без пошуку").tag(1)
                         Text(verbatim: "C · Системна панель: фільтр і оновлення").tag(2)
+                        Text(verbatim: "D · Встановлені: спливаюче вікно").tag(3)
+                        Text(verbatim: "E · Встановлені: аркуш знизу").tag(4)
                     } label: {
                         Text(verbatim: "Магазин")
                     }
@@ -267,8 +274,15 @@ struct ContentView: View {
         if !force && Date().timeIntervalSince(lastSync) < 20 { return }
         syncing = true
         defer { syncing = false }
-        guard let ids = try? await FaceInstaller(ble: ble).listFaces(authKey: key) else { return }
+        guard let list = try? await FaceInstaller(ble: ble).listFaces(authKey: key) else { return }
+        applyDeviceList(list)
+    }
+
+    /// Запам'ятовує, що зараз на браслеті: які циферблати магазину встановлені й який на екрані.
+    private func applyDeviceList(_ list: [WatchfaceInfo]) {
         lastSync = Date()
+        activeFaceID = list.first(where: \.isActive)?.id
+        let ids = Set(list.map(\.id))
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
             if ids.contains(f.id) {
@@ -278,6 +292,49 @@ struct ContentView: View {
             }
         }
         installedRaw = InstalledFaces.encode(map)
+    }
+
+    /// Тестова функція «Встановлені»: увімкнути або видалити циферблат на браслеті.
+    /// Повертає текст помилки для користувача або nil, якщо все вдалося.
+    @MainActor
+    private func bandFaceAction(_ item: StoreFace, delete: Bool) async -> String? {
+        guard keyValid, let key = Hex.decode(authKey), key.count == 16 else {
+            return String(localized: "Спершу додайте ключ браслета")
+        }
+        guard ble.connectedID != nil, ble.servicesReady else {
+            return String(localized: "Спершу підключіть браслет на вкладці «Циферблати»")
+        }
+        guard !busy else { return String(localized: "Зачекайте, поки завершиться встановлення") }
+        // Фонова перевірка браслета могла ще не закінчитись — дві сесії одночасно не можна
+        while syncing { try? await Task.sleep(nanoseconds: 100_000_000) }
+        syncing = true
+        defer { syncing = false }
+        ble.addLog(delete ? String(localized: "Видалення циферблата \(item.name)…")
+                          : String(localized: "Увімкнення циферблата \(item.name)…"))
+        do {
+            let installer = FaceInstaller(ble: ble)
+            let list = delete ? try await installer.deleteFace(id: item.id, authKey: key)
+                              : try await installer.activateFace(id: item.id, authKey: key)
+            applyDeviceList(list)
+            if delete {
+                if list.contains(where: { $0.id == item.id }) {
+                    ble.addLog(String(localized: "Браслет не видалив циферблат"))
+                    return String(localized: "Браслет не видалив циферблат")
+                }
+                ble.addLog(String(localized: "Циферблат видалено"))
+            } else {
+                guard list.first(where: { $0.id == item.id })?.isActive == true else {
+                    ble.addLog(String(localized: "Браслет не увімкнув циферблат"))
+                    return String(localized: "Браслет не увімкнув циферблат")
+                }
+                ble.addLog(String(localized: "Циферблат увімкнено"))
+            }
+            return nil
+        } catch {
+            let text = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            ble.addLog(text)
+            return text
+        }
     }
 
     private func storeInstall(_ item: StoreFace) {

@@ -135,6 +135,7 @@ struct StoreView: View, Equatable {
         a.faces.map(\.id) == b.faces.map(\.id) && a.installed == b.installed
             && a.installingID == b.installingID && a.busy == b.busy
             && a.progress == b.progress && a.progressText == b.progressText
+            && a.activeID == b.activeID
     }
 
     let faces: [StoreFace]
@@ -145,10 +146,15 @@ struct StoreView: View, Equatable {
     let progressText: String
     let onInstall: (StoreFace) -> Void
     let onRefresh: () async -> Void
+    /// Тестова функція «Встановлені»: який циферблат на екрані, увімкнути, видалити (nil — успіх, інакше текст помилки)
+    var activeID: String? = nil
+    var onActivate: (StoreFace) async -> String? = { _ in nil }
+    var onDelete: (StoreFace) async -> String? = { _ in nil }
 
     @State private var query = ""
     /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
-    /// 2 — C (системна панель: фільтр зліва, оновлення справа)
+    /// 2 — C (системна панель: фільтр зліва, оновлення справа),
+    /// 3 — D (фільтр + «Встановлені» у спливаючому вікні), 4 — E (фільтр + «Встановлені» на аркуші знизу)
     @AppStorage("storeLayout") private var layout = 0
     /// Пошук відкрито (лупа розгорнулась у рядок)
     @State private var searchOpen = false
@@ -158,6 +164,8 @@ struct StoreView: View, Equatable {
     @State private var filter = "all"
     /// C: іде перевірка браслета, запущена кнопкою оновлення
     @State private var refreshing = false
+    /// D/E: відкрито вікно «Встановлені»
+    @State private var installedShown = false
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -235,8 +243,12 @@ struct StoreView: View, Equatable {
             // Поки відкритий пошук, маленький системний заголовок ховаємо; великий лишається
             .modifier(HideInlineTitle(hidden: layout == 0 && searchOpen))
             // C: звичайні системні кнопки панелі — скло, перехід до картки й маленький заголовок робить iOS
-            .modifier(SystemBarButtons(enabled: layout == 2, filter: $filter, filters: filterOptions,
-                                       refreshing: refreshing, onRefresh: refresh))
+            .modifier(SystemBarButtons(mode: layout, filter: $filter, filters: filterOptions,
+                                       refreshing: refreshing, onRefresh: refresh,
+                                       panelShown: $installedShown,
+                                       panel: { popover in installedPanel(popover: popover) }))
+            // Щойно вікно «Встановлені» відкрилось — уточнюємо в браслета, що на ньому і що на екрані
+            .onChange(of: installedShown) { shown in if shown { Task { await onRefresh() } } }
             .onChange(of: layout) { _ in searchOpen = false; query = "" }
         }
         // Наша панель (фільтр, лупа, що «перетікає» в рядок пошуку, хрестик) — поверх системної панелі,
@@ -270,6 +282,15 @@ struct StoreView: View, Equatable {
             await onRefresh()
             refreshing = false
         }
+    }
+
+    /// D/E: вміст вікна «Встановлені» — циферблати магазину, що зараз є на браслеті
+    private func installedPanel(popover: Bool) -> InstalledFacesPanel {
+        InstalledFacesPanel(faces: faces.filter { installed[$0.id] != nil },
+                            activeID: activeID,
+                            popover: popover,
+                            onActivate: onActivate,
+                            onDelete: onDelete)
     }
 
     private var chips: some View {
@@ -661,43 +682,243 @@ struct LiquidSearchBar: View {
     }
 }
 
-/// C: системна панель із двома кнопками — фільтр (меню) зліва й оновлення справа.
-/// Поки браслет перевіряється, замість стрілки крутиться системний індикатор.
-private struct SystemBarButtons: ViewModifier {
-    let enabled: Bool
+/// C/D/E: системна панель. Зліва — фільтр (меню); справа — оновлення (C) або «Встановлені» (D — спливаюче вікно,
+/// E — аркуш знизу). Поки браслет перевіряється, замість стрілки оновлення крутиться системний індикатор.
+private struct SystemBarButtons<Panel: View>: ViewModifier {
+    let mode: Int
     @Binding var filter: String
     let filters: [(String, String)]
     let refreshing: Bool
     let onRefresh: () -> Void
+    @Binding var panelShown: Bool
+    let panel: (_ popover: Bool) -> Panel
 
     func body(content: Content) -> some View {
-        content.toolbar {
-            if enabled {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        Picker(selection: $filter) {
-                            ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                        } label: { EmptyView() }
-                    } label: {
-                        Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                          : "line.3.horizontal.decrease.circle.fill")
-                            .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                    }
-                    .accessibilityLabel(Text("Фільтр"))
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: onRefresh) {
-                        if refreshing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
+        content
+            .toolbar {
+                if mode >= 2 {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Menu {
+                            Picker(selection: $filter) {
+                                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                            } label: { EmptyView() }
+                        } label: {
+                            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                                              : "line.3.horizontal.decrease.circle.fill")
+                                .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
                         }
+                        .accessibilityLabel(Text("Фільтр"))
                     }
-                    .disabled(refreshing)
-                    .accessibilityLabel(Text("Оновити"))
+                }
+                if mode == 2 {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: onRefresh) {
+                            if refreshing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                        }
+                        .disabled(refreshing)
+                        .accessibilityLabel(Text("Оновити"))
+                    }
+                }
+                if mode == 3 || mode == 4 {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button { panelShown = true } label: {
+                            Image("IconInstalled")
+                                .resizable()
+                                .frame(width: 23, height: 23)
+                        }
+                        .accessibilityLabel(Text("Встановлені"))
+                        .modifier(InstalledPopover(enabled: mode == 3, shown: $panelShown) { panel(true) })
+                    }
                 }
             }
+            .sheet(isPresented: Binding(get: { mode == 4 && panelShown }, set: { panelShown = $0 })) {
+                InstalledSheet { panel(false) }
+            }
+    }
+}
+
+/// D: спливаюче вікно біля кнопки (на iPhone саме вікно, а не аркуш — з iOS 16.4)
+private struct InstalledPopover<Panel: View>: ViewModifier {
+    let enabled: Bool
+    @Binding var shown: Bool
+    @ViewBuilder let panel: () -> Panel
+    func body(content: Content) -> some View {
+        content.popover(isPresented: Binding(get: { enabled && shown }, set: { shown = $0 }),
+                        arrowEdge: .top) {
+            if #available(iOS 16.4, *) {
+                panel().presentationCompactAdaptation(.popover)
+            } else {
+                panel()
+            }
         }
+    }
+}
+
+/// E: системний аркуш на пів екрана з хрестиком і заголовком «Встановлені»
+private struct InstalledSheet<Panel: View>: View {
+    @ViewBuilder let panel: () -> Panel
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            panel()
+                .navigationTitle("Встановлені")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        if #available(iOS 26, *) {
+                            Button(role: .close) { dismiss() } label: { Image(systemName: "xmark") }
+                        } else {
+                            Button { dismiss() } label: { Image(systemName: "xmark") }
+                        }
+                    }
+                }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+/// Тестова функція: циферблати магазину на браслеті з кнопками «Встановити» (зробити активним) і «Видалити».
+struct InstalledFacesPanel: View {
+    let faces: [StoreFace]
+    let activeID: String?
+    /// true — компактне спливаюче вікно, false — список на аркуші
+    let popover: Bool
+    let onActivate: (StoreFace) async -> String?
+    let onDelete: (StoreFace) async -> String?
+
+    /// Яка дія зараз виконується: «id:a» — увімкнення, «id:d» — видалення
+    @State private var working: String?
+    @State private var askDelete: StoreFace?
+    @State private var error: String?
+
+    var body: some View {
+        content
+            .alert(askDelete.map { String(localized: "Видалити \($0.name)?") } ?? "",
+                   isPresented: Binding(get: { askDelete != nil }, set: { if !$0 { askDelete = nil } }),
+                   presenting: askDelete) { item in
+                Button("Видалити", role: .destructive) { run(item, delete: true) }
+                Button("Скасувати", role: .cancel) {}
+            } message: { _ in
+                Text("Циферблат буде видалено з браслета. Встановити його знову можна з магазину.")
+            }
+    }
+
+    @ViewBuilder private var content: some View {
+        if popover {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("На браслеті · \(faces.count)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 14)
+                    .padding(.bottom, 4)
+                if faces.isEmpty { empty.padding(18) }
+                ForEach(Array(faces.enumerated()), id: \.element.id) { i, item in
+                    row(item, thumb: CGSize(width: 34, height: 80))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    if i < faces.count - 1 { Divider().padding(.leading, 64) }
+                }
+                if let error { errorText(error).padding(.horizontal, 18).padding(.bottom, 12) }
+            }
+            .padding(.bottom, 6)
+            .frame(width: 330)
+        } else {
+            List {
+                Section {
+                    if faces.isEmpty { empty }
+                    ForEach(faces) { item in
+                        row(item, thumb: CGSize(width: 40, height: 96))
+                            .padding(.vertical, 4)
+                    }
+                } footer: {
+                    if let error { errorText(error) }
+                }
+            }
+            .listStyle(.insetGrouped)
+        }
+    }
+
+    private var empty: some View {
+        Text("Циферблатів з магазину на браслеті немає")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+
+    private func errorText(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundStyle(Color.errorText)
+    }
+
+    private func row(_ item: StoreFace, thumb: CGSize) -> some View {
+        HStack(spacing: 14) {
+            MiniCapsule(image: item.preview)
+                .frame(width: thumb.width, height: thumb.height)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name).font(.headline)
+                Text(verbatim: item.meta).font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    if item.id == activeID {
+                        Label("На екрані", systemImage: "checkmark")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(Color.okText)
+                            .padding(.horizontal, 14)
+                            .frame(height: 34)
+                            .background(Capsule().fill(Color(.tertiarySystemFill)))
+                    } else {
+                        actionButton(String(localized: "Встановити"), busy: working == item.id + ":a", tint: .accentColor) {
+                            run(item, delete: false)
+                        }
+                    }
+                    actionButton(String(localized: "Видалити"), busy: working == item.id + ":d", tint: .red) {
+                        askDelete = item
+                    }
+                }
+                .padding(.top, 8)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func actionButton(_ title: String, busy: Bool, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            // Ширину тримає текст; поки йде дія, замість нього крутиться індикатор
+            Text(title)
+                .font(.subheadline.weight(.bold))
+                .opacity(busy ? 0 : 1)
+                .overlay { if busy { ProgressView().controlSize(.small) } }
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(tint)
+        .disabled(working != nil)
+    }
+
+    private func run(_ item: StoreFace, delete: Bool) {
+        guard working == nil else { return }
+        working = item.id + (delete ? ":d" : ":a")
+        error = nil
+        Task {
+            let result = delete ? await onDelete(item) : await onActivate(item)
+            working = nil
+            error = result
+        }
+    }
+}
+
+/// Маленька капсула-мініатюра циферблата для списку «Встановлені»
+private struct MiniCapsule: View {
+    let image: UIImage?
+    var body: some View {
+        ZStack {
+            Capsule(style: .continuous).fill(Color.black)
+            if let image { Image(uiImage: image).resizable().scaledToFill() }
+        }
+        .clipShape(Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(Color.gray.opacity(0.45), lineWidth: 2))
     }
 }
 
