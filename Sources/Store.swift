@@ -151,7 +151,9 @@ struct StoreView: View, Equatable {
     @AppStorage("storeSearchMode") private var searchMode = 0
     @State private var searchOpen = false
     /// Нижній край великого заголовка (варіант A) — щоб показати маленький, коли великий сховався
-    @State private var titleBottom: CGFloat = 100
+    @State private var titleBottom: CGFloat = 1000
+    /// Нижній край верхньої панелі на екрані (варіант A)
+    @State private var barBottom: CGFloat = 0
     /// H: системний пошук відкрито
     @State private var systemSearchShown = false
     /// B: верх сторінки відносно видимої області (0 — на місці, від'ємне — прокручено)
@@ -202,10 +204,12 @@ struct StoreView: View, Equatable {
                                 .font(.largeTitle.bold())
                                 .padding(.horizontal, 16)
                                 .padding(.top, 2)
-                                // Згасає, заходячи під панель: повністю зникає, коли з'являється маленький
-                                .opacity(min(1, max(0, Double(titleBottom) / 30)))
+                                // Згасає, заходячи під панель (за висоту самого заголовка),
+                                // і повністю зникає саме тоді, коли з'являється маленький
+                                .opacity(min(1, max(0, Double(titleBottom - barBottom) / 41)))
                                 .background(GeometryReader { g in
-                                    let bottom = g.frame(in: .named("storeScroll")).maxY
+                                    // Позиція на екрані — як і низ панелі, тож порівнюємо в одних координатах
+                                    let bottom = g.frame(in: .global).maxY
                                     Color.clear
                                         .onAppear { titleBottom = bottom }
                                         .onChange(of: bottom) { titleBottom = $0 }
@@ -265,7 +269,8 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: mode == 1 ? contentTop < -40 : titleBottom < 2,
+                                      smallTitle: mode == 1 ? contentTop < -40 : titleBottom <= barBottom + 2,
+                                      barBottom: $barBottom,
                                       systemShown: $systemSearchShown))
         }
     }
@@ -542,6 +547,7 @@ private struct StoreSearchMode: ViewModifier {
     @Binding var filter: String
     let filters: [(String, String)]
     let smallTitle: Bool
+    @Binding var barBottom: CGFloat
     @Binding var systemShown: Bool
 
     func body(content: Content) -> some View {
@@ -558,6 +564,13 @@ private struct StoreSearchMode: ViewModifier {
                             .animation(.easeOut(duration: 0.2), value: smallTitle)
                             .allowsHitTesting(false)
                     }
+                    // Низ панелі на екрані (+ її нижній відступ 6) — межа, за якою великий заголовок ховається
+                    .background(GeometryReader { g in
+                        let bottom = g.frame(in: .global).maxY + 6
+                        Color.clear
+                            .onAppear { barBottom = bottom }
+                            .onChange(of: bottom) { barBottom = $0 }
+                    })
             })
         case 1:
             // B: та сама панель, що в A (фільтр, лупа, що «перетікає» в рядок, хрестик),
