@@ -200,6 +200,8 @@ struct StoreView: View, Equatable {
                                 .font(.largeTitle.bold())
                                 .padding(.horizontal, 16)
                                 .padding(.top, 2)
+                                // Згасає, заходячи під панель: повністю зникає, коли з'являється маленький
+                                .opacity(min(1, max(0, Double(titleBottom) / 30)))
                                 .background(GeometryReader { g in
                                     let bottom = g.frame(in: .named("storeScroll")).maxY
                                     Color.clear
