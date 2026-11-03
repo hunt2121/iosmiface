@@ -295,7 +295,10 @@ struct ContentView: View {
     /// Запам'ятовує, що зараз на браслеті: які циферблати магазину встановлені й який на екрані.
     private func applyDeviceList(_ list: [WatchfaceInfo]) {
         lastSync = Date()
-        activeFaceID = list.first(where: \.isActive)?.id
+        // Стандартний циферблат браслет інколи не повертає в списку (зокрема коли він активний).
+        // Він є на браслеті завжди, тож якщо в списку немає жодного активного — активний саме він
+        let standardMissing = !list.contains { $0.id == BandFace.standardID }
+        activeFaceID = list.first(where: \.isActive)?.id ?? (standardMissing ? BandFace.standardID : nil)
         let ids = Set(list.map(\.id))
         let storeIDs = Set(storeFaces.map(\.id))
         otherFaces = list.filter { !storeIDs.contains($0.id) }.map { f in
@@ -307,6 +310,11 @@ struct ContentView: View {
             }
             return BandFace(id: f.id, name: f.name?.isEmpty == false ? f.name! : String(localized: "Циферблат \(f.id)"),
                             isActive: f.isActive, canDelete: true)
+        }
+        if standardMissing && !list.isEmpty {
+            otherFaces.insert(BandFace(id: BandFace.standardID, name: String(localized: "Стандартний"),
+                                       isActive: activeFaceID == BandFace.standardID, canDelete: false,
+                                       note: String(localized: "Вбудований")), at: 0)
         }
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
@@ -354,7 +362,7 @@ struct ContentView: View {
                 }
                 ble.addLog(String(localized: "Циферблат видалено"))
             } else {
-                guard list.first(where: { $0.id == id })?.isActive == true else {
+                guard activeFaceID == id else {
                     ble.addLog(String(localized: "Браслет не увімкнув циферблат"))
                     return String(localized: "Браслет не увімкнув циферблат")
                 }
