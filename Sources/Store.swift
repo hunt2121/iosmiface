@@ -913,25 +913,18 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                 if menuFaces.isEmpty {
                                     Text("Циферблатів з магазину на браслеті немає")
                                 } else {
-                                    Picker(selection: Binding(
-                                        get: { activeID ?? "" },
-                                        set: { id in
-                                            if id != activeID, let item = menuFaces.first(where: { $0.id == id }) {
-                                                onSelect(item)
-                                            }
-                                        })) {
-                                        ForEach(menuFaces) { item in
-                                            Label {
-                                                Text(item.name)
-                                                Text(item.id == activeID ? String(localized: "Активний") : item.meta)
-                                            } icon: {
-                                                Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
-                                                    .renderingMode(.original)
-                                            }
-                                            .tag(item.id)
+                                    // Звичайні рядки (а не системний вибір): лише так iOS показує другий рядок
+                                    // з категорією й розміром. Активний позначено зеленою галочкою на мініатюрі
+                                    ForEach(menuFaces) { item in
+                                        Button { if item.id != activeID { onSelect(item) } } label: {
+                                            Text(item.name)
+                                            Text(item.id == activeID
+                                                 ? String(localized: "Активний · \(item.meta)")
+                                                 : item.meta)
+                                            Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
+                                                .renderingMode(.original)
                                         }
-                                    } label: { EmptyView() }
-                                    .pickerStyle(.inline)
+                                    }
                                 }
                             }
 
@@ -952,12 +945,10 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                                 Label("Видалити з браслета", systemImage: "trash")
                                             }
                                         } label: {
-                                            Label {
-                                                Text(item.name)
-                                            } icon: {
-                                                Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
-                                                    .renderingMode(.original)
-                                            }
+                                            Text(item.name)
+                                            Text(verbatim: item.meta)
+                                            Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
+                                                .renderingMode(.original)
                                         }
                                     }
                                 }
