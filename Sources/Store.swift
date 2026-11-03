@@ -276,14 +276,12 @@ struct StoreView: View, Equatable {
     private func chip(_ id: String, _ title: String) -> some View {
         let on = filter == id
         return Button { filter = id } label: {
-            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
             Text(title)
-                .font(.subheadline.weight(.semibold))
-                .hidden()
-                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
+                .font(.subheadline.weight(on ? .semibold : .medium))
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
+                .background(Capsule().fill(on ? Color.accentColor : Color.clear))
                 .modifier(ChipGlass(on: on))
         }
         .buttonStyle(.plain)
@@ -680,16 +678,11 @@ private struct HideInlineTitle: ViewModifier {
     }
 }
 
-/// Мітки фільтра: на iOS 26 усі скляні, вибрана — скло з акцентним відтінком (як кнопки .glassProminent).
-/// На старіших версіях вибрана зафарбована акцентним кольором.
+/// Мітки фільтра, як у збірці 125: вибрана — суцільна акцентна капсула, решта — скляні.
 private struct ChipGlass: ViewModifier {
     let on: Bool
     func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.glassEffect(.regular.tint(on ? Color.accentColor : nil).interactive(), in: Capsule())
-        } else {
-            content.background(Capsule().fill(on ? Color.accentColor : Color.gray.opacity(0.15)))
-        }
+        if on { content } else { content.capsuleGlass() }
     }
 }
 
