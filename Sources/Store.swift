@@ -899,6 +899,20 @@ private struct InstalledSheet<Panel: View>: View {
                 }
         }
         .presentationDetents([.medium, .large])
+        .modifier(SheetGlass())
+    }
+}
+
+/// E: на iOS 26 аркуш і так скляний; на старіших (з 16.4) — напівпрозорий матеріал замість суцільного фону
+private struct SheetGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+        } else if #available(iOS 16.4, *) {
+            content.presentationBackground(.ultraThinMaterial)
+        } else {
+            content
+        }
     }
 }
 
@@ -930,12 +944,12 @@ struct InstalledFacesPanel: View {
             .padding(12)
             .frame(width: 300)
         } else {
+            // Без власного фону: видно прозоре скло системного аркуша
             ScrollView {
                 VStack(spacing: 12) { list }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .background(Color(.systemGroupedBackground))
         }
     }
 
@@ -956,7 +970,7 @@ struct InstalledFacesPanel: View {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        let thumb = popover ? CGSize(width: 90, height: 213) : CGSize(width: 78, height: 186)
+        let thumb = popover ? CGSize(width: 90, height: 213) : CGSize(width: 117, height: 278)
         return HStack(spacing: 16) {
             MiniCapsule(image: item.preview)
                 .frame(width: thumb.width, height: thumb.height)
@@ -981,7 +995,7 @@ struct InstalledFacesPanel: View {
                         .foregroundStyle(Color.okText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
-                        .background(Capsule().fill(popover ? Color(.tertiarySystemFill) : Color(.systemGroupedBackground)))
+                        .background(Capsule().fill(Color(.tertiarySystemFill)))
                 } else {
                     Button { select(item) } label: {
                         Text("Вибрати")
@@ -1004,20 +1018,16 @@ struct InstalledFacesPanel: View {
         .onTapGesture { onOpen(item) }
     }
 
-    /// D: прозоре матове скло, світліше за фон вікна (у темній темі — світлий напівпрозорий шар,
-    /// бо системний матеріал там затемнює); E: звичайна картка
+    /// Прозоре матове скло, світліше за фон вікна (у темній темі — світлий напівпрозорий шар,
+    /// бо системний матеріал там затемнює)
     @ViewBuilder private var cardBackground: some View {
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
-        if popover {
-            if colorScheme == .dark {
-                shape.fill(Color.white.opacity(0.12))
-                    .overlay(shape.strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5))
-            } else {
-                shape.fill(.thinMaterial)
-                    .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
-            }
+        if colorScheme == .dark {
+            shape.fill(Color.white.opacity(0.12))
+                .overlay(shape.strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5))
         } else {
-            shape.fill(Color(.secondarySystemGroupedBackground))
+            shape.fill(.thinMaterial)
+                .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
         }
     }
 
