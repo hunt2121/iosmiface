@@ -156,8 +156,8 @@ struct StoreView: View, Equatable {
     @State private var barBottom: CGFloat = 0
     /// H: системний пошук відкрито
     @State private var systemSearchShown = false
-    /// B: верх сторінки відносно видимої області (0 — на місці, від'ємне — прокручено)
-    @State private var contentTop: CGFloat = 0
+    /// B: верх сторінки на екрані — коли він доходить до низу панелі, великий заголовок уже згорнувся
+    @State private var contentTop: CGFloat = 1000
     @State private var filter = "all"
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -248,7 +248,8 @@ struct StoreView: View, Equatable {
                     .background(alignment: .top) {
                         if mode == 1 {
                             GeometryReader { g in
-                                let top = g.frame(in: .named("storeScroll")).minY
+                                // На екрані — у тих самих координатах, що й низ панелі навігації
+                                let top = g.frame(in: .global).minY
                                 Color.clear
                                     .onAppear { contentTop = top }
                                     .onChange(of: top) { contentTop = $0 }
@@ -269,7 +270,7 @@ struct StoreView: View, Equatable {
             .toolbar(mode == 0 ? .hidden : .automatic, for: .navigationBar)
             .modifier(StoreSearchMode(mode: mode, query: $query, searchOpen: $searchOpen,
                                       filter: $filter, filters: filterOptions,
-                                      smallTitle: mode == 1 ? contentTop < -40 : titleBottom <= barBottom + 2,
+                                      smallTitle: mode == 1 ? contentTop <= barBottom + 14 : titleBottom <= barBottom + 2,
                                       barBottom: $barBottom,
                                       systemShown: $systemSearchShown))
         }
@@ -587,6 +588,13 @@ private struct StoreSearchMode: ViewModifier {
                             .allowsHitTesting(false)
                     }
                     .frame(width: UIScreen.main.bounds.width - 32)
+                    // Низ панелі навігації на екрані: наш рядок по центру панелі висотою 44 + поля
+                    .background(GeometryReader { g in
+                        let bottom = g.frame(in: .global).maxY + 8
+                        Color.clear
+                            .onAppear { barBottom = bottom }
+                            .onChange(of: bottom) { barBottom = $0 }
+                    })
             })
         case 7:
             // H: системний рядок пошуку iOS 26, який відкриває наша лупа в панелі навігації.
