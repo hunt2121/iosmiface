@@ -276,8 +276,11 @@ struct StoreView: View, Equatable {
     private func chip(_ id: String, _ title: String) -> some View {
         let on = filter == id
         return Button { filter = id } label: {
+            // Ширину задає жирний варіант тексту (невидимий), тож при виборі мітки не змінюють розмір
             Text(title)
-                .font(.subheadline.weight(on ? .semibold : .medium))
+                .font(.subheadline.weight(.semibold))
+                .hidden()
+                .overlay(Text(title).font(.subheadline.weight(on ? .semibold : .medium)))
                 .padding(.horizontal, 14)
                 .frame(height: 32)
                 .foregroundStyle(on ? Color.white : Color.primary)
