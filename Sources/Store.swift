@@ -276,6 +276,15 @@ struct StoreView: View, Equatable {
                     .opacity(path.isEmpty ? 1 : 0)
                     .allowsHitTesting(path.isEmpty)
                     .animation(.easeInOut(duration: 0.25), value: path.isEmpty)
+            } else if layout == 3 {
+                // D: власні кнопки й власне вікно — скло кнопки «перетікає» у вікно і назад
+                InstalledBar(filter: $filter, filters: filterOptions, shown: $installedShown,
+                             panel: { installedPanel(popover: true) })
+                    .padding(.horizontal, Self.barMargin)
+                    .padding(.top, 2)
+                    .opacity(path.isEmpty ? 1 : 0)
+                    .allowsHitTesting(path.isEmpty)
+                    .animation(.easeInOut(duration: 0.25), value: path.isEmpty)
             }
         }
     }
@@ -817,7 +826,7 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
-                if mode >= 2 {
+                if mode == 2 || mode == 4 {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Menu {
                             Picker(selection: $filter) {
@@ -844,7 +853,7 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                         .accessibilityLabel(Text("Оновити"))
                     }
                 }
-                if mode == 3 || mode == 4 {
+                if mode == 4 {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button { panelShown = true } label: {
                             Image("IconInstalled")
@@ -934,15 +943,15 @@ struct InstalledFacesPanel: View {
     var body: some View {
         if popover {
             VStack(alignment: .leading, spacing: 10) {
-                Text("На браслеті · \(faces.count)")
+                Text("Встановлено")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.top, 4)
                 list
             }
-            .padding(12)
-            .frame(width: 300)
+            .padding(10)
+            .frame(width: 276)
         } else {
             // Без власного фону: видно прозоре скло системного аркуша
             ScrollView {
@@ -970,8 +979,8 @@ struct InstalledFacesPanel: View {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        let thumb = popover ? CGSize(width: 90, height: 213) : CGSize(width: 117, height: 278)
-        return HStack(spacing: 16) {
+        let thumb = popover ? CGSize(width: 68, height: 160) : CGSize(width: 117, height: 278)
+        return HStack(spacing: popover ? 14 : 16) {
             MiniCapsule(image: item.preview, size: thumb)
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -993,40 +1002,40 @@ struct InstalledFacesPanel: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.okText)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(Capsule().fill(Color(.tertiarySystemFill)))
+                        .frame(height: 36)
+                        .modifier(PlainGlassCapsule())
                 } else {
                     Button { select(item) } label: {
                         Text("Вибрати")
                             .font(.subheadline.weight(.semibold))
                             .opacity(working == item.id ? 0 : 1)
-                            .overlay { if working == item.id { ProgressView().tint(.white) } }
+                            .overlay { if working == item.id { ProgressView() } }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 38)
-                            .foregroundStyle(.white)
-                            .background(Capsule().fill(Color.accentColor))
+                            .frame(height: 22)
                     }
-                    .buttonStyle(.plain)
+                    .glassProminentStyle()
+                    .buttonBorderShape(.capsule)
                     .disabled(working != nil)
                 }
             }
         }
-        .padding(14)
+        .padding(popover ? 12 : 14)
         .background(cardBackground)
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .onTapGesture { onOpen(item) }
     }
 
-    /// Прозоре матове скло, світліше за фон вікна (у темній темі — світлий напівпрозорий шар,
-    /// бо системний матеріал там затемнює)
+    /// Матова картка — напівпрозорий шар поверх системного скла вікна: у темній темі світліша за скло,
+    /// у світлій — темніша. Скло під нею системне, тож прозорість іде за налаштуваннями iOS
+    /// («Рідке скло: прозоре/тоноване», «Зменшення прозорості»), а картка — разом із ним
     @ViewBuilder private var cardBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: popover ? 22 : 26, style: .continuous)
         if colorScheme == .dark {
             shape.fill(Color.white.opacity(0.12))
                 .overlay(shape.strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5))
         } else {
-            shape.fill(.thinMaterial)
-                .overlay(shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
+            shape.fill(Color.black.opacity(0.055))
+                .overlay(shape.strokeBorder(Color.black.opacity(0.06), lineWidth: 0.5))
         }
     }
 
@@ -1038,6 +1047,128 @@ struct InstalledFacesPanel: View {
             let result = await onSelect(item)
             working = nil
             error = result
+        }
+    }
+}
+
+/// Неінтерактивна скляна капсула (позначка «✓ На екрані»)
+private struct PlainGlassCapsule: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content.background(Capsule().fill(Color(.tertiarySystemFill)))
+        }
+    }
+}
+
+/// D: фільтр зліва, «Встановлені» справа і власне вікно. На iOS 26 скло кнопки «перетікає» у вікно
+/// (glassEffectID у спільному GlassEffectContainer) і назад; вікно закривається дотиком будь-де поза ним.
+/// Скло системне — прозорість іде за налаштуваннями iOS.
+private struct InstalledBar<Panel: View>: View {
+    @Binding var filter: String
+    let filters: [(String, String)]
+    @Binding var shown: Bool
+    @ViewBuilder let panel: () -> Panel
+    @Namespace private var glass
+    private let size: CGFloat = 44
+    private let animation = Animation.bouncy(duration: 0.45, extraBounce: 0.05)
+    private let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+
+    var body: some View {
+        HStack(alignment: .top) {
+            filterButton
+            Spacer()
+            installed
+        }
+        .background(alignment: .top) {
+            // Дотик поза вікном закриває його
+            if shown {
+                Color.black.opacity(0.001)
+                    .frame(width: 2000, height: 3000)
+                    .onTapGesture { close() }
+            }
+        }
+    }
+
+    private func close() { withAnimation(animation) { shown = false } }
+
+    private var filterButton: some View {
+        Menu {
+            Picker(selection: $filter) {
+                ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+            } label: { EmptyView() }
+        } label: {
+            Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
+                                              : "line.3.horizontal.decrease.circle.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
+                .frame(width: size, height: size)
+                .contentShape(Circle())
+        }
+        .modifier(PlainGlassCircle())
+        .accessibilityLabel(Text("Фільтр"))
+    }
+
+    @ViewBuilder private var installed: some View {
+        if #available(iOS 26, *) {
+            ZStack(alignment: .topTrailing) {
+                GlassEffectContainer(spacing: 20) {
+                    if shown {
+                        // Невидима копія вмісту задає розмір склу, щоб воно «виросло» саме до розміру вікна
+                        panel().hidden()
+                            .glassEffect(.regular, in: shape)
+                            .glassEffectID("installed", in: glass)
+                            .glassEffectTransition(.matchedGeometry)
+                    } else {
+                        Button { withAnimation(animation) { shown = true } } label: { icon }
+                            .buttonStyle(.plain)
+                            .glassEffect(.regular.interactive(), in: Circle())
+                            .glassEffectID("installed", in: glass)
+                            .glassEffectTransition(.matchedGeometry)
+                    }
+                }
+                if shown {
+                    // Вміст проступає, коли скло вже майже розкрилось, і зникає одразу при закритті
+                    panel()
+                        .transition(.asymmetric(
+                            insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.12)),
+                            removal: .opacity.animation(.easeIn(duration: 0.08))))
+                }
+            }
+        } else {
+            ZStack(alignment: .topTrailing) {
+                if shown {
+                    panel()
+                        .background(shape.fill(.regularMaterial))
+                        .transition(.scale(scale: 0.2, anchor: .topTrailing).combined(with: .opacity))
+                } else {
+                    Button { withAnimation(animation) { shown = true } } label: { icon }
+                        .buttonStyle(.plain)
+                        .background(Circle().fill(Color(.tertiarySystemFill)))
+                }
+            }
+        }
+    }
+
+    private var icon: some View {
+        Image("IconInstalled")
+            .resizable()
+            .frame(width: 23, height: 23)
+            .foregroundStyle(Color.primary)
+            .frame(width: size, height: size)
+            .contentShape(Circle())
+            .accessibilityLabel(Text("Встановлені"))
+    }
+}
+
+/// Скляне коло без морфінгу (кнопка фільтра в D)
+private struct PlainGlassCircle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular.interactive(), in: Circle())
+        } else {
+            content.background(Circle().fill(Color(.tertiarySystemFill)))
         }
     }
 }
