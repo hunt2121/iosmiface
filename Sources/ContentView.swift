@@ -27,8 +27,8 @@ struct ContentView: View {
     @State private var lastSync = Date.distantPast
     /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
     @State private var activeFaceID: String?
-    /// Скільки на браслеті циферблатів не з магазину (з останньої перевірки)
-    @State private var otherFacesCount: Int?
+    /// Циферблати на браслеті не з магазину (з останньої перевірки)
+    @State private var otherFaces: [BandFace] = []
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
@@ -85,9 +85,9 @@ struct ContentView: View {
                               pickFace()
                           }
                       },
-                      otherFacesCount: otherFacesCount,
-                      bandStatus: ble.connectedName.map { String(localized: "\(Self.bandModel($0)) · підключено") }
-                          ?? String(localized: "Браслет не підключено"))
+                      otherFaces: otherFaces,
+                      onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
+                      bandStatus: ble.connectedName.map { Self.bandModel($0) } ?? String(localized: "Браслет не підключено"))
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -298,7 +298,10 @@ struct ContentView: View {
         activeFaceID = list.first(where: \.isActive)?.id
         let ids = Set(list.map(\.id))
         let storeIDs = Set(storeFaces.map(\.id))
-        otherFacesCount = ids.subtracting(storeIDs).count
+        otherFaces = list.filter { !storeIDs.contains($0.id) }.map {
+            BandFace(id: $0.id, name: ($0.name?.isEmpty == false ? $0.name! : String(localized: "Циферблат \($0.id)")),
+                     isActive: $0.isActive, canDelete: $0.canDelete)
+        }
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
             if ids.contains(f.id) {
@@ -314,6 +317,12 @@ struct ContentView: View {
     /// Повертає текст помилки для користувача або nil, якщо все вдалося.
     @MainActor
     private func bandFaceAction(_ item: StoreFace, delete: Bool) async -> String? {
+        await bandFaceAction(id: item.id, name: item.name, delete: delete)
+    }
+
+    /// Те саме для будь-якого циферблата на браслеті (зокрема з Mi Fitness)
+    @MainActor
+    private func bandFaceAction(id: String, name: String, delete: Bool) async -> String? {
         guard keyValid, let key = Hex.decode(authKey), key.count == 16 else {
             return String(localized: "Спершу додайте ключ браслета")
         }
@@ -325,21 +334,21 @@ struct ContentView: View {
         while syncing { try? await Task.sleep(nanoseconds: 100_000_000) }
         syncing = true
         defer { syncing = false }
-        ble.addLog(delete ? String(localized: "Видалення циферблата \(item.name)…")
-                          : String(localized: "Увімкнення циферблата \(item.name)…"))
+        ble.addLog(delete ? String(localized: "Видалення циферблата \(name)…")
+                          : String(localized: "Увімкнення циферблата \(name)…"))
         do {
             let installer = FaceInstaller(ble: ble)
-            let list = delete ? try await installer.deleteFace(id: item.id, authKey: key)
-                              : try await installer.activateFace(id: item.id, authKey: key)
+            let list = delete ? try await installer.deleteFace(id: id, authKey: key)
+                              : try await installer.activateFace(id: id, authKey: key)
             applyDeviceList(list)
             if delete {
-                if list.contains(where: { $0.id == item.id }) {
+                if list.contains(where: { $0.id == id }) {
                     ble.addLog(String(localized: "Браслет не видалив циферблат"))
                     return String(localized: "Браслет не видалив циферблат")
                 }
                 ble.addLog(String(localized: "Циферблат видалено"))
             } else {
-                guard list.first(where: { $0.id == item.id })?.isActive == true else {
+                guard list.first(where: { $0.id == id })?.isActive == true else {
                     ble.addLog(String(localized: "Браслет не увімкнув циферблат"))
                     return String(localized: "Браслет не увімкнув циферблат")
                 }

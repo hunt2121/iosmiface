@@ -138,7 +138,7 @@ struct StoreView: View, Equatable {
             && a.installingID == b.installingID && a.busy == b.busy
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID
-            && a.otherFacesCount == b.otherFacesCount && a.bandStatus == b.bandStatus
+            && a.otherFaces == b.otherFaces && a.bandStatus == b.bandStatus
     }
 
     let faces: [StoreFace]
@@ -157,9 +157,11 @@ struct StoreView: View, Equatable {
     var onCheck: () async -> Void = {}
     /// F: «З файлу» — перейти до вибору файлу на вкладці «Циферблати»
     var onPickFile: () -> Void = {}
-    /// F: скільки на браслеті інших циферблатів (не з магазину); nil — ще не перевіряли
-    var otherFacesCount: Int? = nil
-    /// F: «Smart Band 10 · підключено» / «Браслет не підключено»
+    /// F: циферблати на браслеті не з магазину (назви з браслета; превью браслет не віддає)
+    var otherFaces: [BandFace] = []
+    /// F: вибрати/видалити будь-який циферблат за ID (id, назва, видалити?)
+    var onBandAction: (String, String, Bool) async -> String? = { _, _, _ in nil }
+    /// F: назва браслета або «Браслет не підключено»
     var bandStatus: String = ""
 
     @State private var query = ""
@@ -178,7 +180,7 @@ struct StoreView: View, Equatable {
     /// D/E: відкрито вікно «Встановлені»
     @State private var installedShown = false
     /// F: циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
-    @State private var menuDelete: StoreFace?
+    @State private var menuDelete: BandFace?
     @State private var menuError: String?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -267,15 +269,15 @@ struct StoreView: View, Equatable {
                                        menuFaces: faces.filter { installed[$0.id] != nil },
                                        activeID: activeID,
                                        onOpen: { path.append($0.id) },
-                                       onSelect: { item in menuAction { await onActivate(item) } },
+                                       onSelect: { face in menuAction { await onBandAction(face.id, face.name, false) } },
                                        onDeleteRequest: { menuDelete = $0 },
                                        onPickFile: onPickFile,
-                                       otherFacesCount: otherFacesCount,
+                                       otherFaces: otherFaces,
                                        bandStatus: bandStatus))
             .alert(menuDelete.map { String(localized: "Видалити \($0.name) з браслета?") } ?? "",
                    isPresented: Binding(get: { menuDelete != nil }, set: { if !$0 { menuDelete = nil } }),
                    presenting: menuDelete) { item in
-                Button("Видалити", role: .destructive) { menuAction { await onDelete(item) } }
+                Button("Видалити", role: .destructive) { menuAction { await onBandAction(item.id, item.name, true) } }
                 Button("Скасувати", role: .cancel) {}
             } message: { _ in
                 Text("Встановити його знову можна з магазину.")
@@ -862,10 +864,10 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     let menuFaces: [StoreFace]
     let activeID: String?
     let onOpen: (StoreFace) -> Void
-    let onSelect: (StoreFace) -> Void
-    let onDeleteRequest: (StoreFace) -> Void
+    let onSelect: (BandFace) -> Void
+    let onDeleteRequest: (BandFace) -> Void
     let onPickFile: () -> Void
-    let otherFacesCount: Int?
+    let otherFaces: [BandFace]
     let bandStatus: String
 
     func body(content: Content) -> some View {
@@ -908,58 +910,67 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                 Button { onPickFile() } label: { Label("З файлу", systemImage: "doc.badge.plus") }
                             }
 
-                            // Вибір: системна галочка біля активного; натиск — увімкнути на браслеті
+                            // Циферблати з магазину: у кожного підменю з діями
                             Section("Встановлено") {
                                 if menuFaces.isEmpty {
                                     Text("Циферблатів з магазину на браслеті немає")
-                                } else {
-                                    // Звичайні рядки (а не системний вибір): лише так iOS показує другий рядок
-                                    // з категорією й розміром. Активний позначено зеленою галочкою на мініатюрі
-                                    ForEach(menuFaces) { item in
-                                        Button { if item.id != activeID { onSelect(item) } } label: {
-                                            Text(item.name)
-                                            Text(item.id == activeID
-                                                 ? String(localized: "Активний · \(item.meta)")
-                                                 : item.meta)
-                                            Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
-                                                .renderingMode(.original)
+                                }
+                                ForEach(menuFaces) { item in
+                                    let face = BandFace(id: item.id, name: item.name,
+                                                        isActive: item.id == activeID, canDelete: true)
+                                    Menu {
+                                        Button { onOpen(item) } label: {
+                                            Label("Відкрити сторінку", systemImage: "arrow.up.forward.app")
                                         }
+                                        if !face.isActive {
+                                            Button { onSelect(face) } label: {
+                                                Label("Вибрати", systemImage: "checkmark.circle")
+                                            }
+                                        }
+                                        Button(role: .destructive) { onDeleteRequest(face) } label: {
+                                            Label("Видалити з браслета", systemImage: "trash")
+                                        }
+                                    } label: {
+                                        Text(item.name)
+                                        Text(face.isActive ? String(localized: "Активний · \(item.meta)") : item.meta)
+                                        Image(uiImage: MenuThumb.image(key: item.id, preview: item.preview, active: face.isActive))
+                                            .renderingMode(.original)
                                     }
                                 }
                             }
 
-                            // Керування кожним циферблатом
-                            if !menuFaces.isEmpty {
-                                Section {
-                                    ForEach(menuFaces) { item in
+                            // Інші циферблати на браслеті (з Mi Fitness): назва з браслета, превью немає
+                            if !otherFaces.isEmpty {
+                                Section("Інші на браслеті") {
+                                    ForEach(otherFaces) { face in
                                         Menu {
-                                            Button { onOpen(item) } label: {
-                                                Label("Відкрити сторінку", systemImage: "arrow.up.forward.app")
-                                            }
-                                            if item.id != activeID {
-                                                Button { onSelect(item) } label: {
+                                            if !face.isActive {
+                                                Button { onSelect(face) } label: {
                                                     Label("Вибрати", systemImage: "checkmark.circle")
                                                 }
                                             }
-                                            Button(role: .destructive) { onDeleteRequest(item) } label: {
-                                                Label("Видалити з браслета", systemImage: "trash")
+                                            if face.canDelete {
+                                                Button(role: .destructive) { onDeleteRequest(face) } label: {
+                                                    Label("Видалити з браслета", systemImage: "trash")
+                                                }
                                             }
                                         } label: {
-                                            Text(item.name)
-                                            Text(verbatim: item.meta)
-                                            Image(uiImage: MenuThumb.image(for: item, active: item.id == activeID))
+                                            Text(face.name)
+                                            Text(face.isActive ? String(localized: "Активний · Mi Fitness") : "Mi Fitness")
+                                            Image(uiImage: MenuThumb.image(key: "other", preview: nil, active: face.isActive))
                                                 .renderingMode(.original)
                                         }
                                     }
                                 }
                             }
 
-                            // Довідка
+                            // Браслет — з тією ж іконкою, що на головній
                             Section {
-                                if let other = otherFacesCount, other > 0 {
-                                    Text("Ще \(other) з Mi Fitness")
+                                Label {
+                                    Text(verbatim: bandStatus)
+                                } icon: {
+                                    Image("TabWatch")
                                 }
-                                Text(verbatim: bandStatus)
                             }
                         } label: {
                             Image("IconInstalled")
@@ -988,12 +999,20 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
 }
 
 /// F: мініатюра циферблата для рядка системного меню — капсула в квадраті, щоб iOS не розтягувала її
+/// Циферблат на браслеті для меню F (з магазину чи ні)
+struct BandFace: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let isActive: Bool
+    let canDelete: Bool
+}
+
 private enum MenuThumb {
     private static var cache: [String: UIImage] = [:]
 
     /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
-    static func image(for item: StoreFace, active: Bool = false) -> UIImage {
-        let key = item.id + (active ? ":a" : "")
+    static func image(key id: String, preview: UIImage?, active: Bool = false) -> UIImage {
+        let key = id + (active ? ":a" : "")
         if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
@@ -1006,7 +1025,7 @@ private enum MenuThumb {
             UIColor.black.setFill()
             path.fill()
             path.addClip()
-            if let preview = item.preview {
+            if let preview {
                 let scale = max(capsule.width / preview.size.width, capsule.height / preview.size.height)
                 let size = CGSize(width: preview.size.width * scale, height: preview.size.height * scale)
                 preview.draw(in: CGRect(x: capsule.midX - size.width / 2, y: capsule.midY - size.height / 2,

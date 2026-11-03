@@ -26,6 +26,8 @@ public struct WatchfaceInfo: Sendable, Equatable {
     public var isActive: Bool
     /// Браслет дозволяє видалити (вбудовані циферблати — ні).
     public var canDelete: Bool = true
+    /// Назва з браслета (може бути відсутня)
+    public var name: String? = nil
 }
 
 public enum InstallPhase: Sendable, Equatable {
@@ -237,6 +239,6 @@ extension WatchfaceInstaller {
 
 extension WatchfaceInfo {
     init(entry: WatchfaceEntry) {
-        self.init(id: entry.id, isActive: entry.isActive, canDelete: entry.canDelete)
+        self.init(id: entry.id, isActive: entry.isActive, canDelete: entry.canDelete, name: entry.name)
     }
 }

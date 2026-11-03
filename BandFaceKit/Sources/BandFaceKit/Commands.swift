@@ -148,12 +148,15 @@ public struct Command: Sendable, Equatable {
 
 struct WatchfaceEntry: Sendable, Equatable {
     var id: String
+    /// Назва, як її показує браслет (6.1.1.2; може бути відсутня)
+    var name: String?
     var isActive: Bool
     var canDelete: Bool
 
     init?(message: ProtoMessage) {
         guard let id = message.string(1) else { return nil }
         self.id = id
+        name = message.string(2)
         isActive = message.bool(3) ?? false
         canDelete = message.bool(4) ?? false
     }
