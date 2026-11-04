@@ -628,7 +628,7 @@ struct StoreDetailView: View {
             Text("Видалити з браслета")
                 .opacity(working == .delete ? 0 : 1)
                 .overlay { if working == .delete { ProgressView() } }
-                .foregroundStyle(Color(.systemRed))
+                .foregroundStyle(Color.errorText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)

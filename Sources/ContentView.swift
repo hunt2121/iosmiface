@@ -601,7 +601,7 @@ struct ContentView: View {
                     } label: {
                         Image("IconDisconnect")
                             .renderingMode(.template)
-                            .foregroundStyle(Color(red: 0.878, green: 0.267, blue: 0.227))
+                            .foregroundStyle(Color.errorText)
                     }
                     .accessibilityLabel(Text("Відключити"))
                     .buttonStyle(.plain)
@@ -662,7 +662,7 @@ struct ContentView: View {
                     Text("Очистити").buttonText()
                 }
                 .glassSecondaryStyle()
-                .tint(.red)
+                .tint(Color.errorText)
             }
             .buttonBorderShape(.capsule)
             .padding(.top, 4)

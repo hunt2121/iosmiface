@@ -9,11 +9,9 @@ extension Color {
     static let okIcon = Color(red: 34 / 255, green: 168 / 255, blue: 70 / 255)
     static let okText = okIcon
 
-    static let errorText = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-            ? UIColor.systemRed
-            : UIColor(red: 0.78, green: 0.12, blue: 0.10, alpha: 1)
-    })
+    /// Усі червоні написи, позначки й кнопки — один колір для обох тем (середина між колишніми
+    /// червоними написами світлої та темної тем, трохи світліше)
+    static let errorText = Color(red: 232 / 255, green: 56 / 255, blue: 47 / 255)
 }
 
 /// Liquid Glass на iOS 26 і запасний вигляд на старіших версіях.
