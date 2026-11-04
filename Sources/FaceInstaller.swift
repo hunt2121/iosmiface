@@ -18,7 +18,7 @@ final class FaceInstaller {
             return try await installOnce(face, authKey: authKey, progress: progress)
         } catch BandError.sessionOpenFailed {
             // Найчастіше iOS перестала доставляти нам сповіщення: нове з'єднання дає чисту підписку
-            ble.addLog(String(localized: "Браслет не відповідає — перепідключаюся…"))
+            ble.addLog(String(localized: "Пристрій не відповідає — перепідключаюся…"))
             progress(0, String(localized: "Перепідключення…"))
             guard await ble.reconnect() else { throw BandError.sessionOpenFailed }
             return try await installOnce(face, authKey: authKey, progress: progress)
@@ -56,17 +56,17 @@ final class FaceInstaller {
             if case BandError.timeout = error {
                 if reporter.reachedActivation {
                     // Файл уже на браслеті, але команду активації браслет не підтвердив
-                    ble.addLog(String(localized: "Браслет не підтвердив активацію"))
-                    throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"))
+                    ble.addLog(String(localized: "Пристрій не підтвердив активацію"))
+                    throw InstallFailure(errorDescription: String(localized: "Циферблат передано, але пристрій не підтвердив активацію. Виберіть його на пристрої вручну"))
                 }
                 // Кажемо, на якому саме етапі браслет замовк
-                throw InstallFailure(errorDescription: String(localized: "Браслет не відповів (\(reporter.stage))"))
+                throw InstallFailure(errorDescription: String(localized: "Пристрій не відповів (\(reporter.stage))"))
             }
             throw error
         }
         // Після прийому файлу браслет сам вмикає новий циферблат
         return reporter.alreadyInstalled
-            ? String(localized: "Циферблат уже був на браслеті, його активовано")
+            ? String(localized: "Циферблат уже був на пристрої, його активовано")
             : String(localized: "Циферблат встановлено й активовано")
     }
 
@@ -78,7 +78,7 @@ final class FaceInstaller {
             configuration.log = { text in DispatchQueue.main.async { ble.debug(text) } }
         }
         configuration.onOtherApp = { _ in
-            DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з браслетом")) }
+            DispatchQueue.main.async { ble.addLog(String(localized: "Mi Fitness почав синхронізацію з пристроєм")) }
         }
         configuration.openParameters = [
             (key: 1, value: [0x01, 0x00, 0x00]),
@@ -205,7 +205,7 @@ private final class PhaseReporter: @unchecked Sendable {
         case .authenticating:
             progress(0, String(localized: "Автентифікація…"))
         case .requestingInstall:
-            ble.addLog(String(localized: "Підключено до браслета"))
+            ble.addLog(String(localized: "Підключено до пристрою"))
             ble.addLog(String(localized: "Встановлення \(face.id) (\(String(face.size / 1024)) КБ)…"))
             progress(0, String(localized: "Запит на встановлення…"))
         case .removingOldVersion:
@@ -220,7 +220,7 @@ private final class PhaseReporter: @unchecked Sendable {
         case .closing:
             break
         case .done(let already):
-            if already { ble.addLog(String(localized: "Цей циферблат уже є на браслеті")) }
+            if already { ble.addLog(String(localized: "Цей циферблат уже є на пристрої")) }
         }
     }
 }
@@ -235,29 +235,29 @@ extension BandError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notConnected:
-            return String(localized: "Браслет не підключено")
+            return String(localized: "Пристрій не підключено")
         case .characteristicNotFound:
-            return String(localized: "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.")
+            return String(localized: "У пристрою немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.")
         case .invalidAuthKey:
             return String(localized: "Auth key має бути 32 hex-символи (16 байт)")
         case .authKeyMismatch, .notAuthenticated:
             return String(localized: "Автентифікація не вдалася: перевірте auth key")
         case .sessionOpenFailed, .sessionNotOpen:
-            return String(localized: "Браслет не відповів (\(String(localized: "відкриття сесії")))")
+            return String(localized: "Пристрій не відповів (\(String(localized: "відкриття сесії")))")
         case .timeout:
-            return String(localized: "Браслет не відповів (\(String(localized: "передача даних")))")
+            return String(localized: "Пристрій не відповів (\(String(localized: "передача даних")))")
         case .installRejected(let status):
             let why = String(localized: "статус \(String(status))") + ". "
-                + String(localized: "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета")
-            return String(localized: "Браслет відхилив операцію: \(why)")
+                + String(localized: "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього пристрою")
+            return String(localized: "Пристрій відхилив операцію: \(why)")
         case .uploadRejected(let status):
-            return String(localized: "Браслет відхилив операцію: \(String(localized: "несподівана відповідь на завантаження (\(String(status)))"))")
+            return String(localized: "Пристрій відхилив операцію: \(String(localized: "несподівана відповідь на завантаження (\(String(status)))"))")
         case .installAborted(let status):
-            return String(localized: "Браслет перервав прийом файлу (статус \(String(status))). Спробуйте ще раз")
+            return String(localized: "Пристрій перервав прийом файлу (статус \(String(status))). Спробуйте ще раз")
         case .activationFailed:
-            return String(localized: "Браслет не активував циферблат. Спробуйте встановити ще раз")
+            return String(localized: "Пристрій не активував циферблат. Спробуйте встановити ще раз")
         case .malformedResponse, .malformedProtobuf:
-            return String(localized: "Браслет відхилив операцію: \(String(localized: "некоректні параметри завантаження"))")
+            return String(localized: "Пристрій відхилив операцію: \(String(localized: "некоректні параметри завантаження"))")
         case .invalidFaceFile(let why):
             let reason: String
             switch why {

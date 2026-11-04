@@ -19,7 +19,6 @@ struct ContentView: View {
     @State private var tab: Tab = .faces
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
-    @AppStorage("storeLayout") private var storeLayout = 0  // тимчасовий експеримент
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
@@ -79,7 +78,6 @@ struct ContentView: View {
                       activeID: activeFaceID,
                       onActivate: { await bandFaceAction($0, delete: false) },
                       onDelete: { await bandFaceAction($0, delete: true) },
-                      onCheck: { await syncDeviceFaces() },
                       onPickFile: {
                           tab = .faces
                           Task { @MainActor in
@@ -89,8 +87,8 @@ struct ContentView: View {
                       },
                       otherFaces: otherFaces,
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
-                      bandStatus: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Браслет не підключено"),
-                      bandInfo: ble.connectedName == nil ? BandInfo() : bandInfo)
+                      deviceName: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Пристрій не підключено"),
+                      deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo)
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -160,13 +158,13 @@ struct ContentView: View {
                             // Ключ додається в налаштуваннях: переходимо туди й одразу починаємо пошук
                             openKey(search: true)
                         } label: {
-                            Label("Додати ключ браслета", systemImage: "key")
+                            Label("Додати ключ пристрою", systemImage: "key")
                         }
                     } header: {
                         // Стандартний відступ першої секції — як «Браслет» і «Auth key» під заголовком екрана
                         Text("Ключ")
                     } footer: {
-                        Text("Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.")
+                        Text("Без ключа застосунок не зможе підключитися до пристрою. Його можна знайти автоматично в даних Mi Fitness.")
                     }
                 }
                 bandSection
@@ -225,21 +223,6 @@ struct ContentView: View {
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
-                }
-                // Тимчасово: як фільтрувати циферблати в магазині
-                Section {
-                    Picker(selection: $storeLayout) {
-                        Text(verbatim: "A · Кнопка фільтрів і пошук").tag(0)
-                        Text(verbatim: "B · Мітки фільтрів без пошуку").tag(1)
-                        Text(verbatim: "C · Системна панель: фільтр і оновлення").tag(2)
-                        Text(verbatim: "D · Встановлені: спливаюче вікно").tag(3)
-                        Text(verbatim: "E · Встановлені: аркуш знизу").tag(4)
-                        Text(verbatim: "F · Встановлені: системне меню").tag(5)
-                    } label: {
-                        Text(verbatim: "Магазин")
-                    }
-                } header: {
-                    Text(verbatim: "Експеримент")
                 }
             }
             .navigationTitle("Налаштування")
@@ -349,10 +332,10 @@ struct ContentView: View {
     @MainActor
     private func bandFaceAction(id: String, name: String, delete: Bool) async -> String? {
         guard keyValid, let key = Hex.decode(authKey), key.count == 16 else {
-            return String(localized: "Спершу додайте ключ браслета")
+            return String(localized: "Спершу додайте ключ пристрою")
         }
         guard ble.connectedID != nil, ble.servicesReady else {
-            return String(localized: "Спершу підключіть браслет на вкладці «Циферблати»")
+            return String(localized: "Спершу підключіть пристрій на вкладці «Циферблати»")
         }
         guard !busy else { return String(localized: "Зачекайте, поки завершиться встановлення") }
         // Фонова перевірка браслета могла ще не закінчитись — дві сесії одночасно не можна
@@ -368,14 +351,14 @@ struct ContentView: View {
             applyDeviceList(list)
             if delete {
                 if list.contains(where: { $0.id == id }) {
-                    ble.addLog(String(localized: "Браслет не видалив циферблат"))
-                    return String(localized: "Браслет не видалив циферблат")
+                    ble.addLog(String(localized: "Пристрій не видалив циферблат"))
+                    return String(localized: "Пристрій не видалив циферблат")
                 }
                 ble.addLog(String(localized: "Циферблат видалено"))
             } else {
                 guard activeFaceID == id else {
-                    ble.addLog(String(localized: "Браслет не увімкнув циферблат"))
-                    return String(localized: "Браслет не увімкнув циферблат")
+                    ble.addLog(String(localized: "Пристрій не увімкнув циферблат"))
+                    return String(localized: "Пристрій не увімкнув циферблат")
                 }
                 ble.addLog(String(localized: "Циферблат увімкнено"))
             }
@@ -389,22 +372,22 @@ struct ContentView: View {
 
     private func storeInstall(_ item: StoreFace) {
         if syncing {
-            storeAlert = String(localized: "Йде перевірка циферблатів на браслеті. Спробуйте за кілька секунд")
+            storeAlert = String(localized: "Йде перевірка циферблатів на пристрої. Спробуйте за кілька секунд")
             return
         }
         guard keyValid else {
-            storeAlert = String(localized: "Спершу додайте ключ браслета")
+            storeAlert = String(localized: "Спершу додайте ключ пристрою")
             storeAlertOpensKey = true
             return
         }
         guard ble.connectedID != nil && ble.servicesReady else {
-            storeAlert = String(localized: "Спершу підключіть браслет на вкладці «Циферблати»")
+            storeAlert = String(localized: "Спершу підключіть пристрій на вкладці «Циферблати»")
             storeAlertGoTo = .faces
             return
         }
         if let n = ble.connectedName, let r = n.range(of: #"Band\s*(\d+)"#, options: .regularExpression),
            let model = Int(n[r].filter(\.isNumber)), !item.bands.contains(model) {
-            storeAlert = String(localized: "Цей циферблат не підтримує ваш браслет")
+            storeAlert = String(localized: "Цей циферблат не підтримує ваш пристрій")
             return
         }
         install(item.face, store: item)
@@ -479,7 +462,7 @@ struct ContentView: View {
                 }
             }
         } header: {
-            Text("Auth key браслета")
+            Text("Auth key пристрою")
         } footer: {
             // Обидва варіанти підпису займають місце, видно один — висота не змінюється
             ZStack(alignment: .topLeading) {
@@ -615,14 +598,14 @@ struct ContentView: View {
                 // Автоматичне (або ручне) підключення до браслета
                 HStack {
                     ProgressView()
-                    Text("Підключення до \(ble.connectingName ?? String(localized: "браслета"))…")
+                    Text("Підключення до \(ble.connectingName ?? String(localized: "пристрою"))…")
                         .padding(.leading, 6)
                     Spacer()
                     Button("Скасувати") { ble.disconnect() }
                         .buttonStyle(.borderless)
                 }
             } else {
-                Button(ble.isScanning ? String(localized: "Зупинити пошук") : String(localized: "Шукати браслет")) {
+                Button(ble.isScanning ? String(localized: "Зупинити пошук") : String(localized: "Шукати пристрій")) {
                     ble.isScanning ? ble.stopScan() : ble.startScan()
                 }
                 ForEach(ble.devices) { d in

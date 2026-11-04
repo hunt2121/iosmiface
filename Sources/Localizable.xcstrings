@@ -70,29 +70,6 @@
         }
       }
     },
-    "Auth key браслета": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Band auth key"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auth key браслета"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auth key браслета"
-          }
-        }
-      }
-    },
     "Auth key має бути 32 hex-символи (16 байт)": {
       "extractionState": "manual",
       "localizations": {
@@ -135,6 +112,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auth key оновлено з даних Mi Fitness"
+          }
+        }
+      }
+    },
+    "Auth key пристрою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device auth key"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth key устройства"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth key пристрою"
           }
         }
       }
@@ -185,25 +185,25 @@
         }
       }
     },
-    "Mi Fitness почав синхронізацію з браслетом": {
+    "Mi Fitness почав синхронізацію з пристроєм": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mi Fitness started syncing with the band"
+            "value": "Mi Fitness started syncing with the device"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mi Fitness начал синхронизацию с браслетом"
+            "value": "Mi Fitness начал синхронизацию с устройством"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mi Fitness почав синхронізацію з браслетом"
+            "value": "Mi Fitness почав синхронізацію з пристроєм"
           }
         }
       }
@@ -323,25 +323,25 @@
         }
       }
     },
-    "Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness.": {
+    "Без ключа застосунок не зможе підключитися до пристрою. Його можна знайти автоматично в даних Mi Fitness.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Without the key the app can't connect to the band. It can be found automatically in the Mi Fitness data."
+            "value": "Without the key the app can't connect to the device. It can be found automatically in the Mi Fitness data."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Без ключа приложение не сможет подключиться к браслету. Его можно найти автоматически в данных Mi Fitness."
+            "value": "Без ключа приложение не сможет подключиться к устройству. Его можно найти автоматически в данных Mi Fitness."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Без ключа застосунок не зможе підключитися до браслета. Його можна знайти автоматично в даних Mi Fitness."
+            "value": "Без ключа застосунок не зможе підключитися до пристрою. Його можна знайти автоматично в даних Mi Fitness."
           }
         }
       }
@@ -388,190 +388,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Безкоштовні"
-          }
-        }
-      }
-    },
-    "Браслет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет"
-          }
-        }
-      }
-    },
-    "Браслет відхилив операцію: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band rejected the operation: %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет отклонил операцию: %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет відхилив операцію: %@"
-          }
-        }
-      }
-    },
-    "Браслет не активував циферблат. Спробуйте встановити ще раз": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band did not activate the watch face. Try installing again"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не активировал циферблат. Попробуйте установить ещё раз"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не активував циферблат. Спробуйте встановити ще раз"
-          }
-        }
-      }
-    },
-    "Браслет не відповів (%@)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band didn't respond (%@)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не ответил (%@)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не відповів (%@)"
-          }
-        }
-      }
-    },
-    "Браслет не відповідає — перепідключаюся…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band is not responding — reconnecting…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не отвечает — переподключаюсь…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не відповідає — перепідключаюся…"
-          }
-        }
-      }
-    },
-    "Браслет не підключено": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band is not connected"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не подключён"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не підключено"
-          }
-        }
-      }
-    },
-    "Браслет не підтвердив активацію": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band did not confirm activation"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не подтвердил активацию"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет не підтвердив активацію"
-          }
-        }
-      }
-    },
-    "Браслет перервав прийом файлу (статус %@). Спробуйте ще раз": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band stopped receiving the file (status %@). Try again"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет прервал приём файла (статус %@). Попробуйте ещё раз"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Браслет перервав прийом файлу (статус %@). Спробуйте ще раз"
           }
         }
       }
@@ -921,48 +737,48 @@
         }
       }
     },
-    "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз": {
+    "Дані Mi Fitness знайдено, але ключа пристрою в них немає. Відкрийте Mi Fitness, дочекайтеся підключення пристрою й спробуйте ще раз": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mi Fitness data found, but it has no band key. Open Mi Fitness, wait for the band to connect and try again"
+            "value": "Mi Fitness data found, but it has no device key. Open Mi Fitness, wait for the device to connect and try again"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Данные Mi Fitness найдены, но ключа браслета в них нет. Откройте Mi Fitness, дождитесь подключения браслета и попробуйте ещё раз"
+            "value": "Данные Mi Fitness найдены, но ключа устройства в них нет. Откройте Mi Fitness, дождитесь подключения устройства и попробуйте ещё раз"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Дані Mi Fitness знайдено, але ключа браслета в них немає. Відкрийте Mi Fitness, дочекайтеся підключення браслета й спробуйте ще раз"
+            "value": "Дані Mi Fitness знайдено, але ключа пристрою в них немає. Відкрийте Mi Fitness, дочекайтеся підключення пристрою й спробуйте ще раз"
           }
         }
       }
     },
-    "Додати ключ браслета": {
+    "Додати ключ пристрою": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add band key"
+            "value": "Add device key"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавить ключ браслета"
+            "value": "Добавить ключ устройства"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Додати ключ браслета"
+            "value": "Додати ключ пристрою"
           }
         }
       }
@@ -1059,6 +875,29 @@
         }
       }
     },
+    "Закрити": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити"
+          }
+        }
+      }
+    },
     "Запит на встановлення…": {
       "extractionState": "manual",
       "localizations": {
@@ -1101,6 +940,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Застосунок"
+          }
+        }
+      }
+    },
+    "Звичайний": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обычный"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звичайний"
           }
         }
       }
@@ -1193,6 +1055,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зупинити пошук"
+          }
+        }
+      }
+    },
+    "Йде перевірка циферблатів на пристрої. Спробуйте за кілька секунд": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking watch faces on the device. Try again in a few seconds"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Идёт проверка циферблатов на устройстве. Повторите через несколько секунд"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Йде перевірка циферблатів на пристрої. Спробуйте за кілька секунд"
+          }
+        }
+      }
+    },
+    "Категорія": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Категория"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Категорія"
           }
         }
       }
@@ -1381,25 +1289,25 @@
         }
       }
     },
-    "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета": {
+    "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього пристрою": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perhaps an older version of this watch face is active right now (switch to another one), there are too many custom watch faces (limit ≈10), or the file is not meant for this band"
+            "value": "Perhaps an older version of this watch face is active right now (switch to another one), there are too many custom watch faces (limit ≈10), or the file is not meant for this device"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Возможно, старая версия этого циферблата сейчас активна (переключите на другой), собственных циферблатов слишком много (лимит ≈10) или файл не для этого браслета"
+            "value": "Возможно, старая версия этого циферблата сейчас активна (переключите на другой), собственных циферблатов слишком много (лимит ≈10) или файл не для этого устройства"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього браслета"
+            "value": "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього пристрою"
           }
         }
       }
@@ -1469,6 +1377,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Некоректний файл циферблата: %@"
+          }
+        }
+      }
+    },
+    "Нові": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові"
           }
         }
       }
@@ -1795,6 +1726,52 @@
         }
       }
     },
+    "Пристрої": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devices"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройства"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрої"
+          }
+        }
+      }
+    },
+    "Пристрій": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій"
+          }
+        }
+      }
+    },
     "Пристрій без назви": {
       "extractionState": "manual",
       "localizations": {
@@ -1814,6 +1791,167 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пристрій без назви"
+          }
+        }
+      }
+    },
+    "Пристрій відхилив операцію: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device rejected the operation: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство отклонило операцию: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій відхилив операцію: %@"
+          }
+        }
+      }
+    },
+    "Пристрій не активував циферблат. Спробуйте встановити ще раз": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device did not activate the watch face. Try installing again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не активировало циферблат. Попробуйте установить ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій не активував циферблат. Спробуйте встановити ще раз"
+          }
+        }
+      }
+    },
+    "Пристрій не відповів (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device didn't respond (%@)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не ответило (%@)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій не відповів (%@)"
+          }
+        }
+      }
+    },
+    "Пристрій не відповідає — перепідключаюся…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device is not responding — reconnecting…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не отвечает — переподключаюсь…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій не відповідає — перепідключаюся…"
+          }
+        }
+      }
+    },
+    "Пристрій не підключено": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device is not connected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не подключено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій не підключено"
+          }
+        }
+      }
+    },
+    "Пристрій не підтвердив активацію": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device did not confirm activation"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не подтвердило активацию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій не підтвердив активацію"
+          }
+        }
+      }
+    },
+    "Пристрій перервав прийом файлу (статус %@). Спробуйте ще раз": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device stopped receiving the file (status %@). Try again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство прервало приём файла (статус %@). Попробуйте ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пристрій перервав прийом файлу (статус %@). Спробуйте ще раз"
           }
         }
       }
@@ -1887,25 +2025,25 @@
         }
       }
     },
-    "Підключено до браслета": {
+    "Підключено до пристрою": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connected to the band"
+            "value": "Connected to the device"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подключено к браслету"
+            "value": "Подключено к устройству"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Підключено до браслета"
+            "value": "Підключено до пристрою"
           }
         }
       }
@@ -2025,48 +2163,48 @@
         }
       }
     },
-    "Спершу додайте ключ браслета": {
+    "Спершу додайте ключ пристрою": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add the band key first"
+            "value": "Add the device key first"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сначала добавьте ключ браслета"
+            "value": "Сначала добавьте ключ устройства"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Спершу додайте ключ браслета"
+            "value": "Спершу додайте ключ пристрою"
           }
         }
       }
     },
-    "Спершу підключіть браслет на вкладці «Циферблати»": {
+    "Спершу підключіть пристрій на вкладці «Циферблати»": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect the band on the Watch Faces tab first"
+            "value": "Connect the device on the Watch Faces tab first"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сначала подключите браслет на вкладке «Циферблаты»"
+            "value": "Сначала подключите устройство на вкладке «Циферблаты»"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Спершу підключіть браслет на вкладці «Циферблати»"
+            "value": "Спершу підключіть пристрій на вкладці «Циферблати»"
           }
         }
       }
@@ -2163,29 +2301,6 @@
         }
       }
     },
-    "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band has no 0x5E/0x5F BLE characteristics. This firmware seems to use only Bluetooth Classic, which iOS doesn't support."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У браслета нет BLE-характеристик 0x5E/0x5F. Похоже, на этой прошивке обмен идёт только через Bluetooth Classic, который iOS не поддерживает."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У браслета немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує."
-          }
-        }
-      }
-    },
     "У вікні, що відкриється, перейдіть у розділ «На iPhone», виберіть папку «Mi Fitness» і натисніть «Відкрити». Застосунок сам знайде ключ і запам'ятає папку.": {
       "extractionState": "manual",
       "localizations": {
@@ -2209,25 +2324,48 @@
         }
       }
     },
-    "У папці не знайдено ключа браслета. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику": {
+    "У папці не знайдено ключа пристрою. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No band key found in this folder. Choose the Mi Fitness app folder (for the Chinese version, «小米运动健康»). If that doesn't help, turn on Developer mode in the Log tab, search again and send the log to the developer"
+            "value": "No device key found in this folder. Choose the Mi Fitness app folder (for the Chinese version, «小米运动健康»). If that doesn't help, turn on Developer mode in the Log tab, search again and send the log to the developer"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В папке не найден ключ браслета. Выберите папку приложения Mi Fitness (для китайской версии — «小米运动健康»). Если не помогает, включите «Режим разработчика» в «Журнале», повторите поиск и отправьте журнал разработчику"
+            "value": "В папке не найден ключ устройства. Выберите папку приложения Mi Fitness (для китайской версии — «小米运动健康»). Если не помогает, включите «Режим разработчика» в «Журнале», повторите поиск и отправьте журнал разработчику"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У папці не знайдено ключа браслета. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику"
+            "value": "У папці не знайдено ключа пристрою. Виберіть папку застосунку Mi Fitness (для китайської версії — «小米运动健康»). Якщо не допомагає, увімкніть «Режим розробника» в «Журналі», повторіть пошук і надішліть журнал розробнику"
+          }
+        }
+      }
+    },
+    "У пристрою немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device has no 0x5E/0x5F BLE characteristics. This firmware seems to use only Bluetooth Classic, which iOS doesn't support."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У устройства нет BLE-характеристик 0x5E/0x5F. Похоже, на этой прошивке обмен идёт только через Bluetooth Classic, который iOS не поддерживает."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У пристрою немає BLE-характеристик 0x5E/0x5F. Схоже, на цій прошивці обмін іде лише через Bluetooth Classic, який iOS не підтримує."
           }
         }
       }
@@ -2324,25 +2462,71 @@
         }
       }
     },
-    "Цей циферблат уже є на браслеті": {
+    "Фільтр": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This watch face is already on the band"
+            "value": "Filter"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот циферблат уже есть на браслете"
+            "value": "Фильтр"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цей циферблат уже є на браслеті"
+            "value": "Фільтр"
+          }
+        }
+      }
+    },
+    "Цей циферблат не підтримує ваш пристрій": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This watch face doesn't support your device"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот циферблат не поддерживает ваше устройство"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей циферблат не підтримує ваш пристрій"
+          }
+        }
+      }
+    },
+    "Цей циферблат уже є на пристрої": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This watch face is already on the device"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот циферблат уже есть на устройстве"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей циферблат уже є на пристрої"
           }
         }
       }
@@ -2393,48 +2577,48 @@
         }
       }
     },
-    "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну": {
+    "Циферблат передано, але пристрій не підтвердив активацію. Виберіть його на пристрої вручну": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The watch face was transferred, but the band did not confirm activation. Select it on the band manually"
+            "value": "The watch face was transferred, but the device did not confirm activation. Select it on the device manually"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Циферблат передан, но браслет не подтвердил активацию. Выберите его на браслете вручную"
+            "value": "Циферблат передан, но устройство не подтвердило активацию. Выберите его на устройстве вручную"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Циферблат передано, але браслет не підтвердив активацію. Виберіть його на браслеті вручну"
+            "value": "Циферблат передано, але пристрій не підтвердив активацію. Виберіть його на пристрої вручну"
           }
         }
       }
     },
-    "Циферблат уже був на браслеті, його активовано": {
+    "Циферблат уже був на пристрої, його активовано": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The watch face was already on the band and has been activated"
+            "value": "The watch face was already on the device and has been activated"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Циферблат уже был на браслете, он активирован"
+            "value": "Циферблат уже был на устройстве, он активирован"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Циферблат уже був на браслеті, його активовано"
+            "value": "Циферблат уже був на пристрої, його активовано"
           }
         }
       }
@@ -2462,25 +2646,25 @@
         }
       }
     },
-    "Шукати браслет": {
+    "Шукати пристрій": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Find band"
+            "value": "Find device"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Искать браслет"
+            "value": "Искать устройство"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Шукати браслет"
+            "value": "Шукати пристрій"
           }
         }
       }
@@ -2527,29 +2711,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "активація циферблата"
-          }
-        }
-      }
-    },
-    "браслета": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "the band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "браслету"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "браслета"
           }
         }
       }
@@ -2715,6 +2876,29 @@
         }
       }
     },
+    "пристрою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the device"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "устройству"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "пристрою"
+          }
+        }
+      }
+    },
     "статус %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2803,213 +2987,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "це не файл циферблата Xiaomi (немає заголовка 5A A5)"
-          }
-        }
-      }
-    },
-    "Цей циферблат не підтримує ваш браслет": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This watch face doesn't support your band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот циферблат не поддерживает ваш браслет"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей циферблат не підтримує ваш браслет"
-          }
-        }
-      }
-    },
-    "Пристрій": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Device"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Устройство"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пристрій"
-          }
-        }
-      }
-    },
-    "Звичайний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Normal"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обычный"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Звичайний"
-          }
-        }
-      }
-    },
-    "Пристрої": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Devices"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Устройства"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пристрої"
-          }
-        }
-      }
-    },
-    "Категорія": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Category"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Категория"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Категорія"
-          }
-        }
-      }
-    },
-    "Йде перевірка циферблатів на браслеті. Спробуйте за кілька секунд": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checking watch faces on the band. Try again in a few seconds"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Идёт проверка циферблатов на браслете. Повторите через несколько секунд"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Йде перевірка циферблатів на браслеті. Спробуйте за кілька секунд"
-          }
-        }
-      }
-    },
-    "Нові": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нові"
-          }
-        }
-      }
-    },
-    "Закрити": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрыть"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрити"
-          }
-        }
-      }
-    },
-    "Фільтр": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filter"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фильтр"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фільтр"
           }
         }
       }

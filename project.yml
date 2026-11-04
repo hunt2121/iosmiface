@@ -5,7 +5,7 @@ options:
   deploymentTarget:
     iOS: "16.0"
 packages:
-  # Протокол браслета: окрема бібліотека з ліцензією MIT (див. BandFaceKit/LICENSE)
+  # Протокол пристрою: окрема бібліотека з ліцензією MIT (див. BandFaceKit/LICENSE)
   BandFaceKit:
     path: BandFaceKit
 targets:
@@ -25,7 +25,7 @@ targets:
         CFBundleLocalizations: [uk, en, ru]
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти браслет Xiaomi та встановити циферблат."
+        NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти пристрій Xiaomi та встановити циферблат."
         UILaunchScreen: {}
         # Анімації на 120 Гц на iPhone з ProMotion (без цього — не більше 60 к/с)
         CADisableMinimumFrameDurationOnPhone: true
@@ -38,3 +38,12 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        # Менший застосунок: без символів налагодження й невикористаного коду, оптимізація під розмір
+        Release:
+          DEAD_CODE_STRIPPING: YES
+          DEPLOYMENT_POSTPROCESSING: YES
+          STRIP_INSTALLED_PRODUCT: YES
+          STRIP_STYLE: all
+          COPY_PHASE_STRIP: YES
+          SWIFT_OPTIMIZATION_LEVEL: -Osize

@@ -111,7 +111,7 @@ final class BLEManager: NSObject, ObservableObject {
         p.delegate = self
         isConnecting = true
         connectingName = p.name
-        addLog(String(localized: "Підключення до \(p.name ?? String(localized: "браслета"))…"))
+        addLog(String(localized: "Підключення до \(p.name ?? String(localized: "пристрою"))…"))
         central.connect(p, options: nil)
     }
 
