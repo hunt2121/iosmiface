@@ -620,62 +620,83 @@ enum StoreSort: String, CaseIterable {
     }
 }
 
-/// Кнопка категорій і сортування на UIKit-меню. SwiftUI-меню не вміє водночас системну галочку й підпис
-/// (рядок із галочкою втрачає підпис, а рядок із підписом показує галочку як велику іконку) і не оновлює
-/// відкрите меню. UIMenu вміє все: заголовок секції «Категорія», галочку + підпис з напрямком,
-/// пункти сортування, після яких меню лишається відкритим і одразу показує новий стан.
-private struct FilterSortMenuButton: UIViewRepresentable {
-    let filters: [(String, String)]
-    @Binding var filter: String
-    @Binding var sortKey: String
-    @Binding var sortReversed: Bool
+/// Кнопки категорії й сортування — на UIKit-меню. SwiftUI-меню не вміє водночас системну галочку й підпис
+/// і не оновлює відкрите меню; UIMenu вміє: заголовок секції, галочка + підпис з напрямком, пункти,
+/// після яких меню лишається відкритим і одразу показує новий стан.
+private enum MenuIcon {
+    static let config = UIImage.SymbolConfiguration(textStyle: .body, scale: .large)
+        .applying(UIImage.SymbolConfiguration(weight: .medium))
 
-    func makeUIView(context: Context) -> UIButton {
+    /// Іконка кнопки: звичайна — колір тексту; змінений стан — заповнена в колі, акцентним кольором
+    static func apply(to button: UIButton, normal: String, active: String, isActive: Bool, menu: UIMenu) {
+        button.setImage(UIImage(systemName: isActive ? active : normal, withConfiguration: config), for: .normal)
+        button.tintColor = isActive ? .tintColor : .label
+        button.menu = menu
+        // Якщо меню відкрите — показуємо новий стан одразу
+        button.contextMenuInteraction?.updateVisibleMenu { _ in menu }
+    }
+
+    static func makeButton() -> UIButton {
         let button = UIButton(type: .system)
         button.showsMenuAsPrimaryAction = true
         button.setContentHuggingPriority(.required, for: .horizontal)
-        configure(button)
+        return button
+    }
+}
+
+/// Категорія: «Усі», «Платні», «Безкоштовні» і категорії каталогу
+private struct CategoryMenuButton: UIViewRepresentable {
+    let filters: [(String, String)]
+    @Binding var filter: String
+
+    func makeUIView(context: Context) -> UIButton {
+        let button = MenuIcon.makeButton()
+        updateUIView(button, context: context)
         return button
     }
 
     func updateUIView(_ button: UIButton, context: Context) {
-        configure(button)
-    }
-
-    private func configure(_ button: UIButton) {
-        let active = filter != "all"
-        let config = UIImage.SymbolConfiguration(textStyle: .body, scale: .large)
-            .applying(UIImage.SymbolConfiguration(weight: .medium))
-        button.setImage(UIImage(systemName: active ? "line.3.horizontal.decrease.circle.fill"
-                                                   : "line.3.horizontal.decrease", withConfiguration: config),
-                        for: .normal)
-        button.tintColor = active ? .tintColor : .label
-        let menu = makeMenu()
-        button.menu = menu
-        // Якщо меню відкрите (пункти сортування його не закривають) — показуємо новий стан одразу
-        button.contextMenuInteraction?.updateVisibleMenu { _ in menu }
-    }
-
-    private func makeMenu() -> UIMenu {
-        let categories = filters.map { item in
+        let actions = filters.map { item in
             UIAction(title: item.1, state: item.0 == filter ? .on : .off) { _ in filter = item.0 }
         }
-        let sorts = StoreSort.allCases.map { sort -> UIAction in
+        let menu = UIMenu(children: [
+            UIMenu(title: String(localized: "Категорія"), options: .displayInline, children: actions)
+        ])
+        MenuIcon.apply(to: button, normal: "line.3.horizontal.decrease",
+                       active: "line.3.horizontal.decrease.circle.fill", isActive: filter != "all", menu: menu)
+    }
+}
+
+/// Сортування: дотик до вибраного пункту міняє напрямок; напрямок — підписом під вибраним пунктом.
+/// Меню після дотику не закривається. «Перегляди» й «Завантаження» поки неактивні
+private struct SortMenuButton: UIViewRepresentable {
+    @Binding var sortKey: String
+    @Binding var sortReversed: Bool
+
+    func makeUIView(context: Context) -> UIButton {
+        let button = MenuIcon.makeButton()
+        updateUIView(button, context: context)
+        return button
+    }
+
+    func updateUIView(_ button: UIButton, context: Context) {
+        let actions = StoreSort.allCases.map { sort -> UIAction in
             let selected = sort.rawValue == sortKey
-            // Напрямок — лише під вибраним пунктом; «Перегляди» й «Завантаження» просто сірі
             let subtitle = selected && sort.isAvailable ? sort.direction(reversed: sortReversed) : nil
             var attributes: UIMenuElement.Attributes = [.keepsMenuPresented]
             if !sort.isAvailable { attributes.insert(.disabled) }
-            let action = UIAction(title: sort.title, subtitle: subtitle, attributes: attributes,
-                                  state: selected ? .on : .off) { _ in
+            return UIAction(title: sort.title, subtitle: subtitle, attributes: attributes,
+                            state: selected ? .on : .off) { _ in
                 if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
             }
-            return action
         }
-        return UIMenu(children: [
-            UIMenu(title: String(localized: "Категорія"), options: .displayInline, children: categories),
-            UIMenu(title: String(localized: "Сортувати"), options: .displayInline, children: sorts)
+        let menu = UIMenu(children: [
+            UIMenu(title: String(localized: "Сортувати"), options: .displayInline, children: actions)
         ])
+        // Звичне сортування — «Спочатку нові»; будь-яке інше підсвічує кнопку
+        let changed = sortKey != StoreSort.date.rawValue || sortReversed
+        MenuIcon.apply(to: button, normal: "arrow.up.arrow.down",
+                       active: "arrow.up.arrow.down.circle.fill", isActive: changed, menu: menu)
     }
 }
 
@@ -726,11 +747,14 @@ private struct StoreToolbar: ViewModifier {
 
     func body(content: Content) -> some View {
         content.toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                FilterSortMenuButton(filters: filters, filter: $filter,
-                                     sortKey: $sortKey, sortReversed: $sortReversed)
+            // Категорія й сортування — дві кнопки поруч; iOS 26 об'єднує їх в одну скляну капсулу
+            ToolbarItemGroup(placement: .navigationBarLeading) {
+                CategoryMenuButton(filters: filters, filter: $filter)
                     .frame(width: 32, height: 32)
-                    .accessibilityLabel(Text("Фільтр"))
+                    .accessibilityLabel(Text("Категорія"))
+                SortMenuButton(sortKey: $sortKey, sortReversed: $sortReversed)
+                    .frame(width: 32, height: 32)
+                    .accessibilityLabel(Text("Сортувати"))
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
