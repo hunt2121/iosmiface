@@ -190,7 +190,8 @@ struct StoreView: View, Equatable {
             default: return f.kind == filter
             }
         }
-        return StoreSort(rawValue: sortKey)?.sorted(filtered, reversed: sortReversed) ?? filtered
+        // Збережене сортування могло зникнути (наприклад, «Розмір») — тоді за датою
+        return (StoreSort(rawValue: sortKey) ?? .date).sorted(filtered, reversed: sortReversed)
     }
 
     private func state(_ f: StoreFace) -> StoreAction {
@@ -231,7 +232,7 @@ struct StoreView: View, Equatable {
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
             // Під заголовком — поточне сортування («Спочатку нові», «А–Я»…), з iOS 26
-            .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? ""))
+            .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? StoreSort.date.direction(reversed: false)))
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.id == id }) {
                     StoreDetailView(item: item,
@@ -586,28 +587,26 @@ struct StoreDetailView: View {
 
 
 
-/// Сортування магазину. Звичний напрямок: дата — спочатку нові, назва — А–Я, розмір — спочатку менші.
+/// Сортування магазину. Звичний напрямок: дата — спочатку нові, назва — А–Я.
 /// «Завантаження» й «Перегляди» поки не працюють: для них потрібна статистика з сервера.
 enum StoreSort: String, CaseIterable {
-    case date, name, size, downloads, views
+    case date, name, downloads, views
 
     var title: String {
         switch self {
         case .date: return String(localized: "Дата")
         case .name: return String(localized: "Назва")
-        case .size: return String(localized: "Розмір")
         case .downloads: return String(localized: "Завантаження")
         case .views: return String(localized: "Перегляди")
         }
     }
 
-    var isAvailable: Bool { self == .date || self == .name || self == .size }
+    var isAvailable: Bool { self == .date || self == .name }
 
     func direction(reversed: Bool) -> String {
         switch self {
         case .date: return reversed ? String(localized: "Спочатку старі") : String(localized: "Спочатку нові")
         case .name: return reversed ? "Я–А" : "А–Я"
-        case .size: return reversed ? String(localized: "Спочатку більші") : String(localized: "Спочатку менші")
         case .downloads, .views: return ""
         }
     }
@@ -619,8 +618,6 @@ enum StoreSort: String, CaseIterable {
             result = faces.sorted { ($0.added ?? .distantPast) > ($1.added ?? .distantPast) }
         case .name:
             result = faces.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        case .size:
-            result = faces.sorted { $0.face.size < $1.face.size }
         case .downloads, .views:
             return faces
         }
