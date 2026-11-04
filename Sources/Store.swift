@@ -972,7 +972,8 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                             }
 
                             // Браслет — з тією ж іконкою, що на головній
-                            // Браслет — довідковий рядок (сірий, без дії): назва і заряд
+                            // Браслет — довідковий рядок: назва й іконка звичайним (чорним) кольором, під ними заряд.
+                            // Натиск нічого не робить, лише закриває меню
                             Section {
                                 Button {} label: {
                                     Text(verbatim: bandStatus)
@@ -981,7 +982,6 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                     }
                                     Image("TabWatch")
                                 }
-                                .disabled(true)
                             }
                         } label: {
                             Image("IconInstalled")
