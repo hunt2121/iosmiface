@@ -222,7 +222,9 @@ struct StoreView: View, Equatable {
             }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Магазин")
+            // Без фільтра — «Магазин», з фільтром — його назва («Нові», «Безкоштовні», «Цифровий»…)
+            .navigationTitle(filter == "all" ? String(localized: "Магазин")
+                             : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.id == id }) {
