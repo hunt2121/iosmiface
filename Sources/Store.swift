@@ -630,9 +630,11 @@ private enum MenuIcon {
     static let sortConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium, scale: .large)
 
     /// Іконка кнопки: звичайна — колір тексту; змінений стан — заповнена в колі, акцентним кольором
+    /// `normalConfig` — розмір звичайної іконки; заповнене коло стану завжди однакове в обох кнопок
     static func apply(to button: UIButton, normal: String, active: String, isActive: Bool, menu: UIMenu,
-                      config: UIImage.SymbolConfiguration = MenuIcon.config) {
-        button.setImage(UIImage(systemName: isActive ? active : normal, withConfiguration: config), for: .normal)
+                      normalConfig: UIImage.SymbolConfiguration = MenuIcon.config) {
+        button.setImage(UIImage(systemName: isActive ? active : normal,
+                                withConfiguration: isActive ? config : normalConfig), for: .normal)
         button.tintColor = isActive ? .tintColor : .label
         button.menu = menu
         // Якщо меню відкрите — показуємо новий стан одразу
@@ -700,7 +702,7 @@ private struct SortMenuButton: UIViewRepresentable {
         let changed = sortKey != StoreSort.date.rawValue || sortReversed
         MenuIcon.apply(to: button, normal: "arrow.up.arrow.down",
                        active: "arrow.up.arrow.down.circle.fill", isActive: changed, menu: menu,
-                       config: MenuIcon.sortConfig)
+                       normalConfig: MenuIcon.sortConfig)
     }
 }
 
@@ -768,8 +770,9 @@ private struct StoreToolbar: ViewModifier {
                 .frame(width: 38, height: 44)
                 .accessibilityLabel(Text("Сортувати"))
         }
-        .padding(.leading, 10)
-        .frame(width: 94, height: 44, alignment: .leading)
+        // iOS додає до капсули ще по 4 pt з кожного боку: 86 + 8 = 94 pt
+        .padding(.leading, 6)
+        .frame(width: 86, height: 44, alignment: .leading)
     }
 
     /// Права кнопка: системне меню «Встановлено»
