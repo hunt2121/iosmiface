@@ -26,12 +26,7 @@ struct StoreFace: Identifiable {
     var sizeKB: Int { face.size / 1024 }
     var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
-    var added: Date?   // коли з'явився в магазині
-    /// Додано за останні 28 днів
-    var isNew: Bool {
-        guard let added else { return false }
-        return Date().timeIntervalSince(added) < 28 * 24 * 3600
-    }
+    var added: Date?   // коли з'явився в магазині (для сортування за датою)
 }
 
 enum StoreCatalog {
@@ -186,7 +181,7 @@ struct StoreView: View, Equatable {
         let filtered = faces.filter { f in
             switch filter {
             case "all": return true
-            case "new": return f.isNew
+            case "paid": return !f.isFree
             case "free": return f.isFree
             default: return f.kind == filter
             }
@@ -227,7 +222,7 @@ struct StoreView: View, Equatable {
             }
             .refreshable { await onRefresh() }
             .background(Color(.systemGroupedBackground))
-            // Без фільтра — «Магазин», з фільтром — його назва («Нові», «Безкоштовні», «Цифровий»…)
+            // Без фільтра — «Магазин», з фільтром — його назва («Платні», «Безкоштовні», «Цифровий»…)
             .navigationTitle(filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
@@ -275,7 +270,7 @@ struct StoreView: View, Equatable {
 
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
-        [("all", String(localized: "Усі")), ("new", String(localized: "Нові")),
+        [("all", String(localized: "Усі")), ("paid", String(localized: "Платні")),
          ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
     }
 
@@ -587,10 +582,10 @@ struct StoreDetailView: View {
 
 
 
-/// Сортування магазину. Звичний напрямок: дата — спочатку нові, назва — А–Я.
-/// «Завантаження» й «Перегляди» поки не працюють: для них потрібна статистика з сервера.
+/// Сортування магазину (порядок у меню). Звичний напрямок: дата — спочатку нові, назва — від А до Я.
+/// «Перегляди» й «Завантаження» поки не працюють: для них потрібна статистика з сервера.
 enum StoreSort: String, CaseIterable {
-    case date, name, downloads, views
+    case date, views, downloads, name
 
     var title: String {
         switch self {
@@ -606,7 +601,7 @@ enum StoreSort: String, CaseIterable {
     func direction(reversed: Bool) -> String {
         switch self {
         case .date: return reversed ? String(localized: "Спочатку старі") : String(localized: "Спочатку нові")
-        case .name: return reversed ? "Я–А" : "А–Я"
+        case .name: return reversed ? String(localized: "Від Я до А") : String(localized: "Від А до Я")
         case .downloads, .views: return ""
         }
     }
@@ -622,6 +617,17 @@ enum StoreSort: String, CaseIterable {
             return faces
         }
         return reversed ? result.reversed() : result
+    }
+}
+
+/// Пункт меню, після дотику до якого меню лишається відкритим (з iOS 16.4)
+private struct KeepMenuOpen: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) {
+            content.menuActionDismissBehavior(.disabled)
+        } else {
+            content
+        }
     }
 }
 
@@ -674,27 +680,28 @@ private struct StoreToolbar: ViewModifier {
         content.toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Menu {
-                    Section("Показати") {
+                    Section("Категорія") {
                         Picker(selection: $filter) {
                             ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
                         } label: { EmptyView() }
                         .pickerStyle(.inline)
                     }
-                    // Сортування: дотик до вибраного пункту міняє напрямок; під вибраним — поточний напрямок
+                    // Сортування: дотик до вибраного пункту міняє напрямок. Підпис під кожним пунктом — завжди:
+                    // у вибраного — поточний напрямок, у решти — звичний. Меню після дотику не закривається
                     Section("Сортувати") {
                         ForEach(StoreSort.allCases, id: \.self) { sort in
                             let selected = sort.rawValue == sortKey
-                            Toggle(isOn: Binding(get: { selected }, set: { _ in
+                            Button {
                                 if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
-                            })) {
+                            } label: {
                                 Text(sort.title)
-                                if !sort.isAvailable {
-                                    Text("Тимчасово не працює")
-                                } else if selected {
-                                    Text(sort.direction(reversed: sortReversed))
-                                }
+                                Text(sort.isAvailable
+                                     ? sort.direction(reversed: selected && sortReversed)
+                                     : String(localized: "Тимчасово не працює"))
+                                if selected { Image(systemName: "checkmark") }
                             }
                             .disabled(!sort.isAvailable)
+                            .modifier(KeepMenuOpen())
                         }
                     }
                 } label: {
