@@ -166,9 +166,10 @@ struct StoreView: View, Equatable {
 
     @State private var path: [String] = []
     @State private var filter = "all"
-    /// Сортування запам'ятовується між запусками; reversed — протилежний до звичного напрямок
-    @AppStorage("storeSortKey") private var sortKey = StoreSort.date.rawValue
-    @AppStorage("storeSortReversed") private var sortReversed = false
+    /// Сортування на час роботи застосунку (після перезапуску знову «Спочатку нові»);
+    /// reversed — протилежний до звичного напрямок
+    @State private var sortKey = StoreSort.date.rawValue
+    @State private var sortReversed = false
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
@@ -190,7 +191,6 @@ struct StoreView: View, Equatable {
             default: return f.kind == filter
             }
         }
-        // Збережене сортування могло зникнути (наприклад, «Розмір») — тоді за датою
         return (StoreSort(rawValue: sortKey) ?? .date).sorted(filtered, reversed: sortReversed)
     }
 
