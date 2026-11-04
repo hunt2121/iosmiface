@@ -964,7 +964,9 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                                         } label: {
                                             Text(face.name)
                                             Text(verbatim: face.note)
-                                            Image(uiImage: MenuThumb.image(key: "other", preview: nil, active: face.isActive))
+                                            Image(uiImage: face.id == BandFace.standardID
+                                                  ? MenuThumb.image(key: "standard", preview: UIImage(named: "StandardFace"), active: face.isActive)
+                                                  : MenuThumb.image(key: "other", preview: nil, active: face.isActive))
                                                 .renderingMode(.original)
                                         }
                                     }
@@ -1028,7 +1030,7 @@ private enum MenuThumb {
 
     /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
     static func image(key id: String, preview: UIImage?, active: Bool = false) -> UIImage {
-        let key = id + (active ? ":a" : "") + ":v2"
+        let key = id + (active ? ":a" : "") + ":v3"
         if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
@@ -1049,7 +1051,7 @@ private enum MenuThumb {
             }
             cg.restoreGState()
             // Обведення в 1 фізичний піксель усередині капсули — як у плиток налаштувань
-            // (біле, прозорість 40 % згори → 22 % знизу); в активного — зелене
+            // (біле, прозорість 40 % згори → 22 % знизу); активний позначає лише галочка
             let line: CGFloat = 1 / format.scale
             let border = UIBezierPath(roundedRect: capsule.insetBy(dx: line / 2, dy: line / 2),
                                       cornerRadius: (capsule.width - line) / 2)
@@ -1058,16 +1060,11 @@ private enum MenuThumb {
             cg.addPath(border.cgPath)
             cg.replacePathWithStrokedPath()
             cg.clip()
-            if active {
-                UIColor(red: 0.133, green: 0.659, blue: 0.275, alpha: 1).setFill()
-                cg.fill(capsule.insetBy(dx: -1, dy: -1))
-            } else {
-                let colors = [UIColor.white.withAlphaComponent(0.4).cgColor,
-                              UIColor.white.withAlphaComponent(0.22).cgColor] as CFArray
-                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
-                    cg.drawLinearGradient(gradient, start: CGPoint(x: 0, y: capsule.minY),
-                                          end: CGPoint(x: 0, y: capsule.maxY), options: [])
-                }
+            let colors = [UIColor.white.withAlphaComponent(0.4).cgColor,
+                          UIColor.white.withAlphaComponent(0.22).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                cg.drawLinearGradient(gradient, start: CGPoint(x: 0, y: capsule.minY),
+                                      end: CGPoint(x: 0, y: capsule.maxY), options: [])
             }
             cg.restoreGState()
             if active {
