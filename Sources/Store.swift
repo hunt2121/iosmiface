@@ -620,14 +620,63 @@ enum StoreSort: String, CaseIterable {
     }
 }
 
-/// Пункт меню, після дотику до якого меню лишається відкритим (з iOS 16.4)
-private struct KeepMenuOpen: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 16.4, *) {
-            content.menuActionDismissBehavior(.disabled)
-        } else {
-            content
+/// Кнопка категорій і сортування на UIKit-меню. SwiftUI-меню не вміє водночас системну галочку й підпис
+/// (рядок із галочкою втрачає підпис, а рядок із підписом показує галочку як велику іконку) і не оновлює
+/// відкрите меню. UIMenu вміє все: заголовок секції «Категорія», галочку + підпис з напрямком,
+/// пункти сортування, після яких меню лишається відкритим і одразу показує новий стан.
+private struct FilterSortMenuButton: UIViewRepresentable {
+    let filters: [(String, String)]
+    @Binding var filter: String
+    @Binding var sortKey: String
+    @Binding var sortReversed: Bool
+
+    func makeUIView(context: Context) -> UIButton {
+        let button = UIButton(type: .system)
+        button.showsMenuAsPrimaryAction = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        configure(button)
+        return button
+    }
+
+    func updateUIView(_ button: UIButton, context: Context) {
+        configure(button)
+    }
+
+    private func configure(_ button: UIButton) {
+        let active = filter != "all"
+        let config = UIImage.SymbolConfiguration(textStyle: .body, scale: .large)
+            .applying(UIImage.SymbolConfiguration(weight: .medium))
+        button.setImage(UIImage(systemName: active ? "line.3.horizontal.decrease.circle.fill"
+                                                   : "line.3.horizontal.decrease", withConfiguration: config),
+                        for: .normal)
+        button.tintColor = active ? .tintColor : .label
+        let menu = makeMenu()
+        button.menu = menu
+        // Якщо меню відкрите (пункти сортування його не закривають) — показуємо новий стан одразу
+        button.contextMenuInteraction?.updateVisibleMenu { _ in menu }
+    }
+
+    private func makeMenu() -> UIMenu {
+        let categories = filters.map { item in
+            UIAction(title: item.1, state: item.0 == filter ? .on : .off) { _ in filter = item.0 }
         }
+        let sorts = StoreSort.allCases.map { sort -> UIAction in
+            let selected = sort.rawValue == sortKey
+            let subtitle = sort.isAvailable
+                ? sort.direction(reversed: selected && sortReversed)
+                : String(localized: "Тимчасово не працює")
+            var attributes: UIMenuElement.Attributes = [.keepsMenuPresented]
+            if !sort.isAvailable { attributes.insert(.disabled) }
+            let action = UIAction(title: sort.title, subtitle: subtitle, attributes: attributes,
+                                  state: selected ? .on : .off) { _ in
+                if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
+            }
+            return action
+        }
+        return UIMenu(children: [
+            UIMenu(title: String(localized: "Категорія"), options: .displayInline, children: categories),
+            UIMenu(title: String(localized: "Сортувати"), options: .displayInline, children: sorts)
+        ])
     }
 }
 
@@ -679,37 +728,10 @@ private struct StoreToolbar: ViewModifier {
     func body(content: Content) -> some View {
         content.toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Menu {
-                    Section("Категорія") {
-                        Picker(selection: $filter) {
-                            ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                        } label: { EmptyView() }
-                        .pickerStyle(.inline)
-                    }
-                    // Сортування: дотик до вибраного пункту міняє напрямок. Підпис під кожним пунктом — завжди:
-                    // у вибраного — поточний напрямок, у решти — звичний. Меню після дотику не закривається
-                    Section("Сортувати") {
-                        ForEach(StoreSort.allCases, id: \.self) { sort in
-                            let selected = sort.rawValue == sortKey
-                            Button {
-                                if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
-                            } label: {
-                                Text(sort.title)
-                                Text(sort.isAvailable
-                                     ? sort.direction(reversed: selected && sortReversed)
-                                     : String(localized: "Тимчасово не працює"))
-                                if selected { Image(systemName: "checkmark") }
-                            }
-                            .disabled(!sort.isAvailable)
-                            .modifier(KeepMenuOpen())
-                        }
-                    }
-                } label: {
-                    Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
-                                                      : "line.3.horizontal.decrease.circle.fill")
-                        .foregroundStyle(filter == "all" ? Color.primary : Color.accentColor)
-                }
-                .accessibilityLabel(Text("Фільтр"))
+                FilterSortMenuButton(filters: filters, filter: $filter,
+                                     sortKey: $sortKey, sortReversed: $sortReversed)
+                    .frame(width: 32, height: 32)
+                    .accessibilityLabel(Text("Фільтр"))
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
