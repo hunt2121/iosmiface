@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: macos-15-intel
     env:
       BUILD_NUM: ${{ github.run_number }}
     steps:
