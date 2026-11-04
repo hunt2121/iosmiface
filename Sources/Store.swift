@@ -1030,7 +1030,7 @@ private enum MenuThumb {
 
     /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
     static func image(key id: String, preview: UIImage?, active: Bool = false) -> UIImage {
-        let key = id + (active ? ":a" : "") + ":v3"
+        let key = id + (active ? ":a" : "") + ":v4"
         if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
@@ -1071,7 +1071,7 @@ private enum MenuThumb {
                 let badge = CGRect(x: side - 13, y: side - 13, width: 12, height: 12)
                 // Тонший проміжок між галочкою й капсулою
                 UIColor.systemBackground.setFill()
-                UIBezierPath(ovalIn: badge.insetBy(dx: -0.6, dy: -0.6)).fill()
+                UIBezierPath(ovalIn: badge.insetBy(dx: -0.5, dy: -0.5)).fill()
                 UIColor(red: 0.133, green: 0.659, blue: 0.275, alpha: 1).setFill()
                 UIBezierPath(ovalIn: badge).fill()
                 let check = UIBezierPath()
