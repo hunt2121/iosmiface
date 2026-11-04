@@ -11,10 +11,17 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
-    runs-on: macos-15-intel
+    # Збираємо одночасно на кількох типах машин GitHub: яку дадуть першою — та й збере.
+    # Перша успішна збірка публікує IPA й скасовує решту
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15-intel, macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
     env:
       BUILD_NUM: ${{ github.run_number }}
     steps:
@@ -72,20 +79,24 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.IPA_NAME }}
+          name: ${{ env.IPA_NAME }}-${{ matrix.os }}
           path: ${{ env.IPA_NAME }}.ipa
 
       # Коміт з позначкою [draft]: непідписаний IPA лягає в ЧЕРНЕТКУ релізу (не видна без входу),
       # щоб його можна було забрати й підписати власним сертифікатом
       - name: Draft release with IPA
-        if: contains(github.event.head_commit.message, '[draft]')
+        if: contains(github.event.head_commit.message, '[draft]') || (github.event_name == 'workflow_dispatch' && !inputs.release)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Якщо інша машина вже встигла — нічого не робимо
+          if gh release view "draft-ios-$BUILD_NUM" >/dev/null 2>&1; then exit 0; fi
           gh release create "draft-ios-$BUILD_NUM" "$IPA_NAME.ipa" --draft \
             --target "$GITHUB_SHA" \
             --title "iOS draft $BUILD_NUM" \
             --notes "Unsigned IPA draft for signing"
+          # Решта машин уже не потрібні
+          gh run cancel "$GITHUB_RUN_ID" || true
 
       # Ручний запуск з release=true: IPA стає Release з тегом версії (v1.0.N) —
       # посилання …/releases/latest відкривається без входу в GitHub і не видаляється за 90 днів
