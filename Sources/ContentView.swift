@@ -29,6 +29,8 @@ struct ContentView: View {
     @State private var activeFaceID: String?
     /// Циферблати на браслеті не з магазину (з останньої перевірки)
     @State private var otherFaces: [BandFace] = []
+    /// Заряд і прошивка браслета (з останньої перевірки)
+    @State private var bandInfo = BandInfo()
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
     @State private var storeAlertGoTo: Tab?
@@ -87,7 +89,9 @@ struct ContentView: View {
                       },
                       otherFaces: otherFaces,
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
-                      bandStatus: ble.connectedName.map { Self.bandModel($0) } ?? String(localized: "Браслет не підключено"))
+                      bandStatus: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Браслет не підключено"),
+                      bandBattery: ble.connectedName == nil ? nil : bandInfo.battery,
+                      bandFirmware: ble.connectedName == nil ? nil : bandInfo.firmware)
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -258,6 +262,12 @@ struct ContentView: View {
     }
 
     /// «Xiaomi Smart Band 10 E3B4» → «Xiaomi Smart Band 10»: без службового суфікса.
+    /// «Smart Band 10» — без «Xiaomi», щоб вміщалось у меню
+    static func shortBandModel(_ name: String) -> String {
+        let model = bandModel(name)
+        return model.hasPrefix("Xiaomi ") ? String(model.dropFirst("Xiaomi ".count)) : model
+    }
+
     static func bandModel(_ name: String) -> String {
         if let r = name.range(of: #"^.*?Band\s*\d+"#, options: .regularExpression) { return String(name[r]) }
         return name
@@ -288,8 +298,9 @@ struct ContentView: View {
         if !force && Date().timeIntervalSince(lastSync) < 20 { return }
         syncing = true
         defer { syncing = false }
-        guard let list = try? await FaceInstaller(ble: ble).listFaces(authKey: key) else { return }
-        applyDeviceList(list)
+        guard let state = try? await FaceInstaller(ble: ble).bandState(authKey: key) else { return }
+        bandInfo = state.info
+        applyDeviceList(state.faces)
     }
 
     /// Запам'ятовує, що зараз на браслеті: які циферблати магазину встановлені й який на екрані.

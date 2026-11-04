@@ -30,6 +30,16 @@ public struct WatchfaceInfo: Sendable, Equatable {
     public var name: String? = nil
 }
 
+/// Стан браслета: заряд у відсотках і версія прошивки (nil — браслет не відповів)
+public struct BandInfo: Sendable, Equatable {
+    public var battery: Int?
+    public var firmware: String?
+    public init(battery: Int? = nil, firmware: String? = nil) {
+        self.battery = battery
+        self.firmware = firmware
+    }
+}
+
 public enum InstallPhase: Sendable, Equatable {
     case connecting
     case authenticating
@@ -189,6 +199,35 @@ extension WatchfaceInstaller {
             let list = try await session.watchfaces()
             await session.close()
             return list.map(WatchfaceInfo.init(entry:))
+        } catch {
+            await session.close()
+            throw error
+        }
+    }
+
+    /// Список циферблатів, заряд і прошивка за одну сесію. Заряд і прошивка необов'язкові:
+    /// якщо браслет не відповів — nil. Сесію закриває завжди.
+    public func bandState(authKey: [UInt8], session: BandSession) async throws -> (faces: [WatchfaceInfo], info: BandInfo) {
+        try await session.open()
+        do {
+            try await session.authenticate(authKey: authKey, phoneModel: phoneModel, region: region, phoneInfo: phoneInfo)
+            for body in commandsAfterAuth {
+                _ = try? await session.command(body, timeout: .seconds(3))
+            }
+            try await Task.sleep(for: pauseAfterAuth)
+            var info = BandInfo()
+            // 2/1: System(4).power(2).battery(1).level(1)
+            if let r = try? await session.command(Command.batteryRequest(), timeout: .seconds(2)),
+               let level = r.root.varint(at: [4, 2, 1, 1]), level <= 100 {
+                info.battery = Int(level)
+            }
+            // 2/2: System(4).deviceInfo(3).firmware(2)
+            if let r = try? await session.command(Command.deviceInfoRequest(), timeout: .seconds(2)) {
+                info.firmware = r.root.string(at: [4, 3, 2])
+            }
+            let list = try await session.watchfaces()
+            await session.close()
+            return (list.map(WatchfaceInfo.init(entry:)), info)
         } catch {
             await session.close()
             throw error

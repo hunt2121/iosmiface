@@ -139,6 +139,7 @@ struct StoreView: View, Equatable {
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID
             && a.otherFaces == b.otherFaces && a.bandStatus == b.bandStatus
+            && a.bandBattery == b.bandBattery && a.bandFirmware == b.bandFirmware
     }
 
     let faces: [StoreFace]
@@ -161,8 +162,10 @@ struct StoreView: View, Equatable {
     var otherFaces: [BandFace] = []
     /// F: вибрати/видалити будь-який циферблат за ID (id, назва, видалити?)
     var onBandAction: (String, String, Bool) async -> String? = { _, _, _ in nil }
-    /// F: назва браслета або «Браслет не підключено»
+    /// F: назва браслета або «Браслет не підключено»; заряд і прошивка (nil — невідомо)
     var bandStatus: String = ""
+    var bandBattery: Int? = nil
+    var bandFirmware: String? = nil
 
     @State private var query = ""
     /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
@@ -273,7 +276,9 @@ struct StoreView: View, Equatable {
                                        onDeleteRequest: { menuDelete = $0 },
                                        onPickFile: onPickFile,
                                        otherFaces: otherFaces,
-                                       bandStatus: bandStatus))
+                                       bandStatus: bandStatus,
+                                       bandBattery: bandBattery,
+                                       bandFirmware: bandFirmware))
             .alert(menuDelete.map { String(localized: "Видалити \($0.name) з браслета?") } ?? "",
                    isPresented: Binding(get: { menuDelete != nil }, set: { if !$0 { menuDelete = nil } }),
                    presenting: menuDelete) { item in
@@ -869,6 +874,8 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     let onPickFile: () -> Void
     let otherFaces: [BandFace]
     let bandStatus: String
+    let bandBattery: Int?
+    let bandFirmware: String?
 
     func body(content: Content) -> some View {
         content
@@ -965,10 +972,16 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                             }
 
                             // Браслет — з тією ж іконкою, що на головній
+                            // Підменю браслета: версія прошивки
                             Section {
-                                Label {
+                                Menu {
+                                    Text(bandFirmware.map { String(localized: "Прошивка \($0)") }
+                                         ?? String(localized: "Прошивка невідома"))
+                                } label: {
                                     Text(verbatim: bandStatus)
-                                } icon: {
+                                    if let bandBattery {
+                                        Text("Заряд \(bandBattery)%")
+                                    }
                                     Image("TabWatch")
                                 }
                             }

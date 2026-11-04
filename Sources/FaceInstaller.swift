@@ -104,6 +104,13 @@ final class FaceInstaller {
         }
     }
 
+    /// Циферблати, заряд і прошивка за одну сесію.
+    func bandState(authKey: [UInt8]) async throws -> (faces: [WatchfaceInfo], info: BandInfo) {
+        try await run(authKey: authKey) { installer, session, key in
+            try await installer.bandState(authKey: key, session: session)
+        }
+    }
+
     /// Робить циферблат активним; повертає оновлений список.
     func activateFace(id: String, authKey: [UInt8]) async throws -> [WatchfaceInfo] {
         try await run(authKey: authKey) { installer, session, key in
@@ -119,10 +126,10 @@ final class FaceInstaller {
     }
 
     /// Коротка операція в окремій сесії з параметрами Mi Fitness.
-    private func run(
+    private func run<T>(
         authKey: [UInt8],
-        _ body: (WatchfaceInstaller, BandSession, [UInt8]) async throws -> [WatchfaceInfo]
-    ) async throws -> [WatchfaceInfo] {
+        _ body: (WatchfaceInstaller, BandSession, [UInt8]) async throws -> T
+    ) async throws -> T {
         guard ble.connectedID != nil else { throw BandError.notConnected }
         guard ble.hasBandCharacteristics else { throw BandError.characteristicNotFound }
         guard authKey.count == 16 else { throw BandError.invalidAuthKey }
