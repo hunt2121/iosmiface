@@ -104,7 +104,7 @@ final class FaceInstaller {
         }
     }
 
-    /// Циферблати, заряд і прошивка за одну сесію.
+    /// Циферблати й стан батареї за одну сесію.
     func bandState(authKey: [UInt8]) async throws -> (faces: [WatchfaceInfo], info: BandInfo) {
         try await run(authKey: authKey) { installer, session, key in
             try await installer.bandState(authKey: key, session: session)

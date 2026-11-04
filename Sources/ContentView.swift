@@ -29,7 +29,7 @@ struct ContentView: View {
     @State private var activeFaceID: String?
     /// Циферблати на браслеті не з магазину (з останньої перевірки)
     @State private var otherFaces: [BandFace] = []
-    /// Заряд і прошивка браслета (з останньої перевірки)
+    /// Стан батареї браслета (з останньої перевірки)
     @State private var bandInfo = BandInfo()
     @AppStorage("installedFaceVersions") private var installedRaw = ""
     @State private var storeAlert: String?
@@ -90,8 +90,7 @@ struct ContentView: View {
                       otherFaces: otherFaces,
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
                       bandStatus: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Браслет не підключено"),
-                      bandBattery: ble.connectedName == nil ? nil : bandInfo.battery,
-                      bandFirmware: ble.connectedName == nil ? nil : bandInfo.firmware)
+                      bandInfo: ble.connectedName == nil ? BandInfo() : bandInfo)
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -300,6 +299,7 @@ struct ContentView: View {
         defer { syncing = false }
         guard let state = try? await FaceInstaller(ble: ble).bandState(authKey: key) else { return }
         bandInfo = state.info
+        ble.debug("Батарея: \(state.info.battery.map { "\($0)%" } ?? "?"), заряджається: \(state.info.charging.map { $0 ? "так" : "ні" } ?? "?"), остання зарядка: \(state.info.lastCharge.map { "\($0)" } ?? "?")")
         applyDeviceList(state.faces)
     }
 

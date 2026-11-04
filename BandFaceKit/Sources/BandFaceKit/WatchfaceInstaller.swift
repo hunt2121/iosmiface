@@ -30,13 +30,18 @@ public struct WatchfaceInfo: Sendable, Equatable {
     public var name: String? = nil
 }
 
-/// Стан браслета: заряд у відсотках і версія прошивки (nil — браслет не відповів)
+/// Стан батареї браслета (nil — браслет не повідомив)
 public struct BandInfo: Sendable, Equatable {
+    /// Заряд у відсотках
     public var battery: Int?
-    public var firmware: String?
-    public init(battery: Int? = nil, firmware: String? = nil) {
+    /// Браслет зараз на зарядці
+    public var charging: Bool?
+    /// Коли браслет востаннє заряджали
+    public var lastCharge: Date?
+    public init(battery: Int? = nil, charging: Bool? = nil, lastCharge: Date? = nil) {
         self.battery = battery
-        self.firmware = firmware
+        self.charging = charging
+        self.lastCharge = lastCharge
     }
 }
 
@@ -205,7 +210,7 @@ extension WatchfaceInstaller {
         }
     }
 
-    /// Список циферблатів, заряд і прошивка за одну сесію. Заряд і прошивка необов'язкові:
+    /// Список циферблатів і стан батареї за одну сесію. Стан батареї необов'язковий:
     /// якщо браслет не відповів — nil. Сесію закриває завжди.
     public func bandState(authKey: [UInt8], session: BandSession) async throws -> (faces: [WatchfaceInfo], info: BandInfo) {
         try await session.open()
@@ -216,14 +221,14 @@ extension WatchfaceInstaller {
             }
             try await Task.sleep(for: pauseAfterAuth)
             var info = BandInfo()
-            // 2/1: System(4).power(2).battery(1).level(1)
+            // 2/1: System(4).power(2).battery(1): level(1), state(2: 1 — заряджається), lastCharge(3).timestamp(2)
             if let r = try? await session.command(Command.batteryRequest(), timeout: .seconds(2)),
-               let level = r.root.varint(at: [4, 2, 1, 1]), level <= 100 {
-                info.battery = Int(level)
-            }
-            // 2/2: System(4).deviceInfo(3).firmware(2)
-            if let r = try? await session.command(Command.deviceInfoRequest(), timeout: .seconds(2)) {
-                info.firmware = r.root.string(at: [4, 3, 2])
+               let battery = r.root.message(at: [4, 2, 1]) {
+                if let level = battery.varint(1), level <= 100 { info.battery = Int(level) }
+                if let state = battery.varint(2) { info.charging = state == 1 }
+                if let seconds = battery.message(3)?.varint(2), seconds > 0 {
+                    info.lastCharge = Date(timeIntervalSince1970: TimeInterval(seconds))
+                }
             }
             let list = try await session.watchfaces()
             await session.close()

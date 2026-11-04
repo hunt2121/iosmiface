@@ -139,7 +139,7 @@ struct StoreView: View, Equatable {
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID
             && a.otherFaces == b.otherFaces && a.bandStatus == b.bandStatus
-            && a.bandBattery == b.bandBattery && a.bandFirmware == b.bandFirmware
+            && a.bandInfo == b.bandInfo
     }
 
     let faces: [StoreFace]
@@ -164,8 +164,7 @@ struct StoreView: View, Equatable {
     var onBandAction: (String, String, Bool) async -> String? = { _, _, _ in nil }
     /// F: назва браслета або «Браслет не підключено»; заряд і прошивка (nil — невідомо)
     var bandStatus: String = ""
-    var bandBattery: Int? = nil
-    var bandFirmware: String? = nil
+    var bandInfo = BandInfo()
 
     @State private var query = ""
     /// Тимчасовий експеримент: 0 — A (кнопка фільтрів і пошук угорі), 1 — B (мітки фільтрів, без пошуку),
@@ -277,8 +276,7 @@ struct StoreView: View, Equatable {
                                        onPickFile: onPickFile,
                                        otherFaces: otherFaces,
                                        bandStatus: bandStatus,
-                                       bandBattery: bandBattery,
-                                       bandFirmware: bandFirmware))
+                                       bandInfo: bandInfo))
             .alert(menuDelete.map { String(localized: "Видалити \($0.name) з браслета?") } ?? "",
                    isPresented: Binding(get: { menuDelete != nil }, set: { if !$0 { menuDelete = nil } }),
                    presenting: menuDelete) { item in
@@ -858,6 +856,21 @@ struct LiquidSearchBar: View {
 /// C/D/E: системна панель. Зліва — фільтр (меню); справа — оновлення (C) або «Встановлені» (D — спливаюче вікно,
 /// E — аркуш знизу). Поки браслет перевіряється, замість стрілки оновлення крутиться системний індикатор.
 private struct SystemBarButtons<Panel: View>: ViewModifier {
+    /// «Останній раз був заряджений 3 дні тому» (українські форми: 1 день, 2–4 дні, 5+ днів)
+    static func lastChargeText(_ date: Date?) -> String {
+        guard let date else { return String(localized: "Дата останньої зарядки невідома") }
+        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: date),
+                                                   to: Calendar.current.startOfDay(for: Date())).day ?? 0
+        if days <= 0 { return String(localized: "Останній раз був заряджений сьогодні") }
+        if days == 1 { return String(localized: "Останній раз був заряджений учора") }
+        let n10 = days % 10, n100 = days % 100
+        let word: String
+        if n10 == 1 && n100 != 11 { word = String(localized: "день") }
+        else if (2...4).contains(n10) && !(12...14).contains(n100) { word = String(localized: "дні") }
+        else { word = String(localized: "днів") }
+        return String(localized: "Останній раз був заряджений \(days) \(word) тому")
+    }
+
     let mode: Int
     @Binding var filter: String
     let filters: [(String, String)]
@@ -874,8 +887,7 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
     let onPickFile: () -> Void
     let otherFaces: [BandFace]
     let bandStatus: String
-    let bandBattery: Int?
-    let bandFirmware: String?
+    let bandInfo: BandInfo
 
     func body(content: Content) -> some View {
         content
@@ -974,14 +986,21 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                             }
 
                             // Браслет — з тією ж іконкою, що на головній
-                            // Браслет — довідковий рядок: назва й іконка звичайним (чорним) кольором, під ними заряд.
-                            // Натиск нічого не робить, лише закриває меню
+                            // Браслет: назва й іконка, під ними заряд або «Заряджається»;
+                            // у підменю — коли браслет востаннє заряджали
                             Section {
-                                Button {} label: {
+                                Menu {
+                                    Text(Self.lastChargeText(bandInfo.lastCharge))
+                                } label: {
                                     Text(verbatim: bandStatus)
-                                    if let bandBattery {
-                                        Text("Заряд \(bandBattery)%")
+                                    if bandInfo.charging == true {
+                                        Text("Заряджається")
+                                    } else if let battery = bandInfo.battery {
+                                        Text("Заряд \(battery)%")
                                     }
+                                    Image("TabWatch")
+                                }
+                            }
                                     Image("TabWatch")
                                 }
                             }
