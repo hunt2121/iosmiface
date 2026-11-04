@@ -166,6 +166,9 @@ struct StoreView: View, Equatable {
 
     @State private var path: [String] = []
     @State private var filter = "all"
+    /// Сортування запам'ятовується між запусками; reversed — протилежний до звичного напрямок
+    @AppStorage("storeSortKey") private var sortKey = StoreSort.date.rawValue
+    @AppStorage("storeSortReversed") private var sortReversed = false
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
@@ -179,7 +182,7 @@ struct StoreView: View, Equatable {
     }
 
     private var shown: [StoreFace] {
-        faces.filter { f in
+        let filtered = faces.filter { f in
             switch filter {
             case "all": return true
             case "new": return f.isNew
@@ -187,6 +190,7 @@ struct StoreView: View, Equatable {
             default: return f.kind == filter
             }
         }
+        return StoreSort(rawValue: sortKey)?.sorted(filtered, reversed: sortReversed) ?? filtered
     }
 
     private func state(_ f: StoreFace) -> StoreAction {
@@ -226,6 +230,8 @@ struct StoreView: View, Equatable {
             .navigationTitle(filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
+            // Під заголовком — поточне сортування («Спочатку нові», «А–Я»…), з iOS 26
+            .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? ""))
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.id == id }) {
                     StoreDetailView(item: item,
@@ -241,6 +247,7 @@ struct StoreView: View, Equatable {
                 }
             }
             .modifier(StoreToolbar(filter: $filter, filters: filterOptions,
+                                   sortKey: $sortKey, sortReversed: $sortReversed,
                                    onRefresh: { Task { await onRefresh() } },
                                    menuFaces: faces.filter { installed[$0.id] != nil },
                                    activeID: activeID,
@@ -579,6 +586,60 @@ struct StoreDetailView: View {
 
 
 
+/// Сортування магазину. Звичний напрямок: дата — спочатку нові, назва — А–Я, розмір — спочатку менші.
+/// «Завантаження» й «Перегляди» поки не працюють: для них потрібна статистика з сервера.
+enum StoreSort: String, CaseIterable {
+    case date, name, size, downloads, views
+
+    var title: String {
+        switch self {
+        case .date: return String(localized: "Дата")
+        case .name: return String(localized: "Назва")
+        case .size: return String(localized: "Розмір")
+        case .downloads: return String(localized: "Завантаження")
+        case .views: return String(localized: "Перегляди")
+        }
+    }
+
+    var isAvailable: Bool { self == .date || self == .name || self == .size }
+
+    func direction(reversed: Bool) -> String {
+        switch self {
+        case .date: return reversed ? String(localized: "Спочатку старі") : String(localized: "Спочатку нові")
+        case .name: return reversed ? "Я–А" : "А–Я"
+        case .size: return reversed ? String(localized: "Спочатку більші") : String(localized: "Спочатку менші")
+        case .downloads, .views: return ""
+        }
+    }
+
+    func sorted(_ faces: [StoreFace], reversed: Bool) -> [StoreFace] {
+        let result: [StoreFace]
+        switch self {
+        case .date:
+            result = faces.sorted { ($0.added ?? .distantPast) > ($1.added ?? .distantPast) }
+        case .name:
+            result = faces.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        case .size:
+            result = faces.sorted { $0.face.size < $1.face.size }
+        case .downloads, .views:
+            return faces
+        }
+        return reversed ? result.reversed() : result
+    }
+}
+
+/// Підзаголовок під великим заголовком (системний, з iOS 26)
+private struct NavigationSubtitle: ViewModifier {
+    let text: String
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *), !text.isEmpty {
+            content.navigationSubtitle(text)
+        } else {
+            content
+        }
+    }
+}
+
 /// Панель магазину: зліва фільтр, справа системне меню «Встановлено» (анімацію відкриття робить iOS).
 /// У меню: швидкі дії, циферблати з магазину й інші на пристрої (у кожного підменю з діями), сам пристрій.
 private struct StoreToolbar: ViewModifier {
@@ -599,6 +660,8 @@ private struct StoreToolbar: ViewModifier {
 
     @Binding var filter: String
     let filters: [(String, String)]
+    @Binding var sortKey: String
+    @Binding var sortReversed: Bool
     let onRefresh: () -> Void
     let menuFaces: [StoreFace]
     let activeID: String?
@@ -614,9 +677,29 @@ private struct StoreToolbar: ViewModifier {
         content.toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Menu {
-                    Picker(selection: $filter) {
-                        ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
-                    } label: { EmptyView() }
+                    Section("Показати") {
+                        Picker(selection: $filter) {
+                            ForEach(filters, id: \.0) { f in Text(f.1).tag(f.0) }
+                        } label: { EmptyView() }
+                        .pickerStyle(.inline)
+                    }
+                    // Сортування: дотик до вибраного пункту міняє напрямок; під вибраним — поточний напрямок
+                    Section("Сортувати") {
+                        ForEach(StoreSort.allCases, id: \.self) { sort in
+                            let selected = sort.rawValue == sortKey
+                            Toggle(isOn: Binding(get: { selected }, set: { _ in
+                                if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
+                            })) {
+                                Text(sort.title)
+                                if !sort.isAvailable {
+                                    Text("Тимчасово не працює")
+                                } else if selected {
+                                    Text(sort.direction(reversed: sortReversed))
+                                }
+                            }
+                            .disabled(!sort.isAvailable)
+                        }
+                    }
                 } label: {
                     Image(systemName: filter == "all" ? "line.3.horizontal.decrease"
                                                       : "line.3.horizontal.decrease.circle.fill")
