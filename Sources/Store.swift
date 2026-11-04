@@ -662,9 +662,8 @@ private struct FilterSortMenuButton: UIViewRepresentable {
         }
         let sorts = StoreSort.allCases.map { sort -> UIAction in
             let selected = sort.rawValue == sortKey
-            let subtitle = sort.isAvailable
-                ? sort.direction(reversed: selected && sortReversed)
-                : String(localized: "Тимчасово не працює")
+            // Напрямок — лише під вибраним пунктом; «Перегляди» й «Завантаження» просто сірі
+            let subtitle = selected && sort.isAvailable ? sort.direction(reversed: sortReversed) : nil
             var attributes: UIMenuElement.Attributes = [.keepsMenuPresented]
             if !sort.isAvailable { attributes.insert(.disabled) }
             let action = UIAction(title: sort.title, subtitle: subtitle, attributes: attributes,
