@@ -972,18 +972,16 @@ private struct SystemBarButtons<Panel: View>: ViewModifier {
                             }
 
                             // Браслет — з тією ж іконкою, що на головній
-                            // Підменю браслета: версія прошивки
+                            // Браслет — довідковий рядок (сірий, без дії): назва і заряд
                             Section {
-                                Menu {
-                                    Text(bandFirmware.map { String(localized: "Прошивка \($0)") }
-                                         ?? String(localized: "Прошивка невідома"))
-                                } label: {
+                                Button {} label: {
                                     Text(verbatim: bandStatus)
                                     if let bandBattery {
                                         Text("Заряд \(bandBattery)%")
                                     }
                                     Image("TabWatch")
                                 }
+                                .disabled(true)
                             }
                         } label: {
                             Image("IconInstalled")
