@@ -626,9 +626,12 @@ enum StoreSort: String, CaseIterable {
 private enum MenuIcon {
     static let config = UIImage.SymbolConfiguration(textStyle: .body, scale: .large)
         .applying(UIImage.SymbolConfiguration(weight: .medium))
+    /// Стрілки сортування — 14 pt заввишки (з `config` вони 20 pt і переважують лінії фільтра)
+    static let sortConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium, scale: .large)
 
     /// Іконка кнопки: звичайна — колір тексту; змінений стан — заповнена в колі, акцентним кольором
-    static func apply(to button: UIButton, normal: String, active: String, isActive: Bool, menu: UIMenu) {
+    static func apply(to button: UIButton, normal: String, active: String, isActive: Bool, menu: UIMenu,
+                      config: UIImage.SymbolConfiguration = MenuIcon.config) {
         button.setImage(UIImage(systemName: isActive ? active : normal, withConfiguration: config), for: .normal)
         button.tintColor = isActive ? .tintColor : .label
         button.menu = menu
@@ -696,7 +699,8 @@ private struct SortMenuButton: UIViewRepresentable {
         // Звичне сортування — «Спочатку нові»; будь-яке інше підсвічує кнопку
         let changed = sortKey != StoreSort.date.rawValue || sortReversed
         MenuIcon.apply(to: button, normal: "arrow.up.arrow.down",
-                       active: "arrow.up.arrow.down.circle.fill", isActive: changed, menu: menu)
+                       active: "arrow.up.arrow.down.circle.fill", isActive: changed, menu: menu,
+                       config: MenuIcon.sortConfig)
     }
 }
 
@@ -746,101 +750,134 @@ private struct StoreToolbar: ViewModifier {
     let deviceInfo: BandInfo
 
     func body(content: Content) -> some View {
-        content.toolbar {
-            // Категорія й сортування — дві кнопки поруч; iOS 26 об'єднує їх в одну скляну капсулу
-            ToolbarItemGroup(placement: .navigationBarLeading) {
-                CategoryMenuButton(filters: filters, filter: $filter)
-                    .frame(width: 32, height: 32)
-                    .accessibilityLabel(Text("Категорія"))
-                SortMenuButton(sortKey: $sortKey, sortReversed: $sortReversed)
-                    .frame(width: 32, height: 32)
-                    .accessibilityLabel(Text("Сортувати"))
+        if #available(iOS 26, *) {
+            // Системне скло прибираємо — капсулу з точними розмірами малюємо самі
+            content.toolbar {
+                ToolbarItem(id: "filterSort", placement: .navigationBarLeading) { filterSortCapsule }
+                    .sharedBackgroundVisibility(.hidden)
+                installedItem
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    // Швидкі дії — ряд кнопок угорі меню
-                    ControlGroup {
-                        Button { onRefresh() } label: { Label("Оновити", systemImage: "arrow.clockwise") }
-                        Button { onPickFile() } label: { Label("З файлу", systemImage: "doc.badge.plus") }
-                    }
+        } else {
+            content.toolbar {
+                ToolbarItem(placement: .navigationBarLeading) { filterSortCapsule }
+                installedItem
+            }
+        }
+    }
 
-                    // Циферблати з магазину
-                    Section("Встановлено") {
-                        if menuFaces.isEmpty {
-                            Text("Циферблатів з магазину на пристрої немає")
-                        }
-                        ForEach(menuFaces) { item in
-                            let face = BandFace(id: item.id, name: item.name,
-                                                isActive: item.id == activeID, canDelete: true)
-                            Menu {
-                                Button { onOpen(item) } label: {
-                                    Label("Відкрити сторінку", systemImage: "arrow.up.forward.app")
+    /// Категорія й сортування в одній капсулі 94 × 44 pt: центри іконок за 38 pt,
+    /// від країв іконок до країв капсули — по 18 pt з кожного боку
+    private var filterSortCapsule: some View {
+        HStack(spacing: 0) {
+            CategoryMenuButton(filters: filters, filter: $filter)
+                .frame(width: 38, height: 44)
+                .accessibilityLabel(Text("Категорія"))
+            SortMenuButton(sortKey: $sortKey, sortReversed: $sortReversed)
+                .frame(width: 38, height: 44)
+                .accessibilityLabel(Text("Сортувати"))
+        }
+        .padding(.leading, 10)
+        .frame(width: 94, height: 44, alignment: .leading)
+        .modifier(CapsuleGlass())
+    }
+
+    /// Права кнопка: системне меню «Встановлено»
+    @ToolbarContentBuilder private var installedItem: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                // Швидкі дії — ряд кнопок угорі меню
+                ControlGroup {
+                    Button { onRefresh() } label: { Label("Оновити", systemImage: "arrow.clockwise") }
+                    Button { onPickFile() } label: { Label("З файлу", systemImage: "doc.badge.plus") }
+                }
+
+                // Циферблати з магазину
+                Section("Встановлено") {
+                    if menuFaces.isEmpty {
+                        Text("Циферблатів з магазину на пристрої немає")
+                    }
+                    ForEach(menuFaces) { item in
+                        let face = BandFace(id: item.id, name: item.name,
+                                            isActive: item.id == activeID, canDelete: true)
+                        Menu {
+                            Button { onOpen(item) } label: {
+                                Label("Відкрити сторінку", systemImage: "arrow.up.forward.app")
+                            }
+                            if !face.isActive {
+                                Button { onSelect(face) } label: {
+                                    Label("Вибрати", systemImage: "checkmark.circle")
                                 }
+                            }
+                            Button(role: .destructive) { onDeleteRequest(face) } label: {
+                                Label("Видалити з пристрою", systemImage: "trash")
+                            }
+                        } label: {
+                            Text(item.name)
+                            Text(verbatim: item.meta)
+                            Image(uiImage: MenuThumb.image(key: item.id, preview: item.preview, active: face.isActive))
+                                .renderingMode(.original)
+                        }
+                    }
+                }
+
+                // Інші циферблати на пристрої (з Mi Fitness і вбудований)
+                if !otherFaces.isEmpty {
+                    Section("Інші на пристрої") {
+                        ForEach(otherFaces) { face in
+                            Menu {
                                 if !face.isActive {
                                     Button { onSelect(face) } label: {
                                         Label("Вибрати", systemImage: "checkmark.circle")
                                     }
                                 }
-                                Button(role: .destructive) { onDeleteRequest(face) } label: {
-                                    Label("Видалити з пристрою", systemImage: "trash")
+                                if face.canDelete {
+                                    Button(role: .destructive) { onDeleteRequest(face) } label: {
+                                        Label("Видалити з пристрою", systemImage: "trash")
+                                    }
                                 }
                             } label: {
-                                Text(item.name)
-                                Text(verbatim: item.meta)
-                                Image(uiImage: MenuThumb.image(key: item.id, preview: item.preview, active: face.isActive))
+                                Text(face.name)
+                                Text(verbatim: face.note)
+                                Image(uiImage: face.id == BandFace.standardID
+                                      ? MenuThumb.image(key: "standard", preview: UIImage(named: "StandardFace"), active: face.isActive)
+                                      : MenuThumb.image(key: "other", preview: nil, active: face.isActive))
                                     .renderingMode(.original)
                             }
                         }
                     }
-
-                    // Інші циферблати на пристрої (з Mi Fitness і вбудований)
-                    if !otherFaces.isEmpty {
-                        Section("Інші на пристрої") {
-                            ForEach(otherFaces) { face in
-                                Menu {
-                                    if !face.isActive {
-                                        Button { onSelect(face) } label: {
-                                            Label("Вибрати", systemImage: "checkmark.circle")
-                                        }
-                                    }
-                                    if face.canDelete {
-                                        Button(role: .destructive) { onDeleteRequest(face) } label: {
-                                            Label("Видалити з пристрою", systemImage: "trash")
-                                        }
-                                    }
-                                } label: {
-                                    Text(face.name)
-                                    Text(verbatim: face.note)
-                                    Image(uiImage: face.id == BandFace.standardID
-                                          ? MenuThumb.image(key: "standard", preview: UIImage(named: "StandardFace"), active: face.isActive)
-                                          : MenuThumb.image(key: "other", preview: nil, active: face.isActive))
-                                        .renderingMode(.original)
-                                }
-                            }
-                        }
-                    }
-
-                    // Пристрій: назва й іконка, під ними заряд або «Заряджається»; у підменю — остання зарядка
-                    Section {
-                        Menu {
-                            Text(Self.lastChargeText(deviceInfo.lastCharge))
-                        } label: {
-                            Text(verbatim: deviceName)
-                            if deviceInfo.charging == true {
-                                Text("Заряджається")
-                            } else if let battery = deviceInfo.battery {
-                                Text("Заряд \(battery)%")
-                            }
-                            Image("TabWatch")
-                        }
-                    }
-                } label: {
-                    Image("IconInstalled")
-                        .resizable()
-                        .frame(width: 23, height: 23)
                 }
-                .accessibilityLabel(Text("Встановлені"))
+
+                // Пристрій: назва й іконка, під ними заряд або «Заряджається»; у підменю — остання зарядка
+                Section {
+                    Menu {
+                        Text(Self.lastChargeText(deviceInfo.lastCharge))
+                    } label: {
+                        Text(verbatim: deviceName)
+                        if deviceInfo.charging == true {
+                            Text("Заряджається")
+                        } else if let battery = deviceInfo.battery {
+                            Text("Заряд \(battery)%")
+                        }
+                        Image("TabWatch")
+                    }
+                }
+            } label: {
+                Image("IconInstalled")
+                    .resizable()
+                    .frame(width: 23, height: 23)
             }
+            .accessibilityLabel(Text("Встановлені"))
+        }
+    }
+}
+
+/// Скляна капсула як у системних кнопок панелі (iOS 26); на старших iOS — без фону
+private struct CapsuleGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content
         }
     }
 }
