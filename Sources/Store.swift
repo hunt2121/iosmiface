@@ -750,18 +750,10 @@ private struct StoreToolbar: ViewModifier {
     let deviceInfo: BandInfo
 
     func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            // Системне скло прибираємо — капсулу з точними розмірами малюємо самі
-            content.toolbar {
-                ToolbarItem(id: "filterSort", placement: .navigationBarLeading) { filterSortCapsule }
-                    .sharedBackgroundVisibility(.hidden)
-                installedItem
-            }
-        } else {
-            content.toolbar {
-                ToolbarItem(placement: .navigationBarLeading) { filterSortCapsule }
-                installedItem
-            }
+        content.toolbar {
+            // Одна кнопка панелі — скляну капсулу навколо неї малює iOS
+            ToolbarItem(placement: .navigationBarLeading) { filterSortCapsule }
+            installedItem
         }
     }
 
@@ -778,7 +770,6 @@ private struct StoreToolbar: ViewModifier {
         }
         .padding(.leading, 10)
         .frame(width: 94, height: 44, alignment: .leading)
-        .modifier(CapsuleGlass())
     }
 
     /// Права кнопка: системне меню «Встановлено»
@@ -867,17 +858,6 @@ private struct StoreToolbar: ViewModifier {
                     .frame(width: 23, height: 23)
             }
             .accessibilityLabel(Text("Встановлені"))
-        }
-    }
-}
-
-/// Скляна капсула як у системних кнопок панелі (iOS 26); на старших iOS — без фону
-private struct CapsuleGlass: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.glassEffect(.regular.interactive(), in: .capsule)
-        } else {
-            content
         }
     }
 }
