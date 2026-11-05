@@ -19,7 +19,17 @@ final class FaceRenderer {
     private var cache: [String: CGImage] = [:]
     private var cacheRevision = -1
 
+    /// Кольоровий варіант циферблата: 0 — основний, далі за colorGroupTable
+    var colorVariant = 0
+
     init(_ p: FaceProject) { self.p = p }
+
+    /// Ресурс за посиланням; для картинок — версія вибраного кольорового варіанта, якщо вона є
+    private func pick(_ ref: String?) -> XNode? {
+        guard let base = p.resource(ref: ref) else { return nil }
+        guard colorVariant > 0, base.tag == "Image" || base.tag == "ImageArray" else { return base }
+        return ColorVariants.variant(p, of: base, index: colorVariant) ?? base
+    }
 
     // MARK: Картинки
 
@@ -59,7 +69,7 @@ final class FaceRenderer {
             for l in p.layouts(theme) {
                 let o = overrides[ObjectIdentifier(l)]
                 let x = o?.x ?? CGFloat(l.int("x")), y = o?.y ?? CGFloat(l.int("y"))
-                let r = draw(p.resource(ref: l.string("ref")), at: CGPoint(x: x, y: y), in: c, depth: 0)
+                let r = draw(pick(l.string("ref")), at: CGPoint(x: x, y: y), in: c, depth: 0)
                 boxes.append(LayerBox(layout: l, rect: r ?? CGRect(x: x, y: y, width: 16, height: 16)))
             }
         }
@@ -88,14 +98,14 @@ final class FaceRenderer {
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(img.width), height: CGFloat(img.height))
             put(img, r, c); return r
         case "Sprite":
-            let fr = frames(p.resource(ref: res.string("ref")))
+            let fr = frames(pick(res.string("ref")))
             guard !fr.isEmpty else { return nil }
             let img = fr[Self.spriteFrame(res, count: fr.count, time: time)]
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(img.width), height: CGFloat(img.height))
             put(img, r, c); return r
         case "DataItemImageNumber": return drawNumber(res, o, c)
         case "DataItemImageValues":
-            let fr = frames(p.resource(ref: res.string("ref")))
+            let fr = frames(pick(res.string("ref")))
             guard !fr.isEmpty else { return nil }
             let params = res.all("Param").map { Int($0.int("value")) }
             let v = value(res)
@@ -112,12 +122,12 @@ final class FaceRenderer {
             var u = CGRect.null
             for it in res.all("Item") {
                 let pt = CGPoint(x: o.x + CGFloat(it.int("x")), y: o.y + CGFloat(it.int("y")))
-                if let r = draw(p.resource(ref: it.string("ref")), at: pt, in: c, depth: depth + 1) { u = u.union(r) }
+                if let r = draw(pick(it.string("ref")), at: pt, in: c, depth: depth + 1) { u = u.union(r) }
             }
             if res.has("w"), res.has("h") { u = CGRect(x: o.x, y: o.y, width: CGFloat(res.int("w")), height: CGFloat(res.int("h"))) }
             return u.isNull ? nil : u
         case "Slot":
-            if let it = res.all("Item").first { return draw(p.resource(ref: it.string("ref")), at: o, in: c, depth: depth + 1) }
+            if let it = res.all("Item").first { return draw(pick(it.string("ref")), at: o, in: c, depth: depth + 1) }
             return nil
         default: return nil
         }
@@ -140,7 +150,7 @@ final class FaceRenderer {
     }
 
     private func drawNumber(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
-        let fr = frames(p.resource(ref: res.string("ref")))
+        let fr = frames(pick(res.string("ref")))
         // кадрів може бути менше за 10: так роблять перемикачі стану (2 кадри для «не турбувати», Bluetooth)
         guard !fr.isEmpty else { return nil }
         let total = Int(res.int("totalDigits"))
@@ -149,7 +159,7 @@ final class FaceRenderer {
         if total > 0, s.count > total { s = String(s.suffix(total)) }
         let space = CGFloat(Int8(truncatingIfNeeded: Int(res.int("space"))))
         let fw = CGFloat(fr[0].width), fh = CGFloat(fr[0].height)
-        let unit = image(p.resource(ref: res.string("unitIcon"))?.string("src"))
+        let unit = image(pick(res.string("unitIcon"))?.string("src"))
         var contentW = CGFloat(s.count) * fw + CGFloat(max(0, s.count - 1)) * space
         if let u = unit { contentW += CGFloat(u.width) }
         // x макета — точка прив'язки, як на браслеті: left — лівий край числа, center — його середина,
@@ -175,7 +185,7 @@ final class FaceRenderer {
     }
 
     private func drawPointer(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
-        guard let img = frames(p.resource(ref: res.string("ref"))).first else { return nil }
+        guard let img = frames(pick(res.string("ref"))).first else { return nil }
         let px = CGFloat(res.int("pivotX")), py = CGFloat(res.int("pivotY"))
         let a = CGFloat(res.int("angleStart")) + CGFloat(res.int("angleRange")) * fraction(res)
         c.saveGState()
@@ -190,10 +200,10 @@ final class FaceRenderer {
 
     private func drawArc(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
         var u = CGRect.null
-        if let bg = image(p.resource(ref: res.string("bg"))?.string("src")) {
+        if let bg = image(pick(res.string("bg"))?.string("src")) {
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(bg.width), height: CGFloat(bg.height)); put(bg, r, c); u = r
         }
-        guard let fg = frames(p.resource(ref: res.string("ref"))).first else { return u.isNull ? nil : u }
+        guard let fg = frames(pick(res.string("ref"))).first else { return u.isNull ? nil : u }
         let r = CGRect(x: o.x, y: o.y, width: CGFloat(fg.width), height: CGFloat(fg.height))
         let cx = o.x + CGFloat(res.int("pivotX")), cy = o.y + CGFloat(res.int("pivotY"))
         let rad = CGFloat(res.int("barRadius")) + CGFloat(res.int("barWidth"))
@@ -210,10 +220,10 @@ final class FaceRenderer {
 
     private func drawLine(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
         var u = CGRect.null
-        if let bg = image(p.resource(ref: res.string("bg"))?.string("src")) {
+        if let bg = image(pick(res.string("bg"))?.string("src")) {
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(bg.width), height: CGFloat(bg.height)); put(bg, r, c); u = r
         }
-        guard let fg = frames(p.resource(ref: res.string("ref"))).first else { return u.isNull ? nil : u }
+        guard let fg = frames(pick(res.string("ref"))).first else { return u.isNull ? nil : u }
         let r = CGRect(x: o.x, y: o.y, width: CGFloat(fg.width), height: CGFloat(fg.height))
         let f = fraction(res)
         let sx = CGFloat(res.int("startX")), ex = CGFloat(res.int("endX")), sy = CGFloat(res.int("startY")), ey = CGFloat(res.int("endY"))

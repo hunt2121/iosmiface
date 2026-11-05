@@ -6624,6 +6624,420 @@
           }
         }
       }
+    },
+    "Текст малює сам браслет своїм шрифтом — кольорових варіантів для нього немає.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The band draws text with its own font — there are no color variants for it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст рисует сам браслет своим шрифтом — цветовых вариантов для него нет."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст малює сам браслет своїм шрифтом — кольорових варіантів для нього немає."
+          }
+        }
+      }
+    },
+    "Віджети показують дані застосунків — кольорових варіантів для них немає.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widgets show app data — there are no color variants for them."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виджеты показывают данные приложений — цветовых вариантов для них нет."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віджети показують дані застосунків — кольорових варіантів для них немає."
+          }
+        }
+      }
+    },
+    "Для цього елемента кольорових варіантів немає.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This element has no color variants."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для этого элемента цветовых вариантов нет."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для цього елемента кольорових варіантів немає."
+          }
+        }
+      }
+    },
+    "Картинка багатоколірна — перефарбувати її в інший колір не вийде.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The picture has many colors — it can't be recolored."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинка многоцветная — перекрасить её в другой цвет не получится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинка багатоколірна — перефарбувати її в інший колір не вийде."
+          }
+        }
+      }
+    },
+    "Змінюється з кольором циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes with the face color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Меняется с цветом циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Змінюється з кольором циферблата"
+          }
+        }
+      }
+    },
+    "У кожному кольорі циферблата цей елемент буде відповідного кольору.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In each face color this element takes that color."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В каждом цвете циферблата этот элемент будет соответствующего цвета."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У кожному кольорі циферблата цей елемент буде відповідного кольору."
+          }
+        }
+      }
+    },
+    "Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To make the element change color with the face, add colors on the “Watch face” panel — tap an empty spot on the canvas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы элемент менял цвет вместе с циферблатом, добавьте цвета на панели «Циферблат» — коснитесь пустого места на холсте."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні."
+          }
+        }
+      }
+    },
+    "Кольори циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face colors"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвета циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кольори циферблата"
+          }
+        }
+      }
+    },
+    "На браслеті можна буде вибрати колір циферблата. Для кожного елемента окремо вмикається, чи змінюється він разом із кольором.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll be able to pick the face color on the band. For each element you choose whether it changes with the color."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На браслете можно будет выбрать цвет циферблата. Для каждого элемента отдельно включается, меняется ли он вместе с цветом."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На браслеті можна буде вибрати колір циферблата. Для кожного елемента окремо вмикається, чи змінюється він разом із кольором."
+          }
+        }
+      }
+    },
+    "Додати кольорові варіанти": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add color variants"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить цветовые варианты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати кольорові варіанти"
+          }
+        }
+      }
+    },
+    "Основний колір": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основной цвет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основний колір"
+          }
+        }
+      }
+    },
+    "Основний — вигляд, як намальовано. Цей колір показується у виборі кольору на браслеті.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main is the look as drawn. This color is shown in the color picker on the band."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основной — вид, как нарисовано. Этот цвет показывается в выборе цвета на браслете."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основний — вигляд, як намальовано. Цей колір показується у виборі кольору на браслеті."
+          }
+        }
+      }
+    },
+    "Колір варіанта": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Variant color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвет варианта"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колір варіанта"
+          }
+        }
+      }
+    },
+    "Видалити цей колір": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить этот цвет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити цей колір"
+          }
+        }
+      }
+    },
+    "Елементам, які мають змінювати колір, увімкніть «Змінюється з кольором циферблата» на вкладці «Колір».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For elements that should change color, turn on “Changes with the face color” on the Color tab."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Элементам, которые должны менять цвет, включите «Меняется с цветом циферблата» на вкладке «Цвет»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Елементам, які мають змінювати колір, увімкніть «Змінюється з кольором циферблата» на вкладці «Колір»."
+          }
+        }
+      }
+    },
+    "Вимкнути кольорові варіанти": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off color variants"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключить цветовые варианты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вимкнути кольорові варіанти"
+          }
+        }
+      }
+    },
+    "Основний": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основной"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основний"
+          }
+        }
+      }
+    },
+    "Додати колір": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить цвет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати колір"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

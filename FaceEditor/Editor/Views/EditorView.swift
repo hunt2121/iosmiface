@@ -13,6 +13,8 @@ struct EditorView: View {
     @Environment(\.faceInstall) private var install
 
     @State private var theme = 0
+    /// Який кольоровий варіант показує полотно (0 — основний)
+    @State private var variant = 0
     @State private var selected: XNode?
     @State private var tab: InspectorTab = .look
     @State private var sheet: EditorSheet?
@@ -33,7 +35,7 @@ struct EditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
-            CanvasView(project: project, theme: theme, selected: $selected, snap: snap, grid: grid)
+            CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid)
                 .frame(maxWidth: .infinity)
                 .frame(height: 340)
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
@@ -212,6 +214,8 @@ struct EditorView: View {
             } else {
                 Text(loc(theme == 0 ? "Зараз: основний екран" : "Зараз: «Завжди на екрані»")).font(.footnote).foregroundStyle(.secondary)
             }
+            ColorVariantsPanel(project: project, variant: $variant)
+                .padding(.top, 6)
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -223,7 +227,9 @@ struct EditorView: View {
         do {
             let (data, warnings) = try project.compile()
             share = ShareItem(url: try ShareItem.write(data, name: project.name))
-            if !warnings.isEmpty { alert = loc("Зібрано з попередженнями:") + "\n" + warnings.prefix(5).joined(separator: "\n") }
+            // однакові імена — це кольорові варіанти однієї картинки, так і має бути
+            let shown = warnings.filter { !$0.contains("same name") }
+            if !shown.isEmpty { alert = loc("Зібрано з попередженнями:") + "\n" + shown.prefix(5).joined(separator: "\n") }
         } catch {
             alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
         }

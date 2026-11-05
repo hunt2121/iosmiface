@@ -274,7 +274,10 @@ struct ImageReplaceRow: View {
             Task { @MainActor in
                 if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
                     let rgba = AssetFactory.fromUIImage(img, maxSide: CGFloat(max(project.meta.device.width, project.meta.device.height)))
-                    project.edit { ElementFactory.replaceImage($0, res, rgba) }
+                    project.edit {
+                        ElementFactory.replaceImage($0, res, rgba)
+                        ColorVariants.refresh($0, element: res)
+                    }
                 }
             }
         }

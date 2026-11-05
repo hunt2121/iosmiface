@@ -7,6 +7,8 @@ import FaceCompiler
 struct CanvasView: View {
     @ObservedObject var project: FaceProject
     let theme: Int
+    /// Кольоровий варіант для показу (0 — основний)
+    var variant = 0
     @Binding var selected: XNode?
     let snap: Bool
     let grid: Int
@@ -60,6 +62,7 @@ struct CanvasView: View {
         let rd = renderer ?? FaceRenderer(project)
         if renderer == nil { DispatchQueue.main.async { renderer = rd } }
         rd.overrides = [:]
+        rd.colorVariant = variant
         if let l = dragLayout, let p = dragPos { rd.overrides[ObjectIdentifier(l)] = p }
         return rd.render(theme: theme, scale: max(1, pixelScale))
     }

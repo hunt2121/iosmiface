@@ -124,4 +124,34 @@ final class FaceEditorTests: XCTestCase {
             XCTAssertEqual(files2[e.string("src") ?? ""].flatMap { UIImage(data: $0)?.cgImage?.width }, 134)
         }
     }
+
+    /// Кольорові варіанти: таблиці, варіанти цифр, збирання й розпакування назад.
+    func testColorVariants() throws {
+        let store = ProjectStore()
+        let p = store.create(name: "Colors")
+        defer { store.delete(p) }
+        p.edit { ColorVariants.enable($0, base: "#FFFFFF", first: "#FF9500") }
+        XCTAssertEqual(ColorVariants.colors(p), ["#FFFFFF", "#FF9500"])
+        let hours = try XCTUnwrap(p.resource(ref: p.layouts(0)[0].string("ref")))
+        XCTAssertEqual(ColorVariants.availability(p, element: hours), .generator)
+        p.edit { ColorVariants.set($0, element: hours, on: true) }
+        XCTAssertTrue(ColorVariants.isOn(p, element: hours))
+        p.edit { ColorVariants.setColors($0, ["#FFFFFF", "#FF9500", "#30B455"]) }
+        let arr = try XCTUnwrap(p.resource(ref: hours.string("ref")))
+        XCTAssertEqual(ColorVariants.variants(p, of: arr).count, 2)
+        // текст (дата) — недоступно
+        let date = try XCTUnwrap(p.resource(ref: p.layouts(0)[2].string("ref")))
+        XCTAssertFalse(ColorVariants.availability(p, element: date).isAvailable)
+        // збирання без помилок і розпакування назад з тими самими варіантами
+        let bin = try p.compile().0
+        let (root, _) = try FaceProject.unpack(bin)
+        XCTAssertNotNil(root.string("colorGroupTable"))
+        let name = try XCTUnwrap(arr.string("name"))
+        let same = root.first("Resources")?.elements.filter { $0.string("name") == name } ?? []
+        XCTAssertEqual(same.count, 3)
+        // вимкнення прибирає все
+        p.edit { ColorVariants.disable($0) }
+        XCTAssertTrue(ColorVariants.variants(p, of: arr).isEmpty)
+        XCTAssertNil(p.root.string("colorGroupTable"))
+    }
 }

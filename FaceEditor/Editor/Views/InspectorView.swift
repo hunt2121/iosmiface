@@ -153,6 +153,7 @@ struct InspectorView: View {
     // MARK: Колір
 
     @ViewBuilder private var colors: some View {
+        if let r = res { variantRow(r) }
         if kind == .text, let r = res {
             DebouncedColor(title: "Колір тексту", hex: r.string("color") ?? "#FFFFFF") { h in edit { $0.set("color", h) } }
             CommitSlider(title: "Непрозорість, %", value: Double(r.int("opacity", 100)), range: 0...100, step: 1) { v in edit { $0.set("opacity", int: Int(v)) } }
@@ -161,14 +162,35 @@ struct InspectorView: View {
             if g.kind == .arc || g.kind == .line {
                 DebouncedColor(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
             }
-        } else if let r = res, r.tag == "Image" || r.tag == "ImageArray" {
-            Toggle("Перефарбовування браслетом", isOn: Binding(get: { r.bool("recolorEnable") }, set: { v in edit { $0.set("recolorEnable", bool: v) } }))
-                .font(.subheadline)
-            Text("Колір готової картинки не змінюється. Якщо увімкнути перефарбовування, браслет зможе підставити колір теми.")
-                .font(.footnote).foregroundStyle(.secondary)
         } else {
             Text("Колір цього елемента задається його картинками.").font(.footnote).foregroundStyle(.secondary)
         }
+    }
+
+    /// Чи змінюється елемент разом із кольором циферблата (лише там, де це можливо)
+    @ViewBuilder private func variantRow(_ r: XNode) -> some View {
+        let avail = ColorVariants.availability(project, element: r)
+        let on = ColorVariants.isOn(project, element: r)
+        VStack(alignment: .leading, spacing: 6) {
+            if ColorVariants.isEnabled(project) {
+                Toggle("Змінюється з кольором циферблата", isOn: Binding(get: { on }, set: { v in
+                    project.edit { ColorVariants.set($0, element: r, on: v) }
+                }))
+                .font(.subheadline)
+                // недоступний елемент можна лише вимкнути (якщо варіанти вже були в готовому циферблаті)
+                .disabled(!avail.isAvailable && !on)
+                if case .unavailable(let why) = avail {
+                    Text(why).font(.footnote).foregroundStyle(.secondary)
+                } else if on {
+                    Text("У кожному кольорі циферблата цей елемент буде відповідного кольору.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            } else if avail.isAvailable {
+                Text("Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.bottom, 4)
     }
 }
 

@@ -196,6 +196,7 @@ enum ElementFactory {
     /// Прибирає ресурс і все, на що лише він посилався.
     static func collect(_ p: FaceProject, ref: String) {
         guard ref.count > 1, let res = p.resource(ref: ref), !isReferenced(p, ref: ref) else { return }
+        ColorVariants.removeAll(p, of: res)
         p.resources.kids.removeAll { $0 === res }
         let name = res.string("name") ?? ""
         p.meta.generators[name] = nil
@@ -261,6 +262,8 @@ enum ElementFactory {
             res.set("pivotX", int: img.w / 2).set("pivotY", int: img.h - img.w / 2)
         default: break
         }
+        // кольорові варіанти елемента — тим самим шрифтом і розміром
+        ColorVariants.refresh(p, element: res)
     }
 
     static func replaceImage(_ p: FaceProject, _ res: XNode, _ img: RGBAImage) {
