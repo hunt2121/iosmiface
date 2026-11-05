@@ -16,7 +16,10 @@ struct ProjectsView: View {
     @State private var showImporter = false
     @State private var alert: String?
     @State private var share: ShareItem?
+    /// Мініатюри й анімації за ключем проєкту (змінюється після кожної зміни), тож після закриття редактора
+    /// незмінені проєкти показуються одразу, без чорних капсул
     @State private var thumbs: [String: UIImage] = [:]
+    @State private var gifs: [String: Data] = [:]
     @State private var askDelete: FaceProject?
 
     // як сітка магазину BandFace
@@ -71,7 +74,7 @@ struct ProjectsView: View {
             }
         }
         .fullScreenCover(item: $editing, onDismiss: {
-            store.reload(); thumbs = [:]
+            store.reload()
         }) { p in
             EditorView(project: p)
                 .environment(\.faceInstall, install)
@@ -113,7 +116,12 @@ struct ProjectsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 ZStack {
                     Color.black
-                    if let t = thumbs[p.id] { Image(uiImage: t).resizable().scaledToFill() }
+                    let k = FacePreviews.key(p)
+                    if let gif = gifs[k] {
+                        FaceAnimationView(gif: gif)
+                    } else if let t = thumbs[k] ?? FacePreviews.cachedThumbnail(p) {
+                        Image(uiImage: t).resizable().scaledToFill()
+                    }
                 }
                 .frame(width: 96, height: 236)
                 .faceCapsule()
@@ -151,9 +159,15 @@ struct ProjectsView: View {
             .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         }
         .buttonStyle(.plain)
-        .task(id: p.revision) {
-            // з кешу, поки проєкт не змінювали
-            if thumbs[p.id] == nil { thumbs[p.id] = FacePreviews.thumbnail(p) }
+        .task(id: FacePreviews.key(p)) {
+            // з кешу, поки проєкт не змінювали; інакше малюється у фоні (картинка, потім анімація)
+            let k = FacePreviews.key(p)
+            if thumbs[k] == nil, let t = await Task.detached(priority: .userInitiated, operation: { FacePreviews.thumbnail(p) }).value {
+                thumbs[k] = t
+            }
+            if gifs[k] == nil, let g = await Task.detached(priority: .utility, operation: { FacePreviews.projectGIF(p) }).value {
+                gifs[k] = g
+            }
         }
         .contextMenu {
             if install != nil {
@@ -161,7 +175,7 @@ struct ProjectsView: View {
             }
             Button { editing = p } label: { Label("Змінити", systemImage: "pencil") }
             Button { export(p) } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
-            Button { store.duplicate(p); thumbs = [:] } label: { Label("Копія", systemImage: "plus.square.on.square") }
+            Button { store.duplicate(p) } label: { Label("Копія", systemImage: "plus.square.on.square") }
             Button(role: .destructive) { askDelete = p } label: { Label("Видалити", systemImage: "trash") }
         }
     }

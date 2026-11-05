@@ -161,12 +161,58 @@ enum FacePreviews {
         return c
     }()
 
-    /// Мініатюра проєкту під капсулу; малюється заново лише після зміни проєкту
-    static func thumbnail(_ p: FaceProject) -> UIImage {
-        let k = "\(p.id)-\(p.meta.modified.timeIntervalSince1970)" as NSString
-        if let t = thumbs.object(forKey: k) { return t }
-        let t = FaceRenderer(p).render(theme: 0, scale: scale).0
-        thumbs.setObject(t, forKey: k)
+    /// Ключ проєкту: змінюється після кожної зміни проєкту
+    static func key(_ p: FaceProject) -> String {
+        "p-\(p.id)-\(Int(p.meta.modified.timeIntervalSince1970 * 1000))-\(version)"
+    }
+
+    /// Мініатюра з пам'яті або диска (миттєво; nil — ще не малювали)
+    static func cachedThumbnail(_ p: FaceProject) -> UIImage? {
+        let k = key(p)
+        if let t = thumbs.object(forKey: k as NSString) { return t }
+        guard let d = try? Data(contentsOf: url(k, "main.png")), let t = UIImage(data: d, scale: 1) else { return nil }
+        thumbs.setObject(t, forKey: k as NSString)
         return t
+    }
+
+    /// Мініатюра проєкту під капсулу (256 кольорів). Малюється заново лише після зміни проєкту.
+    /// Можна не з головного потоку.
+    static func thumbnail(_ p: FaceProject) -> UIImage? {
+        if let t = cachedThumbnail(p) { return t }
+        let k = key(p)
+        return queue.sync { () -> UIImage? in
+            if let t = cachedThumbnail(p) { return t }
+            dropOld(p)
+            guard let px = pixels(FaceRenderer(p), 0) else { return nil }
+            let (idx, pal) = GIFEncoder.indexed(px.rgba)
+            let d = Data(PNG.encodeIndexed(px.w, px.h, idx, palette: pal))
+            try? d.write(to: url(k, "main.png"))
+            guard let t = UIImage(data: d, scale: 1) else { return nil }
+            thumbs.setObject(t, forKey: k as NSString)
+            return t
+        }
+    }
+
+    /// Анімація проєкту (GIF), якщо на основному екрані є Sprite; nil — анімації немає
+    static func projectGIF(_ p: FaceProject) -> Data? {
+        let k = key(p)
+        if let d = try? Data(contentsOf: url(k, "anim.gif")) { return d }
+        if FileManager.default.fileExists(atPath: url(k, "noanim").path) { return nil }
+        return queue.sync { () -> Data? in
+            if let d = try? Data(contentsOf: url(k, "anim.gif")) { return d }
+            let gif = animation(p, FaceRenderer(p))
+            if let gif { try? gif.write(to: url(k, "anim.gif")) }
+            else { FileManager.default.createFile(atPath: url(k, "noanim").path, contents: Data()) }
+            return gif
+        }
+    }
+
+    /// Файли попередніх версій цього проєкту більше не потрібні
+    private static func dropOld(_ p: FaceProject) {
+        let prefix = "p-\(p.id)-", current = key(p)
+        for name in (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        where name.hasPrefix(prefix) && !name.hasPrefix(current) {
+            try? FileManager.default.removeItem(at: dir.appendingPathComponent(name))
+        }
     }
 }
