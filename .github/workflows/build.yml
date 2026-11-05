@@ -68,7 +68,7 @@ jobs:
       # Назва як версія внизу журналу («BandFace v1.0.43»), але без точок: BandFace-v1043
       - name: Package IPA
         run: |
-          VERSION=$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/')
+          VERSION=$(grep -m1 -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/')
           NAME="BandFace-v$(echo "${VERSION}.${BUILD_NUM}" | tr -d '.')"
           echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
           mkdir Payload
@@ -99,7 +99,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
+          TAG="v$(grep -m1 -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
           gh release create "$TAG" "$IPA_NAME.ipa" \
             --target "$GITHUB_SHA" \
             --title "BandFace $TAG" \
@@ -113,7 +113,7 @@ jobs:
           PUBLIC_REPO: hunt2121/bandface
         run: |
           if [ -z "$GH_TOKEN" ]; then echo "RELEASES_TOKEN не задано — пропуск"; exit 0; fi
-          TAG="v$(grep -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
+          TAG="v$(grep -m1 -E 'CFBundleShortVersionString' project.yml | sed -E 's/.*"([^"]+)".*/\1/').${BUILD_NUM}"
           gh release create "ios-$TAG" "$IPA_NAME.ipa" --repo "$PUBLIC_REPO" \
             --title "BandFace iOS $TAG" \
             --notes "Unsigned IPA for sideloading (iloader / Sideloadly / AltStore). See README for installation."
