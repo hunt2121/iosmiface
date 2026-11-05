@@ -56,6 +56,8 @@ struct AddElementSheet: View {
                         ForEach(tiles.filter { filter == .all || $0.filter == filter }) { t in
                             Button { choose(t.kind) } label: { tile(t) }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel(t.kind.title)
+                                .accessibilityHint(t.caption)
                                 .disabled(!t.enabled)
                                 .opacity(t.enabled ? 1 : 0.45)
                         }
@@ -157,8 +159,17 @@ struct ElementIcon: View {
         case .image: Image(systemName: "photo").font(.system(size: 24))
         case .animation: Image(systemName: "square.stack").font(.system(size: 24))
         case .pointer: Image(systemName: "clock").font(.system(size: 26))
-        case .arc: Image(systemName: "gauge.with.dots.needle.67percent").font(.system(size: 26))
-        case .line: Image(systemName: "chart.bar.fill").rotationEffect(.degrees(90)).font(.system(size: 22))
+        case .arc:
+            ZStack {
+                Circle().trim(from: 0.0, to: 0.75).stroke(Color(.systemGray4), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                Circle().trim(from: 0.0, to: 0.4).stroke(Color.green, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+            }
+            .rotationEffect(.degrees(135)).frame(width: 32, height: 32)
+        case .line:
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color(.systemGray4)).frame(width: 34, height: 7)
+                Capsule().fill(Color.accentColor).frame(width: 22, height: 7)
+            }
         case .values: Image(systemName: "square.grid.2x2").font(.system(size: 24))
         case .widget: Image(systemName: "plus.rectangle").font(.system(size: 24))
         case .slot: Image(systemName: "rectangle.dashed").font(.system(size: 24))
