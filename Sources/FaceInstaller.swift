@@ -27,30 +27,14 @@ final class FaceInstaller {
 
     private func installOnce(_ face: FaceFile, authKey: [UInt8],
                              progress: @escaping (Double, String) -> Void) async throws -> String {
-        guard ble.connectedID != nil else { throw BandError.notConnected }
-        guard ble.hasBandCharacteristics else { throw BandError.characteristicNotFound }
-        guard authKey.count == 16 else { throw BandError.invalidAuthKey }
-
-        let ble = self.ble
-        let session = makeSession()
-        defer {
-            ble.onData = nil
-            ble.onDisconnect = nil
-        }
-
         progress(0, String(localized: "Відкриття сесії…"))
-        guard await ble.subscribeBand() else { throw BandError.characteristicNotFound }
-
-        var installer = WatchfaceInstaller()
-        installer.phoneInfo = Self.phoneInfo()
-        // Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2)
-        installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
-
         let reporter = PhaseReporter(face: face, ble: ble, progress: progress)
         do {
-            try await installer.install(face, authKey: authKey, session: session) { phase in
-                reporter.record(phase)
-                DispatchQueue.main.async { reporter.show(phase) }
+            try await run(authKey: authKey) { installer, session, key in
+                try await installer.install(face, authKey: key, session: session) { phase in
+                    reporter.record(phase)
+                    DispatchQueue.main.async { reporter.show(phase) }
+                }
             }
         } catch {
             if case BandError.timeout = error {
@@ -97,13 +81,6 @@ final class FaceInstaller {
         return session
     }
 
-    /// Циферблати, які зараз є на браслеті (ID і чи активний).
-    func listFaces(authKey: [UInt8]) async throws -> [WatchfaceInfo] {
-        try await run(authKey: authKey) { installer, session, key in
-            try await installer.listWatchfaces(authKey: key, session: session)
-        }
-    }
-
     /// Циферблати й стан батареї за одну сесію.
     func bandState(authKey: [UInt8]) async throws -> (faces: [WatchfaceInfo], info: BandInfo) {
         try await run(authKey: authKey) { installer, session, key in
@@ -125,7 +102,10 @@ final class FaceInstaller {
         }
     }
 
-    /// Коротка операція в окремій сесії з параметрами Mi Fitness.
+    /// Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2)
+    private static let commandAfterAuth: [UInt8] = [0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]
+
+    /// Одна операція в окремій сесії з параметрами Mi Fitness: перевірки, підписка, налаштування бібліотеки.
     private func run<T>(
         authKey: [UInt8],
         _ body: (WatchfaceInstaller, BandSession, [UInt8]) async throws -> T
@@ -142,7 +122,7 @@ final class FaceInstaller {
         guard await ble.subscribeBand() else { throw BandError.characteristicNotFound }
         var installer = WatchfaceInstaller()
         installer.phoneInfo = Self.phoneInfo()
-        installer.commandsAfterAuth = [[0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]]
+        installer.commandsAfterAuth = [Self.commandAfterAuth]
         return try await body(installer, session, authKey)
     }
 

@@ -1,17 +1,10 @@
 import SwiftUI
-import UIKit
 
-/// Кольори тексту з достатнім контрастом у світлій і темній темах.
-/// Системні .green / .red на білому фоні виглядають блідо, тож у світлій темі вони темніші.
+/// Один зелений і один червоний для обох тем: написи, галочки, позначки, обведення й кнопки
+/// (плитки-іконки в налаштуваннях мають власні кольори).
 extension Color {
-    /// Усі зелені галочки, написи й обведення (крім плиток-іконок) — один колір для обох тем:
-    /// середина між колишніми зеленими написами світлої (#148033) і темної (#30D158) тем
-    static let okIcon = Color(red: 34 / 255, green: 168 / 255, blue: 70 / 255)
-    static let okText = okIcon
-
-    /// Усі червоні написи, позначки й кнопки — один колір для обох тем (середина між колишніми
-    /// червоними написами світлої та темної тем, трохи світліше)
-    static let errorText = Color(red: 232 / 255, green: 56 / 255, blue: 47 / 255)
+    static let okGreen = Color(red: 34 / 255, green: 168 / 255, blue: 70 / 255)      // #22A846
+    static let errorRed = Color(red: 232 / 255, green: 56 / 255, blue: 47 / 255)     // #E8382F
 }
 
 /// Liquid Glass на iOS 26 і запасний вигляд на старіших версіях.
@@ -31,5 +24,4 @@ extension View {
     @ViewBuilder func glassSecondaryStyle() -> some View {
         if #available(iOS 26, *) { self.buttonStyle(.glass) } else { self.buttonStyle(.bordered) }
     }
-
 }

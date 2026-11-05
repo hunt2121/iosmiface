@@ -161,7 +161,7 @@ struct ContentView: View {
                             Label("Додати ключ пристрою", systemImage: "key")
                         }
                     } header: {
-                        // Стандартний відступ першої секції — як «Браслет» і «Auth key» під заголовком екрана
+                        // Стандартний відступ першої секції — як «Пристрій» і «Auth key» під заголовком екрана
                         Text("Ключ")
                     } footer: {
                         Text("Без ключа застосунок не зможе підключитися до пристрою. Його можна знайти автоматично в даних Mi Fitness.")
@@ -184,7 +184,7 @@ struct ContentView: View {
                             Spacer()
                             // Та сама позначка, що всередині сторінки «Ключ»
                             Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundStyle(keyValid ? Color.okIcon : Color.errorText)
+                                .foregroundStyle(keyValid ? Color.okGreen : Color.errorRed)
                                 .font(.title3)
                         }
                     }
@@ -321,7 +321,7 @@ struct ContentView: View {
         installedRaw = InstalledFaces.encode(map)
     }
 
-    /// Тестова функція «Встановлені»: увімкнути або видалити циферблат на браслеті.
+    /// Увімкнути або видалити циферблат магазину на пристрої (сторінка циферблата).
     /// Повертає текст помилки для користувача або nil, якщо все вдалося.
     @MainActor
     private func bandFaceAction(_ item: StoreFace, delete: Bool) async -> String? {
@@ -397,9 +397,9 @@ struct ContentView: View {
 
     /// Текст під кнопкою «Знайти автоматично»: результат пошуку або підказка, якщо ключа немає.
     private var keyStatusLine: (text: String, color: Color)? {
-        if let keyStatus { return (keyStatus, keyStatusIsError ? Color.errorText : Color.okText) }
+        if let keyStatus { return (keyStatus, keyStatusIsError ? Color.errorRed : Color.okGreen) }
         if !keyValid { return (String(localized: "Введіть ключ вручну або знайдіть його автоматично"), Color.secondary) }
-        return (String(localized: "Ключ введено вручну"), Color.okText)
+        return (String(localized: "Ключ введено вручну"), Color.okGreen)
     }
 
     private var authSection: some View {
@@ -419,7 +419,7 @@ struct ContentView: View {
                             if !foundDevices.contains(where: { $0.key == key.lowercased() }) { keyStatus = nil }
                         }
                     Image(systemName: keyValid ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(keyValid ? Color.okIcon : Color.secondary)
+                        .foregroundStyle(keyValid ? Color.okGreen : Color.secondary)
                         .font(.title3)
                 }
                 // Відступ від ключа до кнопки такий самий, як від верху картки до ключа
@@ -455,7 +455,7 @@ struct ContentView: View {
                             }
                             Spacer()
                             if d.key == authKey.lowercased() {
-                                Image(systemName: "checkmark").foregroundStyle(Color.okIcon)
+                                Image(systemName: "checkmark").foregroundStyle(Color.okGreen)
                             }
                         }
                     }
@@ -477,7 +477,7 @@ struct ContentView: View {
     private var installSection: some View {
         Section("Встановлення циферблата") {
             HStack(alignment: .center, spacing: 18) {
-                previewCapsule
+                FaceCapsule(image: filePreview)
                 // Права колонка має фіксовані «слоти»: інформація, кнопки, прогрес.
                 // Їхня висота не змінюється, тож нічого не стрибає.
                 VStack(alignment: .leading, spacing: 8) {
@@ -535,25 +535,10 @@ struct ContentView: View {
     @ViewBuilder
     private var progressBlock: some View {
         if busy {
-            VStack(spacing: 4) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.gray.opacity(0.3))
-                        Capsule().fill(Color.accentColor)
-                            .frame(width: max(12, geo.size.width * progress))
-                    }
-                }
-                .frame(height: 12)
-                HStack {
-                    Text(progressText).lineLimit(1)
-                    Spacer()
-                    Text(verbatim: "\(Int(progress * 100))%")
-                }
-                .font(.footnote).foregroundStyle(.secondary)
-            }
+            InstallProgress(progress: progress, text: progressText)
         } else if let message {
             Text(message).font(.footnote)
-                .foregroundStyle(messageIsError ? Color.errorText : Color.okText)
+                .foregroundStyle(messageIsError ? Color.errorRed : Color.okGreen)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -562,16 +547,10 @@ struct ContentView: View {
         }
     }
 
-    /// Передогляд циферблата: та сама капсула, що в магазині.
-    private var previewCapsule: some View {
-        FaceCapsule(image: filePreview)
-    }
-
     private func pickFace() {
         importingFolder = false
         showImporter = true
     }
-
 
     private var bandSection: some View {
         Section("Пристрій") {
@@ -584,7 +563,7 @@ struct ContentView: View {
                     } label: {
                         Image("IconDisconnect")
                             .renderingMode(.template)
-                            .foregroundStyle(Color.errorText)
+                            .foregroundStyle(Color.errorRed)
                     }
                     .accessibilityLabel(Text("Відключити"))
                     .buttonStyle(.plain)
@@ -624,7 +603,7 @@ struct ContentView: View {
             }
             if ble.state == .unauthorized {
                 Text("Дозвольте Bluetooth для застосунку в Налаштуваннях iOS.")
-                    .font(.footnote).foregroundStyle(Color.errorText)
+                    .font(.footnote).foregroundStyle(Color.errorRed)
             }
         }
     }
@@ -645,7 +624,7 @@ struct ContentView: View {
                     Text("Очистити").buttonText()
                 }
                 .glassSecondaryStyle()
-                .tint(Color.errorText)
+                .tint(Color.errorRed)
             }
             .buttonBorderShape(.capsule)
             .padding(.top, 4)
@@ -653,7 +632,7 @@ struct ContentView: View {
             // Усі записи в одному рядку списку — щільно, без стандартної висоти рядків
             LogLinesView(store: ble.logStore)
         } header: {
-            // Заголовок секції — на тій самій висоті й з тими самими параметрами, що «Браслет» і «Auth key браслета»
+            // Заголовок секції — на тій самій висоті й з тими самими параметрами, що «Пристрій» і «Auth key пристрою»
             Text("Активність")
         }
     }
@@ -671,7 +650,7 @@ struct ContentView: View {
                 let data = try Data(contentsOf: url)
                 let parsed = try FaceFile(data: data)
                 face = parsed
-                filePreview = (try? parsed.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
+                filePreview = parsed.previewImage()
                 fileName = url.lastPathComponent
                 message = nil
             } catch {
@@ -815,7 +794,6 @@ private extension Text {
             .padding(.vertical, 4)
     }
 }
-
 
 /// Рядок налаштувань зі значком у кольоровому квадраті (фіксована ширина — однакові відступи й роздільники).
 /// Плитки налаштувань: колір (градієнт згори донизу) і значок.

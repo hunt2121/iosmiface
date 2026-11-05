@@ -2,14 +2,14 @@ import SwiftUI
 import UIKit
 import BandFaceKit
 
-/// Циферблат у магазині. Поки каталог локальний: файли лежать у застосунку.
-/// Одне зображення в картці циферблата.
+/// Одне зображення на сторінці циферблата.
 struct FacePreview: Identifiable {
     let id = UUID()
     let title: String
     let image: UIImage?
 }
 
+/// Циферблат у магазині. Поки каталог локальний: файли лежать у застосунку.
 struct StoreFace: Identifiable {
     let id: String          // ID циферблата з файла
     let name: String
@@ -19,6 +19,7 @@ struct StoreFace: Identifiable {
     let price: String?      // nil — безкоштовний
     let face: FaceFile
     let preview: UIImage?
+    var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
     var previews: [FacePreview] = []   // зображення в картці (Always On додамо, коли буде справжній скріншот)
 
@@ -26,7 +27,16 @@ struct StoreFace: Identifiable {
     var sizeKB: Int { face.size / 1024 }
     var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
-    var added: Date?   // коли з'явився в магазині (для сортування за датою)
+}
+
+extension FaceFile {
+    /// Превью з файла, один раз зменшене під капсулу на екрані (3x),
+    /// щоб прокрутка й анімації не працювали з великим зображенням
+    func previewImage() -> UIImage? {
+        guard let cg = try? decodePreview()?.makeCGImage() else { return nil }
+        let full = UIImage(cgImage: cg)
+        return full.preparingThumbnail(of: CGSize(width: 330, height: 780)) ?? full
+    }
 }
 
 enum StoreCatalog {
@@ -64,15 +74,11 @@ enum StoreCatalog {
             guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
                   let data = try? Data(contentsOf: url),
                   let face = try? FaceFile(data: data) else { return nil }
-            // Зменшуємо превью один раз під розмір на екрані (3x), щоб прокрутка й анімації не витрачали час на великі зображення
-            let full = (try? face.decodePreview()?.makeCGImage()).map(UIImage.init(cgImage:))
-            let image = full.map { $0.preparingThumbnail(of: CGSize(width: 330, height: 780)) ?? $0 }
+            let image = face.previewImage()
             var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
                                  about: e.about, price: nil, face: face, preview: image)
             item.added = dayFormatter.date(from: e.added)
-            item.previews = [
-                FacePreview(title: String(localized: "Звичайний"), image: image)
-            ]
+            item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
             return item
         }
     }
@@ -116,7 +122,7 @@ struct FaceCapsule: View {
         .frame(width: 96, height: 236)
         .clipShape(Capsule(style: .continuous))
         .padding(3)
-        .background(Capsule(style: .continuous).fill(active ? Color.okIcon : Color.gray.opacity(0.45)))
+        .background(Capsule(style: .continuous).fill(active ? Color.okGreen : Color.gray.opacity(0.45)))
     }
 }
 
@@ -311,7 +317,7 @@ struct StoreView: View, Equatable {
 
     @ViewBuilder private func subtitleView(_ item: StoreFace) -> some View {
         if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
-            (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okText)
+            (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okGreen)
              + Text(verbatim: " · \(item.sizeKB) KB"))
         } else {
             Text(subtitle(item))
@@ -323,6 +329,34 @@ struct StoreView: View, Equatable {
             return String(localized: "Оновлення \(v).0 → \(item.version).0")
         }
         return item.meta
+    }
+}
+
+/// Смужка прогресу встановлення з етапом і відсотками. `large` — як на головній і на сторінці
+/// циферблата (смужка 12 pt, footnote); інакше компактна для картки магазину (8 pt, caption2)
+struct InstallProgress: View {
+    let progress: Double
+    let text: String
+    var large = true
+
+    var body: some View {
+        VStack(spacing: 4) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.gray.opacity(0.3))
+                    Capsule().fill(Color.accentColor)
+                        .frame(width: max(large ? 12 : 8, geo.size.width * progress))
+                }
+            }
+            .frame(height: large ? 12 : 8)
+            HStack {
+                Text(text).lineLimit(1)
+                Spacer()
+                Text(verbatim: "\(Int(progress * 100))%")
+            }
+            .font(large ? .footnote : .caption2)
+            .foregroundStyle(.secondary)
+        }
     }
 }
 
@@ -342,25 +376,9 @@ struct FaceActionButton: View {
             // На сторінці циферблата (велика кнопка) смужка й текст такі самі, як на головній:
             // смужка 12 pt, текст footnote на 4 pt нижче, відступи 14 pt. У картці магазину — 8 pt і відступи 6 pt
             let large = height >= 50
-            VStack(spacing: 4) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.gray.opacity(0.3))
-                        Capsule().fill(Color.accentColor)
-                            .frame(width: max(large ? 12 : 8, geo.size.width * progress))
-                    }
-                }
-                .frame(height: large ? 12 : 8)
-                HStack {
-                    Text(progressText).lineLimit(1)
-                    Spacer()
-                    Text(verbatim: "\(Int(progress * 100))%")
-                }
-                .font(large ? .footnote : .caption2)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, large ? 14 : 6)
-            .frame(height: height)
+            InstallProgress(progress: progress, text: progressText, large: large)
+                .padding(.horizontal, large ? 14 : 6)
+                .frame(height: height)
         case .installed:
             HStack(spacing: 6) {
                 Image(systemName: "checkmark")
@@ -444,7 +462,7 @@ struct StoreDetailView: View {
                 if let error {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(Color.errorText)
+                        .foregroundStyle(Color.errorRed)
                         .padding(.horizontal, 4)
                 }
 
@@ -479,7 +497,7 @@ struct StoreDetailView: View {
                     .foregroundStyle(.secondary)
                 if isActive {
                     slot(Label("На екрані", systemImage: "checkmark"))
-                        .foregroundStyle(Color.okText)
+                        .foregroundStyle(Color.okGreen)
                 } else {
                     Button { run(.select) } label: {
                         Text("Вибрати")
@@ -517,7 +535,7 @@ struct StoreDetailView: View {
             Text("Видалити з пристрою")
                 .opacity(working == .delete ? 0 : 1)
                 .overlay { if working == .delete { ProgressView() } }
-                .foregroundStyle(Color.errorText)
+                .foregroundStyle(Color.errorRed)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -569,18 +587,6 @@ struct StoreDetailView: View {
         .frame(maxWidth: .infinity)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /// Сортування магазину (порядок у меню). Звичний напрямок: дата — спочатку нові, назва — від А до Я.
 /// «Перегляди» й «Завантаження» поки не працюють: для них потрібна статистика з сервера.
@@ -839,7 +845,7 @@ private enum MenuThumb {
 
     /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
     static func image(key id: String, preview: UIImage?, active: Bool = false) -> UIImage {
-        let key = id + (active ? ":a" : "") + ":v4"
+        let key = id + (active ? ":a" : "")
         if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)
@@ -881,7 +887,7 @@ private enum MenuThumb {
                 // Тонший проміжок між галочкою й капсулою
                 UIColor.systemBackground.setFill()
                 UIBezierPath(ovalIn: badge.insetBy(dx: -0.5, dy: -0.5)).fill()
-                UIColor(red: 0.133, green: 0.659, blue: 0.275, alpha: 1).setFill()
+                UIColor(Color.okGreen).setFill()
                 UIBezierPath(ovalIn: badge).fill()
                 let check = UIBezierPath()
                 check.move(to: CGPoint(x: badge.minX + 3.2, y: badge.midY + 0.2))

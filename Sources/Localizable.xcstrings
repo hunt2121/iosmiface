@@ -875,29 +875,6 @@
         }
       }
     },
-    "Закрити": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрыть"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрити"
-          }
-        }
-      }
-    },
     "Запит на встановлення…": {
       "extractionState": "manual",
       "localizations": {
@@ -1381,29 +1358,6 @@
         }
       }
     },
-    "Нові": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нові"
-          }
-        }
-      }
-    },
     "Нічого не знайдено": {
       "extractionState": "manual",
       "localizations": {
@@ -1676,29 +1630,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пошук пристроїв…"
-          }
-        }
-      }
-    },
-    "Пошук циферблатів": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search watch faces"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поиск циферблатов"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пошук циферблатів"
           }
         }
       }
