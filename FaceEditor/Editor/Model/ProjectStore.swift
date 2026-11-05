@@ -24,14 +24,14 @@ final class ProjectStore: ObservableObject {
     private func newFolder() -> URL { base.appendingPathComponent(UUID().uuidString) }
 
     /// Порожній циферблат: фон, час цифрами, дата.
-    func create(name: String, device: DeviceProfile) -> FaceProject {
+    func create(name: String) -> FaceProject {
         let root = XNode("Watchface")
         root.set("id", String(format: "%09d", Int.random(in: 100_000_000...999_999_999)))
         root.set("name", name)
         root.add("Resources")
         let theme = root.add("Theme")
         theme.set("type", "normal").set("name", "").set("bgColor", "#000000")
-        var meta = ProjectMeta(); meta.device = device
+        let meta = ProjectMeta()
         let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: [:], meta: meta)
         // стартові елементи — щоб одразу було що редагувати
         let w = device.width
@@ -51,13 +51,7 @@ final class ProjectStore: ObservableObject {
         guard let xml = mem.files.removeValue(forKey: "manifest.xml"), let root = try XML.parse([UInt8](xml)) else {
             throw FaceCompilerError("manifest.xml не створено")
         }
-        var meta = ProjectMeta()
-        // пристрій — за розміром фону/прев'ю
-        if let th = root.first("Theme"), let pv = th.string("preview"),
-           let img = root.first("Resources")?.elements.first(where: { "@" + ($0.string("name") ?? "") == pv }),
-           let src = img.string("src"), let d = mem.files[src], let png = PNG.decode([UInt8](d)) {
-            meta.device = DeviceProfile.all.min { abs($0.width - png.w) < abs($1.width - png.w) } ?? .band10
-        }
+        let meta = ProjectMeta()
         let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: mem.files, meta: meta)
         if (root.string("name") ?? "").isEmpty { root.set("name", name) }
         p.save()

@@ -23,7 +23,8 @@ struct CanvasView: View {
         GeometryReader { geo in
             let dev = project.meta.device
             let W = CGFloat(dev.width), H = CGFloat(dev.height)
-            let scale = min((geo.size.width - 32) / W, (geo.size.height - 24) / H)
+            let b = FaceFrame.border
+            let scale = min((geo.size.width - 32 - 2 * b) / W, (geo.size.height - 24 - 2 * b) / H)
             let size = CGSize(width: W * scale, height: H * scale)
             let r = currentRender()
             ZStack(alignment: .topLeading) {
@@ -43,10 +44,9 @@ struct CanvasView: View {
                 if guideH { Rectangle().fill(Color.pink).frame(width: size.width, height: 1).offset(y: size.height / 2) }
             }
             .frame(width: size.width, height: size.height)
-            .clipShape(RoundedRectangle(cornerRadius: CGFloat(dev.corner) * scale, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CGFloat(dev.corner) * scale, style: .continuous).stroke(Color(.systemGray3), lineWidth: 3))
             .contentShape(Rectangle())
             .gesture(drag(scale: scale, boxes: r.1, W: W, H: H))
+            .faceCapsule()
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Полотно циферблата")

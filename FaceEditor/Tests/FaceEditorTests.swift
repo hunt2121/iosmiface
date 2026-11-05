@@ -7,7 +7,7 @@ import XCTest
 final class FaceEditorTests: XCTestCase {
     func testCreateAddRenderCompile() throws {
         let store = ProjectStore()
-        let p = store.create(name: "Test", device: .band10)
+        let p = store.create(name: "Test")
         defer { store.delete(p) }
         let c = (106, 260)
         p.edit { ElementFactory.addPointer($0, source: "timeMinute", gen: Generator(kind: .pointer, color: "#FFFFFF", width: 6, length: 80), theme: 0, center: c) }
@@ -46,6 +46,14 @@ final class FaceEditorTests: XCTestCase {
         // збережений на диск проєкт відкривається знову
         let r = FaceProject.load(folder: p.folder)!
         XCTAssertEqual(r.manifestBytes, p.manifestBytes)
+        XCTAssertEqual(r.files, p.files)
+        XCTAssertEqual(try r.compile().0, try p.compile().0)
+        // і через шлях із символьним посиланням (на iOS /var -> /private/var)
+        let link = FileManager.default.temporaryDirectory.appendingPathComponent("link-\(UUID().uuidString)")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: p.folder)
+        defer { try? FileManager.default.removeItem(at: link) }
+        let viaLink = FaceProject.load(folder: link)!
+        XCTAssertEqual(Set(viaLink.files.keys), Set(p.files.keys))
     }
 
     func testOpenBundledFaces() throws {
@@ -57,7 +65,12 @@ final class FaceEditorTests: XCTestCase {
             let p = try store.importBin(data, name: u.lastPathComponent)
             let (_, boxes) = FaceRenderer(p).render(theme: 0)
             XCTAssertFalse(boxes.isEmpty, u.lastPathComponent)
-            XCTAssertEqual(try p.compile().0.count > 0, true)
+            let bin = try p.compile().0
+            XCTAssertTrue(bin.count > 0)
+            // після перезапуску застосунку (читання з диска) картинки на місці й збирається те саме
+            let r = FaceProject.load(folder: p.folder)!
+            XCTAssertEqual(Set(r.files.keys), Set(p.files.keys), u.lastPathComponent)
+            XCTAssertEqual(try r.compile().0, bin, u.lastPathComponent)
             store.delete(p)
         }
     }

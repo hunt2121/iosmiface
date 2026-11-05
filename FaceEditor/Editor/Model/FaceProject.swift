@@ -19,7 +19,7 @@ struct Generator: Codable, Equatable {
     var length: Double = 120
 }
 
-/// Пристрій: розмір екрана для полотна й нового циферблата.
+/// Пристрій: розмір екрана для полотна й нового циферблата. Лише Smart Band 10.
 struct DeviceProfile: Codable, Equatable, Hashable, Identifiable {
     var id: String
     var title: String
@@ -28,8 +28,6 @@ struct DeviceProfile: Codable, Equatable, Hashable, Identifiable {
     var corner: Double
 
     static let band10 = DeviceProfile(id: "band10", title: "Smart Band 10", width: 212, height: 520, corner: 106)
-    static let band9 = DeviceProfile(id: "band9", title: "Smart Band 9", width: 192, height: 490, corner: 96)
-    static let all = [band10, band9]
 }
 
 struct ProjectMeta: Codable {
@@ -133,14 +131,21 @@ final class FaceProject: ObservableObject, Identifiable {
     static func load(folder: URL) -> FaceProject? {
         guard let xml = try? Data(contentsOf: folder.appendingPathComponent("manifest.xml")),
               let root = try? XML.parse([UInt8](xml)) else { return nil }
-        let meta = (try? Data(contentsOf: folder.appendingPathComponent("editor.json")))
+        var meta = (try? Data(contentsOf: folder.appendingPathComponent("editor.json")))
             .flatMap { try? JSONDecoder().decode(ProjectMeta.self, from: $0) } ?? ProjectMeta()
+        meta.device = .band10
         var files: [String: Data] = [:]
         let filesDir = folder.appendingPathComponent("files")
-        if let en = FileManager.default.enumerator(at: filesDir, includingPropertiesForKeys: [.isRegularFileKey]) {
-            for case let u as URL in en where (try? u.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
-                let rel = u.path.replacingOccurrences(of: filesDir.path + "/", with: "")
-                files[rel] = try? Data(contentsOf: u)
+        // Відносні шляхи беремо прямо з перелічувача: на iOS /var і /private/var — той самий каталог,
+        // тож відрізання префікса від абсолютного шляху ненадійне (раніше всі картинки губилися).
+        let fm = FileManager.default
+        if let en = fm.enumerator(atPath: filesDir.path) {
+            for case let rel as String in en {
+                var isDir: ObjCBool = false
+                let full = filesDir.appendingPathComponent(rel)
+                guard fm.fileExists(atPath: full.path, isDirectory: &isDir), !isDir.boolValue,
+                      let d = try? Data(contentsOf: full) else { continue }
+                files[MemoryStorage.normalizedPath(rel)] = d
             }
         }
         return FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)

@@ -404,7 +404,7 @@ struct PreviewView: View {
             let img = { () -> UIImage in r.live = true; return r.render(theme: theme, scale: 3).0 }()
             Image(uiImage: img).resizable()
                 .aspectRatio(CGFloat(dev.width) / CGFloat(dev.height), contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 60, style: .continuous))
+                .faceCapsule()
                 .padding(40)
         }
         .onTapGesture { dismiss() }

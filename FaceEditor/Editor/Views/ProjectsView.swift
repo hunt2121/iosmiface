@@ -45,9 +45,9 @@ struct ProjectsView: View {
             }
         }
         .sheet(isPresented: $showNew) {
-            NewFaceSheet { name, device in
+            NewFaceSheet { name in
                 showNew = false
-                editing = store.create(name: name, device: device)
+                editing = store.create(name: name)
             }
             .presentationDetents([.medium])
         }
@@ -101,10 +101,8 @@ struct ProjectsView: View {
                         Color.black
                     }
                 }
-                .aspectRatio(CGFloat(dev.width) / CGFloat(dev.height), contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(Color.primary.opacity(0.15), lineWidth: 1))
-                .frame(height: 200)
+                .frame(width: 194 * CGFloat(dev.width) / CGFloat(dev.height), height: 194)
+                .faceCapsule()
                 Text(p.name.isEmpty ? "Без назви" : p.name)
                     .font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
             }
@@ -152,27 +150,19 @@ struct ActivityView: UIViewControllerRepresentable {
 }
 
 struct NewFaceSheet: View {
-    var onCreate: (String, DeviceProfile) -> Void
+    var onCreate: (String) -> Void
     @State private var name = "Мій циферблат"
-    @State private var device = DeviceProfile.band10
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Назва") { TextField("Назва", text: $name) }
-                Section("Пристрій") {
-                    Picker("Пристрій", selection: $device) {
-                        ForEach(DeviceProfile.all) { d in Text("\(d.title) · \(d.width)×\(d.height)").tag(d) }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
             }
             .navigationTitle("Новий циферблат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Створити") { onCreate(name, device) }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button("Створити") { onCreate(name) }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }

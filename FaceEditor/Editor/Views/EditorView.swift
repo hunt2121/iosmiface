@@ -175,7 +175,7 @@ struct EditorView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 if let icon { Image(systemName: icon).font(.system(size: 14, weight: .bold)) }
-                Text(title).font(.subheadline.weight(.semibold))
+                Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).fixedSize()
             }
             .frame(maxWidth: .infinity).frame(height: 44)
             .foregroundStyle(prominent ? Color.accentColor : .primary)
@@ -189,15 +189,6 @@ struct EditorView: View {
             Text("Циферблат").font(.title3.weight(.bold))
             Text("Торкніться елемента на полотні, щоб змінити його, або перетягніть, щоб пересунути. «Елемент» додає час, дату, кроки, пульс, погоду та інше.")
                 .font(.subheadline).foregroundStyle(.secondary)
-            HStack {
-                Text("Пристрій").font(.subheadline)
-                Spacer()
-                Picker("Пристрій", selection: Binding(get: { project.meta.device }, set: { d in project.edit { $0.meta.device = d } })) {
-                    ForEach(DeviceProfile.all) { d in Text(d.title).tag(d) }
-                }
-            }
-            .padding(.horizontal, 14).frame(height: 44)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
             if project.themes.count < 2 {
                 Button {
                     project.edit { p in
