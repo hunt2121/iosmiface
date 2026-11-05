@@ -110,8 +110,16 @@ final class FaceEditorTests: XCTestCase {
         XCTAssertNotEqual(c.root.string("id"), try FaceProject.unpack(data).0.string("id"))
         XCTAssertEqual(try c.compile().0.count > 0, true)
         let before = c.resources.elements.count
+        let withoutPreview = c.themes.filter { !$0.has("preview") }.count
         c.edit { $0.theme(0)?.set("bgColor", "#102030") }
-        let (root2, _) = try FaceProject.unpack(try c.compile().0)
-        XCTAssertEqual(root2.first("Resources")?.elements.count, before)
+        let (root2, files2) = try FaceProject.unpack(try c.compile().0)
+        // старе превʼю замінено (не додано поруч); темам без превʼю воно з'явилося
+        XCTAssertEqual(root2.first("Resources")?.elements.count, before + withoutPreview)
+        for t in root2.all("Theme") {
+            let r = try XCTUnwrap(t.string("preview"))
+            let e = try XCTUnwrap(root2.first("Resources")?.elements.first { "@" + ($0.string("name") ?? "") == r })
+            XCTAssertEqual(e.string("format"), "indexed8")
+            XCTAssertEqual(files2[e.string("src") ?? ""].flatMap { UIImage(data: $0)?.cgImage?.width }, 134)
+        }
     }
 }

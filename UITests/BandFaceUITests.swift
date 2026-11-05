@@ -96,6 +96,9 @@ final class BandFaceUITests: XCTestCase {
         sleep(1); shot("en-add-element")
         app.buttons["Arc"].firstMatch.tap()
         sleep(1); shot("en-data-source")
+        let search = app.searchFields.firstMatch
+        if search.waitForExistence(timeout: 2) { search.tap(); search.typeText("Battery") }
+        sleep(1)
         app.buttons["Battery"].firstMatch.tap()
         sleep(2); shot("en-arc-added")
         app.buttons["Close"].firstMatch.tap()

@@ -219,7 +219,7 @@ final class FaceProject: ObservableObject, Identifiable {
             let small = AssetFactory.render(size.w, size.h) { ctx in
                 ctx.interpolationQuality = .high
                 frame.draw(in: CGRect(x: 0, y: 0, width: size.w, height: size.h))
-            }
+            }.quantized()   // indexed8, як в офіційних превʼю: без втрат при повторному збиранні
             var name = "preview_\(t)"
             var i = 2
             while used.contains(name) { name = "preview_\(t)_\(i)"; i += 1 }
