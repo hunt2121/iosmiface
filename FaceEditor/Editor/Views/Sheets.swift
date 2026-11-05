@@ -333,7 +333,7 @@ struct TextLook: View {
                       selected: res.string("verticalAlign") ?? "top") { v in project.edit { _ in res.set("verticalAlign", v) } }
             }
             StepperRow(title: "Відстань між літерами", value: Int(res.int("letterSpace")), range: 0...40) { v in project.edit { _ in res.set("letterSpace", int: v) } }
-            Text("Текст малює сам браслет своїм шрифтом MiSans; на полотні — той самий шрифт (кирилиця — системним шрифтом).")
+            Text("Текст малює сам браслет своїм шрифтом, тож на полотні він виглядає приблизно.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .onAppear { text = res.string("string") ?? "" }

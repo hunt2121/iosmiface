@@ -266,9 +266,6 @@ struct ContentView: View {
                     }
                 } header: {
                     Text("Застосунок")
-                } footer: {
-                    // вимога ліцензії MiSans: зазначити, що шрифт використано
-                    Text("Написи в редакторі — шрифтом MiSans © Xiaomi.")
                 }
             }
             .navigationTitle("Налаштування")

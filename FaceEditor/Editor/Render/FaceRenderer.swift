@@ -344,13 +344,9 @@ final class FaceRenderer {
         return box
     }
 
-    /// MiSans потрібної насиченості (як на браслеті), якщо шрифт є в застосунку; інакше системний
+    /// Системний шрифт потрібної насиченості (браслет малює текст своїм шрифтом — на полотні наближено)
     static func font(_ weight: String?, size: CGFloat) -> UIFont {
-        let names: [String: String] = ["thin": "Thin", "extralight": "ExtraLight", "light": "Light", "normal": "Normal",
-                                       "regular": "Regular", "medium": "Medium", "semibold": "Semibold",
-                                       "demibold": "Demibold", "bold": "Bold", "heavy": "Heavy"]
         let key = (weight ?? "regular").lowercased()
-        if let n = names[key], let f = UIFont(name: "MiSans-" + n, size: size) { return f }
         let weights: [String: UIFont.Weight] = ["thin": .thin, "extralight": .ultraLight, "light": .light, "regular": .regular,
                                                 "normal": .regular, "medium": .medium, "semibold": .semibold, "demibold": .semibold,
                                                 "bold": .bold, "heavy": .heavy]

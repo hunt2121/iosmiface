@@ -63,12 +63,6 @@ enum AssetFactory {
         }()
         var f: UIFont
         switch g.style {
-        case "misans":
-            // шрифт браслета (якщо є в застосунку), інакше системний
-            let names: [(Int, String)] = [(150, "Thin"), (250, "ExtraLight"), (350, "Light"), (450, "Regular"),
-                                          (550, "Medium"), (650, "Semibold"), (800, "Bold"), (10_000, "Heavy")]
-            let n = names.first { g.weight < $0.0 }?.1 ?? "Bold"
-            f = UIFont(name: "MiSans-" + n, size: size) ?? UIFont.systemFont(ofSize: size, weight: weight)
         case "condensed": f = UIFont.systemFont(ofSize: size, weight: weight, width: .condensed)
         case "mono": f = UIFont.monospacedSystemFont(ofSize: size, weight: weight)
         default:

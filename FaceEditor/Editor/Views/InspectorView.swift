@@ -145,7 +145,7 @@ struct InspectorView: View {
         if let g = gen {
             CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 12...160, step: 1) { v in regen { $0.fontSize = v } }
             Chips(title: "Шрифт", hint: "перетворюється на картинки цифр",
-                  items: [("misans", "MiSans"), ("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
+                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
                   selected: g.style) { s in regen { $0.style = s } }
             Chips(title: "Товщина", hint: nil,
                   items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
