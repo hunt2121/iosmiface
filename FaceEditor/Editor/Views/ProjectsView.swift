@@ -49,7 +49,7 @@ struct ProjectsView: View {
                 showNew = false
                 editing = store.create(name: name)
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.height(200)])
         }
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.data]) { result in
             guard case .success(let url) = result else { return }
