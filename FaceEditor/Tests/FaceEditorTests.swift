@@ -78,4 +78,40 @@ final class FaceEditorTests: XCTestCase {
             store.delete(p)
         }
     }
+
+    /// Превʼю з ресурсів (для BandFace) і превʼю для браслета, яке редактор малює при збиранні.
+    func testPreviews() throws {
+        let store = ProjectStore()
+        let u = try XCTUnwrap(Bundle(for: FaceEditorTests.self).url(forResource: "BigWatch_UA", withExtension: "bin"))
+        let data = try Data(contentsOf: u)
+        let shots = FacePreviews.render(data)
+        XCTAssertEqual(shots.count, 2)
+        XCTAssertEqual(shots.first?.alwaysOn, false)
+        XCTAssertEqual(shots.last?.alwaysOn, true)
+        XCTAssertEqual(shots.first?.image.cgImage?.width, 318)
+        XCTAssertEqual(shots.first?.image.cgImage?.height, 780)
+        // кеш на диску віддає те саме
+        _ = FacePreviews.shots(for: data)
+        XCTAssertEqual(FacePreviews.cached(for: data)?.count, 2)
+
+        // новий циферблат: превʼю 134×328 з'являється при збиранні
+        let p = store.create(name: "Preview")
+        defer { store.delete(p) }
+        let (root, files) = try FaceProject.unpack(try p.compile().0)
+        let ref = try XCTUnwrap(root.first("Theme")?.string("preview"))
+        let img = try XCTUnwrap(root.first("Resources")?.elements.first { "@" + ($0.string("name") ?? "") == ref })
+        let png = try XCTUnwrap(files[img.string("src") ?? ""].flatMap { UIImage(data: $0)?.cgImage })
+        XCTAssertEqual(png.width, 134)
+        XCTAssertEqual(png.height, 328)
+
+        // копія з магазину: новий ID; після зміни старе превʼю замінюється, кількість ресурсів та сама
+        let c = try store.importBin(data, name: "BigWatch", asCopy: true)
+        defer { store.delete(c) }
+        XCTAssertNotEqual(c.root.string("id"), try FaceProject.unpack(data).0.string("id"))
+        XCTAssertEqual(try c.compile().0.count > 0, true)
+        let before = c.resources.elements.count
+        c.edit { $0.theme(0)?.set("bgColor", "#102030") }
+        let (root2, _) = try FaceProject.unpack(try c.compile().0)
+        XCTAssertEqual(root2.first("Resources")?.elements.count, before)
+    }
 }

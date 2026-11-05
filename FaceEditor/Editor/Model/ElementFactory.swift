@@ -27,17 +27,17 @@ enum ElementKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .text: return "Текст"
-        case .digits: return "Цифри"
-        case .image: return "Зображення"
-        case .animation: return "Анімація"
-        case .pointer: return "Стрілка"
-        case .arc: return "Дуга"
-        case .line: return "Лінія"
-        case .values: return "Значки за значенням"
-        case .widget: return "Віджет"
-        case .slot: return "Слот"
-        case .other: return "Елемент"
+        case .text: return loc("Текст")
+        case .digits: return loc("Цифри")
+        case .image: return loc("Зображення")
+        case .animation: return loc("Анімація")
+        case .pointer: return loc("Стрілка")
+        case .arc: return loc("Дуга")
+        case .line: return loc("Лінія")
+        case .values: return loc("Значки за значенням")
+        case .widget: return loc("Віджет")
+        case .slot: return loc("Слот")
+        case .other: return loc("Елемент")
         }
     }
 }

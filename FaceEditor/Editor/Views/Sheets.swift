@@ -44,7 +44,7 @@ struct AddElementSheet: View {
                     HStack(spacing: 8) {
                         ForEach(Filter.allCases) { f in
                             Button { filter = f } label: {
-                                Text(f.rawValue).font(.subheadline.weight(filter == f ? .semibold : .medium))
+                                Text(loc(f.rawValue)).font(.subheadline.weight(filter == f ? .semibold : .medium))
                                     .padding(.horizontal, 14).frame(height: 32)
                                     .foregroundStyle(filter == f ? Color.white : Color.primary)
                                     .background(Capsule().fill(filter == f ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
@@ -56,8 +56,8 @@ struct AddElementSheet: View {
                         ForEach(tiles.filter { filter == .all || $0.filter == filter }) { t in
                             Button { choose(t.kind) } label: { tile(t) }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(t.kind.title)
-                                .accessibilityHint(t.caption)
+                                .accessibilityLabel(Text(t.kind.title))
+                                .accessibilityHint(Text(loc(t.caption)))
                                 .disabled(!t.enabled)
                                 .opacity(t.enabled ? 1 : 0.45)
                         }
@@ -109,7 +109,7 @@ struct AddElementSheet: View {
         VStack(spacing: 6) {
             ElementIcon(kind: t.kind).frame(height: 44)
             Text(t.kind.title).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
-            Text(t.caption).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+            Text(loc(t.caption)).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12).padding(.horizontal, 6)
@@ -193,13 +193,13 @@ struct DataSourcePicker: View {
             ForEach(SampleData.groups) { g in
                 let items = g.sources.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || SampleData.title($0).localizedCaseInsensitiveContains(query) }
                 if !items.isEmpty {
-                    Section(g.title) {
+                    Section(loc(g.title)) {
                         ForEach(items, id: \.self) { s in
                             Button { onPick(s); if !keepOpen { dismiss() } } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(SampleData.title(s)).foregroundStyle(.primary)
-                                        if SampleData.titles[s] != nil { Text(s).font(.caption2).foregroundStyle(.secondary) }
+                                        if SampleData.titles[s] != nil { Text(verbatim: s).font(.caption2).foregroundStyle(.secondary) }
                                     }
                                     Spacer()
                                     if s == current { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(Color.accentColor) }
@@ -207,7 +207,7 @@ struct DataSourcePicker: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(SampleData.title(s))
+                            .accessibilityLabel(Text(SampleData.title(s)))
                         }
                     }
                 }
@@ -265,7 +265,7 @@ struct ImageReplaceRow: View {
 
     var body: some View {
         PhotosPicker(selection: $item, matching: .images) {
-            Label(res.tag == "ImageArray" ? "Замінити кадри недоступно" : "Замінити зображення", systemImage: "photo")
+            Label(loc(res.tag == "ImageArray" ? "Замінити кадри недоступно" : "Замінити зображення"), systemImage: "photo")
                 .font(.subheadline.weight(.semibold))
         }
         .disabled(res.tag != "Image")

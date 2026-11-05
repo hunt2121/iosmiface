@@ -1,5 +1,6 @@
-name: Build FaceEditor
-# Тестовий застосунок редактора циферблатів. Лише вручну, одна машина; IPA — у чернетку релізу.
+name: Test editor
+# Тести редактора циферблатів і BandFace на симуляторі зі знімками екранів. Лише вручну, одна машина.
+# IPA BandFace збирає build.yml.
 on:
   workflow_dispatch:
 permissions:
@@ -19,22 +20,18 @@ jobs:
           xcodebuild -version
       - name: Generate Xcode project
         run: brew install xcodegen && xcodegen generate
-      - name: Build (unsigned)
-        run: |
-          set -o pipefail
-          xcodebuild -project BandFace.xcodeproj -scheme FaceEditor -configuration Release -sdk iphoneos \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            CURRENT_PROJECT_VERSION="$BUILD_NUM" build 2>&1 | tee xcodebuild.log | grep -E "error:|warning: .*FaceEditor|BUILD" | head -80
-      # Тести на симуляторі: логіка редактора і прохід екранами зі знімками
+      # Тести на симуляторі: логіка редактора, прохід екранами редактора і BandFace (зі знімками)
       - name: Test on simulator
         continue-on-error: true
         run: |
           DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
           echo "Simulator $DEV"
           mkdir -p test-out
-          TEST_RUNNER_SHOTS="$PWD/test-out" xcodebuild test -project BandFace.xcodeproj -scheme FaceEditor \
-            -destination "id=$DEV" -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO 2>&1 | tee test-out/test.log | \
-            grep -E "error:|failed|passed|Test Suite|Executed" | head -60
+          for SCHEME in FaceEditor BandFace; do
+            TEST_RUNNER_SHOTS="$PWD/test-out" xcodebuild test -project BandFace.xcodeproj -scheme $SCHEME \
+              -destination "id=$DEV" -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO 2>&1 | tee test-out/test-$SCHEME.log | \
+              grep -E "error:|failed|passed|Test Suite|Executed" | head -60
+          done
       - name: Publish test output
         if: always()
         env:
@@ -45,14 +42,3 @@ jobs:
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
           done
           gh release create "editor-test-$BUILD_NUM" editor-test.zip --draft --target "$GITHUB_SHA" --title "editor test output" --notes "temporary"
-      - name: Package IPA
-        run: |
-          NAME="FaceEditor-v01$BUILD_NUM"
-          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
-          mkdir Payload && cp -R build/Build/Products/Release-iphoneos/FaceEditor.app Payload/ && zip -qr "$NAME.ipa" Payload
-      - name: Draft release with IPA
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "editor-$BUILD_NUM" "$IPA_NAME.ipa" --draft --target "$GITHUB_SHA" \
-            --title "FaceEditor draft $BUILD_NUM" --notes "Unsigned FaceEditor IPA for signing"

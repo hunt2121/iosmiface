@@ -6,15 +6,21 @@ import UniformTypeIdentifiers
 import FaceCompiler
 
 struct ProjectsView: View {
-    @StateObject private var store = ProjectStore()
-    @State private var editing: FaceProject?
+    @ObservedObject var store: ProjectStore
+    /// Відкритий у редакторі циферблат (BandFace відкриває сюди й копії з магазину)
+    @Binding var editing: FaceProject?
+    var title: LocalizedStringKey = "Мої циферблати"
+    /// «Встановити на пристрій» — лише в BandFace
+    @Environment(\.faceInstall) private var install
     @State private var showNew = false
     @State private var showImporter = false
     @State private var alert: String?
     @State private var share: ShareItem?
     @State private var thumbs: [String: UIImage] = [:]
+    @State private var askDelete: FaceProject?
 
-    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 16)]
+    // як сітка магазину BandFace
+    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
         NavigationStack {
@@ -22,16 +28,18 @@ struct ProjectsView: View {
                 if store.projects.isEmpty {
                     emptyState
                 } else {
-                    LazyVGrid(columns: columns, spacing: 20) {
+                    LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(store.projects) { p in
                             card(p)
                         }
                     }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
                 }
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Мої циферблати")
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -40,7 +48,7 @@ struct ProjectsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel("Додати")
+                    .accessibilityLabel(Text("Додати"))
                 }
             }
         }
@@ -59,23 +67,32 @@ struct ProjectsView: View {
                 let data = try Data(contentsOf: url)
                 editing = try store.importBin(data, name: url.deletingPathExtension().lastPathComponent)
             } catch {
-                alert = "Не вдалося відкрити: \(error.localizedDescription)"
+                alert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
             }
         }
         .fullScreenCover(item: $editing, onDismiss: {
             store.reload(); thumbs = [:]
         }) { p in
             EditorView(project: p)
+                .environment(\.faceInstall, install)
         }
         .sheet(item: $share) { item in ActivityView(items: [item.url]) }
         .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
             Button("Гаразд", role: .cancel) {}
         }
+        .alert(askDelete.map { String(localized: "Видалити «\($0.displayName)»?") } ?? "",
+               isPresented: Binding(get: { askDelete != nil }, set: { if !$0 { askDelete = nil } }),
+               presenting: askDelete) { p in
+            Button("Видалити", role: .destructive) { store.delete(p) }
+            Button("Скасувати", role: .cancel) {}
+        } message: { _ in
+            Text("Циферблат зникне з редактора. На пристрої він лишиться, якщо вже встановлений.")
+        }
     }
 
     private var emptyState: some View {
         VStack(spacing: 14) {
-            Image(systemName: "applewatch.watchface").font(.system(size: 48)).foregroundStyle(.secondary)
+            Image("TabWatch").resizable().scaledToFit().frame(height: 48).foregroundStyle(.secondary)
             Text("Тут будуть ваші циферблати").font(.headline)
             Text("Створіть новий або відкрийте готовий файл .bin, щоб змінити його.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -90,31 +107,71 @@ struct ProjectsView: View {
         .padding(.top, 80)
     }
 
+    /// Картка як у магазині BandFace: капсула, назва, дата зміни; у BandFace ще й «Встановити».
     private func card(_ p: FaceProject) -> some View {
-        let dev = p.meta.device
-        return Button { editing = p } label: {
-            VStack(spacing: 8) {
+        Button { editing = p } label: {
+            VStack(alignment: .leading, spacing: 10) {
                 ZStack {
-                    if let t = thumbs[p.id] {
-                        Image(uiImage: t).resizable().scaledToFit()
-                    } else {
-                        Color.black
-                    }
+                    Color.black
+                    if let t = thumbs[p.id] { Image(uiImage: t).resizable().scaledToFill() }
                 }
-                .frame(width: 194 * CGFloat(dev.width) / CGFloat(dev.height), height: 194)
+                .frame(width: 96, height: 236)
                 .faceCapsule()
-                Text(p.name.isEmpty ? "Без назви" : p.name)
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .frame(height: 266)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(p.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(p.meta.modified.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 2)
+
+                if install != nil {
+                    Button { installProject(p) } label: {
+                        Text("Встановити")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .foregroundStyle(.white)
+                            .background(Capsule().fill(Color.accentColor))
+                            .capsuleGlass(tint: Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground)))
+            .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         }
         .buttonStyle(.plain)
         .task(id: p.revision) {
-            if thumbs[p.id] == nil { thumbs[p.id] = FaceRenderer(p).render(theme: 0, scale: 2).0 }
+            if thumbs[p.id] == nil { thumbs[p.id] = FaceRenderer(p).render(theme: 0, scale: FacePreviews.scale).0 }
         }
         .contextMenu {
+            if install != nil {
+                Button { installProject(p) } label: { Label("Встановити на пристрій", systemImage: "arrow.down.to.line") }
+            }
+            Button { editing = p } label: { Label("Змінити", systemImage: "pencil") }
             Button { export(p) } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
             Button { store.duplicate(p); thumbs = [:] } label: { Label("Копія", systemImage: "plus.square.on.square") }
-            Button(role: .destructive) { store.delete(p) } label: { Label("Видалити", systemImage: "trash") }
+            Button(role: .destructive) { askDelete = p } label: { Label("Видалити", systemImage: "trash") }
+        }
+    }
+
+    private func installProject(_ p: FaceProject) {
+        guard let install else { return }
+        do {
+            let (data, _) = try p.compile()
+            install(data, p.displayName)
+        } catch {
+            alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
         }
     }
 
@@ -123,7 +180,7 @@ struct ProjectsView: View {
             let (data, _) = try p.compile()
             share = ShareItem(url: try ShareItem.write(data, name: p.name))
         } catch {
-            alert = "Не вдалося зібрати: \(error.localizedDescription)"
+            alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
         }
     }
 }
@@ -151,7 +208,7 @@ struct ActivityView: UIViewControllerRepresentable {
 
 struct NewFaceSheet: View {
     var onCreate: (String) -> Void
-    @State private var name = "Мій циферблат"
+    @State private var name = loc("Мій циферблат")
 
     var body: some View {
         NavigationStack {

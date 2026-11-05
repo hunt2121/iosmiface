@@ -32,7 +32,7 @@ struct InspectorView: View {
                 circle("trash", "Видалити", .red, onDelete)
             }
             Picker("", selection: $tab) {
-                ForEach(InspectorTab.allCases) { t in Text(t.rawValue).tag(t) }
+                ForEach(InspectorTab.allCases) { t in Text(loc(t.rawValue)).tag(t) }
             }
             .pickerStyle(.segmented)
             switch tab {
@@ -50,7 +50,7 @@ struct InspectorView: View {
             Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundStyle(tint)
                 .frame(width: 36, height: 36).background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
         }
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(loc(label)))
     }
 
     /// x числа — точка прив'язки (лівий край / середина / правий край), тож при зміні вирівнювання
@@ -236,7 +236,7 @@ struct PositionPane: View {
                 .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemGroupedBackground)))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(loc(label)))
     }
 
     private func nudge(_ dx: Int, _ dy: Int) {
@@ -249,7 +249,7 @@ struct PositionPane: View {
             Image(systemName: icon).font(.system(size: 12, weight: .bold)).frame(width: 32, height: 26)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemGroupedBackground)))
         }
-        .buttonStyle(.plain).accessibilityLabel(label)
+        .buttonStyle(.plain).accessibilityLabel(Text(loc(label)))
     }
 
     private var nudgePad: some View {
@@ -257,7 +257,7 @@ struct PositionPane: View {
             key("chevron.up", "Вгору", 0, -1)
             HStack(spacing: 4) {
                 key("chevron.left", "Ліворуч", -1, 0)
-                Text("\(max(1, grid)) px").font(.system(size: 10, weight: .bold)).foregroundStyle(Color.accentColor).frame(width: 32)
+                Text(verbatim: "\(max(1, grid)) px").font(.system(size: 10, weight: .bold)).foregroundStyle(Color.accentColor).frame(width: 32)
                 key("chevron.right", "Праворуч", 1, 0)
             }
             key("chevron.down", "Вниз", 0, 1)
@@ -275,7 +275,7 @@ struct Row: View {
         Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.caption).foregroundStyle(.secondary)
+                    Text(loc(title)).font(.caption).foregroundStyle(.secondary)
                     Text(value).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                 }
                 Spacer()
@@ -300,9 +300,9 @@ struct CommitSlider: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.subheadline)
+                Text(loc(title)).font(.subheadline)
                 Spacer()
-                Text("\(Int(local ?? value))").font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
+                Text(verbatim: "\(Int(local ?? value))").font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
             }
             Slider(value: Binding(get: { local ?? value }, set: { local = $0 }), in: range, step: step) { editing in
                 if !editing, let v = local { onCommit(v); local = nil }
@@ -318,7 +318,7 @@ struct StepperRow: View {
     var onChange: (Int) -> Void
     var body: some View {
         Stepper(value: Binding(get: { value }, set: { onChange($0) }), in: range) {
-            HStack { Text(title).font(.subheadline); Spacer(); Text("\(value)").font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
+            HStack { Text(loc(title)).font(.subheadline); Spacer(); Text(verbatim: "\(value)").font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
         }
     }
 }
@@ -332,13 +332,13 @@ struct Chips: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
-                Text(title).font(.subheadline)
-                if let hint { Text("· \(hint)").font(.footnote).foregroundStyle(.secondary) }
+                Text(loc(title)).font(.subheadline)
+                if let hint { Text(verbatim: "· " + loc(hint)).font(.footnote).foregroundStyle(.secondary) }
             }
             HStack(spacing: 6) {
                 ForEach(items, id: \.0) { item in
                     Button { onSelect(item.0) } label: {
-                        Text(item.1).font(.caption.weight(item.0 == selected ? .semibold : .medium))
+                        Text(loc(item.1)).font(.caption.weight(item.0 == selected ? .semibold : .medium))
                             .lineLimit(1).minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity).frame(height: 30)
                             .foregroundStyle(item.0 == selected ? Color.white : Color.primary)
@@ -359,7 +359,7 @@ struct NumberField: View {
     @FocusState private var focused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(loc(title)).font(.caption).foregroundStyle(.secondary)
             TextField("", text: $text)
                 .font(.system(size: 17, weight: .semibold)).monospacedDigit()
                 .keyboardType(.numbersAndPunctuation)
@@ -379,8 +379,8 @@ struct InfoField: View {
     let value: Int
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text("\(value)").font(.system(size: 17, weight: .semibold)).monospacedDigit().foregroundStyle(.secondary)
+            Text(loc(title)).font(.caption).foregroundStyle(.secondary)
+            Text(verbatim: "\(value)").font(.system(size: 17, weight: .semibold)).monospacedDigit().foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -396,7 +396,7 @@ struct DebouncedColor: View {
     @State private var pending: Task<Void, Never>?
 
     var body: some View {
-        ColorPicker(title, selection: Binding(get: { Color(AssetFactory.color(hex)) }, set: { c in
+        ColorPicker(loc(title), selection: Binding(get: { Color(AssetFactory.color(hex)) }, set: { c in
             let h = Self.hex(UIColor(c))
             pending?.cancel()
             pending = Task { @MainActor in

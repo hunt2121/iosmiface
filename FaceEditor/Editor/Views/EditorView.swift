@@ -9,6 +9,8 @@ import FaceCompiler
 struct EditorView: View {
     @ObservedObject var project: FaceProject
     @Environment(\.dismiss) private var dismiss
+    /// «Встановити на пристрій» — лише в BandFace
+    @Environment(\.faceInstall) private var install
 
     @State private var theme = 0
     @State private var selected: XNode?
@@ -94,11 +96,14 @@ struct EditorView: View {
             .accessibilityLabel("Закрити")
             Spacer()
             Button { renameText = project.name; showRename = true } label: {
-                Text(project.name.isEmpty ? "Без назви" : project.name).font(.headline).foregroundStyle(.primary).lineLimit(1)
+                Text(project.displayName).font(.headline).foregroundStyle(.primary).lineLimit(1)
             }
             .buttonStyle(.plain)
             Spacer()
             Menu {
+                if install != nil {
+                    Button { installOnBand() } label: { Label("Встановити на пристрій", systemImage: "arrow.down.to.line") }
+                }
                 Button { exportBin() } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
                 Button { dismiss() } label: { Label("Готово", systemImage: "checkmark") }
             } label: {
@@ -129,7 +134,7 @@ struct EditorView: View {
                 .frame(width: 36, height: 36)
                 .background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
         }
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(loc(label)))
     }
 
     // MARK: Нижня панель
@@ -175,7 +180,7 @@ struct EditorView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 if let icon { Image(systemName: icon).font(.system(size: 14, weight: .bold)) }
-                Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).fixedSize()
+                Text(loc(title)).font(.subheadline.weight(.semibold)).lineLimit(1).fixedSize()
             }
             .frame(maxWidth: .infinity).frame(height: 44)
             .foregroundStyle(prominent ? Color.accentColor : .primary)
@@ -205,7 +210,7 @@ struct EditorView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Text(theme == 0 ? "Зараз: основний екран" : "Зараз: «Завжди на екрані»").font(.footnote).foregroundStyle(.secondary)
+                Text(loc(theme == 0 ? "Зараз: основний екран" : "Зараз: «Завжди на екрані»")).font(.footnote).foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 16)
@@ -218,9 +223,22 @@ struct EditorView: View {
         do {
             let (data, warnings) = try project.compile()
             share = ShareItem(url: try ShareItem.write(data, name: project.name))
-            if !warnings.isEmpty { alert = "Зібрано з попередженнями:\n" + warnings.prefix(5).joined(separator: "\n") }
+            if !warnings.isEmpty { alert = loc("Зібрано з попередженнями:") + "\n" + warnings.prefix(5).joined(separator: "\n") }
         } catch {
-            alert = "Не вдалося зібрати: \(error.localizedDescription)"
+            alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
+        }
+    }
+
+    /// Збирає .bin і передає BandFace: та встановлює його на браслет (або підказує, що спершу підключити).
+    private func installOnBand() {
+        guard let install else { return }
+        do {
+            let (data, _) = try project.compile()
+            let name = project.displayName
+            dismiss()
+            install(data, name)
+        } catch {
+            alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
         }
     }
 

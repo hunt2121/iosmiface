@@ -6,6 +6,9 @@ import SwiftUI
 
 @main
 struct FaceEditorApp: App {
+    @StateObject private var store = ProjectStore()
+    @State private var editing: FaceProject?
+
     init() {
         // UI-тести починають із порожнього списку
         if CommandLine.arguments.contains("-uitest-reset") {
@@ -16,7 +19,7 @@ struct FaceEditorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ProjectsView()
+            ProjectsView(store: store, editing: $editing)
         }
     }
 }

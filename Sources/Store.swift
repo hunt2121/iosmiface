@@ -18,7 +18,7 @@ struct StoreFace: Identifiable {
     let about: String
     let price: String?      // nil — безкоштовний
     let face: FaceFile
-    let preview: UIImage?
+    var preview: UIImage?
     var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
     var previews: [FacePreview] = []   // зображення в картці (Always On додамо, коли буде справжній скріншот)
@@ -79,8 +79,42 @@ enum StoreCatalog {
                                  about: e.about, price: nil, face: face, preview: image)
             item.added = dayFormatter.date(from: e.added)
             item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
+            // намальоване з ресурсів превʼю, якщо вже є в кеші (інакше з'явиться після renderPreviews)
+            if let shots = FacePreviews.cached(for: Data(face.data)), !shots.isEmpty { item.apply(shots) }
             return item
         }
+    }
+
+    /// Малює превʼю всіх циферблатів магазину з їхніх ресурсів (у фоні, з кешем на диску).
+    static func renderPreviews(for faces: [StoreFace]) async -> [String: [FacePreviews.Shot]] {
+        let input = faces.map { ($0.id, Data($0.face.data)) }
+        return await Task.detached(priority: .utility) {
+            var out: [String: [FacePreviews.Shot]] = [:]
+            for (id, data) in input {
+                let shots = FacePreviews.shots(for: data)
+                if !shots.isEmpty { out[id] = shots }
+            }
+            return out
+        }.value
+    }
+}
+
+extension StoreFace {
+    /// Превʼю, намальовані з ресурсів циферблата: основний екран і «Завжди на екрані»
+    mutating func apply(_ shots: [FacePreviews.Shot]) {
+        guard let first = shots.first else { return }
+        preview = first.image
+        previews = shots.map {
+            FacePreview(title: $0.alwaysOn ? String(localized: "Завжди на екрані") : String(localized: "Звичайний"),
+                        image: $0.image)
+        }
+    }
+}
+
+extension FaceFile {
+    /// Превʼю для показу: намальоване з ресурсів (якщо вдалося), інакше вбудоване у файл
+    func renderedPreview() -> UIImage? {
+        FacePreviews.shots(for: Data(data)).first?.image ?? previewImage()
     }
 }
 
@@ -136,6 +170,7 @@ enum StoreAction {
 struct StoreView: View, Equatable {
     static func == (a: StoreView, b: StoreView) -> Bool {
         a.faces.map(\.id) == b.faces.map(\.id) && a.installed == b.installed
+            && a.faces.map(\.preview).elementsEqual(b.faces.map(\.preview), by: { $0 === $1 })
             && a.installingID == b.installingID && a.busy == b.busy
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID && a.otherFaces == b.otherFaces
@@ -164,6 +199,8 @@ struct StoreView: View, Equatable {
     /// Назва пристрою або «Пристрій не підключено»; стан батареї
     var deviceName: String = ""
     var deviceInfo = BandInfo()
+    /// «Змінити в редакторі»: копія циферблата відкривається на вкладці «Редактор»
+    var onEdit: (StoreFace) -> Void = { _ in }
 
     @State private var path: [String] = []
     @State private var filter = "all"
@@ -245,7 +282,8 @@ struct StoreView: View, Equatable {
                                     onInstall: onInstall,
                                     isActive: item.id == activeID,
                                     onSelect: { await onActivate(item) },
-                                    onDelete: { await onDelete(item) })
+                                    onDelete: { await onDelete(item) },
+                                    onEdit: { onEdit(item) })
                 }
             }
             .modifier(StoreToolbar(filter: $filter, filters: filterOptions,
@@ -434,6 +472,8 @@ struct StoreDetailView: View {
     /// «Вибрати» (зробити активним) і «Видалити з браслета»: nil — успіх, інакше текст помилки
     var onSelect: () async -> String? = { nil }
     var onDelete: () async -> String? = { nil }
+    /// «Змінити в редакторі»
+    var onEdit: () -> Void = {}
 
     private enum Work { case select, delete }
     @State private var working: Work?
@@ -470,6 +510,8 @@ struct StoreDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
+
+                editRow
 
                 // Видалення — окремо внизу, далеко від основних кнопок; лише для встановленого
                 if installedVersion != nil && state != .installing {
@@ -528,6 +570,27 @@ struct StoreDetailView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+    }
+
+    /// Копія циферблата в редакторі (з власним ID — оригінал на пристрої не зміниться)
+    private var editRow: some View {
+        Button(action: onEdit) {
+            VStack(spacing: 2) {
+                Label("Змінити в редакторі", systemImage: "pencil")
+                    .font(.body.weight(.semibold))
+                Text("Буде створено копію — оригінал не зміниться")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
+            .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground)))
+            .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(state == .installing)
     }
 
     private var deleteRow: some View {
@@ -845,7 +908,8 @@ private enum MenuThumb {
 
     /// Капсула в квадраті 30×30; в активного — зелений кружечок із галочкою в куті
     static func image(key id: String, preview: UIImage?, active: Bool = false) -> UIImage {
-        let key = id + (active ? ":a" : "")
+        // превʼю може змінитися (намальоване з ресурсів замість вбудованого) — воно теж у ключі
+        let key = id + (active ? ":a" : "") + (preview.map { ":\(ObjectIdentifier($0).hashValue)" } ?? "")
         if let cached = cache[key] { return cached }
         let side: CGFloat = 30
         let capsule = CGRect(x: (side - 13) / 2, y: 0, width: 13, height: side)

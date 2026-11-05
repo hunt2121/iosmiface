@@ -3,6 +3,7 @@
 // Будь-який розпакований .bin стає проєктом, і після редагування збирається назад тим самим компілятором.
 
 import Foundation
+import UIKit
 import FaceCompiler
 
 /// Параметри, з яких редактор створив ресурс (щоб перегенерувати картинки після зміни шрифту, кольору тощо).
@@ -34,6 +35,19 @@ struct ProjectMeta: Codable {
     var device = DeviceProfile.band10
     var generators: [String: Generator] = [:]
     var modified = Date()
+    /// Циферблат змінювали в редакторі: при збиранні превʼю для браслета малюється заново
+    var edited = false
+
+    init() {}
+
+    // editor.json старіших версій не має нових полів — читаємо те, що є
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        device = (try? c.decodeIfPresent(DeviceProfile.self, forKey: .device)) ?? .band10
+        generators = (try? c.decodeIfPresent([String: Generator].self, forKey: .generators)) ?? [:]
+        modified = (try? c.decodeIfPresent(Date.self, forKey: .modified)) ?? Date()
+        edited = (try? c.decodeIfPresent(Bool.self, forKey: .edited)) ?? false
+    }
 }
 
 final class FaceProject: ObservableObject, Identifiable {
@@ -67,6 +81,8 @@ final class FaceProject: ObservableObject, Identifiable {
     var name: String {
         get { root.string("name") ?? "" }
     }
+    /// Назва для показу: «Без назви», якщо порожня
+    var displayName: String { name.isEmpty ? loc("Без назви") : name }
 
     func resource(named n: String) -> XNode? {
         resources.elements.first { $0.string("name") == n }
@@ -95,6 +111,7 @@ final class FaceProject: ObservableObject, Identifiable {
         if undoStack.count > 40 { undoStack.removeFirst() }
         change(self)
         meta.modified = Date()
+        meta.edited = true
         revision += 1
         objectWillChange.send()
         save()
@@ -151,6 +168,16 @@ final class FaceProject: ObservableObject, Identifiable {
         return FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
     }
 
+    /// Розпаковує .bin у дерево маніфесту й файли (без запису на диск).
+    static func unpack(_ data: Data) throws -> (XNode, [String: Data]) {
+        let mem = MemoryStorage()
+        try WatchfaceCompiler.unpack(data, to: mem)
+        guard let xml = mem.files.removeValue(forKey: "manifest.xml"), let root = try XML.parse([UInt8](xml)) else {
+            throw FaceCompilerError("manifest.xml не створено")
+        }
+        return (root, mem.files)
+    }
+
     // MARK: Збирання
 
     var manifestBytes: [UInt8] { XML.print(root) }
@@ -163,10 +190,66 @@ final class FaceProject: ObservableObject, Identifiable {
     }
 
     /// Збирає .bin. Повертає дані й попередження компілятора.
+    /// Після змін у редакторі (або коли превʼю немає) превʼю для браслета малюється заново.
     func compile() throws -> (Data, [String]) {
         let log = FaceCompilerLog()
-        let data = try WatchfaceCompiler.build(from: storage(), log: log)
+        let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
+        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), log: log)
         return (data, log.warnings)
+    }
+
+    /// Розмір превʼю, яке браслет показує у списку циферблатів (як в офіційних циферблатах Smart Band 10)
+    static let previewSize = (w: 134, h: 328)
+
+    /// Сховище для збирання, де в кожної теми нове превʼю — зменшений кадр цієї теми.
+    /// Сам проєкт не змінюється. Старе превʼю прибирається, якщо більше ніде не використовується.
+    func storageWithFreshPreviews() -> MemoryStorage {
+        let root = self.root.copy()
+        var all = files
+        let res: XNode
+        if let r = root.first("Resources") { res = r } else { res = XNode("Resources"); root.kids.insert(res, at: 0) }
+        var used = Set(res.elements.compactMap { $0.string("name") })
+        let renderer = FaceRenderer(self)
+        let themes = root.all("Theme")
+        var inserted = 0
+        for (t, theme) in themes.enumerated() {
+            let old = theme.string("preview").flatMap { $0.count > 1 ? String($0.dropFirst()) : nil }
+            let (frame, _) = renderer.render(theme: t, scale: 1)
+            let size = Self.previewSize
+            let small = AssetFactory.render(size.w, size.h) { ctx in
+                ctx.interpolationQuality = .high
+                frame.draw(in: CGRect(x: 0, y: 0, width: size.w, height: size.h))
+            }
+            var name = "preview_\(t)"
+            var i = 2
+            while used.contains(name) { name = "preview_\(t)_\(i)"; i += 1 }
+            used.insert(name)
+            all["\(name).png"] = small.png
+            let e = XNode("Image")
+            e.set("name", name).set("src", "\(name).png").set("compressMethod", "RLEReversed")
+                .set("format", small.bestFormat).set("recolorEnable", bool: false)
+            res.kids.insert(e, at: inserted)
+            inserted += 1
+            theme.set("preview", "@" + name)
+            // старе превʼю більше не потрібне, якщо на нього не посилається ні шар, ні інша тема
+            if let old, Self.references(to: old, in: root) == 0,
+               let idx = res.kids.firstIndex(where: { !$0.isComment && $0.string("name") == old }) {
+                if let src = res.kids[idx].string("src") { all[MemoryStorage.normalizedPath(src)] = nil }
+                for img in res.kids[idx].all("Image") { if let s = img.string("src") { all[MemoryStorage.normalizedPath(s)] = nil } }
+                res.kids.remove(at: idx)
+                if idx < inserted { inserted -= 1 }
+            }
+        }
+        all["manifest.xml"] = Data(XML.print(root))
+        return MemoryStorage(all)
+    }
+
+    /// Скільки разів десь у маніфесті є «@name».
+    private static func references(to name: String, in node: XNode) -> Int {
+        let ref = Array(("@" + name).utf8)
+        var n = node.attrs.filter { $0.1 == ref }.count
+        for k in node.kids where !k.isComment { n += references(to: name, in: k) }
+        return n
     }
 }
 

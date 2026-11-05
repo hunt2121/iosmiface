@@ -14,8 +14,12 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+      # Редактор циферблатів (той самий код, що й у тестовому застосунку FaceEditor)
+      - path: FaceEditor/Editor
     dependencies:
       - package: BandFaceKit
+      - package: BandFaceKit
+        product: FaceCompiler
     info:
       path: Sources/Info.plist
       properties:
@@ -47,6 +51,23 @@ targets:
           STRIP_STYLE: all
           COPY_PHASE_STRIP: YES
           SWIFT_OPTIMIZATION_LEVEL: -Osize
+    scheme:
+      testTargets:
+        - BandFaceUITests
+
+  # Прохід екранами BandFace зі знімками (магазин, превʼю, редактор) — для перевірки вигляду в CI
+  BandFaceUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: BandFace
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: BandFace
 
   # Тестовий застосунок: редактор циферблатів (код редактора — FaceEditor/Editor, компілятор — FaceCompiler)
   FaceEditor:

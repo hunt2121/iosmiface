@@ -23,10 +23,13 @@ final class ProjectStore: ObservableObject {
 
     private func newFolder() -> URL { base.appendingPathComponent(UUID().uuidString) }
 
+    /// Новий ID циферблата (9 цифр, як у Mi Fitness): копія не замінює оригінал на браслеті.
+    static func newFaceID() -> String { String(Int.random(in: 100_000_000...999_999_999)) }
+
     /// Порожній циферблат: фон, час цифрами, дата.
     func create(name: String) -> FaceProject {
         let root = XNode("Watchface")
-        root.set("id", String(format: "%09d", Int.random(in: 100_000_000...999_999_999)))
+        root.set("id", Self.newFaceID())
         root.set("name", name)
         root.add("Resources")
         let theme = root.add("Theme")
@@ -45,15 +48,15 @@ final class ProjectStore: ObservableObject {
     }
 
     /// Відкрити готовий .bin: розпакування тим самим компілятором.
-    func importBin(_ data: Data, name: String) throws -> FaceProject {
-        let mem = MemoryStorage()
-        try WatchfaceCompiler.unpack(data, to: mem)
-        guard let xml = mem.files.removeValue(forKey: "manifest.xml"), let root = try XML.parse([UInt8](xml)) else {
-            throw FaceCompilerError("manifest.xml не створено")
-        }
-        let meta = ProjectMeta()
-        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: mem.files, meta: meta)
+    /// `asCopy` — копія чужого циферблата (з магазину): новий ID і «(копія)» в назві.
+    func importBin(_ data: Data, name: String, asCopy: Bool = false) throws -> FaceProject {
+        let (root, files) = try FaceProject.unpack(data)
+        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: files, meta: ProjectMeta())
         if (root.string("name") ?? "").isEmpty { root.set("name", name) }
+        if asCopy {
+            root.set("id", Self.newFaceID())
+            root.set("name", (root.string("name") ?? name) + loc(" (копія)"))
+        }
         p.save()
         projects.insert(p, at: 0)
         return p
@@ -63,7 +66,8 @@ final class ProjectStore: ObservableObject {
         let folder = newFolder()
         try? FileManager.default.copyItem(at: p.folder, to: folder)
         if let c = FaceProject.load(folder: folder) {
-            c.edit { $0.root.set("name", ($0.root.string("name") ?? "") + " (копія)") }
+            // власний ID: інакше копія на браслеті замінила б оригінал
+            c.edit { $0.root.set("name", ($0.root.string("name") ?? "") + loc(" (копія)")).set("id", Self.newFaceID()) }
             projects.insert(c, at: 0)
         }
     }

@@ -49,6 +49,8 @@ final class FaceRenderer {
         fmt.opaque = true
         let img = UIGraphicsImageRenderer(size: size, format: fmt).image { ctx in
             let c = ctx.cgContext
+            // пікселі браслета збільшуються плавно (полотно, перегляд, превʼю в BandFace)
+            c.interpolationQuality = .high
             let bg = p.theme(theme)?.string("bgColor") ?? "#000000"
             c.setFillColor(AssetFactory.color(bg).cgColor)
             c.fill(CGRect(origin: .zero, size: size))

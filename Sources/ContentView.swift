@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import BandFaceKit
 
 struct ContentView: View {
-    enum Tab: Hashable { case faces, store, settings }
+    enum Tab: Hashable { case faces, store, editor, settings }
     enum SettingsRoute: Hashable { case key, log }
 
     @EnvironmentObject var ble: BLEManager
@@ -42,6 +42,10 @@ struct ContentView: View {
     @State private var message: String?
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
+    // Редактор циферблатів
+    @StateObject private var editorStore = ProjectStore()
+    /// Циферблат, відкритий у редакторі
+    @State private var editorProject: FaceProject?
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -88,10 +92,15 @@ struct ContentView: View {
                       otherFaces: otherFaces,
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
                       deviceName: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Пристрій не підключено"),
-                      deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo)
+                      deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo,
+                      onEdit: { editCopy($0) })
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
+
+            ProjectsView(store: editorStore, editing: $editorProject, title: "Редактор")
+                .tabItem { Label("Редактор", image: "TabEditor") }
+                .tag(Tab.editor)
 
             settingsTab
                 .tabItem { Label("Налаштування", image: "TabSettings") }
@@ -99,6 +108,8 @@ struct ContentView: View {
                 .badge(keyValid ? nil : Text("!"))
                 .tag(Tab.settings)
         }
+        // Редактор збирає .bin і передає сюди: встановлення йде звичним шляхом вкладки «Циферблати»
+        .environment(\.faceInstall, FaceInstallAction { data, name in installFromEditor(data, name: name) })
         .preferredColorScheme(appTheme == "light" ? .light : (appTheme == "dark" ? .dark : nil))
         .onChange(of: tab) { newTab in
             if newTab == .store { Task { await syncDeviceFaces() } }
@@ -118,6 +129,13 @@ struct ContentView: View {
         }
         .onAppear {
             autoFindKey()
+        }
+        // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
+        .task {
+            let shots = await StoreCatalog.renderPreviews(for: storeFaces)
+            for (id, s) in shots {
+                if let i = storeFaces.firstIndex(where: { $0.id == id }) { storeFaces[i].apply(s) }
+            }
         }
         .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
                                                       set: { if !$0 { storeAlert = nil } })) {
@@ -653,6 +671,7 @@ struct ContentView: View {
                 filePreview = parsed.previewImage()
                 fileName = url.lastPathComponent
                 message = nil
+                renderFilePreview(parsed)
             } catch {
                 face = nil
                 filePreview = nil
@@ -781,6 +800,67 @@ struct ContentView: View {
     private func show(_ text: String, error: Bool) {
         message = text
         messageIsError = error
+    }
+
+    // MARK: - Редактор
+
+    /// Превʼю вибраного файла з його ресурсів; поки малюється — вбудоване
+    private func renderFilePreview(_ file: FaceFile) {
+        let data = Data(file.data)
+        Task { @MainActor in
+            let image = await Task.detached(priority: .userInitiated) { FacePreviews.shots(for: data).first?.image }.value
+            // за цей час могли вибрати інший файл
+            if let image, face?.data == file.data { filePreview = image }
+        }
+    }
+
+    /// Копія циферблата з магазину відкривається в редакторі (з власним ID — оригінал не зміниться)
+    private func editCopy(_ item: StoreFace) {
+        do {
+            let p = try editorStore.importBin(Data(item.face.data), name: item.name, asCopy: true)
+            tab = .editor
+            Task { @MainActor in
+                // спершу вкладка, потім редактор поверх неї
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                editorProject = p
+            }
+        } catch {
+            storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
+        }
+    }
+
+    /// Циферблат із редактора: стає вибраним файлом на вкладці «Циферблати» і одразу встановлюється,
+    /// якщо пристрій готовий; інакше — підказка, що зробити
+    private func installFromEditor(_ data: Data, name: String) {
+        guard let parsed = try? FaceFile(data: data) else {
+            storeAlert = String(localized: "Не вдалося підготувати циферблат до встановлення")
+            return
+        }
+        guard !busy else {
+            storeAlert = String(localized: "Зачекайте, поки завершиться встановлення")
+            return
+        }
+        face = parsed
+        fileName = name + ".bin"
+        filePreview = parsed.previewImage()
+        message = nil
+        renderFilePreview(parsed)
+        tab = .faces
+        Task { @MainActor in
+            // редактор закривається — алерт показуємо вже на вкладці
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard keyValid else {
+                storeAlert = String(localized: "Спершу додайте ключ пристрою")
+                storeAlertOpensKey = true
+                return
+            }
+            guard ble.connectedID != nil && ble.servicesReady else {
+                storeAlert = String(localized: "Циферблат готовий. Підключіть пристрій і натисніть «Встановити»")
+                return
+            }
+            while syncing { try? await Task.sleep(nanoseconds: 100_000_000) }
+            install(parsed)
+        }
     }
 }
 

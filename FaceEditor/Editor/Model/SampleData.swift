@@ -59,7 +59,7 @@ enum SampleData {
         "weatherCurrentTemperature": "Температура", "weatherCurrentWeather": "Погода",
     ]
 
-    static func title(_ source: String) -> String { titles[source] ?? source }
+    static func title(_ source: String) -> String { titles[source].map(loc) ?? source }
 
     struct Group: Identifiable {
         let id: String
