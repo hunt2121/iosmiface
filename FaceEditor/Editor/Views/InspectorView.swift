@@ -56,7 +56,7 @@ struct InspectorView: View {
     /// x числа — точка прив'язки (лівий край / середина / правий край), тож при зміні вирівнювання
     /// переносимо її так, щоб число лишилося на місці.
     private func setNumberAlign(_ r: XNode, _ v: String) {
-        let b = FaceRenderer(project).render(theme: theme, scale: 1).1.first { $0.layout === layout }?.rect
+        let b = FaceRenderer(project).boxes(theme: theme).first { $0.layout === layout }?.rect
         project.edit { _ in
             r.set("align", v)
             guard let b else { return }
@@ -204,7 +204,7 @@ struct PositionPane: View {
     @Binding var grid: Int
 
     private var box: CGRect {
-        FaceRenderer(project).render(theme: theme, scale: 1).1.first { $0.layout === layout }?.rect ?? .zero
+        FaceRenderer(project).boxes(theme: theme).first { $0.layout === layout }?.rect ?? .zero
     }
 
     var body: some View {

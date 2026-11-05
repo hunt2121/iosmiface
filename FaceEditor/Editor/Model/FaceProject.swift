@@ -66,7 +66,15 @@ final class FaceProject: ObservableObject, Identifiable {
     @Published private(set) var revision = 0
 
     private var undoStack: [(Data, [String: Data], ProjectMeta)] = []
+    private var redoStack: [(Data, [String: Data], ProjectMeta)] = []
     var canUndo: Bool { !undoStack.isEmpty }
+    var canRedo: Bool { !redoStack.isEmpty }
+    /// Розпаковані картинки проєкту, спільні для всіх рендерів
+    let images = ImageCache()
+    /// Що записати на диск при наступному збереженні (а не всі файли щоразу)
+    private var dirty = Set<String>()
+    private var removed = Set<String>()
+    private var fullSave = true
 
     init(id: String, folder: URL, root: XNode, files: [String: Data], meta: ProjectMeta) {
         self.id = id; self.folder = folder; self.root = root; self.files = files; self.meta = meta
@@ -113,6 +121,7 @@ final class FaceProject: ObservableObject, Identifiable {
     func edit(_ change: (FaceProject) -> Void) {
         undoStack.append((Data(XML.print(root)), files, meta))
         if undoStack.count > 40 { undoStack.removeFirst() }
+        redoStack.removeAll()
         change(self)
         meta.modified = Date()
         meta.edited = true
@@ -123,13 +132,35 @@ final class FaceProject: ObservableObject, Identifiable {
 
     func undo() {
         guard let snap = undoStack.popLast(), let r = try? XML.parse([UInt8](snap.0)) else { return }
-        root = r; files = snap.1; meta = snap.2
+        redoStack.append((Data(XML.print(root)), files, meta))
+        restore(r, snap.1, snap.2)
+    }
+
+    func redo() {
+        guard let snap = redoStack.popLast(), let r = try? XML.parse([UInt8](snap.0)) else { return }
+        undoStack.append((Data(XML.print(root)), files, meta))
+        restore(r, snap.1, snap.2)
+    }
+
+    private func restore(_ r: XNode, _ f: [String: Data], _ m: ProjectMeta) {
+        root = r; files = f; meta = m
+        images.removeAll()
+        fullSave = true
         revision += 1
         save()
     }
 
-    func setFile(_ path: String, _ data: Data) { files[MemoryStorage.normalizedPath(path)] = data }
-    func removeFile(_ path: String) { files[MemoryStorage.normalizedPath(path)] = nil }
+    /// Файли вже на диску (щойно прочитаний проєкт)
+    func markSaved() { fullSave = false; dirty.removeAll(); removed.removeAll() }
+
+    func setFile(_ path: String, _ data: Data) {
+        let k = MemoryStorage.normalizedPath(path)
+        files[k] = data; images.remove(k); dirty.insert(k); removed.remove(k)
+    }
+    func removeFile(_ path: String) {
+        let k = MemoryStorage.normalizedPath(path)
+        files[k] = nil; images.remove(k); dirty.remove(k); removed.insert(k)
+    }
 
     // MARK: Збереження
 
@@ -141,12 +172,15 @@ final class FaceProject: ObservableObject, Identifiable {
         try? Data(xml).write(to: folder.appendingPathComponent("manifest.xml"))
         if let m = try? JSONEncoder().encode(meta) { try? m.write(to: folder.appendingPathComponent("editor.json")) }
         let filesDir = folder.appendingPathComponent("files")
-        try? fm.removeItem(at: filesDir)
-        for (p, d) in files {
+        // лише змінені файли; повністю — після відкату й при першому збереженні
+        if fullSave { try? fm.removeItem(at: filesDir) }
+        for p in removed { try? fm.removeItem(at: filesDir.appendingPathComponent(p)) }
+        for (p, d) in files where fullSave || dirty.contains(p) {
             let u = filesDir.appendingPathComponent(p)
             try? fm.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? d.write(to: u)
         }
+        fullSave = false; dirty.removeAll(); removed.removeAll()
     }
 
     static func load(folder: URL) -> FaceProject? {
@@ -169,7 +203,9 @@ final class FaceProject: ObservableObject, Identifiable {
                 files[MemoryStorage.normalizedPath(rel)] = d
             }
         }
-        return FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
+        let project = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
+        project.markSaved()
+        return project
     }
 
     /// Розпаковує .bin у дерево маніфесту й файли (без запису на диск).
@@ -317,4 +353,21 @@ extension MemoryStorage {
         }
         return parts.joined(separator: "/")
     }
+}
+
+/// Розпаковані картинки проєкту (потокобезпечно: мініатюри малюються у фоні)
+final class ImageCache {
+    private var map: [String: CGImage] = [:]
+    private let lock = NSLock()
+
+    func get(_ key: String, make: () -> CGImage?) -> CGImage? {
+        lock.lock()
+        if let c = map[key] { lock.unlock(); return c }
+        lock.unlock()
+        guard let img = make() else { return nil }
+        lock.lock(); map[key] = img; lock.unlock()
+        return img
+    }
+    func remove(_ key: String) { lock.lock(); map[key] = nil; lock.unlock() }
+    func removeAll() { lock.lock(); map.removeAll(); lock.unlock() }
 }

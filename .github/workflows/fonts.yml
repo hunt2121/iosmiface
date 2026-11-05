@@ -41,12 +41,27 @@ jobs:
           print(open('report.txt').read()[:6000])
           PY
           python3 sub.py
+          # латиниця MiSans (кирилиці в MiSans немає — її браслет і iOS беруть з іншого шрифту): 10 насичень у TTF
+          cat > conv.py <<'PY'
+          import glob, os
+          from fontTools.ttLib import TTFont
+          os.makedirs('out', exist_ok=True)
+          for f in glob.glob('package/lib/*.119.woff2'):
+              t = TTFont(f)
+              ps = t['name'].getDebugName(6) or os.path.basename(f)
+              t.flavor = None
+              t.save(os.path.join('out', ps + '.ttf'))
+              print(ps, os.path.getsize(os.path.join('out', ps + '.ttf')))
+          PY
+          python3 conv.py
+          cp package/LICENSE* out/ 2>/dev/null || true
+          ls -la out
       - name: Publish
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          zip -q fonts-report.zip listing.txt report.txt || true
+          zip -q fonts-report.zip listing.txt report.txt out/* || true
           for id in $(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | select(.name=="fonts output") | .id'); do
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
           done

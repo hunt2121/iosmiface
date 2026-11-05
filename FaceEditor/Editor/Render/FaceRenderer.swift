@@ -16,8 +16,8 @@ final class FaceRenderer {
     var time: Double = 0
     /// Тимчасові позиції шарів під час перетягування (без зміни маніфесту)
     var overrides: [ObjectIdentifier: CGPoint] = [:]
-    private var cache: [String: CGImage] = [:]
-    private var cacheRevision = -1
+    /// Лише рамки шарів, без малювання (інспектор, вирівнювання)
+    private var measureOnly = false
 
     /// Кольоровий варіант циферблата: 0 — основний, далі за colorGroupTable
     var colorVariant = 0
@@ -33,14 +33,15 @@ final class FaceRenderer {
 
     // MARK: Картинки
 
+    /// Картинка проєкту; розпаковані картинки спільні для всіх рендерів проєкту (полотно, інспектор, мініатюри)
+    /// і скидаються лише для змінених файлів
     func image(_ src: String?) -> CGImage? {
         guard let src else { return nil }
-        if cacheRevision != p.revision { cache = [:]; cacheRevision = p.revision }
-        if let c = cache[src] { return c }
-        guard let d = p.file(src), let png = PNG.decode([UInt8](d)) else { return nil }
-        let img = RGBAImage(w: png.w, h: png.h, px: png.rgba).cgImage
-        cache[src] = img
-        return img
+        let path = MemoryStorage.normalizedPath(src)
+        return p.images.get(path) {
+            guard let d = p.file(path), let png = PNG.decode([UInt8](d)) else { return nil }
+            return RGBAImage(w: png.w, h: png.h, px: png.rgba).cgImage
+        }
     }
 
     func frames(_ arr: XNode?) -> [CGImage] {
@@ -80,7 +81,25 @@ final class FaceRenderer {
     }
 
     private func put(_ img: CGImage, _ r: CGRect, _ c: CGContext) {
+        guard !measureOnly else { return }
         UIImage(cgImage: img).draw(in: r)
+    }
+
+    /// Рамки шарів теми без малювання — для інспектора й вирівнювання (у рази швидше за render)
+    func boxes(theme: Int) -> [LayerBox] {
+        measureOnly = true
+        defer { measureOnly = false }
+        guard let ctx = CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return [] }
+        UIGraphicsPushContext(ctx)
+        defer { UIGraphicsPopContext() }
+        return p.layouts(theme).map { l in
+            let o = overrides[ObjectIdentifier(l)]
+            let x = o?.x ?? CGFloat(l.int("x")), y = o?.y ?? CGFloat(l.int("y"))
+            let r = draw(pick(l.string("ref")), at: CGPoint(x: x, y: y), in: ctx, depth: 0)
+            return LayerBox(layout: l, rect: r ?? CGRect(x: x, y: y, width: 16, height: 16))
+        }
     }
 
     private func value(_ res: XNode) -> Int {
@@ -218,6 +237,13 @@ final class FaceRenderer {
                     endAngle: (a0 + span - 90) * .pi / 180, clockwise: span >= 0)
         path.close()
         c.saveGState(); c.addPath(path.cgPath); c.clip(); put(fg, r, c); c.restoreGState()
+        // крапка-індикатор на кінці заповнення
+        if let ind = image(pick(res.string("indicatorImage"))?.string("src")) {
+            let ir = CGFloat(res.has("indicatorRadius") ? res.int("indicatorRadius") : res.int("barRadius"))
+            let a = (a0 + span) * .pi / 180
+            let ix = cx + ir * sin(a), iy = cy - ir * cos(a)
+            put(ind, CGRect(x: ix - CGFloat(ind.width) / 2, y: iy - CGFloat(ind.height) / 2, width: CGFloat(ind.width), height: CGFloat(ind.height)), c)
+        }
         return u.union(r)
     }
 
@@ -243,29 +269,92 @@ final class FaceRenderer {
     }
 
     private func drawText(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
-        let w = CGFloat(max(res.int("w"), 1)), h = CGFloat(max(res.int("h"), 1))
         var s = res.string("string") ?? ""
         for src in res.all("Content").compactMap({ $0.string("source") }) {
             if let r = s.range(of: "%s") ?? s.range(of: "%d") { s.replaceSubrange(r, with: String(value(res: src))) }
         }
-        let size = res.has("fontSize") ? CGFloat(res.int("fontSize")) : max(10, h * 0.8)
-        let weights: [String: UIFont.Weight] = ["thin": .thin, "extralight": .ultraLight, "light": .light, "regular": .regular, "normal": .regular,
-                                                "medium": .medium, "semibold": .semibold, "demibold": .semibold, "bold": .bold, "heavy": .heavy]
-        let weight = weights[res.string("fontWeight") ?? ""] ?? .regular
+        let arc = (res.string("style") ?? "normal") != "normal"
+        let h0 = CGFloat(max(res.int("h"), 1))
+        let size = res.has("fontSize") ? CGFloat(max(res.int("fontSize"), 1)) : max(10, h0 * 0.8)
+        let font = Self.font(res.string("fontWeight"), size: size)
         let color = AssetFactory.color(res.string("color") ?? "#FFFFFF").withAlphaComponent(CGFloat(res.int("opacity", 100)) / 100)
+        let kern = CGFloat(res.int("letterSpace"))
+        if arc { return drawArcText(s, res, o, c, font: font, color: color, kern: kern) }
+        let w = CGFloat(max(res.int("w"), 1)), h = h0
         let para = NSMutableParagraphStyle()
         let aligns: [String: NSTextAlignment] = ["center": .center, "right": .right]
         para.alignment = aligns[res.string("align") ?? ""] ?? .left
-        para.lineBreakMode = .byClipping
-        let attrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: size, weight: weight), .foregroundColor: color,
-                                                    .paragraphStyle: para, .kern: CGFloat(res.int("letterSpace"))]
+        let wrap = res.string("longMode") == "wrap"
+        para.lineBreakMode = wrap ? .byWordWrapping : .byClipping
+        para.lineSpacing = CGFloat(res.int("lineSpace"))
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: para, .kern: kern]
         let r = CGRect(x: o.x, y: o.y, width: w, height: h)
+        guard !measureOnly else { return r }
         let str = NSAttributedString(string: s, attributes: attrs)
-        let th = str.boundingRect(with: CGSize(width: w, height: 1000), options: [.usesLineFragmentOrigin], context: nil).height
-        c.saveGState(); c.clip(to: r)
-        str.draw(with: CGRect(x: r.minX, y: r.minY + max(0, (h - th) / 2), width: w, height: max(h, th)), options: [.usesLineFragmentOrigin], context: nil)
+        let opts: NSStringDrawingOptions = wrap ? [.usesLineFragmentOrigin] : [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
+        let bound = CGSize(width: wrap ? w : 10_000, height: 1000)
+        let tb = str.boundingRect(with: bound, options: [.usesLineFragmentOrigin], context: nil)
+        c.saveGState()
+        // поворот навколо середини поля
+        let rot = CGFloat(res.int("rotation"))
+        if rot != 0 { c.translateBy(x: r.midX, y: r.midY); c.rotate(by: rot * .pi / 180); c.translateBy(x: -r.midX, y: -r.midY) }
+        c.clip(to: r)
+        var dx: CGFloat = 0
+        if !wrap {
+            // рядок без переносу: вирівнювання вручну, бо поле ширше за ширину малювання
+            switch para.alignment { case .center: dx = (w - tb.width) / 2; case .right: dx = w - tb.width; default: dx = 0 }
+        }
+        str.draw(with: CGRect(x: r.minX + (wrap ? 0 : dx), y: r.minY + max(0, (h - tb.height) / 2),
+                              width: wrap ? w : tb.width + 2, height: max(h, tb.height)), options: opts, context: nil)
         c.restoreGState()
         return r
+    }
+
+    /// Текст дугою: коло радіуса radius, рамка — квадрат 2r від точки макета; кут 0° — угорі, за годинниковою
+    private func drawArcText(_ s: String, _ res: XNode, _ o: CGPoint, _ c: CGContext, font: UIFont, color: UIColor, kern: CGFloat) -> CGRect? {
+        let r = CGFloat(max(res.int("radius"), 1))
+        let box = CGRect(x: o.x, y: o.y, width: r * 2, height: r * 2)
+        guard !measureOnly, !s.isEmpty else { return box }
+        let cx = box.midX, cy = box.midY
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        let widths = s.map { (String($0) as NSString).size(withAttributes: attrs).width + kern }
+        let total = widths.reduce(0, +)
+        // радіус середньої лінії тексту залежно від verticalAlign
+        let va = res.string("verticalAlign") ?? "top"
+        let mid: CGFloat = va == "center" ? r - font.lineHeight / 2 : va == "bottom" ? r - font.lineHeight : r
+        let rr = max(1, va == "top" ? r - font.ascender : mid)
+        let a0 = CGFloat(res.int("startAngle")), span = CGFloat(res.int("span"))
+        let textAngle = total / rr * 180 / .pi
+        var a: CGFloat
+        switch res.string("align") ?? "center" {
+        case "left": a = a0
+        case "right": a = a0 + span - textAngle
+        default: a = a0 + (span - textAngle) / 2
+        }
+        for (ch, w) in zip(s, widths) {
+            let half = w / 2 / rr * 180 / .pi
+            let ang = (a + half) * .pi / 180
+            c.saveGState()
+            c.translateBy(x: cx + rr * sin(ang), y: cy - rr * cos(ang))
+            c.rotate(by: ang)
+            (String(ch) as NSString).draw(at: CGPoint(x: -(w - kern) / 2, y: -font.ascender), withAttributes: attrs)
+            c.restoreGState()
+            a += w / rr * 180 / .pi
+        }
+        return box
+    }
+
+    /// MiSans потрібної насиченості (як на браслеті), якщо шрифт є в застосунку; інакше системний
+    static func font(_ weight: String?, size: CGFloat) -> UIFont {
+        let names: [String: String] = ["thin": "Thin", "extralight": "ExtraLight", "light": "Light", "normal": "Normal",
+                                       "regular": "Regular", "medium": "Medium", "semibold": "Semibold",
+                                       "demibold": "Demibold", "bold": "Bold", "heavy": "Heavy"]
+        let key = (weight ?? "regular").lowercased()
+        if let n = names[key], let f = UIFont(name: "MiSans-" + n, size: size) { return f }
+        let weights: [String: UIFont.Weight] = ["thin": .thin, "extralight": .ultraLight, "light": .light, "regular": .regular,
+                                                "normal": .regular, "medium": .medium, "semibold": .semibold, "demibold": .semibold,
+                                                "bold": .bold, "heavy": .heavy]
+        return UIFont.systemFont(ofSize: size, weight: weights[key] ?? .regular)
     }
 
     private func value(res src: String) -> Int { SampleData.value(src, live: live) }

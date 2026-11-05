@@ -20,6 +20,17 @@ struct CanvasView: View {
     @State private var guideV = false
     @State private var guideH = false
     @State private var moved = false
+    /// Під час перетягування: шари під вибраним, сам шар і шари над ним — намальовані один раз;
+    /// далі лише зсувається картинка шару (без перемальовування всього циферблата на кожен рух пальця)
+    @State private var dragCache: DragCache?
+
+    struct DragCache {
+        let below: UIImage
+        let layer: UIImage
+        let above: UIImage
+        /// рамки шарів на початку перетягування
+        let boxes: [LayerBox]
+    }
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -30,10 +41,22 @@ struct CanvasView: View {
             let scale = min((geo.size.width - 32 - 2 * b) / W, (geo.size.height - 24 - 2 * b) / H)
             let size = CGSize(width: W * scale, height: H * scale)
             // рівно під фізичні пікселі полотна (раніше — у 6 разів більше, що гальмувало перетягування)
-            let r = currentRender(scale * displayScale)
+            let cache = dragCache
+            let r: (UIImage, [LayerBox])? = cache == nil ? currentRender(scale * displayScale) : nil
+            let boxes = r?.1 ?? cache?.boxes ?? []
+            // зсув перетягуваного шару (у пікселях браслета)
+            let shift = cache != nil && dragPos != nil ? CGSize(width: dragPos!.x - dragStart.x, height: dragPos!.y - dragStart.y) : .zero
             ZStack(alignment: .topLeading) {
-                Image(uiImage: r.0).resizable().frame(width: size.width, height: size.height)
-                if let box = selectedBox(r.1) {
+                if let r {
+                    Image(uiImage: r.0).resizable().frame(width: size.width, height: size.height)
+                } else if let cache {
+                    Image(uiImage: cache.below).resizable().frame(width: size.width, height: size.height)
+                    Image(uiImage: cache.layer).resizable().frame(width: size.width, height: size.height)
+                        .offset(x: shift.width * scale, y: shift.height * scale)
+                    Image(uiImage: cache.above).resizable().frame(width: size.width, height: size.height)
+                }
+                if let box0 = selectedBox(boxes) {
+                    let box = box0.offsetBy(dx: shift.width, dy: shift.height)
                     let rect = CGRect(x: box.minX * scale, y: box.minY * scale, width: box.width * scale, height: box.height * scale)
                     SelectionFrame(rect: rect)
                     if let pos = dragPos {
@@ -49,7 +72,7 @@ struct CanvasView: View {
             }
             .frame(width: size.width, height: size.height)
             .contentShape(Rectangle())
-            .gesture(drag(scale: scale, boxes: r.1, W: W, H: H))
+            .gesture(drag(scale: scale, boxes: boxes, W: W, H: H))
             .faceCapsule()
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
             .accessibilityElement(children: .ignore)
@@ -65,6 +88,19 @@ struct CanvasView: View {
         rd.colorVariant = variant
         if let l = dragLayout, let p = dragPos { rd.overrides[ObjectIdentifier(l)] = p }
         return rd.render(theme: theme, scale: max(1, pixelScale))
+    }
+
+    /// Три шари для перетягування: під вибраним, вибраний, над ним
+    private func makeCache(for l: XNode, pixelScale: CGFloat) -> DragCache? {
+        guard let i = project.layouts(theme).firstIndex(where: { $0 === l }) else { return nil }
+        let rd = renderer ?? FaceRenderer(project)
+        rd.overrides = [:]
+        rd.colorVariant = variant
+        let ps = max(1, pixelScale)
+        let below = rd.render(theme: theme, scale: ps, layers: { $0 < i }).0
+        let layer = rd.render(theme: theme, scale: ps, layers: { $0 == i }, opaque: false).0
+        let above = rd.render(theme: theme, scale: ps, layers: { $0 > i }, opaque: false).0
+        return DragCache(below: below, layer: layer, above: above, boxes: rd.boxes(theme: theme))
     }
 
     private func selectedBox(_ boxes: [LayerBox]) -> CGRect? {
@@ -91,7 +127,10 @@ struct CanvasView: View {
                 }
                 guard let l = dragLayout else { return }
                 let dx = v.translation.width / scale, dy = v.translation.height / scale
-                if abs(dx) + abs(dy) > 1.5 { moved = true }
+                if abs(dx) + abs(dy) > 1.5, !moved {
+                    moved = true
+                    dragCache = makeCache(for: l, pixelScale: scale * displayScale)
+                }
                 guard moved else { return }
                 var x = dragStart.x + dx, y = dragStart.y + dy
                 let g = CGFloat(max(1, grid))
@@ -110,7 +149,7 @@ struct CanvasView: View {
                 dragPos = CGPoint(x: x.rounded(), y: y.rounded())
             }
             .onEnded { v in
-                defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false }
+                defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false; dragCache = nil }
                 guard let l = dragLayout else {
                     // дотик повз шари — зняти вибір
                     selected = nil
