@@ -40,6 +40,9 @@ final class FaceEditorUITests: XCTestCase {
         sleep(1); shot("add-element")
         app.buttons["Дуга"].firstMatch.tap()
         sleep(1); shot("data-source")
+        let search = app.searchFields.firstMatch
+        if search.waitForExistence(timeout: 2) { search.tap(); search.typeText("Батарея") }
+        sleep(1); shot("data-source-search")
         app.buttons["Батарея"].firstMatch.tap()
         sleep(2); shot("arc-added")
         app.buttons["Шари"].firstMatch.tap()

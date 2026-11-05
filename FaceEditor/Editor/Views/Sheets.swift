@@ -204,7 +204,10 @@ struct DataSourcePicker: View {
                                     Spacer()
                                     if s == current { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(Color.accentColor) }
                                 }
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(SampleData.title(s))
                         }
                     }
                 }
