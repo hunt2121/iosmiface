@@ -1,39 +1,48 @@
 name: Test editor
-# Тести редактора циферблатів і BandFace на симуляторі зі знімками екранів. Лише вручну, одна машина.
-# IPA BandFace збирає build.yml.
+# Тести редактора циферблатів на симуляторі. Лише вручну й лише коли справді потрібно, одна машина.
+# За замовчуванням — тільки швидкі тести логіки (компілятор, редактор, превʼю).
+# ui: true — ще й прохід екранами BandFace зі знімками. IPA збирає build.yml.
 on:
   workflow_dispatch:
+    inputs:
+      ui:
+        description: "Прохід екранами зі знімками"
+        type: boolean
+        default: false
 permissions:
   contents: write
 jobs:
-  build:
+  test:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 25
     env:
       BUILD_NUM: ${{ github.run_number }}
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: |
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
-          xcodebuild -version
       - name: Generate Xcode project
         run: brew install xcodegen && xcodegen generate
-      # Тести на симуляторі: логіка редактора, прохід екранами редактора і BandFace (зі знімками)
+      # -O: тести компілятора (PNG, RLE) у неоптимізованій збірці йдуть у рази довше
       - name: Test on simulator
-        continue-on-error: true
+        id: test
         run: |
           DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
-          echo "Simulator $DEV"
+          ONLY="-only-testing:EditorTests"
+          if [ "${{ inputs.ui }}" = "true" ]; then ONLY="$ONLY -only-testing:BandFaceUITests"; fi
           mkdir -p test-out
-          for SCHEME in FaceEditor BandFace; do
-            TEST_RUNNER_SHOTS="$PWD/test-out" xcodebuild test -project BandFace.xcodeproj -scheme $SCHEME \
-              -destination "id=$DEV" -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO 2>&1 | tee test-out/test-$SCHEME.log | \
-              grep -E "error:|failed|passed|Test Suite|Executed" | head -60
-          done
+          set -o pipefail
+          TEST_RUNNER_SHOTS="$PWD/test-out" xcodebuild test -project BandFace.xcodeproj -scheme BandFace \
+            -destination "id=$DEV" -derivedDataPath build-sim $ONLY -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO SWIFT_OPTIMIZATION_LEVEL=-O COMPILER_INDEX_STORE_ENABLE=NO 2>&1 | \
+            tee test-out/test.log | grep -E "error:|failed|Executed|\*\* TEST" | head -60
+      # Знімки й журнал — лише для проходу екранами або коли тести впали
       - name: Publish test output
-        if: always()
+        if: always() && (inputs.ui || steps.test.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

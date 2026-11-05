@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Логіка редактора на симуляторі: створення, усі типи елементів, рендер, збирання й відкриття .bin.
 import XCTest
-@testable import FaceEditor
+@testable import BandFace
 
 @MainActor
 final class FaceEditorTests: XCTestCase {

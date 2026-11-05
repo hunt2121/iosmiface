@@ -40,70 +40,74 @@ final class BandFaceUITests: XCTestCase {
         return app
     }
 
+    /// Коротка пауза на анімацію (замість довгих sleep)
+    func settle() { usleep(600_000) }
+
     func button(_ app: XCUIApplication, containing text: String) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
     func testStoreAndEditorUkrainian() {
         let app = launch("uk", "uk_UA")
-        sleep(2); shot("faces")
+        settle(); shot("faces")
         app.tabBars.buttons["Магазин"].tap()
-        sleep(4); shot("store")
+        _ = app.staticTexts["BigWatch"].waitForExistence(timeout: 5)
+        usleep(1_500_000); shot("store")   // превʼю малюються у фоні
         app.staticTexts["BigWatch"].firstMatch.tap()
-        sleep(2); shot("store-detail")
+        settle(); shot("store-detail")
         app.swipeUp()
-        sleep(1); shot("store-detail-bottom")
+        settle(); shot("store-detail-bottom")
         let edit = button(app, containing: "Змінити в редакторі")
         XCTAssertTrue(edit.waitForExistence(timeout: 3))
         edit.tap()
-        sleep(3); shot("editor-copy")
+        settle(); shot("editor-copy")
         // кроки: x=106 (середина), y≈474 з 520
         let canvas = app.descendants(matching: .any)["canvas"].firstMatch
         if canvas.waitForExistence(timeout: 3) {
             canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 470.0 / 520.0)).tap()
-            sleep(1); shot("steps-selected")
+            settle(); shot("steps-selected")
         }
         let done = app.buttons["Готово"].firstMatch
         done.press(forDuration: 1.2)
-        sleep(1); shot("done-menu")
+        settle(); shot("done-menu")
         let install = app.buttons["Встановити на пристрій"].firstMatch
         if install.waitForExistence(timeout: 2) {
             install.tap()
-            sleep(2); shot("install-from-editor")
+            settle(); shot("install-from-editor")
             if app.alerts.firstMatch.waitForExistence(timeout: 2) { app.alerts.firstMatch.buttons.firstMatch.tap() }
-            sleep(1)
+            settle()
             app.tabBars.buttons["Циферблати"].tap()
-            sleep(2); shot("faces-with-editor-face")
+            settle(); shot("faces-with-editor-face")
         }
         app.tabBars.buttons["Редактор"].tap()
-        sleep(2); shot("editor-tab")
+        settle(); shot("editor-tab")
     }
 
     func testEditorEnglish() {
         let app = launch("en", "en_US")
         app.tabBars.buttons["Editor"].tap()
-        sleep(1); shot("en-editor-empty")
+        settle(); shot("en-editor-empty")
         app.buttons["New watch face"].firstMatch.tap()
-        sleep(1)
+        settle()
         app.buttons["Create"].tap()
-        sleep(2); shot("en-editor")
+        settle(); shot("en-editor")
         let canvas = app.descendants(matching: .any)["canvas"].firstMatch
         if canvas.waitForExistence(timeout: 3) {
             canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 120.0 / 520.0)).tap()
-            sleep(1); shot("en-selected")
+            settle(); shot("en-selected")
         }
         app.buttons["Element"].firstMatch.tap()
-        sleep(1); shot("en-add-element")
+        settle(); shot("en-add-element")
         app.buttons["Arc"].firstMatch.tap()
-        sleep(1); shot("en-data-source")
+        settle(); shot("en-data-source")
         let search = app.searchFields.firstMatch
         if search.waitForExistence(timeout: 2) { search.tap(); search.typeText("Battery") }
-        sleep(1)
+        settle()
         app.buttons["Battery"].firstMatch.tap()
-        sleep(2); shot("en-arc-added")
+        settle(); shot("en-arc-added")
         app.buttons["Close"].firstMatch.tap()
-        sleep(1)
+        settle()
         if app.buttons["Save and close"].waitForExistence(timeout: 2) { app.buttons["Save and close"].tap() }
-        sleep(2); shot("en-editor-list")
+        settle(); shot("en-editor-list")
     }
 }
