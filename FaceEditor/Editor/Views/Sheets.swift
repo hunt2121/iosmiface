@@ -305,7 +305,9 @@ struct LayersSheet: View {
                             Spacer()
                             if l === selected { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
                 .onMove { from, to in
                     guard let f = from.first else { return }
