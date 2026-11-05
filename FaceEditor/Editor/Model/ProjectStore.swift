@@ -51,7 +51,9 @@ final class ProjectStore: ObservableObject {
     /// `asCopy` — копія чужого циферблата (з магазину): новий ID і «(копія)» в назві.
     func importBin(_ data: Data, name: String, asCopy: Bool = false) throws -> FaceProject {
         let (root, files) = try FaceProject.unpack(data)
-        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: files, meta: ProjectMeta())
+        var meta = ProjectMeta()
+        meta.sourceKey = FacePreviews.dataKey(data)
+        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: files, meta: meta)
         if (root.string("name") ?? "").isEmpty { root.set("name", name) }
         if asCopy {
             root.set("id", Self.newFaceID())

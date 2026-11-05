@@ -80,6 +80,8 @@ enum FacePreviews {
 
     private static func load(_ k: String) -> Shots? {
         if let s = memory.object(forKey: k as NSString) { return s }
+        // повний набір (основний, AOD, анімація) — лише якщо його малювали з .bin; мініатюра редактора — не повний
+        guard FileManager.default.fileExists(atPath: url(k, "full").path) else { return nil }
         guard let d = try? Data(contentsOf: url(k, "main.png")), let main = UIImage(data: d, scale: 1) else { return nil }
         let aod = (try? Data(contentsOf: url(k, "aod.png"))).flatMap { UIImage(data: $0, scale: 1) }
         let gif = try? Data(contentsOf: url(k, "anim.gif"))
@@ -116,6 +118,8 @@ enum FacePreviews {
         let aod = project.themes.count > 1 && !project.layouts(1).isEmpty ? png(1, "aod.png") : nil
         let gif = animation(project, renderer)
         if let gif { try? gif.write(to: url(k, "anim.gif")) }
+        else { FileManager.default.createFile(atPath: url(k, "noanim").path, contents: Data()) }
+        FileManager.default.createFile(atPath: url(k, "full").path, contents: Data())
         return Shots(main: main, alwaysOn: aod, gif: gif)
     }
 
@@ -161,9 +165,24 @@ enum FacePreviews {
         return c
     }()
 
-    /// Ключ проєкту: змінюється після кожної зміни проєкту
+    /// Ключ превʼю для вмісту .bin
+    static func dataKey(_ data: Data) -> String { key(data) }
+
+    /// Ключ проєкту: поки проєкт не змінювали — ключ .bin, з якого його відкрито (ті самі файли, що в магазині);
+    /// після змін — власний, що змінюється з кожною зміною
     static func key(_ p: FaceProject) -> String {
-        "p-\(p.id)-\(Int(p.meta.modified.timeIntervalSince1970 * 1000))-\(version)"
+        if !p.meta.edited, let s = p.meta.sourceKey { return s }
+        return "p-\(p.id)-\(Int(p.meta.modified.timeIntervalSince1970 * 1000))-\(version)"
+    }
+
+    /// Зібраний із проєкту .bin отримує вже намальовані превʼю проєкту (вкладка «Циферблати» не малює їх удруге)
+    static func alias(_ data: Data, from p: FaceProject) {
+        let src = key(p), dst = key(data)
+        guard src != dst else { return }
+        let fm = FileManager.default
+        for part in ["main.png", "anim.gif"] where fm.fileExists(atPath: url(src, part).path) && !fm.fileExists(atPath: url(dst, part).path) {
+            try? fm.copyItem(at: url(src, part), to: url(dst, part))
+        }
     }
 
     /// Мініатюра з пам'яті або диска (миттєво; nil — ще не малювали)
@@ -210,6 +229,7 @@ enum FacePreviews {
     /// Файли попередніх версій цього проєкту більше не потрібні
     private static func dropOld(_ p: FaceProject) {
         let prefix = "p-\(p.id)-", current = key(p)
+        guard current.hasPrefix("p-") else { return }   // спільний ключ із .bin — нічого власного ще немає
         for name in (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
         where name.hasPrefix(prefix) && !name.hasPrefix(current) {
             try? FileManager.default.removeItem(at: dir.appendingPathComponent(name))

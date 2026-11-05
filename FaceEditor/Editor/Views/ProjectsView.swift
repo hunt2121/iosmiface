@@ -184,6 +184,7 @@ struct ProjectsView: View {
         guard let install else { return }
         do {
             let (data, _) = try p.compile()
+            FacePreviews.alias(data, from: p)
             install(data, p.displayName)
         } catch {
             alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")

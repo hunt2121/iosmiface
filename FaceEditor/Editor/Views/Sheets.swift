@@ -395,17 +395,19 @@ struct PreviewView: View {
     @ObservedObject var project: FaceProject
     let theme: Int
     @Environment(\.dismiss) private var dismiss
-    @State private var renderer: FaceRenderer?
-    @State private var start = Date()
-
-    /// Крок оновлення: інтервал анімації (якщо на темі є Sprite), інакше раз на секунду для годинника
-    private var step: Double {
-        let sprites = project.layouts(theme).compactMap { project.resource(ref: $0.string("ref")) }.filter { $0.tag == "Sprite" }
-        guard let s = sprites.first else { return 1 }
-        return Double(max(30, Int(s.int("interval", 100)))) / 1000
-    }
-
     @Environment(\.displayScale) private var displayScale
+    @State private var renderer: FaceRenderer?
+    @State private var sprite: SpriteLayer?
+
+    /// Анімація на темі: шари під нею й над нею малюються раз на секунду (живий час), а сама анімація —
+    /// кадрами з циферблата в UIImageView (без перемальовування всього екрана 16 разів на секунду)
+    struct SpriteLayer {
+        let index: Int
+        let x: CGFloat, y: CGFloat
+        let frames: [UIImage]
+        let duration: Double
+        let repeats: Int
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -414,22 +416,69 @@ struct PreviewView: View {
             let fit = min((geo.size.width - 80) / CGFloat(dev.width), (geo.size.height - 80) / CGFloat(dev.height))
             ZStack {
                 Color.black.ignoresSafeArea()
-                TimelineView(.periodic(from: start, by: step)) { ctx in
-                    let img: UIImage = {
-                        let r = renderer ?? FaceRenderer(project)
+                TimelineView(.periodic(from: Date(), by: 1)) { _ in
+                    let r = renderer ?? FaceRenderer(project)
+                    let s = sprite
+                    let below = { () -> UIImage in
                         r.live = true
-                        r.time = ctx.date.timeIntervalSince(start)
-                        return r.render(theme: theme, scale: max(1, fit * displayScale)).0
+                        let filter: ((Int) -> Bool)? = s.map { sp -> (Int) -> Bool in { $0 < sp.index } }
+                        return r.render(theme: theme, scale: max(1, fit * displayScale), layers: filter).0
                     }()
-                    Image(uiImage: img).resizable()
-                        .frame(width: CGFloat(dev.width) * fit, height: CGFloat(dev.height) * fit)
-                        .faceCapsule()
+                    let above: UIImage? = s.map { sp -> UIImage in
+                        r.render(theme: theme, scale: max(1, fit * displayScale), layers: { $0 > sp.index }, opaque: false).0
+                    }
+                    ZStack(alignment: .topLeading) {
+                        Image(uiImage: below).resizable()
+                        if let s {
+                            SpriteFramesView(frames: s.frames, duration: s.duration, repeats: s.repeats)
+                                .frame(width: (s.frames.first?.size.width ?? 0) * fit, height: (s.frames.first?.size.height ?? 0) * fit)
+                                .offset(x: s.x * fit, y: s.y * fit)
+                        }
+                        if let above { Image(uiImage: above).resizable() }
+                    }
+                    .frame(width: CGFloat(dev.width) * fit, height: CGFloat(dev.height) * fit)
+                    .clipped()
+                    .faceCapsule()
                 }
             }
         }
         .background(Color.black.ignoresSafeArea())
-        .onAppear { renderer = FaceRenderer(project); start = Date() }
+        .onAppear {
+            let r = FaceRenderer(project)
+            renderer = r
+            let ls = project.layouts(theme)
+            if let i = ls.firstIndex(where: { project.resource(ref: $0.string("ref"))?.tag == "Sprite" }),
+               let res = project.resource(ref: ls[i].string("ref")) {
+                let frames = r.frames(project.resource(ref: res.string("ref"))).map { UIImage(cgImage: $0) }
+                if frames.count > 1 {
+                    let ms = Double(max(16, Int(res.int("interval", 100))))
+                    sprite = SpriteLayer(index: i, x: CGFloat(ls[i].int("x")), y: CGFloat(ls[i].int("y")), frames: frames,
+                                         duration: ms * Double(frames.count) / 1000, repeats: Int(res.int("repeatCount")))
+                }
+            }
+        }
         .onTapGesture { dismiss() }
         .accessibilityLabel("Попередній перегляд. Торкніться, щоб закрити.")
     }
+}
+
+/// Кадри анімації (UIImageView: програє сама, без перемальовування SwiftUI)
+struct SpriteFramesView: UIViewRepresentable {
+    let frames: [UIImage]
+    let duration: Double
+    let repeats: Int
+
+    func makeUIView(context: Context) -> UIImageView {
+        let v = UIImageView()
+        v.contentMode = .scaleToFill
+        v.layer.magnificationFilter = .linear
+        v.animationImages = frames
+        v.animationDuration = duration
+        v.animationRepeatCount = max(0, repeats)
+        v.image = repeats > 0 ? frames.last : frames.first
+        v.startAnimating()
+        return v
+    }
+
+    func updateUIView(_ v: UIImageView, context: Context) {}
 }

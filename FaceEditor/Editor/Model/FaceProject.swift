@@ -37,6 +37,9 @@ struct ProjectMeta: Codable {
     var modified = Date()
     /// Циферблат змінювали в редакторі: при збиранні превʼю для браслета малюється заново
     var edited = false
+    /// Ключ превʼю .bin, з якого відкрито проєкт: поки проєкт не змінювали, превʼю й анімація ті самі,
+    /// що в магазині чи для вибраного файла, — не малюються вдруге
+    var sourceKey: String?
 
     init() {}
 
@@ -47,6 +50,7 @@ struct ProjectMeta: Codable {
         generators = (try? c.decodeIfPresent([String: Generator].self, forKey: .generators)) ?? [:]
         modified = (try? c.decodeIfPresent(Date.self, forKey: .modified)) ?? Date()
         edited = (try? c.decodeIfPresent(Bool.self, forKey: .edited)) ?? false
+        sourceKey = try? c.decodeIfPresent(String.self, forKey: .sourceKey)
     }
 }
 

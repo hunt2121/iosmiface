@@ -240,6 +240,7 @@ struct EditorView: View {
         guard let install else { return }
         do {
             let (data, _) = try project.compile()
+            FacePreviews.alias(data, from: project)
             let name = project.displayName
             dismiss()
             install(data, name)

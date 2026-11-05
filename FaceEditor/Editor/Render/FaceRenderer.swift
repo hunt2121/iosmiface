@@ -51,22 +51,25 @@ final class FaceRenderer {
 
     // MARK: Малювання
 
-    /// Тема на полотні розміру пристрою.
-    func render(theme: Int, scale: CGFloat = 1) -> (UIImage, [LayerBox]) {
+    /// Тема на полотні розміру пристрою. `layers` — лише шари з цими номерами (для перегляду з анімацією:
+    /// шари під нею й над нею малюються окремо); `opaque: false` — без фону теми (прозоре полотно).
+    func render(theme: Int, scale: CGFloat = 1, layers: ((Int) -> Bool)? = nil, opaque: Bool = true) -> (UIImage, [LayerBox]) {
         let dev = p.meta.device
         let size = CGSize(width: dev.width, height: dev.height)
         var boxes: [LayerBox] = []
         let fmt = UIGraphicsImageRendererFormat()
         fmt.scale = scale
-        fmt.opaque = true
+        fmt.opaque = opaque
         let img = UIGraphicsImageRenderer(size: size, format: fmt).image { ctx in
             let c = ctx.cgContext
             // пікселі браслета збільшуються плавно (полотно, перегляд, превʼю в BandFace)
             c.interpolationQuality = .high
-            let bg = p.theme(theme)?.string("bgColor") ?? "#000000"
-            c.setFillColor(AssetFactory.color(bg).cgColor)
-            c.fill(CGRect(origin: .zero, size: size))
-            for l in p.layouts(theme) {
+            if opaque {
+                let bg = p.theme(theme)?.string("bgColor") ?? "#000000"
+                c.setFillColor(AssetFactory.color(bg).cgColor)
+                c.fill(CGRect(origin: .zero, size: size))
+            }
+            for (i, l) in p.layouts(theme).enumerated() where layers?(i) ?? true {
                 let o = overrides[ObjectIdentifier(l)]
                 let x = o?.x ?? CGFloat(l.int("x")), y = o?.y ?? CGFloat(l.int("y"))
                 let r = draw(pick(l.string("ref")), at: CGPoint(x: x, y: y), in: c, depth: 0)
