@@ -91,11 +91,9 @@ enum ColorVariants {
         guard list.count > 1 else { disable(p); return }
         let joined = list.joined(separator: ",")
         p.root.set("colorGroupTable", joined)
-        // лише основні екрани: «Завжди на екрані» лишається в основному кольорі (і не множить картинки)
-        for th in p.themes {
-            if th.string("type") == "AOD" { th.remove("colorGroup"); th.remove("colorGroupTable") }
-            else { th.set("colorGroup", joined) }
-        }
+        // кольори в усіх темах, як у робочих циферблатах (експеримент без кольорів у «Завжди на екрані»
+        // разом із пропуском копій перезавантажував браслет)
+        for th in p.themes { th.set("colorGroup", joined) }
     }
 
     // MARK: Пошук

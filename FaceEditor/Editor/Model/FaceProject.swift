@@ -195,9 +195,9 @@ final class FaceProject: ObservableObject, Identifiable {
         let log = FaceCompilerLog()
         ColorVariants.syncThemes(self)
         let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
-        // кольорові варіанти: лише справжні, без копій незмінних картинок (експеримент — файл майже не росте)
-        let options = FaceCompilerOptions(colorCopies: false)
-        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), options: options, log: log)
+        // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується
+        // при виборі кольору (перевірено на Smart Band 10, збірка 235)
+        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), log: log)
         return (data, log.warnings)
     }
 
