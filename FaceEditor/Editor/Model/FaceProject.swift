@@ -197,8 +197,55 @@ final class FaceProject: ObservableObject, Identifiable {
         let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
         // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується
         // при виборі кольору (перевірено на Smart Band 10, збірка 235)
-        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), log: log)
+        let st = needsPreview ? storageWithFreshPreviews() : storage()
+        if ColorVariants.isEnabled(self) { addBackgroundFill(st) }
+        let data = try WatchfaceCompiler.build(from: st, log: log)
         return (data, log.warnings)
+    }
+
+    /// Циферблат із вибором кольору: браслет злегка підфарбовує фон теми вибраним кольором, тож найнижчим
+    /// шаром кладемо непрозору картинку кольору фону (якщо такого шару ще немає). Проєкт не змінюється.
+    private func addBackgroundFill(_ st: MemoryStorage) {
+        guard let xml = st.files["manifest.xml"], let root = try? XML.parse([UInt8](xml)) else { return }
+        let res: XNode
+        if let r = root.first("Resources") { res = r } else { res = XNode("Resources"); root.kids.insert(res, at: 0) }
+        let dev = meta.device
+        var used = Set(res.elements.compactMap { $0.string("name") })
+        for (t, theme) in root.all("Theme").enumerated() {
+            if let first = theme.all("Layout").first, coversScreen(first, res, st) { continue }
+            let color = theme.string("bgColor") ?? "#000000"
+            let fill = AssetFactory.render(dev.width, dev.height) { ctx in
+                ctx.setFillColor(AssetFactory.color(color).cgColor)
+                ctx.fill(CGRect(x: 0, y: 0, width: dev.width, height: dev.height))
+            }
+            var name = "bgfill_\(t)"
+            var i = 2
+            while used.contains(name) { name = "bgfill_\(t)_\(i)"; i += 1 }
+            used.insert(name)
+            st.files["\(name).png"] = fill.png
+            let e = XNode("Image")
+            e.set("name", name).set("src", "\(name).png").set("compressMethod", "RLEReversed")
+                .set("format", fill.bestFormat).set("recolorEnable", bool: false)
+            res.kids.append(e)
+            let l = XNode("Layout")
+            l.set("ref", "@" + name).set("x", int: 0).set("y", int: 0)
+            let idx = theme.kids.firstIndex { $0.tag == "Layout" } ?? theme.kids.count
+            theme.kids.insert(l, at: idx)
+        }
+        st.files["manifest.xml"] = Data(XML.print(root))
+    }
+
+    /// Шар — непрозора картинка на весь екран у точці 0,0
+    private func coversScreen(_ layout: XNode, _ res: XNode, _ st: MemoryStorage) -> Bool {
+        guard layout.int("x") == 0, layout.int("y") == 0, let ref = layout.string("ref"), ref.count > 1 else { return false }
+        let name = String(ref.dropFirst())
+        guard let img = res.elements.first(where: { $0.tag == "Image" && $0.string("name") == name }),
+              let src = img.string("src"), let d = st.files[MemoryStorage.normalizedPath(src)],
+              let png = PNG.decode([UInt8](d)) else { return false }
+        guard png.w >= meta.device.width, png.h >= meta.device.height else { return false }
+        var i = 3
+        while i < png.rgba.count { if png.rgba[i] < 255 { return false }; i += 4 }
+        return true
     }
 
     /// Розмір превʼю, яке браслет показує у списку циферблатів (як в офіційних циферблатах Smart Band 10)
