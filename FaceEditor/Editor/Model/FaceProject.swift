@@ -27,8 +27,8 @@ struct DeviceProfile: Codable, Equatable, Hashable, Identifiable {
     var height: Int
     var corner: Double
 
-    static let band10 = DeviceProfile(id: "band10", title: "Xiaomi Smart Band 10", width: 212, height: 520, corner: 106)
-    static let band9 = DeviceProfile(id: "band9", title: "Xiaomi Smart Band 9", width: 192, height: 490, corner: 96)
+    static let band10 = DeviceProfile(id: "band10", title: "Smart Band 10", width: 212, height: 520, corner: 106)
+    static let band9 = DeviceProfile(id: "band9", title: "Smart Band 9", width: 192, height: 490, corner: 96)
     static let all = [band10, band9]
 }
 

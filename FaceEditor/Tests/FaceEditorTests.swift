@@ -22,10 +22,15 @@ final class FaceEditorTests: XCTestCase {
         XCTAssertEqual(ui.size.width, 212)
         let (bin, warnings) = try p.compile()
         XCTAssertTrue(warnings.isEmpty, "\(warnings)")
-        // відкриваємо зібране як новий проєкт і збираємо знову — те саме
+        // відкриваємо зібране як новий проєкт і збираємо знову — те саме (порядок ресурсів збігається з порядком компілятора)
         let q = try store.importBin(bin, name: "back")
         defer { store.delete(q) }
-        XCTAssertEqual(try q.compile().0, bin)
+        let bin2 = try q.compile().0
+        XCTAssertEqual(bin2, bin)
+        // друге коло розпакування/збирання стабільне завжди
+        let q2 = try store.importBin(bin2, name: "back2")
+        defer { store.delete(q2) }
+        XCTAssertEqual(try q2.compile().0, bin2)
         // перегенерація, дублювання, видалення, відкат
         let digits = p.layouts(0)[0]
         let name = p.resource(ref: digits.string("ref"))!.string("name")!

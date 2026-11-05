@@ -96,6 +96,7 @@ struct EditorView: View {
             Button { renameText = project.name; showRename = true } label: {
                 Text(project.name.isEmpty ? "Без назви" : project.name).font(.headline).foregroundStyle(.primary).lineLimit(1)
             }
+            .buttonStyle(.plain)
             Spacer()
             Menu {
                 Button { exportBin() } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }

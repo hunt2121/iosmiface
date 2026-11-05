@@ -143,8 +143,9 @@ enum ElementFactory {
     static func addArc(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
         let fg = AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.color)
         let bg = AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.bgColor)
-        let fgName = addImageResource(p, fg, base: "arc")
+        // фон перед основною — так само, як їх упорядковує компілятор (стабільні id після розпакування)
         let bgName = addImageResource(p, bg, base: "arcBg")
+        let fgName = addImageResource(p, fg, base: "arc")
         let name = p.uniqueName("arc")
         p.meta.generators[name] = gen
         let e = XNode("DataItemArcProgressBar")
@@ -159,8 +160,8 @@ enum ElementFactory {
     static func addLine(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
         let fg = AssetFactory.bar(length: gen.length, width: gen.width, color: gen.color)
         let bg = AssetFactory.bar(length: gen.length, width: gen.width, color: gen.bgColor)
-        let fgName = addImageResource(p, fg, base: "bar")
         let bgName = addImageResource(p, bg, base: "barBg")
+        let fgName = addImageResource(p, fg, base: "bar")
         let name = p.uniqueName("line")
         p.meta.generators[name] = gen
         let e = XNode("DataItemLineProgressBar")

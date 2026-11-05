@@ -29,12 +29,10 @@ final class FaceEditorUITests: XCTestCase {
         app.buttons["Створити"].tap()
         sleep(2); shot("editor")
         // перший шар — години по центру зверху
-        let canvas = app.otherElements["Полотно циферблата"].firstMatch
-        if canvas.exists {
-            canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.22)).tap()
-        } else {
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
-        }
+        // години: центр по горизонталі, y≈120 з 520
+        let canvas = app.descendants(matching: .any)["canvas"].firstMatch
+        XCTAssertTrue(canvas.waitForExistence(timeout: 3))
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 120.0 / 520.0)).tap()
         sleep(1); shot("selected-look")
         app.buttons["Колір"].firstMatch.tap(); sleep(1); shot("selected-color")
         app.buttons["Позиція"].firstMatch.tap(); sleep(1); shot("selected-position")

@@ -48,7 +48,9 @@ struct CanvasView: View {
             .contentShape(Rectangle())
             .gesture(drag(scale: scale, boxes: r.1, W: W, H: H))
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel("Полотно циферблата")
+            .accessibilityIdentifier("canvas")
         }
     }
 

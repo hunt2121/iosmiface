@@ -78,28 +78,36 @@ enum AssetFactory {
         return UIFont(descriptor: d, size: size)
     }
 
-    /// Кадри «0»…«9» однакового розміру, щільно по висоті цифр.
+    /// Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).
     static func digitFrames(_ g: Generator) -> [RGBAImage] {
         let f = font(g)
         let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
-        var union = CGRect.null
         var advance: CGFloat = 0
-        for d in 0...9 {
-            let s = NSAttributedString(string: "\(d)", attributes: attrs)
-            let r = s.boundingRect(with: CGSize(width: 1000, height: 1000), options: [.usesDeviceMetrics], context: nil)
-            union = union.union(r)
-            advance = max(advance, s.size().width)
-        }
-        let pad: CGFloat = 1
-        let w = Int(ceil(max(advance, union.maxX) + pad * 2))
-        let h = Int(ceil(union.height + pad * 2))
-        return (0...9).map { d in
-            render(w, h) { _ in
+        for d in 0...9 { advance = max(advance, NSAttributedString(string: "\(d)", attributes: attrs).size().width) }
+        let w = Int(ceil(advance)) + 2
+        let lh = ceil(f.lineHeight)
+        let tall = Int(lh * 2)
+        let top = lh / 2
+        let full = (0...9).map { d in
+            render(w, tall) { _ in
                 let s = NSAttributedString(string: "\(d)", attributes: attrs)
-                let sw = s.size().width
-                // базова лінія: верх щільних меж має бути на pad
-                s.draw(at: CGPoint(x: (CGFloat(w) - sw) / 2, y: pad - f.ascender - union.minY))
+                s.draw(at: CGPoint(x: (CGFloat(w) - s.size().width) / 2, y: top))
             }
+        }
+        // спільні верх і низ усіх цифр
+        var minY = tall, maxY = -1
+        for img in full {
+            for y in 0..<tall {
+                var any = false
+                for x in 0..<w where img.px[(y * w + x) * 4 + 3] != 0 { any = true; break }
+                if any { minY = min(minY, y); maxY = max(maxY, y) }
+            }
+        }
+        if maxY < minY { return full }
+        let y0 = max(0, minY - 1), y1 = min(tall - 1, maxY + 1)
+        let h = y1 - y0 + 1
+        return full.map { img in
+            RGBAImage(w: w, h: h, px: Array(img.px[(y0 * w * 4)..<((y1 + 1) * w * 4)]))
         }
     }
 
