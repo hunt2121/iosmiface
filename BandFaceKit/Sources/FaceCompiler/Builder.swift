@@ -128,6 +128,7 @@ public final class FaceBuilder {
             for le in te.all("Layout") {
                 let it = try BuildItem(self, le, type: 0)
                 it.theme = t
+                it.name = it.defaultName(theme: t)      // «Layout_t_0» (id ще не призначено)
                 it.id = assign(it)
                 ti.tables[0].append(it)
                 try walk(ti, it)

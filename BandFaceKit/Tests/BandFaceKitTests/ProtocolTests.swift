@@ -2,6 +2,7 @@
 // Тест-вектори згенеровано незалежною реалізацією Tools/generate_vectors.py.
 
 import XCTest
+import SQLite3
 @testable import BandFaceKit
 
 private func hex(_ s: String) -> [UInt8] { Hex.decode(s)! }

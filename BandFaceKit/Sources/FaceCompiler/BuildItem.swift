@@ -122,11 +122,13 @@ final class BuildItem {
             }
         case 8:
             name = str(try required("name")); slotType = str(try required("type"))
-            if slotType == "appWidget" { slotKind = 3; appWidget = try required("appWidgetID"); return }
-            slotKind = ["widget": 0, "time": 1, "dualTime": 6][slotType] ?? 0
-            for c in e.all("Item") {
-                guard let r = c.raw("ref") else { throw FaceCompilerError("Error on line \(c.line): field ref is required!") }
-                slotItems.append(r)
+            if slotType == "appWidget" { slotKind = 3; appWidget = try required("appWidgetID") }
+            else {
+                slotKind = ["widget": 0, "time": 1, "dualTime": 6][slotType] ?? 0
+                for c in e.all("Item") {
+                    guard let r = c.raw("ref") else { throw FaceCompilerError("Error on line \(c.line): field ref is required!") }
+                    slotItems.append(r)
+                }
             }
         case 9:
             name = str(try required("name"))
@@ -157,6 +159,27 @@ final class BuildItem {
         default:
             break
         }
+        if name.isEmpty { name = defaultName(theme: -1) }
+    }
+
+    /// 0x140029f50: ім'я ресурсу без атрибута name — «Short_theme_id» (або «Short_id» поза темою), id ще 0.
+    func defaultName(theme t: Int) -> String {
+        let id = UInt32(type) << 24 | (self.id & 0x7FFFF)
+        return t == -1 ? "\(shortName)_\(hexUpper(id))" : "\(shortName)_\(t)_\(hexUpper(id))"
+    }
+
+    var shortName: String {
+        switch type {
+        case 0: return "Layout"
+        case 2: return "Image"
+        case 3: return "ImageArray"
+        case 4: return "Sprite"
+        case 5: return "File"
+        case 6: return "Translation"
+        case 8: return "Slot"
+        case 9: return "Widget"
+        default: return ["Text", "ImageNumber", "ImageValues", "Pointer", "ArcProgress", "LineProgress"][min(kind, 5)]
+        }
     }
 
     func parseFormat(_ s: [UInt8]?) -> UInt8 {
@@ -186,7 +209,7 @@ final class BuildItem {
     // MARK: DataItem
 
     func loadDataItem() throws {
-        name = str(try required("name"))
+        name = e.string("name") ?? ""
         guard let k = BuildItem.diKinds[e.tag] else { throw FaceCompilerError("Unknown data format: " + e.tag) }
         kind = k
         switch e.string("renderRule") ?? "" {

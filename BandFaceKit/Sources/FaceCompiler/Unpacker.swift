@@ -85,8 +85,9 @@ public final class FaceUnpacker {
         if k < colors.count { e.set("colorGroup", hex6(colors[k])) }
     }
 
-    /// manifest.xml (без перетворення кінців рядків).
-    public func manifestXML() throws -> [UInt8] {
+    /// manifest.xml (без перетворення кінців рядків). Якщо задано сховище — файли пишуться під час обходу,
+    /// як у exe (запис XML ресурсу й збереження його картинки йдуть разом; помилка посередині лишає вже записане).
+    public func manifestXML(saving storage: FaceStorage? = nil) throws -> [UInt8] {
         let root = XNode("Watchface")
         root.set("id", b.cstr(0x28, 0x40))
         if b.u32(0x68) != 0xFFFF_FFFF { root.set("name", b.cstr(0x68, 0x40)) } else { root.set("name", "@Translation_\(b.u32(0x6C))") }
@@ -96,8 +97,16 @@ public final class FaceUnpacker {
         for it in globalItems { try it.xml(res) }
         for (t, th) in themes.enumerated() {
             res.kids.append(.comment("Resources of theme \(t)"))
-            if let p = th.previewImage { try p.xml(res, name: "preview_\(t)") }
-            for ty in 1..<10 { for it in th.items[ty] { try it.xml(res) } }
+            if let p = th.previewImage {
+                try p.xml(res, name: "preview_\(t)")
+                if let storage { try p.save(storage, name: "preview_\(t)") }
+            }
+            for ty in 1..<10 {
+                for it in th.items[ty] {
+                    try it.xml(res)
+                    if let storage { try it.save(storage) }
+                }
+            }
         }
         for (t, th) in themes.enumerated() {
             let e = root.add("Theme")
@@ -114,13 +123,8 @@ public final class FaceUnpacker {
 
     /// Записує проєкт: зображення, файли, manifest.xml (як exe — у текстовому режимі Windows, CR LF).
     public func save(to storage: FaceStorage) throws {
-        log.info("Output directory: …")
-        for (t, th) in themes.enumerated() {
-            if let p = th.previewImage { try p.save(storage, name: "preview_\(t)") }
-            for ty in [2, 3, 5] { for it in th.items[ty] { try it.save(storage) } }
-        }
         var xml: [UInt8] = []
-        for c in try manifestXML() { if c == 0x0A { xml.append(0x0D) }; xml.append(c) }
+        for c in try manifestXML(saving: storage) { if c == 0x0A { xml.append(0x0D) }; xml.append(c) }
         try storage.write("manifest.xml", Data(xml))
         log.info("Done!")
     }

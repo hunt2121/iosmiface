@@ -36,8 +36,8 @@ public enum WatchfaceCompiler {
 }
 
 /// Декодування зображень для збирання: PNG — власним декодером (як stb_image), інші формати — системою.
-enum ImageDecoder {
-    static func decode(_ d: [UInt8]) -> PNG.Image? {
+public enum ImageDecoder {
+    public static func decode(_ d: [UInt8]) -> PNG.Image? {
         if let p = PNG.decode(d) { return p }
         #if canImport(ImageIO)
         return systemDecode(d)
@@ -74,3 +74,24 @@ extension ImageDecoder {
     }
 }
 #endif
+
+/// Довідники для редактора.
+public enum FaceCatalog {
+    /// Усі джерела даних: (назва, id) у порядку exe.
+    public static var sources: [(String, UInt16)] { FaceTables.sources }
+    public static var jumpApps: [String] { FaceTables.jumpApps.map { $0.1 } }
+    public static var fontIds: [String] { FaceTables.fontIds.map { $0.0 } }
+    public static var fontWeights: [String] { FaceTables.fontWeights.map { $0.0 } }
+    public static var appWidgets: [String] { FaceTables.appWidgets.map { $0.0 } }
+    /// Кодування пікселів (для редактора: дізнатися, чи вміщається зображення в indexed8).
+    public static func colorCount(_ rgba: [UInt8], limit: Int = 257) -> Int {
+        var set = Set<UInt32>()
+        var i = 0
+        while i + 3 < rgba.count {
+            set.insert(UInt32(rgba[i]) | UInt32(rgba[i + 1]) << 8 | UInt32(rgba[i + 2]) << 16 | UInt32(rgba[i + 3]) << 24)
+            if set.count >= limit { break }
+            i += 4
+        }
+        return set.count
+    }
+}

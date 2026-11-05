@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum PNG {
+public enum PNG {
     // MARK: CRC / Adler
 
     static let crcTable: [UInt32] = (0..<256).map { n -> UInt32 in
@@ -146,7 +146,7 @@ enum PNG {
     }
 
     /// RGBA8888 -> PNG (точно як stbi_write_png з 4 каналами).
-    static func encode(_ w: Int, _ h: Int, _ rgba: [UInt8]) -> [UInt8] {
+    public static func encode(_ w: Int, _ h: Int, _ rgba: [UInt8]) -> [UInt8] {
         let n = 4, stride = w * n
         var filt = [UInt8](); filt.reserveCapacity((stride + 1) * h)
         var lines = [[UInt8]](repeating: [UInt8](repeating: 0, count: stride), count: 5)
@@ -178,9 +178,10 @@ enum PNG {
 
     // MARK: Читання
 
-    struct Image { let w: Int; let h: Int; let rgba: [UInt8] }
+    public struct Image { public let w: Int; public let h: Int; public let rgba: [UInt8]
+        public init(w: Int, h: Int, rgba: [UInt8]) { self.w = w; self.h = h; self.rgba = rgba } }
 
-    static func decode(_ d: [UInt8]) -> Image? {
+    public static func decode(_ d: [UInt8]) -> Image? {
         guard d.count > 8, Array(d[0..<8]) == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] else { return nil }
         var p = 8
         var w = 0, h = 0, depth = 0, ctype = 0, interlace = 0
