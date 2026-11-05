@@ -25,6 +25,26 @@ jobs:
           xcodebuild -project BandFace.xcodeproj -scheme FaceEditor -configuration Release -sdk iphoneos \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION="$BUILD_NUM" build 2>&1 | tee xcodebuild.log | grep -E "error:|warning: .*FaceEditor|BUILD" | head -80
+      # Тести на симуляторі: логіка редактора і прохід екранами зі знімками
+      - name: Test on simulator
+        continue-on-error: true
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "Simulator $DEV"
+          mkdir -p test-out
+          TEST_RUNNER_SHOTS="$PWD/test-out" xcodebuild test -project BandFace.xcodeproj -scheme FaceEditor \
+            -destination "id=$DEV" -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO 2>&1 | tee test-out/test.log | \
+            grep -E "error:|failed|passed|Test Suite|Executed" | head -60
+      - name: Publish test output
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p test-out && zip -qr editor-test.zip test-out
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | select(.name=="editor test output") | .id'); do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
+          done
+          gh release create "editor-test-$BUILD_NUM" editor-test.zip --draft --target "$GITHUB_SHA" --title "editor test output" --notes "temporary"
       - name: Package IPA
         run: |
           NAME="FaceEditor-v01$BUILD_NUM"

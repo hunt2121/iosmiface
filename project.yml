@@ -54,6 +54,9 @@ targets:
     platform: iOS
     sources:
       - path: FaceEditor
+        excludes:
+          - "Tests/**"
+          - "UITests/**"
       - path: Sources/Theme.swift
       - path: Sources/Assets.xcassets
     dependencies:
@@ -77,3 +80,34 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme:
+      testTargets:
+        - FaceEditorTests
+        - FaceEditorUITests
+  FaceEditorTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: FaceEditor/Tests
+      - path: Sources/Faces
+        buildPhase: resources
+    dependencies:
+      - target: FaceEditor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.faceeditor.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/FaceEditor.app/FaceEditor"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  FaceEditorUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: FaceEditor/UITests
+    dependencies:
+      - target: FaceEditor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.faceeditor.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: FaceEditor

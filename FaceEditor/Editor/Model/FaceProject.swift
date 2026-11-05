@@ -148,6 +148,8 @@ final class FaceProject: ObservableObject, Identifiable {
 
     // MARK: Збирання
 
+    var manifestBytes: [UInt8] { XML.print(root) }
+
     /// Сховище для компілятора: файли + manifest.xml.
     func storage() -> MemoryStorage {
         var all = files
