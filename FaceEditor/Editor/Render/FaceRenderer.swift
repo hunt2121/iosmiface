@@ -12,6 +12,8 @@ struct LayerBox {
 final class FaceRenderer {
     let p: FaceProject
     var live = false
+    /// Час анімації, с: який кадр показує кожен Sprite (0 — перший кадр)
+    var time: Double = 0
     /// Тимчасові позиції шарів під час перетягування (без зміни маніфесту)
     var overrides: [ObjectIdentifier: CGPoint] = [:]
     private var cache: [String: CGImage] = [:]
@@ -86,7 +88,11 @@ final class FaceRenderer {
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(img.width), height: CGFloat(img.height))
             put(img, r, c); return r
         case "Sprite":
-            return draw(p.resource(ref: res.string("ref")), at: o, in: c, depth: depth + 1)
+            let fr = frames(p.resource(ref: res.string("ref")))
+            guard !fr.isEmpty else { return nil }
+            let img = fr[Self.spriteFrame(res, count: fr.count, time: time)]
+            let r = CGRect(x: o.x, y: o.y, width: CGFloat(img.width), height: CGFloat(img.height))
+            put(img, r, c); return r
         case "DataItemImageNumber": return drawNumber(res, o, c)
         case "DataItemImageValues":
             let fr = frames(p.resource(ref: res.string("ref")))
@@ -117,6 +123,14 @@ final class FaceRenderer {
         }
     }
 
+    /// Кадр анімації: interval мс на кадр; repeatCount 0 — без кінця, інакше після повторів лишається останній
+    static func spriteFrame(_ res: XNode, count: Int, time: Double) -> Int {
+        let step = Int(time * 1000) / max(1, Int(res.int("interval", 100)))
+        let repeats = Int(res.int("repeatCount"))
+        if repeats > 0, step >= count * repeats { return count - 1 }
+        return step % count
+    }
+
     private func fraction(_ res: XNode) -> CGFloat {
         let v = CGFloat(value(res))
         let start = res.has("valueStartSource") ? 0 : CGFloat(res.int("valueStart"))
@@ -127,7 +141,8 @@ final class FaceRenderer {
 
     private func drawNumber(_ res: XNode, _ o: CGPoint, _ c: CGContext) -> CGRect? {
         let fr = frames(p.resource(ref: res.string("ref")))
-        guard fr.count >= 10 else { return nil }
+        // кадрів може бути менше за 10: так роблять перемикачі стану (2 кадри для «не турбувати», Bluetooth)
+        guard !fr.isEmpty else { return nil }
         let total = Int(res.int("totalDigits"))
         var s = String(abs(value(res)))
         if res.bool("leadingZero"), total > 0, s.count < total { s = String(repeating: "0", count: total - s.count) + s }
@@ -148,7 +163,7 @@ final class FaceRenderer {
         let r = CGRect(x: x, y: o.y, width: contentW, height: fh)
         for ch in s {
             let d = ch.wholeNumberValue ?? 0
-            put(fr[d], CGRect(x: x, y: o.y, width: fw, height: fh), c)
+            if d < fr.count { put(fr[d], CGRect(x: x, y: o.y, width: fw, height: fh), c) }
             x += fw + space
         }
         if let u = unit {

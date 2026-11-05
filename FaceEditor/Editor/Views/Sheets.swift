@@ -392,23 +392,35 @@ struct PreviewView: View {
     @ObservedObject var project: FaceProject
     let theme: Int
     @Environment(\.dismiss) private var dismiss
-    @State private var tick = Date()
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var renderer: FaceRenderer?
+    @State private var start = Date()
+
+    /// Крок оновлення: інтервал анімації (якщо на темі є Sprite), інакше раз на секунду для годинника
+    private var step: Double {
+        let sprites = project.layouts(theme).compactMap { project.resource(ref: $0.string("ref")) }.filter { $0.tag == "Sprite" }
+        guard let s = sprites.first else { return 1 }
+        return Double(max(30, Int(s.int("interval", 100)))) / 1000
+    }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             let dev = project.meta.device
-            let r = FaceRenderer(project)
-            let _ = tick
-            let img = { () -> UIImage in r.live = true; return r.render(theme: theme, scale: 3).0 }()
-            Image(uiImage: img).resizable()
-                .aspectRatio(CGFloat(dev.width) / CGFloat(dev.height), contentMode: .fit)
-                .faceCapsule()
-                .padding(40)
+            TimelineView(.periodic(from: start, by: step)) { ctx in
+                let img: UIImage = {
+                    let r = renderer ?? FaceRenderer(project)
+                    r.live = true
+                    r.time = ctx.date.timeIntervalSince(start)
+                    return r.render(theme: theme, scale: 2.5).0
+                }()
+                Image(uiImage: img).resizable()
+                    .aspectRatio(CGFloat(dev.width) / CGFloat(dev.height), contentMode: .fit)
+                    .faceCapsule()
+                    .padding(40)
+            }
         }
+        .onAppear { renderer = FaceRenderer(project); start = Date() }
         .onTapGesture { dismiss() }
-        .onReceive(timer) { tick = $0 }
         .accessibilityLabel("Попередній перегляд. Торкніться, щоб закрити.")
     }
 }

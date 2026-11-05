@@ -146,7 +146,8 @@ struct FaceCapsule: View {
         ZStack {
             Capsule(style: .continuous).fill(Color.black)
             if let image {
-                Image(uiImage: image).resizable().scaledToFill()
+                // UIImageView: програє й анімовані превʼю
+                FaceImageView(image: image)
             } else {
                 Image("TabWatch").resizable().scaledToFit()
                     .frame(width: 30)
@@ -476,6 +477,8 @@ struct StoreDetailView: View {
     var onEdit: () -> Void = {}
 
     private enum Work { case select, delete }
+    /// Анімація основного екрана (якщо циферблат анімований); малюється, коли сторінку відкрито
+    @State private var motion: UIImage?
     @State private var working: Work?
     @State private var askDelete = false
     @State private var error: String?
@@ -523,6 +526,10 @@ struct StoreDetailView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: item.id) {
+            let data = Data(item.face.data)
+            motion = await Task.detached(priority: .userInitiated) { FacePreviews.animation(for: data) }.value
+        }
         .alert(String(localized: "Видалити \(item.name) з пристрою?"), isPresented: $askDelete) {
             Button("Видалити", role: .destructive) { run(.delete) }
             Button("Скасувати", role: .cancel) {}
@@ -622,9 +629,9 @@ struct StoreDetailView: View {
 
     private var previews: some View {
         HStack(alignment: .top, spacing: 28) {
-            ForEach(item.previews) { p in
+            ForEach(Array(item.previews.enumerated()), id: \.element.id) { i, p in
                 VStack(spacing: 10) {
-                    FaceCapsule(image: p.image)
+                    FaceCapsule(image: i == 0 ? (motion ?? p.image) : p.image)
                     Text(p.title)
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)

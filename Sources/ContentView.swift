@@ -811,6 +811,9 @@ struct ContentView: View {
             let image = await Task.detached(priority: .userInitiated) { FacePreviews.shots(for: data).first?.image }.value
             // за цей час могли вибрати інший файл
             if let image, face?.data == file.data { filePreview = image }
+            // анімований циферблат — у капсулі програється анімація
+            let motion = await Task.detached(priority: .utility) { FacePreviews.animation(for: data) }.value
+            if let motion, face?.data == file.data { filePreview = motion }
         }
     }
 

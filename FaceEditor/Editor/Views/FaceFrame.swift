@@ -19,3 +19,26 @@ extension View {
             .background(Capsule(style: .continuous).fill(active ? Color.accentColor : FaceFrame.color))
     }
 }
+
+/// Картинка циферблата, що програє анімацію (UIImage з кадрами); звичайну показує як є.
+/// SwiftUI Image анімованих UIImage не відтворює, тому UIImageView.
+struct FaceImageView: UIViewRepresentable {
+    let image: UIImage?
+
+    func makeUIView(context: Context) -> UIImageView {
+        let v = UIImageView()
+        v.contentMode = .scaleAspectFill
+        v.clipsToBounds = true
+        v.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        v.setContentHuggingPriority(.defaultLow, for: .vertical)
+        v.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        v.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        return v
+    }
+
+    func updateUIView(_ v: UIImageView, context: Context) {
+        guard v.image !== image else { return }
+        v.image = image
+        if image?.images != nil { v.startAnimating() }
+    }
+}

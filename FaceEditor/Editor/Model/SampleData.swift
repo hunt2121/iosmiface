@@ -32,6 +32,9 @@ enum SampleData {
             return v
         }
         let l = s.lowercased()
+        // стани як у звичайному вигляді: «не турбувати» вимкнено, Bluetooth підключено
+        if l.contains("disturb") { return 0 }
+        if l.contains("bluetooth") { return 1 }
         if l.contains("step") { return l.contains("progress") ? 84 : 8412 }
         if l.contains("heart") { return 72 }
         if l.contains("battery") { return 80 }
