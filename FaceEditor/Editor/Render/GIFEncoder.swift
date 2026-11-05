@@ -31,6 +31,14 @@ enum GIFEncoder {
         (Int(p[i]) >> 3) << 10 | (Int(p[i + 1]) >> 3) << 5 | Int(p[i + 2]) >> 3
     }
 
+    /// Один кадр → палітра до 256 кольорів і індекси (для палітрового PNG превʼю).
+    static func indexed(_ rgba: [UInt8], colors: Int = 256) -> (indices: [UInt8], palette: [UInt8]) {
+        let (pal, map) = palette([Frame(rgba: rgba, durationMs: 0)], colors: colors)
+        var out = [UInt8](repeating: 0, count: rgba.count / 4)
+        for i in 0..<out.count { out[i] = map[bin(rgba, i * 4)] }
+        return (out, pal)
+    }
+
     /// Медіанний поділ гістограми 5-5-5 усіх кадрів: палітра й відповідність «бін → індекс».
     private static func palette(_ frames: [Frame], colors: Int) -> ([UInt8], [UInt8]) {
         var count = [Int](repeating: 0, count: 32768)
@@ -69,7 +77,7 @@ enum GIFEncoder {
             boxes[best] = Array(sorted[..<cut])
             boxes.append(Array(sorted[cut...]))
         }
-        var pal = [UInt8](repeating: 0, count: 768)
+        var pal = [UInt8](repeating: 0, count: 768)   // 256 кольорів; при colors = 256 індекс 255 теж колір
         var map = [UInt8](repeating: 0, count: 32768)
         for (i, box) in boxes.enumerated() {
             var r = 0, g = 0, b = 0, n = 0

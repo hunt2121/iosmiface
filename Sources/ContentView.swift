@@ -134,7 +134,10 @@ struct ContentView: View {
         }
         // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
         .task {
-            let shots = await StoreCatalog.renderPreviews(for: storeFaces)
+            // лише ті, яких ще немає в кеші
+            let missing = storeFaces.filter { FacePreviews.cached(for: Data($0.face.data)) == nil }
+            guard !missing.isEmpty else { return }
+            let shots = await StoreCatalog.renderPreviews(for: missing)
             for (id, s) in shots {
                 if let i = storeFaces.firstIndex(where: { $0.id == id }) { storeFaces[i].apply(s) }
             }
@@ -812,12 +815,12 @@ struct ContentView: View {
     private func renderFilePreview(_ file: FaceFile) {
         let data = Data(file.data)
         Task { @MainActor in
-            let image = await Task.detached(priority: .userInitiated) { FacePreviews.shots(for: data).first?.image }.value
+            // один виклик: картинка й анімація з того самого кешу, що й у магазині
+            let shots = await Task.detached(priority: .userInitiated) { FacePreviews.get(for: data) }.value
             // за цей час могли вибрати інший файл
-            if let image, face?.data == file.data { filePreview = image }
-            // анімований циферблат — у капсулі програється анімація (GIF)
-            let gif = await Task.detached(priority: .utility) { FacePreviews.animationGIF(for: data) }.value
-            if face?.data == file.data { fileAnimation = gif }
+            guard let shots, face?.data == file.data else { return }
+            filePreview = shots.main
+            fileAnimation = shots.gif
         }
     }
 

@@ -174,6 +174,24 @@ public enum PNG {
         return out
     }
 
+    /// Палітровий PNG (8 біт, тип 3): індекси w×h і палітра RGB (до 256 кольорів). Рядки без фільтра —
+    /// для палітри це найкраще стискається. Утричі-вчетверо менше за RGBA.
+    public static func encodeIndexed(_ w: Int, _ h: Int, _ indices: [UInt8], palette: [UInt8]) -> [UInt8] {
+        var raw = [UInt8](); raw.reserveCapacity((w + 1) * h)
+        for y in 0..<h { raw.append(0); raw += indices[(y * w)..<(y * w + w)] }
+        var out: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+        func chunk(_ t: String, _ d: [UInt8]) {
+            let tb = Array(t.utf8)
+            out += be32(UInt32(d.count)); out += tb; out += d; out += be32(crc32(tb, d))
+        }
+        let colors = max(1, min(256, palette.count / 3))
+        chunk("IHDR", be32(UInt32(w)) + be32(UInt32(h)) + [8, 3, 0, 0, 0])
+        chunk("PLTE", Array(palette.prefix(colors * 3)))
+        chunk("IDAT", zlibCompress(raw, quality: 8))
+        chunk("IEND", [])
+        return out
+    }
+
     static func be32(_ v: UInt32) -> [UInt8] { [UInt8(v >> 24), UInt8((v >> 16) & 0xFF), UInt8((v >> 8) & 0xFF), UInt8(v & 0xFF)] }
 
     // MARK: Читання

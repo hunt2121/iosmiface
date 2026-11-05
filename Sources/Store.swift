@@ -21,7 +21,9 @@ struct StoreFace: Identifiable {
     var preview: UIImage?
     var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
-    var previews: [FacePreview] = []   // зображення в картці (Always On додамо, коли буде справжній скріншот)
+    var previews: [FacePreview] = []   // зображення на сторінці: основний екран і «Завжди на екрані»
+    /// Анімація основного екрана (GIF), спільна для картки й сторінки
+    var animation: Data?
 
     var isFree: Bool { price == nil }
     var sizeKB: Int { face.size / 1024 }
@@ -74,25 +76,28 @@ enum StoreCatalog {
             guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
                   let data = try? Data(contentsOf: url),
                   let face = try? FaceFile(data: data) else { return nil }
-            let image = face.previewImage()
             var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
-                                 about: e.about, price: nil, face: face, preview: image)
+                                 about: e.about, price: nil, face: face, preview: nil)
             item.added = dayFormatter.date(from: e.added)
-            item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
-            // намальоване з ресурсів превʼю, якщо вже є в кеші (інакше з'явиться після renderPreviews)
-            if let shots = FacePreviews.cached(for: Data(face.data)), !shots.isEmpty { item.apply(shots) }
+            // намальовані з ресурсів превʼю, якщо вже є в кеші; інакше поки вбудоване (оновить renderPreviews)
+            if let shots = FacePreviews.cached(for: Data(face.data)) {
+                item.apply(shots)
+            } else {
+                let image = face.previewImage()
+                item.preview = image
+                item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
+            }
             return item
         }
     }
 
-    /// Малює превʼю всіх циферблатів магазину з їхніх ресурсів (у фоні, з кешем на диску).
-    static func renderPreviews(for faces: [StoreFace]) async -> [String: [FacePreviews.Shot]] {
+    /// Малює превʼю циферблатів магазину, яких ще немає в кеші (у фоні, по одному)
+    static func renderPreviews(for faces: [StoreFace]) async -> [String: FacePreviews.Shots] {
         let input = faces.map { ($0.id, Data($0.face.data)) }
         return await Task.detached(priority: .utility) {
-            var out: [String: [FacePreviews.Shot]] = [:]
+            var out: [String: FacePreviews.Shots] = [:]
             for (id, data) in input {
-                let shots = FacePreviews.shots(for: data)
-                if !shots.isEmpty { out[id] = shots }
+                if let s = FacePreviews.get(for: data) { out[id] = s }
             }
             return out
         }.value
@@ -100,21 +105,12 @@ enum StoreCatalog {
 }
 
 extension StoreFace {
-    /// Превʼю, намальовані з ресурсів циферблата: основний екран і «Завжди на екрані»
-    mutating func apply(_ shots: [FacePreviews.Shot]) {
-        guard let first = shots.first else { return }
-        preview = first.image
-        previews = shots.map {
-            FacePreview(title: $0.alwaysOn ? String(localized: "Завжди на екрані") : String(localized: "Звичайний"),
-                        image: $0.image)
-        }
-    }
-}
-
-extension FaceFile {
-    /// Превʼю для показу: намальоване з ресурсів (якщо вдалося), інакше вбудоване у файл
-    func renderedPreview() -> UIImage? {
-        FacePreviews.shots(for: Data(data)).first?.image ?? previewImage()
+    /// Превʼю з ресурсів циферблата — ті самі об'єкти для картки, сторінки й меню «Встановлено»
+    mutating func apply(_ s: FacePreviews.Shots) {
+        preview = s.main
+        animation = s.gif
+        previews = [FacePreview(title: String(localized: "Звичайний"), image: s.main)]
+        if let aod = s.alwaysOn { previews.append(FacePreview(title: String(localized: "Завжди на екрані"), image: aod)) }
     }
 }
 
@@ -165,22 +161,6 @@ struct FaceCapsule: View {
     }
 }
 
-/// Капсула, що програє анімацію циферблата (якщо є): кадри малюються у фоні, поки капсула на екрані.
-struct AnimatedFaceCapsule: View {
-    let face: FaceFile
-    let image: UIImage?
-    var active = false
-    @State private var gif: Data?
-
-    var body: some View {
-        FaceCapsule(image: image, active: active, animation: gif)
-            .task(id: face.id) {
-                let data = Data(face.data)
-                gif = await Task.detached(priority: .utility) { FacePreviews.animationGIF(for: data) }.value
-            }
-    }
-}
-
 /// Стан кнопки циферблата.
 enum StoreAction {
     case install, update, installed, installing
@@ -192,6 +172,7 @@ struct StoreView: View, Equatable {
     static func == (a: StoreView, b: StoreView) -> Bool {
         a.faces.map(\.id) == b.faces.map(\.id) && a.installed == b.installed
             && a.faces.map(\.preview).elementsEqual(b.faces.map(\.preview), by: { $0 === $1 })
+            && a.faces.map { $0.animation?.count } == b.faces.map { $0.animation?.count }
             && a.installingID == b.installingID && a.busy == b.busy
             && a.progress == b.progress && a.progressText == b.progressText
             && a.activeID == b.activeID && a.otherFaces == b.otherFaces
@@ -348,7 +329,7 @@ struct StoreView: View, Equatable {
 
     private func card(_ item: StoreFace) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            AnimatedFaceCapsule(face: item.face, image: item.preview, active: item.id == activeID)
+            FaceCapsule(image: item.preview, active: item.id == activeID, animation: item.animation)
                 .frame(maxWidth: .infinity)
                 .frame(height: 266)
 
@@ -645,11 +626,7 @@ struct StoreDetailView: View {
         HStack(alignment: .top, spacing: 28) {
             ForEach(Array(item.previews.enumerated()), id: \.element.id) { i, p in
                 VStack(spacing: 10) {
-                    if i == 0 {
-                        AnimatedFaceCapsule(face: item.face, image: p.image)
-                    } else {
-                        FaceCapsule(image: p.image)
-                    }
+                    FaceCapsule(image: p.image, animation: i == 0 ? item.animation : nil)
                     Text(p.title)
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)

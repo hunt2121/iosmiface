@@ -152,7 +152,8 @@ struct ProjectsView: View {
         }
         .buttonStyle(.plain)
         .task(id: p.revision) {
-            if thumbs[p.id] == nil { thumbs[p.id] = FaceRenderer(p).render(theme: 0, scale: FacePreviews.scale).0 }
+            // з кешу, поки проєкт не змінювали
+            if thumbs[p.id] == nil { thumbs[p.id] = FacePreviews.thumbnail(p) }
         }
         .contextMenu {
             if install != nil {

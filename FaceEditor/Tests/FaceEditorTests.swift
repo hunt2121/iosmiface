@@ -84,15 +84,17 @@ final class FaceEditorTests: XCTestCase {
         let store = ProjectStore()
         let u = try XCTUnwrap(Bundle(for: FaceEditorTests.self).url(forResource: "BigWatch_UA", withExtension: "bin"))
         let data = try Data(contentsOf: u)
-        let shots = FacePreviews.render(data)
-        XCTAssertEqual(shots.count, 2)
-        XCTAssertEqual(shots.first?.alwaysOn, false)
-        XCTAssertEqual(shots.last?.alwaysOn, true)
-        XCTAssertEqual(shots.first?.image.cgImage?.width, 318)
-        XCTAssertEqual(shots.first?.image.cgImage?.height, 780)
-        // кеш на диску віддає те саме
-        _ = FacePreviews.shots(for: data)
-        XCTAssertEqual(FacePreviews.cached(for: data)?.count, 2)
+        let shots = try XCTUnwrap(FacePreviews.get(for: data))
+        XCTAssertNotNil(shots.alwaysOn)
+        XCTAssertNil(shots.gif)
+        let h = try XCTUnwrap(shots.main.cgImage?.height)
+        XCTAssertEqual(Double(h), Double(FacePreviews.scale * 520), accuracy: 1)
+        // ті самі об'єкти для всіх розділів
+        XCTAssertTrue(FacePreviews.cached(for: data)?.main === shots.main)
+        // анімація WhatTime — GIF до 500 КБ
+        let wt = try Data(contentsOf: XCTUnwrap(Bundle(for: FaceEditorTests.self).url(forResource: "WhatTime_UA", withExtension: "bin")))
+        let gif = try XCTUnwrap(FacePreviews.get(for: wt)?.gif)
+        XCTAssertLessThan(gif.count, 500_000)
 
         // новий циферблат: превʼю 134×328 з'являється при збиранні
         let p = store.create(name: "Preview")
