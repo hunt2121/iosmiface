@@ -2,6 +2,7 @@
 // Властивості вибраного шару: вкладки «Вигляд», «Колір», «Позиція».
 
 import SwiftUI
+import PhotosUI
 import FaceCompiler
 
 struct InspectorView: View {
@@ -15,7 +16,8 @@ struct InspectorView: View {
     var onDuplicate: () -> Void
     var onDelete: () -> Void
 
-    private var res: XNode? { project.resource(ref: layout.string("ref")) }
+    /// Сам елемент (для обгортки «дія при натисканні» — те, що всередині)
+    private var res: XNode? { project.element(of: layout) }
     private var kind: ElementKind { ElementKind.of(res) }
     private var resName: String { res?.string("name") ?? "" }
     private var gen: Generator? { project.meta.generators[resName] }
@@ -89,20 +91,61 @@ struct InspectorView: View {
             case .pointer, .arc, .line: gaugeLook(r)
             case .animation:
                 CommitSlider(title: "Інтервал кадрів, мс", value: Double(r.int("interval")), range: 30...2000, step: 10) { v in edit { $0.set("interval", int: Int(v)) } }
+                StepperRow(title: "Повтори (0 — без кінця)", value: Int(r.int("repeatCount")), range: 0...50) { v in edit { $0.set("repeatCount", int: v) } }
+            case .values:
+                ValuesLook(project: project, res: r)
             case .image:
                 ImageReplaceRow(project: project, res: r)
             default:
                 Text("Цей елемент можна пересувати, дублювати й видаляти. Його вміст редактор поки не змінює.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            if r.tag.hasPrefix("DataItem") { renderRuleRow(r) }
+            tapRow
         }
+    }
+
+    /// Коли ховати елемент (правило браслета)
+    @ViewBuilder private func renderRuleRow(_ r: XNode) -> some View {
+        Chips(title: "Показувати", hint: nil,
+              items: [("alwaysShow", "Завжди"), ("hideWhenOutRange", "Є дані"), ("hideWhenUnitMismatch", "Та сама одиниця")],
+              selected: r.string("renderRule") ?? "alwaysShow") { v in edit { $0.set("renderRule", v) } }
+    }
+
+    /// Натискання на елемент на браслеті відкриває застосунок
+    private var tapRow: some View {
+        let current = ElementFactory.tapApp(project, layout: layout)
+        let apps = FaceCatalog.jumpApps.filter { ElementFactory.appTitles[$0] != nil }
+        return HStack {
+            Text("Натискання відкриває").font(.subheadline)
+            Spacer()
+            Menu {
+                Button { setTap(nil) } label: { if current == nil { Label(loc("Нічого"), systemImage: "checkmark") } else { Text(loc("Нічого")) } }
+                ForEach(apps.sorted { loc(ElementFactory.appTitles[$0] ?? $0) < loc(ElementFactory.appTitles[$1] ?? $1) }, id: \.self) { a in
+                    Button { setTap(a) } label: {
+                        if a == current { Label(loc(ElementFactory.appTitles[a] ?? a), systemImage: "checkmark") }
+                        else { Text(loc(ElementFactory.appTitles[a] ?? a)) }
+                    }
+                }
+            } label: {
+                Text(current.map { loc(ElementFactory.appTitles[$0] ?? $0) } ?? loc("Нічого"))
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal, 14).frame(height: 44)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+    }
+
+    private func setTap(_ app: String?) {
+        let l = layout, t = theme
+        project.edit { ElementFactory.setTapApp($0, layout: l, theme: t, app: app) }
     }
 
     @ViewBuilder private func digitsLook(_ r: XNode) -> some View {
         if let g = gen {
             CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 12...160, step: 1) { v in regen { $0.fontSize = v } }
             Chips(title: "Шрифт", hint: "перетворюється на картинки цифр",
-                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
+                  items: [("misans", "MiSans"), ("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
                   selected: g.style) { s in regen { $0.style = s } }
             Chips(title: "Товщина", hint: nil,
                   items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
@@ -119,6 +162,7 @@ struct InspectorView: View {
         Chips(title: "Вирівнювання", hint: "куди росте число",
               items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
               selected: r.string("align") ?? "left") { v in setNumberAlign(r, v) }
+        if gen != nil { UnitField(unit: gen?.unit ?? "") { u in regen { $0.unit = u } } }
         StepperRow(title: "Кількість цифр", value: Int(r.int("totalDigits")), range: 0...9) { v in edit { $0.set("totalDigits", int: v) } }
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
@@ -133,6 +177,21 @@ struct InspectorView: View {
         if kind == .pointer {
             CommitSlider(title: "Кут початку", value: Double(r.int("angleStart")), range: -360...360, step: 1) { v in edit { $0.set("angleStart", int: Int(v)) } }
             CommitSlider(title: "Поворот за діапазон, °", value: Double(r.int("angleRange")), range: -1440...1440, step: 5) { v in edit { $0.set("angleRange", int: Int(v)) } }
+            HStack(spacing: 8) {
+                NumberField(title: "Вісь X", value: Int(r.int("pivotX"))) { v in edit { $0.set("pivotX", int: v) } }
+                NumberField(title: "Вісь Y", value: Int(r.int("pivotY"))) { v in edit { $0.set("pivotY", int: v) } }
+            }
+            Text("Вісь — точка картинки стрілки, навколо якої вона обертається.").font(.caption).foregroundStyle(.secondary)
+            HandImageRow(project: project, res: r)
+        }
+        if kind == .arc {
+            Toggle("Заокруглені кінці", isOn: Binding(get: { r.string("endingStyle") != "normal" }, set: { v in edit { $0.set("endingStyle", v ? "round" : "normal") } }))
+                .font(.subheadline)
+            Toggle("Крапка на кінці заповнення", isOn: Binding(get: { r.has("indicatorImage") }, set: { v in
+                let width = gen?.width ?? Double(r.int("barWidth", 10))
+                project.edit { p in ElementFactory.setIndicator(p, element: r, on: v, size: width) }
+            }))
+            .font(.subheadline)
         }
         if !r.has("valueRangeSource") {
             StepperRow(title: "Найбільше значення", value: Int(r.int("valueRange")), range: 1...100000) { v in edit { $0.set("valueRange", int: v) } }
@@ -434,5 +493,91 @@ struct DebouncedColor: View {
         c.getRed(&r, green: &g, blue: &b, alpha: &a)
         func v(_ x: CGFloat) -> Int { Int((min(max(x, 0), 1) * 255).rounded()) }
         return String(format: "#%02X%02X%02X", v(r), v(g), v(b))
+    }
+}
+
+/// Одиниця біля числа: «%», «°», «км»… (тим самим шрифтом, що й цифри)
+struct UnitField: View {
+    let unit: String
+    var onCommit: (String) -> Void
+    @State private var text = ""
+    var body: some View {
+        HStack {
+            Text("Одиниця").font(.subheadline)
+            Spacer()
+            TextField(loc("немає"), text: $text)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 110)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit { if text != unit { onCommit(text) } }
+            ForEach(["%", "°", "км"], id: \.self) { u in
+                Button(u) { text = u; onCommit(u) }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.bordered)
+            }
+        }
+        .onAppear { text = unit }
+    }
+}
+
+/// Своя картинка стрілки (вісь — по центру внизу, потім можна підправити)
+struct HandImageRow: View {
+    @ObservedObject var project: FaceProject
+    let res: XNode
+    @State private var item: PhotosPickerItem?
+    var body: some View {
+        PhotosPicker(selection: $item, matching: .images) {
+            Label("Своя картинка стрілки", systemImage: "photo").font(.subheadline.weight(.semibold))
+        }
+        .onChange(of: item) { it in
+            guard let it else { return }
+            Task { @MainActor in
+                guard let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) else { return }
+                let rgba = AssetFactory.fromUIImage(img, maxSide: 260)
+                project.edit { p in
+                    guard let target = p.resource(ref: res.string("ref")) else { return }
+                    ElementFactory.replaceImage(p, target, rgba)
+                    res.set("pivotX", int: rgba.w / 2).set("pivotY", int: rgba.h - rgba.w / 2)
+                    // своя картинка — параметри малювання стрілки більше не діють
+                    p.meta.generators[res.string("name") ?? ""] = nil
+                }
+            }
+        }
+    }
+}
+
+/// Значки за значенням: пороги й картинки
+struct ValuesLook: View {
+    @ObservedObject var project: FaceProject
+    let res: XNode
+    @State private var items: [PhotosPickerItem] = []
+
+    var body: some View {
+        let params = res.all("Param")
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Картинка змінюється, коли значення досягає порогу.").font(.caption).foregroundStyle(.secondary)
+            ForEach(Array(params.enumerated()), id: \.offset) { i, prm in
+                NumberField(title: String(format: loc("Поріг %d"), i + 1), value: Int(prm.int("value"))) { v in
+                    project.edit { _ in prm.set("value", int: v) }
+                }
+            }
+            PhotosPicker(selection: $items, maxSelectionCount: 30, matching: .images) {
+                Label("Замінити картинки", systemImage: "photo.stack").font(.subheadline.weight(.semibold))
+            }
+        }
+        .onChange(of: items) { list in
+            guard !list.isEmpty else { return }
+            Task { @MainActor in
+                var imgs: [RGBAImage] = []
+                for it in list {
+                    if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
+                        imgs.append(AssetFactory.fromUIImage(img, maxSide: 200))
+                    }
+                }
+                guard !imgs.isEmpty else { return }
+                project.edit { p in ElementFactory.replaceValueImages(p, element: res, images: imgs) }
+                items = []
+            }
+        }
     }
 }

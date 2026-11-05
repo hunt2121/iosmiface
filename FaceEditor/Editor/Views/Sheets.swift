@@ -21,11 +21,22 @@ struct AddElementSheet: View {
     @State private var photos: [PhotosPickerItem] = []
     @State private var showPhoto = false
     @State private var showFrames = false
+    /// «Значки за значенням»: після вибору джерела — вибір картинок
+    @State private var valuesSource: String?
+    @State private var showValuePhotos = false
+    @State private var valuePhotos: [PhotosPickerItem] = []
 
-    private struct Tile: Identifiable { let kind: ElementKind; let caption: String; let filter: Filter; let enabled: Bool; var id: String { kind.rawValue } }
+    private struct Tile: Identifiable {
+        let kind: ElementKind; let caption: String; let filter: Filter; let enabled: Bool
+        var preset: String? = nil
+        var title: String { preset == "clock" ? loc("Годинник") : kind.title }
+        var id: String { preset ?? kind.rawValue }
+    }
     private let tiles: [Tile] = [
         Tile(kind: .text, caption: "рядок із даних", filter: .data, enabled: true),
         Tile(kind: .digits, caption: "картинки цифр", filter: .data, enabled: true),
+        Tile(kind: .values, caption: "картинка за значенням", filter: .data, enabled: true),
+        Tile(kind: .pointer, caption: "три стрілки", filter: .gauges, enabled: true, preset: "clock"),
         Tile(kind: .image, caption: "PNG, фото", filter: .decor, enabled: true),
         Tile(kind: .animation, caption: "кадри, інтервал", filter: .decor, enabled: true),
         Tile(kind: .pointer, caption: "обертання", filter: .gauges, enabled: true),
@@ -54,9 +65,9 @@ struct AddElementSheet: View {
                     }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                         ForEach(tiles.filter { filter == .all || $0.filter == filter }) { t in
-                            Button { choose(t.kind) } label: { tile(t) }
+                            Button { if t.preset == "clock" { addClock() } else { choose(t.kind) } } label: { tile(t) }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(Text(t.kind.title))
+                                .accessibilityLabel(Text(t.title))
                                 .accessibilityHint(Text(loc(t.caption)))
                                 .disabled(!t.enabled)
                                 .opacity(t.enabled ? 1 : 0.45)
@@ -76,6 +87,23 @@ struct AddElementSheet: View {
         }
         .photosPicker(isPresented: $showPhoto, selection: $photo, matching: .images)
         .photosPicker(isPresented: $showFrames, selection: $photos, maxSelectionCount: 60, matching: .images)
+        .photosPicker(isPresented: $showValuePhotos, selection: $valuePhotos, maxSelectionCount: 30, matching: .images)
+        .onChange(of: valuePhotos) { items in
+            guard !items.isEmpty, let src = valuesSource else { return }
+            Task { @MainActor in
+                var imgs: [RGBAImage] = []
+                for it in items {
+                    if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
+                        imgs.append(AssetFactory.fromUIImage(img, maxSide: 200))
+                    }
+                }
+                if !imgs.isEmpty {
+                    let c = center
+                    project.edit { ElementFactory.addValues($0, source: src, images: imgs, theme: theme, center: c) }
+                    finish()
+                }
+            }
+        }
         .onChange(of: photo) { item in
             guard let item else { return }
             Task { @MainActor in
@@ -108,7 +136,7 @@ struct AddElementSheet: View {
     private func tile(_ t: Tile) -> some View {
         VStack(spacing: 6) {
             ElementIcon(kind: t.kind).frame(height: 44)
-            Text(t.kind.title).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
+            Text(t.title).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
             Text(loc(t.caption)).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
@@ -124,7 +152,19 @@ struct AddElementSheet: View {
         }
     }
 
+    private func addClock() {
+        let c = center
+        project.edit { ElementFactory.addAnalogClock($0, theme: theme, center: c) }
+        finish()
+    }
+
     private func add(_ k: ElementKind, source: String) {
+        if k == .values {
+            // далі — картинки для значень
+            valuesSource = source
+            showValuePhotos = true
+            return
+        }
         let c = center
         project.edit { p in
             switch k {
@@ -230,6 +270,11 @@ struct TextLook: View {
     let res: XNode
     @State private var text = ""
 
+    static let weightTitles: [String: String] = [
+        "thin": "Тонкий", "extralight": "Дуже легкий", "light": "Легкий", "normal": "Звичайний", "regular": "Нормальний",
+        "medium": "Середній", "demibold": "Напівжирний", "semibold": "Напівжирний+", "bold": "Жирний", "heavy": "Дуже жирний",
+    ]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -240,16 +285,55 @@ struct TextLook: View {
                 Text("«%s» замінюється значенням джерела (кожне наступне «%s» — наступним джерелом).")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            CommitSlider(title: "Розмір шрифту", value: Double(res.int("fontSize", 24)), range: 8...120, step: 1) { v in
+                project.edit { _ in
+                    res.set("fontSize", int: Int(v))
+                    // поле не нижче за рядок
+                    if res.int("h") < Int32(v * 1.3) { res.set("h", int: Int(v * 1.3)) }
+                }
+            }
             Chips(title: "Шрифт браслета", hint: nil, items: FaceCatalog.fontIds.map { ($0, $0.replacingOccurrences(of: "misans", with: "MiSans ").trimmingCharacters(in: .whitespaces)) },
                   selected: res.string("fontId") ?? "") { v in project.edit { _ in res.set("fontId", v) } }
-            Chips(title: "Товщина", hint: nil, items: ["light", "regular", "medium", "bold", "heavy"].map { ($0, $0) },
-                  selected: res.string("fontWeight") ?? "") { v in project.edit { _ in res.set("fontWeight", v) } }
+            HStack {
+                Text("Товщина").font(.subheadline)
+                Spacer()
+                Picker("Товщина", selection: Binding(get: { res.string("fontWeight") ?? "regular" },
+                                                     set: { v in project.edit { _ in res.set("fontWeight", v) } })) {
+                    ForEach(["thin", "extralight", "light", "normal", "regular", "medium", "demibold", "semibold", "bold", "heavy"], id: \.self) { w in
+                        Text(loc(Self.weightTitles[w] ?? w)).tag(w)
+                    }
+                }
+            }
             Chips(title: "Вирівнювання", hint: nil, items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
                   selected: res.string("align") ?? "left") { v in project.edit { _ in res.set("align", v) } }
-            CommitSlider(title: "Ширина поля", value: Double(res.int("w")), range: 10...Double(project.meta.device.width), step: 1) { v in project.edit { _ in res.set("w", int: Int(v)) } }
-            CommitSlider(title: "Висота поля", value: Double(res.int("h")), range: 8...200, step: 1) { v in project.edit { _ in res.set("h", int: Int(v)) } }
+            Chips(title: "Розміщення", hint: nil, items: [("normal", "Рядком"), ("arc", "Дугою")],
+                  selected: (res.string("style") ?? "normal") == "normal" ? "normal" : "arc") { v in
+                project.edit { _ in
+                    res.set("style", v)
+                    if v == "arc", !res.has("radius") {
+                        res.set("radius", int: 90).set("startAngle", int: -60).set("span", int: 120).set("verticalAlign", "top")
+                    }
+                }
+            }
+            if (res.string("style") ?? "normal") == "normal" {
+                CommitSlider(title: "Ширина поля", value: Double(res.int("w")), range: 10...Double(project.meta.device.width), step: 1) { v in project.edit { _ in res.set("w", int: Int(v)) } }
+                CommitSlider(title: "Висота поля", value: Double(res.int("h")), range: 8...300, step: 1) { v in project.edit { _ in res.set("h", int: Int(v)) } }
+                Chips(title: "Довгий текст", hint: nil,
+                      items: [("clip", "Обрізати"), ("wrap", "Переносити"), ("scroll", "Прокручувати"), ("scroll_circular", "По колу")],
+                      selected: res.string("longMode") ?? "clip") { v in project.edit { _ in res.set("longMode", v) } }
+                if res.string("longMode") == "wrap" {
+                    StepperRow(title: "Між рядками", value: Int(res.int("lineSpace")), range: 0...40) { v in project.edit { _ in res.set("lineSpace", int: v) } }
+                }
+                CommitSlider(title: "Поворот, °", value: Double(res.int("rotation")), range: -180...180, step: 1) { v in project.edit { _ in res.set("rotation", int: Int(v)) } }
+            } else {
+                CommitSlider(title: "Радіус дуги", value: Double(res.int("radius")), range: 20...260, step: 1) { v in project.edit { _ in res.set("radius", int: Int(v)) } }
+                CommitSlider(title: "Кут початку", value: Double(res.int("startAngle")), range: -180...180, step: 1) { v in project.edit { _ in res.set("startAngle", int: Int(v)) } }
+                CommitSlider(title: "Довжина дуги, °", value: Double(res.int("span")), range: 10...360, step: 1) { v in project.edit { _ in res.set("span", int: Int(v)) } }
+                Chips(title: "Текст відносно дуги", hint: nil, items: [("top", "Зовні"), ("center", "По центру"), ("bottom", "Всередині")],
+                      selected: res.string("verticalAlign") ?? "top") { v in project.edit { _ in res.set("verticalAlign", v) } }
+            }
             StepperRow(title: "Відстань між літерами", value: Int(res.int("letterSpace")), range: 0...40) { v in project.edit { _ in res.set("letterSpace", int: v) } }
-            Text("Текст малює сам браслет своїм шрифтом, тож на полотні він виглядає приблизно.")
+            Text("Текст малює сам браслет своїм шрифтом MiSans; на полотні — той самий шрифт (кирилиця — системним шрифтом).")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .onAppear { text = res.string("string") ?? "" }
@@ -297,7 +381,7 @@ struct LayersSheet: View {
             List {
                 let ls = Array(project.layouts(theme).reversed())
                 ForEach(Array(ls.enumerated()), id: \.offset) { _, l in
-                    let res = project.resource(ref: l.string("ref"))
+                    let res = project.element(of: l)
                     Button { selected = l; dismiss() } label: {
                         HStack(spacing: 12) {
                             ElementIcon(kind: ElementKind.of(res)).frame(width: 36).foregroundStyle(.secondary)

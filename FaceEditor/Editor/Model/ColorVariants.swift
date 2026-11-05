@@ -84,7 +84,9 @@ enum ColorVariants {
     /// Таблиці тем за поточними кольорами (циферблати, де кольори вмикали ще для «Завжди на екрані»)
     static func syncThemes(_ p: FaceProject) {
         let c = colors(p)
-        if c.count > 1 { write(p, c) }
+        guard c.count > 1 else { return }
+        let joined = c.joined(separator: ",")
+        if p.themes.contains(where: { $0.string("colorGroup") != joined }) { write(p, c) }
     }
 
     private static func write(_ p: FaceProject, _ list: [String]) {

@@ -20,15 +20,13 @@ struct EditorView: View {
     @State private var sheet: EditorSheet?
     @State private var showPreview = false
     @State private var confirmDiscard = false
-    @State private var renameText = ""
-    @State private var showRename = false
     @State private var alert: String?
     @State private var share: ShareItem?
     @State private var initial: (Data, [String: Data], ProjectMeta)?
     @AppStorage("editorSnap") private var snap = true
     @AppStorage("editorGrid") private var grid = 1
 
-    enum EditorSheet: Identifiable { case add, layers, background, source
+    enum EditorSheet: Identifiable { case add, layers, background, source, properties
         var id: Int { hashValue }
     }
 
@@ -60,8 +58,11 @@ struct EditorView: View {
             case .background:
                 BackgroundSheet(project: project, theme: theme)
                     .presentationDetents([.medium])
+            case .properties:
+                FacePropertiesSheet(project: project, theme: $theme)
+                    .presentationDetents([.large])
             case .source:
-                if let sel = selected, let res = project.resource(ref: sel.string("ref")) {
+                if let sel = selected, let res = project.element(of: sel) {
                     NavigationStack {
                         DataSourcePicker(current: res.string("source")) { src in
                             project.edit { _ in res.set("source", src) }
@@ -75,11 +76,6 @@ struct EditorView: View {
         .confirmationDialog("Відкинути зміни, зроблені після відкриття?", isPresented: $confirmDiscard, titleVisibility: .visible) {
             Button("Відкинути зміни", role: .destructive) { discard() }
             Button("Зберегти й закрити") { dismiss() }
-        }
-        .alert("Назва циферблата", isPresented: $showRename) {
-            TextField("Назва", text: $renameText)
-            Button("Готово") { let n = renameText; project.edit { $0.root.set("name", n) } }
-            Button("Скасувати", role: .cancel) {}
         }
         .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
             Button("Гаразд", role: .cancel) {}
@@ -97,10 +93,15 @@ struct EditorView: View {
             }
             .accessibilityLabel("Закрити")
             Spacer()
-            Button { renameText = project.name; showRename = true } label: {
-                Text(project.displayName).font(.headline).foregroundStyle(.primary).lineLimit(1)
+            // назва → властивості циферблата (назва, ID, екрани, розмір)
+            Button { sheet = .properties } label: {
+                HStack(spacing: 4) {
+                    Text(project.displayName).font(.headline).foregroundStyle(.primary).lineLimit(1)
+                    Image(systemName: "chevron.down.circle.fill").font(.system(size: 15)).foregroundStyle(.secondary)
+                }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text("Властивості циферблата"))
             Spacer()
             Menu {
                 if install != nil {
@@ -120,14 +121,20 @@ struct EditorView: View {
 
     private var canvasButtons: some View {
         VStack(spacing: 8) {
-            roundButton("arrow.uturn.backward", "Скасувати") { project.undo(); if let s = selected, !project.layouts(theme).contains(where: { $0 === s }) { selected = nil } }
+            roundButton("arrow.uturn.backward", "Скасувати") { project.undo(); dropMissingSelection() }
                 .disabled(!project.canUndo)
+            roundButton("arrow.uturn.forward", "Повторити") { project.redo(); dropMissingSelection() }
+                .disabled(!project.canRedo)
             roundButton("eye", "Попередній перегляд") { showPreview = true }
             if project.themes.count > 1 {
                 roundButton(theme == 0 ? "sun.max" : "moon", "Тема") { theme = (theme + 1) % project.themes.count; selected = nil }
             }
         }
         .padding(12)
+    }
+
+    private func dropMissingSelection() {
+        if let s = selected, !project.layouts(theme).contains(where: { $0 === s }) { selected = nil }
     }
 
     private func roundButton(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {
@@ -202,7 +209,7 @@ struct EditorView: View {
                         let t = p.root.add("Theme")
                         t.set("type", "AOD").set("name", "").set("bgColor", "#000000")
                         // у режимі «завжди на екрані» — лише час, без секундних і кольорових деталей
-                        for l in p.layouts(0) where ElementKind.of(p.resource(ref: l.string("ref"))) == .digits { t.kids.append(l.copy()) }
+                        for l in p.layouts(0) where ElementKind.of(p.element(of: l)) == .digits { t.kids.append(l.copy()) }
                     }
                     theme = 1; selected = nil
                 } label: {

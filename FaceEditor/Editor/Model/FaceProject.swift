@@ -18,6 +18,29 @@ struct Generator: Codable, Equatable {
     var radius: Double = 60
     var width: Double = 10
     var length: Double = 120
+    /// Одиниця біля числа («%», «°», «км»), малюється тим самим шрифтом
+    var unit: String = ""
+
+    init(kind: Kind, color: String = "#FFFFFF", bgColor: String = "#3A3A3C", fontSize: Double = 48, weight: Int = 700,
+         style: String = "rounded", radius: Double = 60, width: Double = 10, length: Double = 120, unit: String = "") {
+        self.kind = kind; self.color = color; self.bgColor = bgColor; self.fontSize = fontSize; self.weight = weight
+        self.style = style; self.radius = radius; self.width = width; self.length = length; self.unit = unit
+    }
+
+    // старі editor.json не мають нових полів — беремо типові
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try c.decode(Kind.self, forKey: .kind)
+        color = (try? c.decodeIfPresent(String.self, forKey: .color)) ?? "#FFFFFF"
+        bgColor = (try? c.decodeIfPresent(String.self, forKey: .bgColor)) ?? "#3A3A3C"
+        fontSize = (try? c.decodeIfPresent(Double.self, forKey: .fontSize)) ?? 48
+        weight = (try? c.decodeIfPresent(Int.self, forKey: .weight)) ?? 700
+        style = (try? c.decodeIfPresent(String.self, forKey: .style)) ?? "rounded"
+        radius = (try? c.decodeIfPresent(Double.self, forKey: .radius)) ?? 60
+        width = (try? c.decodeIfPresent(Double.self, forKey: .width)) ?? 10
+        length = (try? c.decodeIfPresent(Double.self, forKey: .length)) ?? 120
+        unit = (try? c.decodeIfPresent(String.self, forKey: .unit)) ?? ""
+    }
 }
 
 /// Пристрій: розмір екрана для полотна й нового циферблата. Лише Smart Band 10.
@@ -103,6 +126,13 @@ final class FaceProject: ObservableObject, Identifiable {
     func resource(ref: String?) -> XNode? {
         guard let ref, ref.count > 1 else { return nil }
         return resource(named: String(ref.dropFirst()))
+    }
+
+    /// Елемент шару: для обгортки «дія при натисканні» — те, що всередині
+    func element(of layout: XNode) -> XNode? {
+        guard let r = resource(ref: layout.string("ref")) else { return nil }
+        if let inner = ElementFactory.tapInner(self, r) { return inner }
+        return r
     }
 
     func uniqueName(_ base: String) -> String {

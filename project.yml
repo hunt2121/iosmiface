@@ -35,6 +35,30 @@ targets:
         CADisableMinimumFrameDurationOnPhone: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # MiSans (латиниця) — шрифт браслета для написів у редакторі. © Xiaomi, вбудовування дозволене
+        UIAppFonts:
+          - MiSans-Thin.ttf
+          - MiSans-ExtraLight.ttf
+          - MiSans-Light.ttf
+          - MiSans-Normal.ttf
+          - MiSans-Regular.ttf
+          - MiSans-Medium.ttf
+          - MiSans-Demibold.ttf
+          - MiSans-Semibold.ttf
+          - MiSans-Bold.ttf
+          - MiSans-Heavy.ttf
+        # Файли циферблатів (.bin, .face) відкриваються в BandFace з «Файлів», AirDrop і «Поділитися»
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Xiaomi watch face
+            LSHandlerRank: Owner
+            LSItemContentTypes: [app.bandface.watchface]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: app.bandface.watchface
+            UTTypeDescription: Xiaomi watch face
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [bin, face]
+        LSSupportsOpeningDocumentsInPlace: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface

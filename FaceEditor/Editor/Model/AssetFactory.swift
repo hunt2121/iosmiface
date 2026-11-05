@@ -63,6 +63,12 @@ enum AssetFactory {
         }()
         var f: UIFont
         switch g.style {
+        case "misans":
+            // шрифт браслета (якщо є в застосунку), інакше системний
+            let names: [(Int, String)] = [(150, "Thin"), (250, "ExtraLight"), (350, "Light"), (450, "Regular"),
+                                          (550, "Medium"), (650, "Semibold"), (800, "Bold"), (10_000, "Heavy")]
+            let n = names.first { g.weight < $0.0 }?.1 ?? "Bold"
+            f = UIFont(name: "MiSans-" + n, size: size) ?? UIFont.systemFont(ofSize: size, weight: weight)
         case "condensed": f = UIFont.systemFont(ofSize: size, weight: weight, width: .condensed)
         case "mono": f = UIFont.monospacedSystemFont(ofSize: size, weight: weight)
         default:
@@ -109,6 +115,34 @@ enum AssetFactory {
         return full.map { img in
             RGBAImage(w: w, h: h, px: Array(img.px[(y0 * w * 4)..<((y1 + 1) * w * 4)]))
         }
+    }
+
+    /// Значок одиниці («%», «°», «км»…) тим самим шрифтом і кольором, що й цифри, тієї ж висоти —
+    /// щоб стояв на одній лінії з числом.
+    static func unitImage(_ text: String, _ g: Generator) -> RGBAImage? {
+        let t = text.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty, let digit = digitFrames(g).first else { return nil }
+        let f = font(g)
+        let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
+        let s = NSAttributedString(string: t, attributes: attrs)
+        let w = Int(ceil(s.size().width)) + 4
+        let lh = ceil(f.lineHeight)
+        let tall = Int(lh * 2)
+        let top = lh / 2
+        let full = render(w, tall) { _ in s.draw(at: CGPoint(x: 2, y: top)) }
+        // та сама вертикальна вирізка, що й у цифр: шукаємо її за кадром «0»
+        let zero = render(digit.w, tall) { _ in
+            let z = NSAttributedString(string: "0", attributes: attrs)
+            z.draw(at: CGPoint(x: (CGFloat(digit.w) - z.size().width) / 2, y: top))
+        }
+        var y0 = tall
+        for y in 0..<tall where y0 == tall {
+            for x in 0..<digit.w where zero.px[(y * digit.w + x) * 4 + 3] != 0 { y0 = y; break }
+        }
+        y0 = max(0, y0 - 1)
+        let h = digit.h
+        guard y0 + h <= tall else { return nil }
+        return RGBAImage(w: w, h: h, px: Array(full.px[(y0 * w * 4)..<((y0 + h) * w * 4)]))
     }
 
     /// Кільце: повне коло заданого кольору (для дуги й фону дуги).

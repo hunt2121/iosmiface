@@ -48,6 +48,15 @@ struct ContentView: View {
     @StateObject private var editorStore = ProjectStore()
     /// Циферблат, відкритий у редакторі
     @State private var editorProject: FaceProject?
+    /// Файл циферблата, відкритий у BandFace з «Файлів», AirDrop чи «Поділитися»
+    @State private var openedFile: OpenedFace?
+
+    struct OpenedFace: Identifiable {
+        let id = UUID()
+        let data: Data
+        let name: String
+        let face: FaceFile
+    }
     @AppStorage("verboseLog") private var verboseLog = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -132,6 +141,15 @@ struct ContentView: View {
         .onAppear {
             autoFindKey()
         }
+        .onOpenURL { openExternal($0) }
+        .confirmationDialog(openedFile.map { $0.name } ?? "", isPresented: Binding(get: { openedFile != nil }, set: { if !$0 { openedFile = nil } }),
+                            titleVisibility: .visible, presenting: openedFile) { f in
+            Button("Встановити на пристрій") { useOpened(f) }
+            Button("Відкрити в редакторі") { openInEditor(f) }
+            Button("Скасувати", role: .cancel) {}
+        } message: { _ in
+            Text("Що зробити з цим циферблатом?")
+        }
         // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
         .task {
             // лише ті, яких ще немає в кеші
@@ -215,7 +233,7 @@ struct ContentView: View {
                         SettingsLabel("Журнал", tile: .log)
                     }
                 }
-                Section("Застосунок") {
+                Section {
                     Picker(selection: $appTheme) {
                         Text("Системна").tag("system")
                         Text("Світла").tag("light")
@@ -246,6 +264,11 @@ struct ContentView: View {
                         Text(verbatim: "\(Self.versionString).\(Self.buildNumber)")
                             .foregroundStyle(.secondary)
                     }
+                } header: {
+                    Text("Застосунок")
+                } footer: {
+                    // вимога ліцензії MiSans: зазначити, що шрифт використано
+                    Text("Написи в редакторі — шрифтом MiSans © Xiaomi.")
                 }
             }
             .navigationTitle("Налаштування")
@@ -807,6 +830,47 @@ struct ContentView: View {
     private func show(_ text: String, error: Bool) {
         message = text
         messageIsError = error
+    }
+
+    // MARK: - Файли ззовні
+
+    /// Файл .bin / .face, переданий у застосунок
+    private func openExternal(_ url: URL) {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped { url.stopAccessingSecurityScopedResource() }
+            // копія в Documents/Inbox більше не потрібна
+            if url.path.contains("/Inbox/") { try? FileManager.default.removeItem(at: url) }
+        }
+        guard let data = try? Data(contentsOf: url), let parsed = try? FaceFile(data: data) else {
+            storeAlert = String(localized: "Це не файл циферблата Xiaomi")
+            return
+        }
+        let name = url.deletingPathExtension().lastPathComponent
+        openedFile = OpenedFace(data: data, name: parsed.name ?? name, face: parsed)
+    }
+
+    private func useOpened(_ f: OpenedFace) {
+        face = f.face
+        fileName = f.name + ".bin"
+        filePreview = f.face.previewImage()
+        fileAnimation = nil
+        message = nil
+        renderFilePreview(f.face)
+        tab = .faces
+    }
+
+    private func openInEditor(_ f: OpenedFace) {
+        do {
+            let p = try editorStore.importBin(f.data, name: f.name)
+            tab = .editor
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                editorProject = p
+            }
+        } catch {
+            storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Редактор
