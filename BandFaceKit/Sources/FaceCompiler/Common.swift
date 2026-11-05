@@ -15,7 +15,10 @@ public struct FaceCompilerError: Error, LocalizedError, CustomStringConvertible,
 public struct FaceCompilerOptions: Sendable {
     /// Відтворювати відомі помилки exe (для побайтової звірки з еталоном). Типово — виправлена поведінка.
     public var exeQuirks: Bool
-    public init(exeQuirks: Bool = false) { self.exeQuirks = exeQuirks }
+    /// Кольорові варіанти: копіювати в кожен колір і ті картинки, що не змінюються (так робить exe).
+    /// false — лише справжні варіанти; файл значно менший (експеримент: чи бере браслет основну картинку сам).
+    public var colorCopies: Bool
+    public init(exeQuirks: Bool = false, colorCopies: Bool = true) { self.exeQuirks = exeQuirks; self.colorCopies = colorCopies }
 }
 
 /// Журнал повідомлень (exe пише в консоль через spdlog).

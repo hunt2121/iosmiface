@@ -69,7 +69,7 @@ public final class FaceBuilder {
             for c in ti.colorGroups where c != 0 {
                 let nid = UInt32(it.type) << 24 | (c & 0xFF) << 19 | (it.id & 0x7FFFF)
                 if let g = lists[it.type]?.first(where: { $0.realId == nid }) { ti.tables[it.type].append(g) }
-                else { ti.tables[it.type].append(it.clone(colorGroup: UInt8(c & 0xFF))) }
+                else if options.colorCopies { ti.tables[it.type].append(it.clone(colorGroup: UInt8(c & 0xFF))) }
             }
         }
     }

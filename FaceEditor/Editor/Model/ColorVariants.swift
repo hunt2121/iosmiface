@@ -81,11 +81,21 @@ enum ColorVariants {
         for r in p.resources.elements where r.tag == "Image" || r.tag == "ImageArray" { r.remove("colorGroup") }
     }
 
+    /// Таблиці тем за поточними кольорами (циферблати, де кольори вмикали ще для «Завжди на екрані»)
+    static func syncThemes(_ p: FaceProject) {
+        let c = colors(p)
+        if c.count > 1 { write(p, c) }
+    }
+
     private static func write(_ p: FaceProject, _ list: [String]) {
         guard list.count > 1 else { disable(p); return }
         let joined = list.joined(separator: ",")
         p.root.set("colorGroupTable", joined)
-        for th in p.themes { th.set("colorGroup", joined) }
+        // лише основні екрани: «Завжди на екрані» лишається в основному кольорі (і не множить картинки)
+        for th in p.themes {
+            if th.string("type") == "AOD" { th.remove("colorGroup"); th.remove("colorGroupTable") }
+            else { th.set("colorGroup", joined) }
+        }
     }
 
     // MARK: Пошук

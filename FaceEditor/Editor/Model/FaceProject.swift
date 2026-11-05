@@ -193,8 +193,11 @@ final class FaceProject: ObservableObject, Identifiable {
     /// Після змін у редакторі (або коли превʼю немає) превʼю для браслета малюється заново.
     func compile() throws -> (Data, [String]) {
         let log = FaceCompilerLog()
+        ColorVariants.syncThemes(self)
         let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
-        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), log: log)
+        // кольорові варіанти: лише справжні, без копій незмінних картинок (експеримент — файл майже не росте)
+        let options = FaceCompilerOptions(colorCopies: false)
+        let data = try WatchfaceCompiler.build(from: needsPreview ? storageWithFreshPreviews() : storage(), options: options, log: log)
         return (data, log.warnings)
     }
 
