@@ -34,7 +34,7 @@ final class ProjectStore: ObservableObject {
         let meta = ProjectMeta()
         let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: [:], meta: meta)
         // стартові елементи — щоб одразу було що редагувати
-        let w = device.width
+        let w = meta.device.width
         let digits = Generator(kind: .digits, color: "#FFFFFF", fontSize: 66, weight: 800, style: "rounded")
         ElementFactory.addDigits(p, source: "timeHour", gen: digits, theme: 0, center: (w / 2, 120))
         ElementFactory.addDigits(p, source: "timeMinute", gen: digits, theme: 0, center: (w / 2, 200))
