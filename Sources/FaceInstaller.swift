@@ -211,7 +211,7 @@ struct InstallFailure: LocalizedError {
 
 // MARK: - Тексти помилок бібліотеки
 
-extension BandError: LocalizedError {
+extension BandError: @retroactive LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notConnected:

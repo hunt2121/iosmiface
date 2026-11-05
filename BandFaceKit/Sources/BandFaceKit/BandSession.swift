@@ -186,11 +186,11 @@ public actor BandSession {
                 do {
                     try await self.transport.write(frame)
                 } catch {
-                    await self.failSessionWaiter(code: code, error: error)
+                    self.failSessionWaiter(code: code, error: error)
                     return
                 }
                 try? await Task.sleep(for: timeout)
-                await self.failSessionWaiter(code: code, error: BandError.timeout)
+                self.failSessionWaiter(code: code, error: BandError.timeout)
             }
         }
     }
@@ -291,7 +291,7 @@ public actor BandSession {
         }
         Task {
             try? await Task.sleep(for: timeout)
-            await self.fail(id, BandError.timeout)
+            self.fail(id, BandError.timeout)
         }
     }
 
@@ -365,7 +365,7 @@ public actor BandSession {
             ackWaiters[id] = continuation
             Task {
                 try? await Task.sleep(for: timeout)
-                await self.resumeAckWaiter(id, false)
+                self.resumeAckWaiter(id, false)
             }
         }
     }
@@ -481,7 +481,7 @@ public actor BandSession {
             eventWaiters[id] = (name: "\(type)/\(subtype)", continuation: continuation)
             Task {
                 try? await Task.sleep(for: timeout)
-                await self.resumeEventWaiter(id, nil)
+                self.resumeEventWaiter(id, nil)
             }
         }
         return result != nil

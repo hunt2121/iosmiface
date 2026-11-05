@@ -19,7 +19,7 @@ BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files t
 
 ## Features
 
-- **One-tap install.** Pick a watch face file, tap *Install on band* — the band receives the file and switches to the new face by itself.
+- **One-tap install.** Pick a watch face file, tap *Install* — the band receives the file and switches to the new face by itself.
 - **Preview before installing.** The app shows the face's preview image, name, ID and size.
 - **Auth key found automatically.** Choose the *Mi Fitness* folder in the Files app once; the key is re-read on every launch.
 - **Remembers your band** and reconnects automatically.
@@ -51,7 +51,7 @@ With a free Apple ID the app must be re-signed every 7 days. Test builds of ever
 
 1. **Key** tab → *Find automatically* → in the picker open *On My iPhone › Mi Fitness* → *Open*. The key appears with a green check mark.
 2. **Watch faces** tab → connect to your band.
-3. *Choose file* → pick a `.face` or `.bin` file → *Install on band*.
+3. *Choose file* → pick a `.face` or `.bin` file → *Install*.
 
 If something goes wrong, turn on **Developer mode** in the **Log** tab, repeat, and attach the copied log to an issue.
 
