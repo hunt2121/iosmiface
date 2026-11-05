@@ -1,0 +1,38 @@
+name: Build FaceEditor
+# Тестовий застосунок редактора циферблатів. Лише вручну, одна машина; IPA — у чернетку релізу.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BUILD_NUM: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
+          xcodebuild -version
+      - name: Generate Xcode project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project BandFace.xcodeproj -scheme FaceEditor -configuration Release -sdk iphoneos \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUM" build 2>&1 | tee xcodebuild.log | grep -E "error:|warning: .*FaceEditor|BUILD" | head -80
+      - name: Package IPA
+        run: |
+          NAME="FaceEditor-v01$BUILD_NUM"
+          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
+          mkdir Payload && cp -R build/Build/Products/Release-iphoneos/FaceEditor.app Payload/ && zip -qr "$NAME.ipa" Payload
+      - name: Draft release with IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "editor-$BUILD_NUM" "$IPA_NAME.ipa" --draft --target "$GITHUB_SHA" \
+            --title "FaceEditor draft $BUILD_NUM" --notes "Unsigned FaceEditor IPA for signing"

@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: MIT
+// Редактор циферблата: полотно з вибором і перетягуванням шарів, панель властивостей, додавання елементів,
+// шари, фон, попередній перегляд і збирання .bin.
+
+import SwiftUI
+import PhotosUI
+import FaceCompiler
+
+struct EditorView: View {
+    @ObservedObject var project: FaceProject
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var theme = 0
+    @State private var selected: XNode?
+    @State private var tab: InspectorTab = .look
+    @State private var sheet: EditorSheet?
+    @State private var showPreview = false
+    @State private var confirmDiscard = false
+    @State private var renameText = ""
+    @State private var showRename = false
+    @State private var alert: String?
+    @State private var share: ShareItem?
+    @State private var initial: (Data, [String: Data], ProjectMeta)?
+    @AppStorage("editorSnap") private var snap = true
+    @AppStorage("editorGrid") private var grid = 1
+
+    enum EditorSheet: Identifiable { case add, layers, background, source
+        var id: Int { hashValue }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            topBar
+            CanvasView(project: project, theme: theme, selected: $selected, snap: snap, grid: grid)
+                .frame(maxWidth: .infinity)
+                .frame(height: 340)
+                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
+                .overlay(alignment: .topTrailing) { canvasButtons }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+            panel
+        }
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .onAppear {
+            if initial == nil { initial = (Data(XML.print(project.root)), project.files, project.meta) }
+            if project.themes.isEmpty { project.edit { $0.root.add("Theme").set("type", "normal").set("name", "").set("bgColor", "#000000") } }
+        }
+        .sheet(item: $sheet) { s in
+            switch s {
+            case .add:
+                AddElementSheet(project: project, theme: theme) { layout in selected = layout; tab = .look }
+                    .presentationDetents([.large])
+            case .layers:
+                LayersSheet(project: project, theme: theme, selected: $selected)
+                    .presentationDetents([.medium, .large])
+            case .background:
+                BackgroundSheet(project: project, theme: theme)
+                    .presentationDetents([.medium])
+            case .source:
+                if let sel = selected, let res = project.resource(ref: sel.string("ref")) {
+                    NavigationStack {
+                        DataSourcePicker(current: res.string("source")) { src in
+                            project.edit { _ in res.set("source", src) }
+                        }
+                    }
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showPreview) { PreviewView(project: project, theme: theme) }
+        .sheet(item: $share) { item in ActivityView(items: [item.url]) }
+        .confirmationDialog("Відкинути зміни, зроблені після відкриття?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+            Button("Відкинути зміни", role: .destructive) { discard() }
+            Button("Зберегти й закрити") { dismiss() }
+        }
+        .alert("Назва циферблата", isPresented: $showRename) {
+            TextField("Назва", text: $renameText)
+            Button("Готово") { let n = renameText; project.edit { $0.root.set("name", n) } }
+            Button("Скасувати", role: .cancel) {}
+        }
+        .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
+            Button("Гаразд", role: .cancel) {}
+        }
+    }
+
+    // MARK: Верхня панель
+
+    private var topBar: some View {
+        HStack {
+            Button { confirmDiscard = true } label: {
+                Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color(.secondarySystemGroupedBackground)))
+            }
+            .accessibilityLabel("Закрити")
+            Spacer()
+            Button { renameText = project.name; showRename = true } label: {
+                Text(project.name.isEmpty ? "Без назви" : project.name).font(.headline).foregroundStyle(.primary).lineLimit(1)
+            }
+            Spacer()
+            Menu {
+                Button { exportBin() } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
+                Button { dismiss() } label: { Label("Готово", systemImage: "checkmark") }
+            } label: {
+                Text("Готово").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 16).frame(height: 40)
+                    .background(Capsule().fill(Color.accentColor))
+            } primaryAction: { dismiss() }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private var canvasButtons: some View {
+        VStack(spacing: 8) {
+            roundButton("arrow.uturn.backward", "Скасувати") { project.undo(); if let s = selected, !project.layouts(theme).contains(where: { $0 === s }) { selected = nil } }
+                .disabled(!project.canUndo)
+            roundButton("eye", "Попередній перегляд") { showPreview = true }
+            if project.themes.count > 1 {
+                roundButton(theme == 0 ? "sun.max" : "moon", "Тема") { theme = (theme + 1) % project.themes.count; selected = nil }
+            }
+        }
+        .padding(12)
+    }
+
+    private func roundButton(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).font(.system(size: 16, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
+        }
+        .accessibilityLabel(label)
+    }
+
+    // MARK: Нижня панель
+
+    private var panel: some View {
+        VStack(spacing: 0) {
+            Capsule().fill(Color(.systemGray4)).frame(width: 36, height: 5).padding(.top, 10).padding(.bottom, 10)
+            ScrollView {
+                if let sel = selected, project.layouts(theme).contains(where: { $0 === sel }) {
+                    InspectorView(project: project, theme: theme, layout: sel, tab: $tab, snap: $snap, grid: $grid,
+                                  onSource: { sheet = .source },
+                                  onDuplicate: {
+                                      project.edit { ElementFactory.duplicate($0, layout: sel, theme: theme) }
+                                      selected = project.layouts(theme).last
+                                  },
+                                  onDelete: {
+                                      project.edit { ElementFactory.delete($0, layout: sel, theme: theme) }
+                                      selected = nil
+                                  })
+                } else {
+                    faceInfo
+                }
+            }
+            HStack(spacing: 10) {
+                bottomButton("Елемент", icon: "plus", prominent: true) { sheet = .add }
+                bottomButton("Шари", icon: nil) { sheet = .layers }
+                bottomButton("Фон", icon: nil) { sheet = .background }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+            .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
+        .background(
+            UnevenRoundedCorners(radius: 28).fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.08), radius: 10, y: -2)
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .padding(.top, 14)
+    }
+
+    private func bottomButton(_ title: String, icon: String?, prominent: Bool = false, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let icon { Image(systemName: icon).font(.system(size: 14, weight: .bold)) }
+                Text(title).font(.subheadline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity).frame(height: 44)
+            .foregroundStyle(prominent ? Color.accentColor : .primary)
+            .background(Capsule().fill(prominent ? Color.accentColor.opacity(0.14) : Color(.tertiarySystemGroupedBackground)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var faceInfo: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Циферблат").font(.title3.weight(.bold))
+            Text("Торкніться елемента на полотні, щоб змінити його, або перетягніть, щоб пересунути. «Елемент» додає час, дату, кроки, пульс, погоду та інше.")
+                .font(.subheadline).foregroundStyle(.secondary)
+            HStack {
+                Text("Пристрій").font(.subheadline)
+                Spacer()
+                Picker("Пристрій", selection: Binding(get: { project.meta.device }, set: { d in project.edit { $0.meta.device = d } })) {
+                    ForEach(DeviceProfile.all) { d in Text(d.title).tag(d) }
+                }
+            }
+            .padding(.horizontal, 14).frame(height: 44)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+            if project.themes.count < 2 {
+                Button {
+                    project.edit { p in
+                        let t = p.root.add("Theme")
+                        t.set("type", "AOD").set("name", "").set("bgColor", "#000000")
+                        // у режимі «завжди на екрані» — лише час, без секундних і кольорових деталей
+                        for l in p.layouts(0) where ElementKind.of(p.resource(ref: l.string("ref"))) == .digits { t.kids.append(l.copy()) }
+                    }
+                    theme = 1; selected = nil
+                } label: {
+                    Label("Додати екран «Завжди на екрані»", systemImage: "moon")
+                        .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 44)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text(theme == 0 ? "Зараз: основний екран" : "Зараз: «Завжди на екрані»").font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: Дії
+
+    private func exportBin() {
+        do {
+            let (data, warnings) = try project.compile()
+            share = ShareItem(url: try ShareItem.write(data, name: project.name))
+            if !warnings.isEmpty { alert = "Зібрано з попередженнями:\n" + warnings.prefix(5).joined(separator: "\n") }
+        } catch {
+            alert = "Не вдалося зібрати: \(error.localizedDescription)"
+        }
+    }
+
+    private func discard() {
+        if let snap = initial, let r = try? XML.parse([UInt8](snap.0)) {
+            project.edit { p in
+                p.root.kids = r.kids; p.root.attrs = r.attrs
+                for k in p.files.keys { p.removeFile(k) }
+                for (k, v) in snap.1 { p.setFile(k, v) }
+                p.meta = snap.2
+            }
+        }
+        dismiss()
+    }
+}
+
+/// Верхні заокруглені кути панелі (iOS 16 не має UnevenRoundedRectangle).
+struct UnevenRoundedCorners: Shape {
+    var radius: CGFloat
+    func path(in rect: CGRect) -> Path {
+        Path(UIBezierPath(roundedRect: rect, byRoundingCorners: [.topLeft, .topRight],
+                          cornerRadii: CGSize(width: radius, height: radius)).cgPath)
+    }
+}
+
+enum InspectorTab: String, CaseIterable, Identifiable {
+    case look = "Вигляд", color = "Колір", position = "Позиція"
+    var id: String { rawValue }
+}

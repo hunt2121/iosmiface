@@ -47,3 +47,33 @@ targets:
           STRIP_STYLE: all
           COPY_PHASE_STRIP: YES
           SWIFT_OPTIMIZATION_LEVEL: -Osize
+
+  # Тестовий застосунок: редактор циферблатів (код редактора — FaceEditor/Editor, компілятор — FaceCompiler)
+  FaceEditor:
+    type: application
+    platform: iOS
+    sources:
+      - path: FaceEditor
+      - path: Sources/Theme.swift
+      - path: Sources/Assets.xcassets
+    dependencies:
+      - package: BandFaceKit
+        product: FaceCompiler
+    info:
+      path: FaceEditor/Info.plist
+      properties:
+        CFBundleDisplayName: "Редактор"
+        CFBundleDevelopmentRegion: uk
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        CADisableMinimumFrameDurationOnPhone: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.faceeditor
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

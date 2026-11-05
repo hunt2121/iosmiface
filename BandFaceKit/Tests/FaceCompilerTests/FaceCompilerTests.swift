@@ -29,6 +29,7 @@ final class FaceCompilerTests: XCTestCase {
         XCTAssertEqual(img?.w, w); XCTAssertEqual(img?.h, h); XCTAssertEqual(img?.rgba, px)
     }
 
+    /// RGB565A8 у exe не ідемпотентний (декодування й кодування округлюють по-різному), тому тут indexed8.
     /// Новий циферблат із нуля -> .bin -> розпакування -> знову .bin: результат однаковий.
     func testBuildUnpackBuild() throws {
         let w = 20, h = 10
@@ -39,7 +40,7 @@ final class FaceCompilerTests: XCTestCase {
         <Watchface id="123456789" name="Test">
             <Resources>
                 <Image name="bg" src="bg.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
-                <ImageArray name="digits" compressMethod="RLEReversed" format="RGB565A8" recolorEnable="false">
+                <ImageArray name="digits" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
                     <Image src="d/0.png"/>
                     <Image src="d/1.png"/>
                 </ImageArray>
