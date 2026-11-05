@@ -53,6 +53,18 @@ struct InspectorView: View {
         .accessibilityLabel(label)
     }
 
+    /// x числа — точка прив'язки (лівий край / середина / правий край), тож при зміні вирівнювання
+    /// переносимо її так, щоб число лишилося на місці.
+    private func setNumberAlign(_ r: XNode, _ v: String) {
+        let b = FaceRenderer(project).render(theme: theme, scale: 1).1.first { $0.layout === layout }?.rect
+        project.edit { _ in
+            r.set("align", v)
+            guard let b else { return }
+            let x = v == "center" ? b.midX : v == "right" ? b.maxX : b.minX
+            layout.set("x", int: Int(x.rounded()))
+        }
+    }
+
     private func edit(_ f: @escaping (XNode) -> Void) {
         guard let r = res else { return }
         project.edit { _ in f(r) }
@@ -104,6 +116,9 @@ struct InspectorView: View {
                 Label("Намалювати цифри шрифтом", systemImage: "textformat.123").font(.subheadline.weight(.semibold))
             }
         }
+        Chips(title: "Вирівнювання", hint: "куди росте число",
+              items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
+              selected: r.string("align") ?? "left") { v in setNumberAlign(r, v) }
         StepperRow(title: "Кількість цифр", value: Int(r.int("totalDigits")), range: 0...9) { v in edit { $0.set("totalDigits", int: v) } }
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))

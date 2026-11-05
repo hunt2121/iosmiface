@@ -132,24 +132,27 @@ final class FaceRenderer {
         if total > 0, s.count > total { s = String(s.suffix(total)) }
         let space = CGFloat(Int8(truncatingIfNeeded: Int(res.int("space"))))
         let fw = CGFloat(fr[0].width), fh = CGFloat(fr[0].height)
-        let n = CGFloat(max(total, s.count))
-        let boxW = n * fw + max(0, n - 1) * space
-        let contentW = CGFloat(s.count) * fw + CGFloat(max(0, s.count - 1)) * space
+        let unit = image(p.resource(ref: res.string("unitIcon"))?.string("src"))
+        var contentW = CGFloat(s.count) * fw + CGFloat(max(0, s.count - 1)) * space
+        if let u = unit { contentW += CGFloat(u.width) }
+        // x макета — точка прив'язки, як на браслеті: left — лівий край числа, center — його середина,
+        // right — правий край (у BigWatch кроки: align="center", x=106 — середина екрана 212).
         var x = o.x
         switch res.string("align") {
-        case "right": x = o.x + boxW - contentW
-        case "center": x = o.x + (boxW - contentW) / 2
+        case "right", "flex-end": x = o.x - contentW
+        case "center": x = o.x - contentW / 2
         default: break
         }
+        let r = CGRect(x: x, y: o.y, width: contentW, height: fh)
         for ch in s {
             let d = ch.wholeNumberValue ?? 0
             put(fr[d], CGRect(x: x, y: o.y, width: fw, height: fh), c)
             x += fw + space
         }
-        var r = CGRect(x: o.x, y: o.y, width: boxW, height: fh)
-        if let u = image(p.resource(ref: res.string("unitIcon"))?.string("src")) {
-            let ur = CGRect(x: x, y: o.y, width: CGFloat(u.width), height: CGFloat(u.height))
-            put(u, ur, c); r = r.union(ur)
+        if let u = unit {
+            let ur = CGRect(x: x - space, y: o.y, width: CGFloat(u.width), height: CGFloat(u.height))
+            put(u, ur, c)
+            return r.union(ur)
         }
         return r
     }

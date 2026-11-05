@@ -65,6 +65,10 @@ final class FaceEditorTests: XCTestCase {
             let p = try store.importBin(data, name: u.lastPathComponent)
             let (_, boxes) = FaceRenderer(p).render(theme: 0)
             XCTAssertFalse(boxes.isEmpty, u.lastPathComponent)
+            // кроки в BigWatch/WhatTime: align="center", x=106 — число має стояти по центру екрана
+            for b in boxes where p.resource(ref: b.layout.string("ref"))?.string("source") == "healthStepCount" {
+                XCTAssertEqual(b.rect.midX, 106, accuracy: 0.5, u.lastPathComponent)
+            }
             let bin = try p.compile().0
             XCTAssertTrue(bin.count > 0)
             // після перезапуску застосунку (читання з диска) картинки на місці й збирається те саме
