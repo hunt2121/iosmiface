@@ -42,6 +42,8 @@ struct ContentView: View {
     @State private var message: String?
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
+    /// Анімоване превʼю вибраного файла (GIF), якщо циферблат анімований
+    @State private var fileAnimation: Data?
     // Редактор циферблатів
     @StateObject private var editorStore = ProjectStore()
     /// Циферблат, відкритий у редакторі
@@ -495,7 +497,7 @@ struct ContentView: View {
     private var installSection: some View {
         Section("Встановлення циферблата") {
             HStack(alignment: .center, spacing: 18) {
-                FaceCapsule(image: filePreview)
+                FaceCapsule(image: filePreview, animation: fileAnimation)
                 // Права колонка має фіксовані «слоти»: інформація, кнопки, прогрес.
                 // Їхня висота не змінюється, тож нічого не стрибає.
                 VStack(alignment: .leading, spacing: 8) {
@@ -669,12 +671,14 @@ struct ContentView: View {
                 let parsed = try FaceFile(data: data)
                 face = parsed
                 filePreview = parsed.previewImage()
+                fileAnimation = nil
                 fileName = url.lastPathComponent
                 message = nil
                 renderFilePreview(parsed)
             } catch {
                 face = nil
                 filePreview = nil
+                fileAnimation = nil
                 fileName = nil
                 show(error is BandError ? error.localizedDescription
                      : String(localized: "Некоректний файл циферблата: \(error.localizedDescription)"), error: true)
@@ -811,9 +815,9 @@ struct ContentView: View {
             let image = await Task.detached(priority: .userInitiated) { FacePreviews.shots(for: data).first?.image }.value
             // за цей час могли вибрати інший файл
             if let image, face?.data == file.data { filePreview = image }
-            // анімований циферблат — у капсулі програється анімація
-            let motion = await Task.detached(priority: .utility) { FacePreviews.animation(for: data) }.value
-            if let motion, face?.data == file.data { filePreview = motion }
+            // анімований циферблат — у капсулі програється анімація (GIF)
+            let gif = await Task.detached(priority: .utility) { FacePreviews.animationGIF(for: data) }.value
+            if face?.data == file.data { fileAnimation = gif }
         }
     }
 
@@ -846,6 +850,7 @@ struct ContentView: View {
         face = parsed
         fileName = name + ".bin"
         filePreview = parsed.previewImage()
+        fileAnimation = nil
         message = nil
         renderFilePreview(parsed)
         tab = .faces

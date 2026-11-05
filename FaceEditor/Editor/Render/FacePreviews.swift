@@ -81,18 +81,20 @@ enum FacePreviews {
 
     // MARK: Анімація
 
-    /// Анімації в пам'яті: ліміт за обсягом кадрів (≈12 МБ на 16 кадрів 289×708), решту iOS викидає сама
-    private static let animationCache: NSCache<NSString, UIImage> = {
-        let c = NSCache<NSString, UIImage>()
-        c.totalCostLimit = 120 << 20
-        return c
-    }()
+    /// Анімоване превʼю основного екрана як GIF (до ~480 КБ), якщо на темі є Sprite; nil — анімації немає.
+    /// Кешується на диску; показується покадрово (FaceAnimationView), тож у пам'яті лише один кадр.
+    static func animationGIF(for data: Data, theme: Int = 0) -> Data? {
+        let k = key(data)
+        let file = dir.appendingPathComponent("\(k)-anim\(theme).gif")
+        let none = dir.appendingPathComponent("\(k)-anim\(theme)-none")
+        if let d = try? Data(contentsOf: file) { return d }
+        if FileManager.default.fileExists(atPath: none.path) { return nil }
+        let gif = makeGIF(data, theme: theme)
+        if let gif { try? gif.write(to: file) } else { FileManager.default.createFile(atPath: none.path, contents: Data()) }
+        return gif
+    }
 
-    /// Анімований кадр теми (UIImage з кадрами), якщо на ній є Sprite; nil — анімації немає.
-    /// Кадри малюються з кроком інтервалу першої анімації, не більше 60.
-    static func animation(for data: Data, theme: Int = 0) -> UIImage? {
-        let k = "\(key(data))-\(theme)" as NSString
-        if let c = animationCache.object(forKey: k) { return c }
+    private static func makeGIF(_ data: Data, theme: Int) -> Data? {
         guard let unpacked = try? FaceProject.unpack(data) else { return nil }
         let (root, files) = unpacked
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("anim-\(UUID().uuidString)")
@@ -102,14 +104,22 @@ enum FacePreviews {
         let renderer = FaceRenderer(project)
         let count = sprites.map { renderer.frames(project.resource(ref: $0.string("ref"))).count }.max() ?? 0
         guard count > 1 else { return nil }
-        let interval = Double(max(16, Int(first.int("interval", 100)))) / 1000
-        let frames = (0..<min(count, 60)).map { i -> UIImage in
-            renderer.time = Double(i) * interval + interval / 2
-            return renderer.render(theme: theme, scale: scale).0
+        let ms = max(20, Int(first.int("interval", 100)))
+        var frames: [GIFEncoder.Frame] = []
+        var w = 0, h = 0
+        for i in 0..<min(count, 60) {
+            renderer.time = (Double(i) + 0.5) * Double(ms) / 1000
+            guard let cg = renderer.render(theme: theme, scale: scale).0.cgImage else { return nil }
+            w = cg.width; h = cg.height
+            var px = [UInt8](repeating: 0, count: w * h * 4)
+            px.withUnsafeMutableBytes { p in
+                guard let ctx = CGContext(data: p.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+                ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+            }
+            frames.append(GIFEncoder.Frame(rgba: px, durationMs: ms))
         }
-        guard let anim = UIImage.animatedImage(with: frames, duration: interval * Double(frames.count)) else { return nil }
-        let px = frames.first.map { Int($0.size.width * $0.scale) * Int($0.size.height * $0.scale) * 4 } ?? 0
-        animationCache.setObject(anim, forKey: k, cost: px * frames.count)
-        return anim
+        return GIFEncoder.encode(frames, width: w, height: h)
     }
 }

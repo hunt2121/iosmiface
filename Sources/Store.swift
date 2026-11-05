@@ -141,11 +141,15 @@ struct FaceCapsule: View {
     let image: UIImage?
     /// Циферблат зараз на екрані браслета — рамка зелена
     var active = false
+    /// Анімоване превʼю (GIF) — програється замість картинки
+    var animation: Data? = nil
 
     var body: some View {
         ZStack {
             Capsule(style: .continuous).fill(Color.black)
-            if let image {
+            if let animation {
+                FaceAnimationView(gif: animation)
+            } else if let image {
                 // UIImageView: програє й анімовані превʼю
                 FaceImageView(image: image)
             } else {
@@ -166,15 +170,14 @@ struct AnimatedFaceCapsule: View {
     let face: FaceFile
     let image: UIImage?
     var active = false
-    @State private var motion: UIImage?
+    @State private var gif: Data?
 
     var body: some View {
-        FaceCapsule(image: motion ?? image, active: active)
+        FaceCapsule(image: image, active: active, animation: gif)
             .task(id: face.id) {
                 let data = Data(face.data)
-                motion = await Task.detached(priority: .utility) { FacePreviews.animation(for: data) }.value
+                gif = await Task.detached(priority: .utility) { FacePreviews.animationGIF(for: data) }.value
             }
-            .onDisappear { motion = nil }
     }
 }
 
