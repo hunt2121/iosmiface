@@ -103,6 +103,13 @@ final class BuildItem {
                 frames.append(px)
             }
             if frames.isEmpty { throw FaceCompilerError("ImageArray \(name) at line \(e.line) should contain at least 1 image!") }
+            // виправлення: exe пише colorGroup і для ImageArray, а читає лише для Image, тож кольорові варіанти
+            // цифр і значків підмінялися копією основних кадрів (браслет показував вибір кольору, але колір не змінювався)
+            if !b.quirks, let cg = e.raw("colorGroup") {
+                let c = try parseColor(cg) & 0xFF_FFFF
+                guard let i = b.colors.firstIndex(of: c) else { throw FaceCompilerError("Color \(str(cg)) is not specified in Watchface colorGroupTable!") }
+                colorGroup = UInt8(truncatingIfNeeded: i)
+            }
         case 4:
             name = e.string("name") ?? ""; ref = e.raw("ref") ?? []
             interval = e.int("interval"); repeatCount = e.int("repeatCount")

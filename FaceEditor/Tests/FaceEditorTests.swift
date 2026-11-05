@@ -144,11 +144,15 @@ final class FaceEditorTests: XCTestCase {
         XCTAssertFalse(ColorVariants.availability(p, element: date).isAvailable)
         // збирання без помилок і розпакування назад з тими самими варіантами
         let bin = try p.compile().0
-        let (root, _) = try FaceProject.unpack(bin)
+        let (root, files) = try FaceProject.unpack(bin)
         XCTAssertNotNil(root.string("colorGroupTable"))
         let name = try XCTUnwrap(arr.string("name"))
         let same = root.first("Resources")?.elements.filter { $0.string("name") == name } ?? []
         XCTAssertEqual(same.count, 3)
+        // у варіантах справді інші кадри, а не копія основних
+        let firstFrames = same.compactMap { $0.first("Image")?.string("src").flatMap { files[$0] } }
+        XCTAssertEqual(firstFrames.count, 3)
+        XCTAssertEqual(Set(firstFrames).count, 3)
         // вимкнення прибирає все
         p.edit { ColorVariants.disable($0) }
         XCTAssertTrue(ColorVariants.variants(p, of: arr).isEmpty)
