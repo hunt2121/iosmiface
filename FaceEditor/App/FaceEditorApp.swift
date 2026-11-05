@@ -10,6 +10,7 @@ struct FaceEditorApp: App {
     @State private var editing: FaceProject?
 
     init() {
+        FacePreviews.displayScale = UIScreen.main.scale
         // UI-тести починають із порожнього списку
         if CommandLine.arguments.contains("-uitest-reset") {
             let d = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("FaceProjects")

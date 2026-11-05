@@ -14,10 +14,15 @@ enum FacePreviews {
         let alwaysOn: Bool
     }
 
-    /// Масштаб кадру: 212×520 → 318×780 px, з запасом для капсули 96×236 pt на екрані 3x
-    static let scale: CGFloat = 1.5
-    /// Змінюється, коли змінюється рендер: старі кадри в кеші тоді не використовуються
-    private static let version = "r2"
+    /// Висота капсули превʼю в BandFace (FaceCapsule 96×236 pt)
+    static let capsuleHeight: CGFloat = 236
+    /// Масштаб екрана телефона. Задає застосунок на старті: з фонових потоків UIScreen не читаємо
+    static var displayScale: CGFloat = 3
+    /// Пікселів кадру на піксель браслета — рівно під капсулу у фізичних пікселях
+    /// (3x: 520 → 708 px, кадр 289×708; 2x: 472 px). Без зайвого перемасштабування й пам'яті.
+    static var scale: CGFloat { capsuleHeight * displayScale / 520 }
+    /// Змінюється, коли змінюється рендер або розмір: старі кадри в кеші тоді не використовуються
+    private static var version: String { "r3-\(Int(displayScale))x" }
 
     private static let dir: URL = {
         let d = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("FacePreviews")
@@ -76,8 +81,12 @@ enum FacePreviews {
 
     // MARK: Анімація
 
-    /// Остання намальована анімація (одна, щоб не тримати в пам'яті кадри всіх циферблатів)
-    private static let animationCache = NSCache<NSString, UIImage>()
+    /// Анімації в пам'яті: ліміт за обсягом кадрів (≈12 МБ на 16 кадрів 289×708), решту iOS викидає сама
+    private static let animationCache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.totalCostLimit = 120 << 20
+        return c
+    }()
 
     /// Анімований кадр теми (UIImage з кадрами), якщо на ній є Sprite; nil — анімації немає.
     /// Кадри малюються з кроком інтервалу першої анімації, не більше 60.
@@ -99,8 +108,8 @@ enum FacePreviews {
             return renderer.render(theme: theme, scale: scale).0
         }
         guard let anim = UIImage.animatedImage(with: frames, duration: interval * Double(frames.count)) else { return nil }
-        animationCache.countLimit = 1
-        animationCache.setObject(anim, forKey: k)
+        let px = frames.first.map { Int($0.size.width * $0.scale) * Int($0.size.height * $0.scale) * 4 } ?? 0
+        animationCache.setObject(anim, forKey: k, cost: px * frames.count)
         return anim
     }
 }

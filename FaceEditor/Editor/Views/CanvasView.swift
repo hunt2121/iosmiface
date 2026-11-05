@@ -18,6 +18,7 @@ struct CanvasView: View {
     @State private var guideV = false
     @State private var guideH = false
     @State private var moved = false
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         GeometryReader { geo in
@@ -26,7 +27,8 @@ struct CanvasView: View {
             let b = FaceFrame.border
             let scale = min((geo.size.width - 32 - 2 * b) / W, (geo.size.height - 24 - 2 * b) / H)
             let size = CGSize(width: W * scale, height: H * scale)
-            let r = currentRender()
+            // рівно під фізичні пікселі полотна (раніше — у 6 разів більше, що гальмувало перетягування)
+            let r = currentRender(scale * displayScale)
             ZStack(alignment: .topLeading) {
                 Image(uiImage: r.0).resizable().frame(width: size.width, height: size.height)
                 if let box = selectedBox(r.1) {
@@ -54,12 +56,12 @@ struct CanvasView: View {
         }
     }
 
-    private func currentRender() -> (UIImage, [LayerBox]) {
+    private func currentRender(_ pixelScale: CGFloat) -> (UIImage, [LayerBox]) {
         let rd = renderer ?? FaceRenderer(project)
         if renderer == nil { DispatchQueue.main.async { renderer = rd } }
         rd.overrides = [:]
         if let l = dragLayout, let p = dragPos { rd.overrides[ObjectIdentifier(l)] = p }
-        return rd.render(theme: theme, scale: UIScreen.main.scale * 1.5)
+        return rd.render(theme: theme, scale: max(1, pixelScale))
     }
 
     private func selectedBox(_ boxes: [LayerBox]) -> CGRect? {

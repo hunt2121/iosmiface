@@ -161,6 +161,23 @@ struct FaceCapsule: View {
     }
 }
 
+/// Капсула, що програє анімацію циферблата (якщо є): кадри малюються у фоні, поки капсула на екрані.
+struct AnimatedFaceCapsule: View {
+    let face: FaceFile
+    let image: UIImage?
+    var active = false
+    @State private var motion: UIImage?
+
+    var body: some View {
+        FaceCapsule(image: motion ?? image, active: active)
+            .task(id: face.id) {
+                let data = Data(face.data)
+                motion = await Task.detached(priority: .utility) { FacePreviews.animation(for: data) }.value
+            }
+            .onDisappear { motion = nil }
+    }
+}
+
 /// Стан кнопки циферблата.
 enum StoreAction {
     case install, update, installed, installing
@@ -328,7 +345,7 @@ struct StoreView: View, Equatable {
 
     private func card(_ item: StoreFace) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            FaceCapsule(image: item.preview, active: item.id == activeID)
+            AnimatedFaceCapsule(face: item.face, image: item.preview, active: item.id == activeID)
                 .frame(maxWidth: .infinity)
                 .frame(height: 266)
 
@@ -477,8 +494,6 @@ struct StoreDetailView: View {
     var onEdit: () -> Void = {}
 
     private enum Work { case select, delete }
-    /// Анімація основного екрана (якщо циферблат анімований); малюється, коли сторінку відкрито
-    @State private var motion: UIImage?
     @State private var working: Work?
     @State private var askDelete = false
     @State private var error: String?
@@ -526,10 +541,6 @@ struct StoreDetailView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: item.id) {
-            let data = Data(item.face.data)
-            motion = await Task.detached(priority: .userInitiated) { FacePreviews.animation(for: data) }.value
-        }
         .alert(String(localized: "Видалити \(item.name) з пристрою?"), isPresented: $askDelete) {
             Button("Видалити", role: .destructive) { run(.delete) }
             Button("Скасувати", role: .cancel) {}
@@ -631,7 +642,11 @@ struct StoreDetailView: View {
         HStack(alignment: .top, spacing: 28) {
             ForEach(Array(item.previews.enumerated()), id: \.element.id) { i, p in
                 VStack(spacing: 10) {
-                    FaceCapsule(image: i == 0 ? (motion ?? p.image) : p.image)
+                    if i == 0 {
+                        AnimatedFaceCapsule(face: item.face, image: p.image)
+                    } else {
+                        FaceCapsule(image: p.image)
+                    }
                     Text(p.title)
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)

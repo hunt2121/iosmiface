@@ -402,23 +402,29 @@ struct PreviewView: View {
         return Double(max(30, Int(s.int("interval", 100)))) / 1000
     }
 
+    @Environment(\.displayScale) private var displayScale
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geo in
             let dev = project.meta.device
-            TimelineView(.periodic(from: start, by: step)) { ctx in
-                let img: UIImage = {
-                    let r = renderer ?? FaceRenderer(project)
-                    r.live = true
-                    r.time = ctx.date.timeIntervalSince(start)
-                    return r.render(theme: theme, scale: 2.5).0
-                }()
-                Image(uiImage: img).resizable()
-                    .aspectRatio(CGFloat(dev.width) / CGFloat(dev.height), contentMode: .fit)
-                    .faceCapsule()
-                    .padding(40)
+            // рівно під фізичні пікселі капсули на весь екран
+            let fit = min((geo.size.width - 80) / CGFloat(dev.width), (geo.size.height - 80) / CGFloat(dev.height))
+            ZStack {
+                Color.black.ignoresSafeArea()
+                TimelineView(.periodic(from: start, by: step)) { ctx in
+                    let img: UIImage = {
+                        let r = renderer ?? FaceRenderer(project)
+                        r.live = true
+                        r.time = ctx.date.timeIntervalSince(start)
+                        return r.render(theme: theme, scale: max(1, fit * displayScale)).0
+                    }()
+                    Image(uiImage: img).resizable()
+                        .frame(width: CGFloat(dev.width) * fit, height: CGFloat(dev.height) * fit)
+                        .faceCapsule()
+                }
             }
         }
+        .background(Color.black.ignoresSafeArea())
         .onAppear { renderer = FaceRenderer(project); start = Date() }
         .onTapGesture { dismiss() }
         .accessibilityLabel("Попередній перегляд. Торкніться, щоб закрити.")
