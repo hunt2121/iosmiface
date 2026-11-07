@@ -10051,6 +10051,167 @@
           }
         }
       }
+    },
+    "Напис": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Label"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Надпись"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напис"
+          }
+        }
+      }
+    },
+    "рядок картинкою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a line as an image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "строка картинкой"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "рядок картинкою"
+          }
+        }
+      }
+    },
+    "Текст браслета": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Band text"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст браслета"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст браслета"
+          }
+        }
+      }
+    },
+    "Текст напису": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Label text"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст надписи"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст напису"
+          }
+        }
+      }
+    },
+    "напис стає картинкою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the label becomes an image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "надпись становится картинкой"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "напис стає картинкою"
+          }
+        }
+      }
+    },
+    "Будь-яка мова, зокрема кирилиця: напис малюється шрифтом телефона й іде на браслет картинкою.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any language, Cyrillic included: the label is drawn with the phone's font and goes to the band as an image."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Любой язык, включая кириллицу: надпись рисуется шрифтом телефона и идёт на браслет картинкой."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Будь-яка мова, зокрема кирилиця: напис малюється шрифтом телефона й іде на браслет картинкою."
+          }
+        }
+      }
+    },
+    "Текст, який малює сам браслет, редактор не підтримує: на Smart Band 10 він не перевірений і може зламати прошивку. Видаліть його й додайте «Напис» — рядок картинкою.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The editor doesn't support text drawn by the band itself: it hasn't been tested on Smart Band 10 and may break the firmware. Delete it and add a “Label” — a line as an image."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст, который рисует сам браслет, редактор не поддерживает: на Smart Band 10 он не проверен и может сломать прошивку. Удалите его и добавьте «Надпись» — строку картинкой."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст, який малює сам браслет, редактор не підтримує: на Smart Band 10 він не перевірений і може зламати прошивку. Видаліть його й додайте «Напис» — рядок картинкою."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

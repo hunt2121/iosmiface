@@ -18,7 +18,7 @@ struct InspectorView: View {
 
     /// Сам елемент (для обгортки «дія при натисканні» — те, що всередині)
     private var res: XNode? { project.element(of: layout) }
-    private var kind: ElementKind { ElementKind.of(res) }
+    private var kind: ElementKind { ElementKind.of(res, in: project) }
     private var resName: String { res?.string("name") ?? "" }
     private var gen: Generator? { project.meta.generators[resName] }
 
@@ -87,7 +87,10 @@ struct InspectorView: View {
             if r.has("source") { Row(title: "Що показує", value: SampleData.title(r.string("source") ?? ""), action: onSource) }
             switch kind {
             case .digits: digitsLook(r)
-            case .text: TextLook(project: project, res: r)
+            case .label: labelLook()
+            case .text:
+                Text("Текст, який малює сам браслет, редактор не підтримує: на Smart Band 10 він не перевірений і може зламати прошивку. Видаліть його й додайте «Напис» — рядок картинкою.")
+                    .font(.footnote).foregroundStyle(.secondary)
             case .pointer, .arc, .line: gaugeLook(r)
             case .animation:
                 CommitSlider(title: "Інтервал кадрів, мс", value: Double(r.int("interval")), range: 30...2000, step: 10) { v in edit { $0.set("interval", int: Int(v)) } }
@@ -169,6 +172,20 @@ struct InspectorView: View {
             .font(.subheadline)
     }
 
+    /// Напис: рядок, шрифт, розмір, товщина (колір — на вкладці «Колір»)
+    @ViewBuilder private func labelLook() -> some View {
+        if let g = gen {
+            LabelField(text: g.text) { t in regen { $0.text = t } }
+            CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 8...160, step: 1) { v in regen { $0.fontSize = v } }
+            Chips(title: "Шрифт", hint: "напис стає картинкою",
+                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
+                  selected: g.style) { s in regen { $0.style = s } }
+            Chips(title: "Товщина", hint: nil,
+                  items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
+                  selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 600 } }
+        }
+    }
+
     @ViewBuilder private func gaugeLook(_ r: XNode) -> some View {
         if kind == .arc {
             CommitSlider(title: "Кут початку", value: Double(r.int("angleStart")), range: -360...360, step: 1) { v in edit { $0.set("angleStart", int: Int(v)) } }
@@ -213,10 +230,7 @@ struct InspectorView: View {
 
     @ViewBuilder private var colors: some View {
         if let r = res { variantRow(r) }
-        if kind == .text, let r = res {
-            DebouncedColor(title: "Колір тексту", hex: r.string("color") ?? "#FFFFFF") { h in edit { $0.set("color", h) } }
-            CommitSlider(title: "Непрозорість, %", value: Double(r.int("opacity", 100)), range: 0...100, step: 1) { v in edit { $0.set("opacity", int: Int(v)) } }
-        } else if let g = gen, g.kind != .image {
+        if let g = gen, g.kind != .image, g.kind != .frames {
             DebouncedColor(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
             if g.kind == .arc || g.kind == .line {
                 DebouncedColor(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
@@ -497,6 +511,28 @@ struct DebouncedColor: View {
 }
 
 /// Одиниця біля числа: «%», «°», «км»… (тим самим шрифтом, що й цифри)
+/// Рядок напису: записується після «Готово» на клавіатурі
+struct LabelField: View {
+    let text: String
+    var onCommit: (String) -> Void
+    @State private var value = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Текст напису").font(.subheadline)
+            TextField(loc("Напис"), text: $value)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .onSubmit {
+                    let t = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !t.isEmpty && t != text { onCommit(t) } else { value = text }
+                }
+            Text("Будь-яка мова, зокрема кирилиця: напис малюється шрифтом телефона й іде на браслет картинкою.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear { value = text }
+    }
+}
+
 struct UnitField: View {
     let unit: String
     var onCommit: (String) -> Void

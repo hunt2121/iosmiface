@@ -8,7 +8,7 @@ import FaceCompiler
 
 /// Параметри, з яких редактор створив ресурс (щоб перегенерувати картинки після зміни шрифту, кольору тощо).
 struct Generator: Codable, Equatable {
-    enum Kind: String, Codable { case digits, arc, line, pointer, image, frames }
+    enum Kind: String, Codable { case digits, arc, line, pointer, image, frames, label }
     var kind: Kind
     var color: String = "#FFFFFF"
     var bgColor: String = "#3A3A3C"
@@ -20,11 +20,13 @@ struct Generator: Codable, Equatable {
     var length: Double = 120
     /// Одиниця біля числа («%», «°», «км»), малюється тим самим шрифтом
     var unit: String = ""
+    /// Рядок напису (kind == .label): малюється шрифтом у картинку
+    var text: String = ""
 
     init(kind: Kind, color: String = "#FFFFFF", bgColor: String = "#3A3A3C", fontSize: Double = 48, weight: Int = 700,
-         style: String = "rounded", radius: Double = 60, width: Double = 10, length: Double = 120, unit: String = "") {
+         style: String = "rounded", radius: Double = 60, width: Double = 10, length: Double = 120, unit: String = "", text: String = "") {
         self.kind = kind; self.color = color; self.bgColor = bgColor; self.fontSize = fontSize; self.weight = weight
-        self.style = style; self.radius = radius; self.width = width; self.length = length; self.unit = unit
+        self.style = style; self.radius = radius; self.width = width; self.length = length; self.unit = unit; self.text = text
     }
 
     // старі editor.json не мають нових полів — беремо типові
@@ -40,6 +42,7 @@ struct Generator: Codable, Equatable {
         width = (try? c.decodeIfPresent(Double.self, forKey: .width)) ?? 10
         length = (try? c.decodeIfPresent(Double.self, forKey: .length)) ?? 120
         unit = (try? c.decodeIfPresent(String.self, forKey: .unit)) ?? ""
+        text = (try? c.decodeIfPresent(String.self, forKey: .text)) ?? ""
     }
 }
 

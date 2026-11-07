@@ -112,6 +112,36 @@ enum AssetFactory {
         }
     }
 
+    /// Напис: рядок вибраним шрифтом і кольором, щільно обрізаний за справжніми пікселями (з полем 1 px).
+    /// Текст на браслеті — лише картинками: власний текст браслета (DataItemText) на Smart Band 10 не перевірений.
+    static func labelImage(_ g: Generator) -> RGBAImage? {
+        let t = g.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return nil }
+        let f = font(g)
+        let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
+        let s = NSAttributedString(string: t, attributes: attrs)
+        let size = s.size()
+        let w = Int(ceil(size.width)) + 8
+        let lh = ceil(f.lineHeight)
+        let tall = Int(lh * 2)
+        let full = render(w, tall) { _ in s.draw(at: CGPoint(x: 4, y: lh / 2)) }
+        var minX = w, maxX = -1, minY = tall, maxY = -1
+        for y in 0..<tall {
+            for x in 0..<w where full.px[(y * w + x) * 4 + 3] != 0 {
+                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= minX, maxY >= minY else { return nil }
+        let x0 = max(0, minX - 1), x1 = min(w - 1, maxX + 1), y0 = max(0, minY - 1), y1 = min(tall - 1, maxY + 1)
+        let cw = x1 - x0 + 1, ch = y1 - y0 + 1
+        var px = [UInt8](repeating: 0, count: cw * ch * 4)
+        for y in 0..<ch {
+            let src = ((y0 + y) * w + x0) * 4
+            px.replaceSubrange((y * cw * 4)..<((y + 1) * cw * 4), with: full.px[src..<(src + cw * 4)])
+        }
+        return RGBAImage(w: cw, h: ch, px: px)
+    }
+
     /// Значок одиниці («%», «°», «км»…) тим самим шрифтом і кольором, що й цифри, тієї ж висоти —
     /// щоб стояв на одній лінії з числом.
     static func unitImage(_ text: String, _ g: Generator) -> RGBAImage? {

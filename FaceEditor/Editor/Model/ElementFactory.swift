@@ -7,7 +7,7 @@ import UIKit
 import FaceCompiler
 
 enum ElementKind: String, CaseIterable, Identifiable {
-    case text, digits, image, animation, pointer, arc, line, values, widget, slot, other
+    case text, label, digits, image, animation, pointer, arc, line, values, widget, slot, other
     var id: String { rawValue }
 
     static func of(_ res: XNode?) -> ElementKind {
@@ -26,9 +26,17 @@ enum ElementKind: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Тип із урахуванням редактора: картинка-напис показується як «Напис»
+    static func of(_ res: XNode?, in p: FaceProject) -> ElementKind {
+        let k = of(res)
+        if k == .image, let n = res?.string("name"), p.meta.generators[n]?.kind == .label { return .label }
+        return k
+    }
+
     var title: String {
         switch self {
-        case .text: return loc("Текст")
+        case .text: return loc("Текст браслета")
+        case .label: return loc("Напис")
         case .digits: return loc("Цифри")
         case .image: return loc("Зображення")
         case .animation: return loc("Анімація")
@@ -98,21 +106,17 @@ enum ElementFactory {
         addLayout(p, ref: name, theme: theme, x: center.0 - w / 2, y: center.1 - h / 2)
     }
 
-    static func addText(_ p: FaceProject, string: String, sources: [String], theme: Int, center: (Int, Int), color: String) {
-        let name = p.uniqueName("text")
-        let e = XNode("DataItemText")
-        let w = 160, h = 30
-        e.set("name", name).set("color", color).set("opacity", int: 100).set("fontId", "misans").set("fontWeight", "bold").set("fontSize", int: 24)
-            .set("letterSpace", int: 0).set("align", "center").set("longMode", "clip").set("style", "normal")
-            .set("lineSpace", int: 0).set("w", int: w).set("h", int: h).set("rotation", int: 0).set("string", string)
-        for s in sources { e.add("Content").set("source", s) }
-        p.resources.kids.append(e)
-        addLayout(p, ref: name, theme: theme, x: center.0 - w / 2, y: center.1 - h / 2)
-    }
-
     static func addImage(_ p: FaceProject, _ img: RGBAImage, theme: Int, center: (Int, Int)) {
         let name = addImageResource(p, img, base: "image")
         p.meta.generators[name] = Generator(kind: .image)
+        addLayout(p, ref: name, theme: theme, x: center.0 - img.w / 2, y: center.1 - img.h / 2)
+    }
+
+    /// Напис картинкою (рядок вибраним шрифтом)
+    static func addLabel(_ p: FaceProject, gen: Generator, theme: Int, center: (Int, Int)) {
+        guard let img = AssetFactory.labelImage(gen) else { return }
+        let name = addImageResource(p, img, base: "label")
+        p.meta.generators[name] = gen
         addLayout(p, ref: name, theme: theme, x: center.0 - img.w / 2, y: center.1 - img.h / 2)
     }
 
@@ -263,6 +267,8 @@ enum ElementFactory {
             let img = AssetFactory.hand(length: gen.length, width: gen.width, color: gen.color)
             if let r = p.resource(ref: res.string("ref")) { replaceImage(p, r, img) }
             res.set("pivotX", int: img.w / 2).set("pivotY", int: img.h - img.w / 2)
+        case .label:
+            if let img = AssetFactory.labelImage(gen) { replaceImage(p, res, img) }
         default: break
         }
         // кольорові варіанти елемента — тим самим шрифтом і розміром

@@ -33,7 +33,7 @@ struct AddElementSheet: View {
         var id: String { preset ?? kind.rawValue }
     }
     private let tiles: [Tile] = [
-        Tile(kind: .text, caption: "не перевірено на браслеті", filter: .data, enabled: true),
+        Tile(kind: .label, caption: "рядок картинкою", filter: .decor, enabled: true),
         Tile(kind: .digits, caption: "картинки цифр", filter: .data, enabled: true),
         Tile(kind: .values, caption: "картинка за значенням", filter: .data, enabled: true),
         Tile(kind: .pointer, caption: "три стрілки", filter: .gauges, enabled: true, preset: "clock"),
@@ -148,8 +148,17 @@ struct AddElementSheet: View {
         switch k {
         case .image: showPhoto = true
         case .animation: showFrames = true
+        case .label: addLabel()
         default: pendingKind = k; showSource = true
         }
+    }
+
+    /// Напис одразу по центру; рядок, шрифт і колір — у властивостях
+    private func addLabel() {
+        let c = center
+        let g = Generator(kind: .label, color: "#FFFFFF", fontSize: 28, weight: 600, style: "rounded", text: loc("Напис"))
+        project.edit { ElementFactory.addLabel($0, gen: g, theme: theme, center: c) }
+        finish()
     }
 
     private func addClock() {
@@ -168,7 +177,6 @@ struct AddElementSheet: View {
         let c = center
         project.edit { p in
             switch k {
-            case .text: ElementFactory.addText(p, string: "%s", sources: [source], theme: theme, center: c, color: "#FFFFFF")
             case .digits:
                 ElementFactory.addDigits(p, source: source, gen: Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded"), theme: theme, center: c)
             case .pointer:
@@ -194,7 +202,7 @@ struct ElementIcon: View {
     let kind: ElementKind
     var body: some View {
         switch kind {
-        case .text: Text("Aa").font(.system(size: 20, weight: .bold))
+        case .text, .label: Text("Aa").font(.system(size: 20, weight: .bold))
         case .digits: Text("10 24").font(.system(size: 18, weight: .heavy)).tracking(-0.5)
         case .image: Image(systemName: "photo").font(.system(size: 24))
         case .animation: Image(systemName: "square.stack").font(.system(size: 24))
@@ -263,83 +271,6 @@ struct DataSourcePicker: View {
     }
 }
 
-// MARK: - Текст
-
-struct TextLook: View {
-    @ObservedObject var project: FaceProject
-    let res: XNode
-    @State private var text = ""
-
-    static let weightTitles: [String: String] = [
-        "thin": "Тонкий", "extralight": "Дуже легкий", "light": "Легкий", "normal": "Звичайний", "regular": "Нормальний",
-        "medium": "Середній", "demibold": "Напівжирний", "semibold": "Напівжирний+", "bold": "Жирний", "heavy": "Дуже жирний",
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Текст").font(.subheadline)
-                TextField("%s — місце для значення", text: $text)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { let t = text; project.edit { _ in res.set("string", t) } }
-                Text("«%s» замінюється значенням джерела (кожне наступне «%s» — наступним джерелом).")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            CommitSlider(title: "Розмір шрифту", value: Double(res.int("fontSize", 24)), range: 8...120, step: 1) { v in
-                project.edit { _ in
-                    res.set("fontSize", int: Int(v))
-                    // поле не нижче за рядок
-                    if res.int("h") < Int32(v * 1.3) { res.set("h", int: Int(v * 1.3)) }
-                }
-            }
-            Chips(title: "Шрифт браслета", hint: nil, items: FaceCatalog.fontIds.map { ($0, $0.replacingOccurrences(of: "misans", with: "MiSans ").trimmingCharacters(in: .whitespaces)) },
-                  selected: res.string("fontId") ?? "") { v in project.edit { _ in res.set("fontId", v) } }
-            HStack {
-                Text("Товщина").font(.subheadline)
-                Spacer()
-                Picker("Товщина", selection: Binding(get: { res.string("fontWeight") ?? "regular" },
-                                                     set: { v in project.edit { _ in res.set("fontWeight", v) } })) {
-                    ForEach(["thin", "extralight", "light", "normal", "regular", "medium", "demibold", "semibold", "bold", "heavy"], id: \.self) { w in
-                        Text(loc(Self.weightTitles[w] ?? w)).tag(w)
-                    }
-                }
-            }
-            Chips(title: "Вирівнювання", hint: nil, items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
-                  selected: res.string("align") ?? "left") { v in project.edit { _ in res.set("align", v) } }
-            Chips(title: "Розміщення", hint: nil, items: [("normal", "Рядком"), ("arc", "Дугою")],
-                  selected: (res.string("style") ?? "normal") == "normal" ? "normal" : "arc") { v in
-                project.edit { _ in
-                    res.set("style", v)
-                    if v == "arc", !res.has("radius") {
-                        res.set("radius", int: 90).set("startAngle", int: -60).set("span", int: 120).set("verticalAlign", "top")
-                    }
-                }
-            }
-            if (res.string("style") ?? "normal") == "normal" {
-                CommitSlider(title: "Ширина поля", value: Double(res.int("w")), range: 10...Double(project.meta.device.width), step: 1) { v in project.edit { _ in res.set("w", int: Int(v)) } }
-                CommitSlider(title: "Висота поля", value: Double(res.int("h")), range: 8...300, step: 1) { v in project.edit { _ in res.set("h", int: Int(v)) } }
-                Chips(title: "Довгий текст", hint: nil,
-                      items: [("clip", "Обрізати"), ("wrap", "Переносити"), ("scroll", "Прокручувати"), ("scroll_circular", "По колу")],
-                      selected: res.string("longMode") ?? "clip") { v in project.edit { _ in res.set("longMode", v) } }
-                if res.string("longMode") == "wrap" {
-                    StepperRow(title: "Між рядками", value: Int(res.int("lineSpace")), range: 0...40) { v in project.edit { _ in res.set("lineSpace", int: v) } }
-                }
-                CommitSlider(title: "Поворот, °", value: Double(res.int("rotation")), range: -180...180, step: 1) { v in project.edit { _ in res.set("rotation", int: Int(v)) } }
-            } else {
-                CommitSlider(title: "Радіус дуги", value: Double(res.int("radius")), range: 20...260, step: 1) { v in project.edit { _ in res.set("radius", int: Int(v)) } }
-                CommitSlider(title: "Кут початку", value: Double(res.int("startAngle")), range: -180...180, step: 1) { v in project.edit { _ in res.set("startAngle", int: Int(v)) } }
-                CommitSlider(title: "Довжина дуги, °", value: Double(res.int("span")), range: 10...360, step: 1) { v in project.edit { _ in res.set("span", int: Int(v)) } }
-                Chips(title: "Текст відносно дуги", hint: nil, items: [("top", "Зовні"), ("center", "По центру"), ("bottom", "Всередині")],
-                      selected: res.string("verticalAlign") ?? "top") { v in project.edit { _ in res.set("verticalAlign", v) } }
-            }
-            StepperRow(title: "Відстань між літерами", value: Int(res.int("letterSpace")), range: 0...40) { v in project.edit { _ in res.set("letterSpace", int: v) } }
-            Text("Текст малює сам браслет своїм шрифтом, тож на полотні він виглядає приблизно.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        .onAppear { text = res.string("string") ?? "" }
-    }
-}
-
 // MARK: - Заміна картинки
 
 struct ImageReplaceRow: View {
@@ -370,6 +301,14 @@ struct ImageReplaceRow: View {
 
 // MARK: - Шари
 
+/// Підпис шару в списку: джерело даних, текст напису або ім'я ресурсу
+func layerSubtitle(_ p: FaceProject, _ res: XNode?) -> String {
+    if let s = res?.string("source") { return SampleData.title(s) }
+    let name = res?.string("name") ?? ""
+    if let g = p.meta.generators[name], g.kind == .label { return "«" + g.text + "»" }
+    return name
+}
+
 struct LayersSheet: View {
     @ObservedObject var project: FaceProject
     let theme: Int
@@ -384,10 +323,10 @@ struct LayersSheet: View {
                     let res = project.element(of: l)
                     Button { selected = l; dismiss() } label: {
                         HStack(spacing: 12) {
-                            ElementIcon(kind: ElementKind.of(res)).frame(width: 36).foregroundStyle(.secondary)
+                            ElementIcon(kind: ElementKind.of(res, in: project)).frame(width: 36).foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(ElementKind.of(res).title).foregroundStyle(.primary)
-                                Text(res?.string("source").map(SampleData.title) ?? res?.string("name") ?? "").font(.caption).foregroundStyle(.secondary)
+                                Text(ElementKind.of(res, in: project).title).foregroundStyle(.primary)
+                                Text(layerSubtitle(project, res)).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
                             if l === selected { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }

@@ -233,6 +233,7 @@ enum ColorVariants {
                 case .arc: images = [AssetFactory.ring(radius: g.radius, width: g.width, color: c)]
                 case .line: images = [AssetFactory.bar(length: g.length, width: g.width, color: c)]
                 case .pointer: images = [AssetFactory.hand(length: g.length, width: g.width, color: c)]
+                case .label: images = AssetFactory.labelImage(g).map { [$0] } ?? []
                 default: images = []
                 }
             } else {
