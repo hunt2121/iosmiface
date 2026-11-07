@@ -228,6 +228,17 @@ namespace BandFace.Protocol
             finally { lock (_gate) _waiters.Remove(w); }
         }
 
+        /// <summary>Зашифрована команда без очікування відповіді (сповіщення пристрій не підтверджує)</summary>
+        public async Task SendAsync(byte[] body)
+        {
+            SessionKeys keys;
+            lock (_gate) keys = _keys;
+            if (keys == null) throw new BandException(ErrorKind.NotAuthenticated);
+            string name; try { name = new Command(body).Name; } catch (Exception) { name = "?"; }
+            Log("→ cmd " + name);
+            await WriteData(new DataPacket(DataChannel.Protobuf, DataOpcode.Encrypted, keys.EncryptCommand(body)), false).ConfigureAwait(false);
+        }
+
         public Task<Command> CommandAsync(byte[] body, int? timeoutMs = null)
         {
             var h = new Command(body);

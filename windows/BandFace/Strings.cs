@@ -96,6 +96,21 @@ namespace BandFace
             ["reconnecting"] = new[] { "Перепідключення…", "Reconnecting…", "Переподключение…" },
             ["closeBusyAsk"] = new[] { "Циферблат ще передається на пристрій. Закрити BandFace і перервати встановлення?", "The watch face is still being sent to the device. Close BandFace and stop the installation?", "Циферблат ещё передаётся на устройство. Закрыть BandFace и прервать установку?" },
             ["noBle"] = new[] { "Bluetooth недоступний на цьому комп'ютері", "Bluetooth is not available on this PC", "Bluetooth недоступен на этом компьютере" },
+            ["needKey"] = new[] { "Спершу додайте ключ пристрою в Налаштуваннях", "Add the device key in Settings first", "Сначала добавьте ключ устройства в Настройках" },
+            ["needBand"] = new[] { "Спершу підключіть пристрій", "Connect the device first", "Сначала подключите устройство" },
+            ["notifySection"] = new[] { "Сповіщення на пристрій", "Notifications on the device", "Уведомления на устройство" },
+            ["welcomeRow"] = new[] { "Вітання при підключенні", "Greeting on connect", "Приветствие при подключении" },
+            ["welcomeDesc"] = new[] { "Пристрій показує «BandFace підключено», коли комп'ютер під'єднався", "The device shows “BandFace connected” when the PC connects", "Устройство показывает «BandFace подключено», когда компьютер подключился" },
+            ["welcomeTitle"] = new[] { "BandFace підключено", "BandFace connected", "BandFace подключено" },
+            ["welcomeBody"] = new[] { "Комп'ютер {0} на зв'язку", "PC {0} is connected", "Компьютер {0} на связи" },
+            ["forwardRow"] = new[] { "Сповіщення з Windows", "Notifications from Windows", "Уведомления из Windows" },
+            ["forwardDesc"] = new[] { "Пересилати на пристрій сповіщення вибраних програм, поки BandFace відкритий і пристрій підключений", "Forward notifications of the chosen apps while BandFace is open and the device is connected", "Пересылать на устройство уведомления выбранных программ, пока BandFace открыт и устройство подключено" },
+            ["forwardOn"] = new[] { "Увімкнено: нові сповіщення вибраних програм ідуть на пристрій", "On: new notifications of the chosen apps go to the device", "Включено: новые уведомления выбранных программ идут на устройство" },
+            ["forwardFail"] = new[] { "Windows не дав доступу до сповіщень ({0}). Перевірте Параметри → Конфіденційність → Сповіщення", "Windows didn't allow access to notifications ({0}). Check Settings → Privacy → Notifications", "Windows не дал доступа к уведомлениям ({0}). Проверьте Параметры → Конфиденциальность → Уведомления" },
+            ["otherApps"] = new[] { "Інші програми", "Other apps", "Другие программы" },
+            ["testNotify"] = new[] { "Надіслати тестове", "Send a test", "Отправить тестовое" },
+            ["testTitle"] = new[] { "Тестове сповіщення", "Test notification", "Тестовое уведомление" },
+            ["testBody"] = new[] { "Якщо ви це бачите — сповіщення з Windows працюють", "If you can see this, notifications from Windows work", "Если вы это видите — уведомления из Windows работают" },
         };
 
         public static string Get(string key, params object[] args)

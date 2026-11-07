@@ -190,6 +190,37 @@
               </DockPanel>
             </Button>
 
+            <!-- Сповіщення на пристрій -->
+            <TextBlock x:Name="NotifySectionLabel" Style="{StaticResource GroupHeader}"/>
+            <Border Style="{StaticResource SettingCard}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE8E1;"/>
+                <CheckBox x:Name="WelcomeSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" VerticalAlignment="Center" Click="Welcome_Click"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
+                  <TextBlock x:Name="RowWelcomeText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="RowWelcomeDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource SettingCard}">
+              <StackPanel>
+                <DockPanel>
+                  <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE8BD;"/>
+                  <CheckBox x:Name="ForwardSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" VerticalAlignment="Center" Click="Forward_Click"/>
+                  <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
+                    <TextBlock x:Name="RowForwardText" Style="{StaticResource SettingTitle}"/>
+                    <TextBlock x:Name="RowForwardDesc" Style="{StaticResource SettingDesc}" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </DockPanel>
+                <StackPanel x:Name="ForwardApps" Margin="44,0,0,12" Orientation="Horizontal">
+                  <CheckBox x:Name="AppWa" Content="WhatsApp" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
+                  <CheckBox x:Name="AppTg" Content="Telegram" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
+                  <CheckBox x:Name="AppOther" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
+                  <Button x:Name="TestNotifyBtn" Style="{StaticResource Btn}" Click="TestNotify_Click"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <TextBlock x:Name="AppSectionLabel" Style="{StaticResource GroupHeader}"/>
             <Border Style="{StaticResource SettingCard}">
               <DockPanel>

@@ -55,6 +55,8 @@ namespace BandFace
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
             _ble.Restored += () => Dispatcher.BeginInvoke(new Action(() => { AddLog("connected again"); RefreshBand(); }));
+            WinNotifications.Arrived += OnWindowsNotification;
+            if (Storage.LoadText("notifyForward") == "1") Loaded += async (s, e) => await StartForwardAsync();
             AddLog("BandFace " + _version + " started");
 
             EditorTab.EditorShownChanged += shown => UpdateSidebar();
@@ -160,6 +162,7 @@ namespace BandFace
             var key = Bytes.ParseHex(KeyBox.Text);
             if (key == null || key.Length != 16 || !_ble.IsConnected) return;
             SetStatus(S.Get("phPair"), false);
+            await _bandGate.WaitAsync();
             var session = new BandSession(_ble, NewConfig());
             _session = session;
             try
@@ -167,13 +170,20 @@ namespace BandFace
                 await session.OpenAsync();
                 await session.AuthenticateAsync(key, "Windows PC", "UK", Command.PhoneInfoMiFitness(Region()));
                 try { await session.CommandAsync(Command.AfterAuthMiFitness, 3000); } catch (BandException) { }
+                if (Storage.LoadText("notifyWelcome") != "0")
+                {
+                    // вітання на екрані пристрою: заодно видно, що зв'язок і вхід працюють
+                    await Task.Delay(200);
+                    await session.SendAsync(Command.Notification(NextNoteId(), WinNotifications.Package("other"), "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody", Environment.MachineName), DateTime.Now));
+                    AddLog("welcome sent");
+                }
                 await Task.Delay(300);
                 await session.CloseAsync();
                 AddLog("connect activate: ok");
                 SetStatus("", false);
             }
             catch (Exception ex) { AddLog("connect activate: " + ex.Message); SetStatus(Describe(ex), true); }
-            finally { try { session.Dispose(); } catch (Exception) { } _session = null; }
+            finally { try { session.Dispose(); } catch (Exception) { } _session = null; _bandGate.Release(); }
         }
 
         void SaveShot(string path)
@@ -207,6 +217,12 @@ namespace BandFace
             KeyNoticeText.Text = S.Get("addKeyNote");
             DeviceSectionLabel.Text = S.Get("device").ToUpperInvariant();
             AppSectionLabel.Text = S.Get("appSection").ToUpperInvariant();
+            NotifySectionLabel.Text = S.Get("notifySection").ToUpperInvariant();
+            RowWelcomeText.Text = S.Get("welcomeRow");
+            RowWelcomeDesc.Text = S.Get("welcomeDesc");
+            RowForwardText.Text = S.Get("forwardRow");
+            AppOther.Content = S.Get("otherApps");
+            TestNotifyBtn.Content = S.Get("testNotify");
             RowKeyText.Text = TitleKey.Text = S.Get("key");
             RowLogText.Text = TitleLog.Text = S.Get("log");
             RowThemeText.Text = S.Get("theme");
@@ -323,6 +339,11 @@ namespace BandFace
             LangBox.Items.Add("English");
             LangBox.Items.Add("Русский");
             LangBox.SelectedIndex = Math.Max(0, Array.IndexOf(LangKeys, Storage.LoadText("lang")));
+            WelcomeSwitch.IsChecked = Storage.LoadText("notifyWelcome") != "0";
+            ForwardSwitch.IsChecked = Storage.LoadText("notifyForward") == "1";
+            var apps = ForwardKinds();
+            AppWa.IsChecked = apps.Contains("wa"); AppTg.IsChecked = apps.Contains("tg"); AppOther.IsChecked = apps.Contains("other");
+            RefreshForward(null);
             _loadingSettings = false;
         }
 
@@ -623,6 +644,7 @@ namespace BandFace
 
         async Task<bool> InstallOnceAsync(byte[] key)
         {
+            await _bandGate.WaitAsync();
             _session = new BandSession(_ble, NewConfig());
             try
             {
@@ -654,6 +676,7 @@ namespace BandFace
             {
                 try { _session.Dispose(); } catch (Exception) { }
                 _session = null;
+                _bandGate.Release();
             }
         }
 
