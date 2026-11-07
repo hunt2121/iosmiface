@@ -24,7 +24,7 @@ namespace BandFace
     /// </summary>
     public partial class MainWindow : Window
     {
-        const double SideWide = 228, SideNarrow = 56;
+        const double SideWide = 228, SideNarrow = 60;
 
         readonly BleTransport _ble = new BleTransport();
         readonly StringBuilder _log = new StringBuilder();
@@ -44,7 +44,7 @@ namespace BandFace
             var v = Assembly.GetExecutingAssembly().GetName().Version;
             _version = v.Major + "." + v.Minor + "." + v.Build;
             VersionText.Text = "v" + _version;
-            VersionValue.Text = _version;
+            VersionValue.Text = "BandFace " + _version;
             ApplyTexts();
             UpdateSidebar();
             FillSettings();
@@ -89,9 +89,42 @@ namespace BandFace
                     if (openFile != null) AskAboutFile(openFile);
                     await AutoConnectAsync();
                 };
-            SourceInitialized += (s, e) => Theme.Apply(this);
+            SourceInitialized += (s, e) => { Theme.Apply(this); RestorePlacement(); };
+            Closing += Window_Closing;
+            SmoothScroll.Attach(this);
             SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(() => Theme.Apply(this)));
             Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); };
+        }
+
+        // ---------- Вікно: розмір і положення, закриття під час встановлення ----------
+
+        void RestorePlacement()
+        {
+            var v = Storage.LoadText("window").Split(';');
+            double l, t, w, h;
+            if (v.Length < 5 || !double.TryParse(v[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out l)
+                || !double.TryParse(v[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out t)
+                || !double.TryParse(v[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out w)
+                || !double.TryParse(v[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out h)) return;
+            // вікно має лишитися на видимому екрані (монітор могли відключити)
+            var screen = new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop, SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight);
+            if (!screen.IntersectsWith(new Rect(l + 40, t + 10, Math.Max(100, w - 80), 40))) return;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = l; Top = t; Width = Math.Max(MinWidth, w); Height = Math.Max(MinHeight, h);
+            if (v[4] == "1") WindowState = WindowState.Maximized;
+        }
+
+        void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // посеред встановлення — спершу спитати
+            if (_busy && MessageBox.Show(this, S.Get("closeBusyAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
+            var r = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            Storage.SaveText("window", string.Join(";", r.Left.ToString(ci), r.Top.ToString(ci), r.Width.ToString(ci), r.Height.ToString(ci), WindowState == WindowState.Maximized ? "1" : "0"));
         }
 
         /// <summary>Параметри відкриття сесії, як у Mi Fitness.</summary>
@@ -178,7 +211,13 @@ namespace BandFace
             RowLogText.Text = TitleLog.Text = S.Get("log");
             RowThemeText.Text = S.Get("theme");
             RowLangText.Text = S.Get("language");
-            RowVersionText.Text = S.Get("version");
+            RowVersionText.Text = S.Get("about");
+            RowKeyDesc.Text = S.Get("keyDesc");
+            RowLogDesc.Text = S.Get("logDesc");
+            RowThemeDesc.Text = S.Get("themeDesc");
+            RowLangDesc.Text = S.Get("langDesc");
+            CancelConnectBtn.Content = S.Get("cloudCancel");
+            DisconnectBtn.ToolTip = S.Get("disconnect");
             KeyBackBtn.ToolTip = LogBackBtn.ToolTip = S.Get("settings");
             BandLabel.Text = S.Get("band").ToUpperInvariant();
             InstallLabel.Text = S.Get("installCard").ToUpperInvariant();
@@ -249,6 +288,8 @@ namespace BandFace
             var textVis = wide ? Visibility.Visible : Visibility.Collapsed;
             foreach (var t in new FrameworkElement[] { NavFacesText, NavStoreText, StoreChip, NavEditorText, NavSettingsText })
                 t.Visibility = textVis;
+            // у вузькій смузі менший відступ пункту меню, щоб значок не обрізався
+            foreach (var n in new Control[] { NavFaces, NavStore, NavEditor, NavSettings }) n.Padding = new Thickness(wide ? 12 : 10, 0, wide ? 12 : 0, 0);
             VersionText.Text = wide ? "v" + _version : _version;
             VersionText.Margin = new Thickness(wide ? 12 : 0, 0, 0, 6);
             VersionText.FontSize = wide ? 12 : 10;
@@ -302,51 +343,98 @@ namespace BandFace
             try { Process.Start(Assembly.GetExecutingAssembly().Location); Application.Current.Shutdown(); } catch (Exception) { }
         }
 
-        // ---------- Браслет ----------
+        // ---------- Пристрій ----------
+
+        /// <summary>«Xiaomi Smart Band 10 E3B4» → «Xiaomi Smart Band 10» (як в iOS): без службового суфікса.</summary>
+        static string BandModel(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return name ?? "";
+            var m = Regex.Match(name, @"^.*?Band\s*\d+");
+            return m.Success ? m.Value : name;
+        }
+
+        bool _scanning, _cancelConnect;
+        string _connectingName;
+        readonly Dictionary<ulong, TextBlock> _rssi = new Dictionary<ulong, TextBlock>();
+
         void RefreshBand()
         {
-            bool c = _ble.IsConnected;
+            bool c = _ble.IsConnected && !_connecting;
             BandConnected.Visibility = c ? Visibility.Visible : Visibility.Collapsed;
-            BandIdle.Visibility = c ? Visibility.Collapsed : Visibility.Visible;
-            BandName.Text = _ble.ConnectedName ?? "";
-            BandStatus.Text = S.Get("connected");
+            BandConnecting.Visibility = _connecting ? Visibility.Visible : Visibility.Collapsed;
+            BandIdle.Visibility = !c && !_connecting ? Visibility.Visible : Visibility.Collapsed;
+            BandName.Text = BandModel(_ble.ConnectedName);
+            ConnectingText.Text = S.Get("autoConnecting", BandModel(_connectingName));
             BandNone.Text = S.Get("notConnected");
-            ScanBtn.Content = S.Get(_connecting ? "phConnect" : "scan");
-            ScanBtn.IsEnabled = !_connecting;
-            InstallBtn.IsEnabled = !_busy && _face != null;
+            ScanBtn.Content = S.Get(_scanning ? "stopScan" : "scan");
+            Spin(_connecting);
+            RefreshButtons();
+        }
+
+        /// <summary>Індикатор підключення: дуга, що обертається.</summary>
+        void Spin(bool on)
+        {
+            if (on) SpinnerRotate.BeginAnimation(RotateTransform.AngleProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.9)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever });
+            else SpinnerRotate.BeginAnimation(RotateTransform.AngleProperty, null);
         }
 
         void Scan_Click(object sender, RoutedEventArgs e)
         {
+            if (_scanning) { _ble.StopScan(); _scanning = false; RefreshBand(); return; }
             DeviceList.Children.Clear();
             _seen.Clear();
-            ScanBtn.Content = S.Get("scanning");
+            _rssi.Clear();
             try
             {
                 _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (!_seen.Add(f.Address)) return;
-                    var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
+                    if (!_scanning) return;
+                    // уже в списку — лише оновлюємо силу сигналу
+                    if (!_seen.Add(f.Address)) { if (_rssi.TryGetValue(f.Address, out var t)) t.Text = f.Rssi + " dBm"; return; }
+                    var row = new Grid();
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    row.Children.Add(new TextBlock { Text = f.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+                    var rs = new TextBlock { Text = f.Rssi + " dBm", Foreground = (Brush)FindResource("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+                    Grid.SetColumn(rs, 1);
+                    row.Children.Add(rs);
+                    _rssi[f.Address] = rs;
+                    var b = new Button { Content = row, Style = (Style)FindResource("Btn"), Height = 36, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0), MaxWidth = 520, HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 360 };
                     b.Click += async (s, a) => await ConnectTo(f.Address, f.Name, false);
                     DeviceList.Children.Add(b);
                 })));
+                _scanning = true;
             }
-            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); }
+            catch (Exception) { SetStatus(S.Get("noBle"), true); _scanning = false; }
+            RefreshBand();
+        }
+
+        void CancelConnect_Click(object sender, RoutedEventArgs e)
+        {
+            // як в iOS: «Скасувати» під час підключення
+            _cancelConnect = true;
+            _ble.Disconnect();
+            _connecting = false;
+            SetStatus("", false);
+            AddLog("connect: cancelled by user");
+            RefreshBand();
         }
 
         /// <summary>auto — автопідключення під час запуску: тихо, з наявним спарюванням.</summary>
         async Task<bool> ConnectTo(ulong address, string name, bool auto)
         {
             if (_connecting) return false;
-            _connecting = true;
-            _ble.StopScan();
+            _connecting = true; _cancelConnect = false; _connectingName = name;
+            _ble.StopScan(); _scanning = false;
             DeviceList.Children.Clear();
             RefreshBand();
-            SetStatus(auto ? S.Get("autoConnecting", name) : S.Get("phPair"), false);
+            if (!auto) SetStatus(S.Get("phPair"), false);
             bool ok = false;
             try
             {
                 await _ble.ConnectAsync(address, auto);
+                if (_cancelConnect) { _ble.Disconnect(); return false; }
                 AddLog("connected " + name + (auto ? " (auto)" : ""));
                 Storage.SaveText("band", address.ToString("X") + "|" + name);
                 Storage.SaveText("auto", "1");
@@ -359,21 +447,28 @@ namespace BandFace
             catch (Exception ex)
             {
                 AddLog("connect: " + ex.Message);
-                if (auto) SetStatus("", false);   // браслета поруч немає — просто показуємо «Не підключено»
+                if (_cancelConnect || auto) SetStatus("", false);   // скасовано або пристрою поруч немає — просто «Не підключено»
                 else SetStatus(Describe(ex), true);
             }
             finally { _connecting = false; RefreshBand(); }
             return ok;
         }
 
-        /// <summary>Як в iOS: під час запуску підключаємося до браслета, з яким працювали минулого разу.</summary>
+        /// <summary>Як в iOS: під час запуску підключаємося до пристрою, з яким працювали минулого разу.</summary>
         async Task AutoConnectAsync()
         {
             if (Storage.LoadText("auto") != "1" || !KeyValid || _ble.IsConnected) return;
+            ulong address; string name;
+            if (!SavedBand(out address, out name)) return;
+            await ConnectTo(address, name, true);
+        }
+
+        static bool SavedBand(out ulong address, out string name)
+        {
             var saved = Storage.LoadText("band").Split('|');
-            ulong address;
-            if (saved.Length < 2 || !ulong.TryParse(saved[0], System.Globalization.NumberStyles.HexNumber, null, out address)) return;
-            await ConnectTo(address, saved[1], true);
+            name = saved.Length > 1 ? saved[1] : "";
+            address = 0;
+            return saved.Length > 1 && ulong.TryParse(saved[0], System.Globalization.NumberStyles.HexNumber, null, out address);
         }
 
         void Disconnect_Click(object sender, RoutedEventArgs e)
@@ -405,23 +500,28 @@ namespace BandFace
             {
                 if (data == null) throw new InvalidDataException();
                 _face = new FaceFile(data);
+                _faceData = data;
                 _faceFile = fileName;
                 SetStatus("", false);
             }
-            catch (Exception) { _face = null; SetStatus(S.Get("errFace"), true); }
+            catch (Exception) { _face = null; _faceData = null; SetStatus(S.Get("errFace"), true); }
             RefreshFace();
             return _face != null;
         }
 
+        byte[] _faceData;
+        System.Windows.Threading.DispatcherTimer _anim;
+
         void RefreshFace()
         {
+            StopAnimation();
+            PreviewImage.Source = null;
             if (_face == null)
             {
                 FaceName.Text = S.Get("noFile");
                 FaceInfo.Text = S.Get("format");
                 FaceFileName.Text = S.Get("pickHint");
                 PickBtn.Content = S.Get("pick");
-                PreviewImage.Source = null;
             }
             else
             {
@@ -429,19 +529,50 @@ namespace BandFace
                 FaceInfo.Text = "ID " + _face.Id + " · " + (_face.Size + 512) / 1024 + " " + S.Get("kb");
                 FaceFileName.Text = _faceFile;
                 PickBtn.Content = S.Get("pickOther");
-                PreviewImage.Source = null;
-                try
-                {
-                    var p = _face.DecodePreview();
-                    if (p != null)
-                    {
-                        var bmp = BitmapSource.Create(p.Width, p.Height, 96, 96, PixelFormats.Bgra32, null, p.Bgra, p.Width * 4);
-                        bmp.Freeze();
-                        PreviewImage.Source = bmp;
-                    }
-                }
-                catch (Exception) { }
+                ShowPreview(_faceData);
             }
+            PreviewPlaceholder.Visibility = _face == null ? Visibility.Visible : Visibility.Collapsed;
+            RefreshButtons();
+        }
+
+        /// <summary>
+        /// Як в iOS: превʼю малює сам BandFace з ресурсів циферблата (тим самим рушієм, що й редактор) —
+        /// чітко й рівно під капсулу; якщо є анімація — кадри програються. Не вдалося — вбудоване превʼю файла.
+        /// </summary>
+        void ShowPreview(byte[] data)
+        {
+            double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
+            var shots = FacePreview.Render(data, 236 * dpi);
+            if (shots != null && shots.Frames.Count > 0)
+            {
+                PreviewImage.Source = shots.Frames[0];
+                if (shots.Frames.Count > 1)
+                {
+                    int i = 0;
+                    _anim = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(shots.IntervalMs) };
+                    _anim.Tick += (s, e) => { i = (i + 1) % shots.Frames.Count; PreviewImage.Source = shots.Frames[i]; };
+                    _anim.Start();
+                }
+                return;
+            }
+            try
+            {
+                var p = _face.DecodePreview();
+                if (p == null) return;
+                var bmp = BitmapSource.Create(p.Width, p.Height, 96, 96, PixelFormats.Bgra32, null, p.Bgra, p.Width * 4);
+                bmp.Freeze();
+                PreviewImage.Source = bmp;
+            }
+            catch (Exception) { }
+        }
+
+        void StopAnimation() { _anim?.Stop(); _anim = null; }
+
+        /// <summary>Як в iOS: поки файл не вибрано, головна кнопка — «Вибрати файл», далі — «Встановити».</summary>
+        void RefreshButtons()
+        {
+            PickBtn.Style = (Style)FindResource(_face == null ? "PrimaryBtn" : "Btn");
+            PickBtn.IsEnabled = !_busy;
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
 
@@ -462,10 +593,36 @@ namespace BandFace
             var key = Bytes.ParseHex(KeyBox.Text);
             if (key == null || key.Length != 16) { SetStatus(S.Get("keyInvalid"), true); return; }
             if (!_ble.IsConnected) { SetStatus(S.Get("errConnect"), true); return; }
-            _busy = true; InstallBtn.IsEnabled = false; PickBtn.IsEnabled = false;
+            _busy = true; RefreshButtons();
             SetStatus("", false);
             ProgressPanel.Visibility = Visibility.Visible;
             Bar.Value = 0; ProgressPercent.Text = ""; ProgressText.Text = S.Get("phConnect");
+            try
+            {
+                bool already;
+                try { already = await InstallOnceAsync(key); }
+                catch (BandException ex) when (ex.Kind == ErrorKind.SessionOpenFailed)
+                {
+                    // як в iOS: пристрій не відповідає — перепідключаємося й пробуємо ще раз
+                    AddLog("install: no answer, reconnecting");
+                    ProgressText.Text = S.Get("reconnecting");
+                    ulong address; string name;
+                    if (!SavedBand(out address, out name)) throw;
+                    await _ble.ConnectAsync(address, true);
+                    already = await InstallOnceAsync(key);
+                }
+                SetStatus(S.Get(already ? "doneOld" : "doneNew"), false, true);
+            }
+            catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("install: " + ex.Message); }
+            finally
+            {
+                ProgressPanel.Visibility = Visibility.Collapsed;
+                _busy = false; RefreshBand();
+            }
+        }
+
+        async Task<bool> InstallOnceAsync(byte[] key)
+        {
             _session = new BandSession(_ble, NewConfig());
             try
             {
@@ -491,15 +648,12 @@ namespace BandFace
                             break;
                     }
                 })));
-                SetStatus(S.Get(already ? "doneOld" : "doneNew"), false, true);
+                return already;
             }
-            catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("install: " + ex.Message); }
             finally
             {
                 try { _session.Dispose(); } catch (Exception) { }
                 _session = null;
-                ProgressPanel.Visibility = Visibility.Collapsed;
-                _busy = false; PickBtn.IsEnabled = true; RefreshBand();
             }
         }
 

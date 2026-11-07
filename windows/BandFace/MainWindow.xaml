@@ -6,37 +6,52 @@
         Background="{DynamicResource Bg}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True"
         AllowDrop="True" Icon="Assets/app.ico">
   <Window.Resources>
-    <!-- Рядок налаштувань (як у списках iOS): уся ширина, підсвічування під мишею -->
-    <Style x:Key="RowBtn" TargetType="Button">
+    <!-- Плитка налаштувань як у «Параметрах» Windows 11: уся ширина, підсвічування під мишею -->
+    <Style x:Key="SettingRow" TargetType="Button">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="b" Background="Transparent" CornerRadius="6" Padding="10,8">
+            <Border x:Name="b" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="16,0" MinHeight="66">
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="{DynamicResource NavSel}"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="{DynamicResource BtnHover}"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
-    <!-- Кольорова плитка зі значком (як в iOS) -->
-    <Style x:Key="Tile" TargetType="Border">
-      <Setter Property="Width" Value="28"/>
-      <Setter Property="Height" Value="28"/>
-      <Setter Property="CornerRadius" Value="7"/>
-      <Setter Property="Margin" Value="0,0,14,0"/>
+    <Style x:Key="SettingCard" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource Card}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="16,0"/>
+      <Setter Property="MinHeight" Value="66"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
-    <Style x:Key="TileGlyph" TargetType="TextBlock">
+    <!-- Однотонний значок налаштування (Segoe MDL2) -->
+    <Style x:Key="SettingGlyph" TargetType="TextBlock">
       <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-      <Setter Property="FontSize" Value="14"/>
-      <Setter Property="Foreground" Value="White"/>
-      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="Margin" Value="0,0,18,0"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="SettingTitle" TargetType="TextBlock"><Setter Property="FontSize" Value="14"/></Style>
+    <Style x:Key="SettingDesc" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource Sub}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="GroupHeader" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="2,14,0,8"/>
     </Style>
     <Style x:Key="NavGlyph" TargetType="TextBlock">
       <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
@@ -55,7 +70,7 @@
   </Window.Resources>
 
   <Grid>
-    <!-- Вміст вкладок; лівий відступ = ширина бічного меню (228 або 56 у редакторі) -->
+    <!-- Вміст вкладок; лівий відступ = ширина бічного меню (228 або 60 у редакторі) -->
     <Grid x:Name="ContentHost" Margin="228,0,0,0">
       <Grid x:Name="PagesHost" Margin="26,6,36,0">
 
@@ -71,16 +86,33 @@
                 <TextBlock x:Name="KeyNoticeText" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
               </StackPanel>
             </Border>
+
+            <!-- Пристрій: як в iOS — значок, назва моделі, червона кнопка «від'єднати» -->
             <Border Style="{StaticResource CardBox}">
               <StackPanel>
                 <TextBlock x:Name="BandLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
                 <Grid x:Name="BandConnected" Visibility="Collapsed">
-                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                  <StackPanel>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <Viewbox Width="26" Height="26" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <Canvas Width="26" Height="26"><Path Data="{StaticResource BandGeometry}" Fill="{DynamicResource Accent}"/></Canvas>
+                  </Viewbox>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock x:Name="BandName" FontSize="16" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="BandStatus" FontSize="12" Foreground="{DynamicResource Ok}"/>
+                    <TextBlock x:Name="BandStatus" FontSize="12" Foreground="{DynamicResource Sub}" Visibility="Collapsed"/>
                   </StackPanel>
-                  <Button x:Name="DisconnectBtn" Grid.Column="1" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Disconnect_Click"/>
+                  <Button x:Name="DisconnectBtn" Grid.Column="2" Style="{StaticResource IconBtn}" Width="36" Height="36" BorderThickness="0" Background="Transparent" Click="Disconnect_Click">
+                    <Viewbox Width="22" Height="22"><Canvas Width="30" Height="30"><Path Data="{StaticResource DisconnectGeometry}" Fill="{DynamicResource Err}"/></Canvas></Viewbox>
+                  </Button>
+                </Grid>
+                <Grid x:Name="BandConnecting" Visibility="Collapsed">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <!-- індикатор: дуга, що обертається -->
+                  <Path x:Name="Spinner" Width="20" Height="20" Margin="2,0,14,0" Stretch="None" Stroke="{DynamicResource Accent}" StrokeThickness="2.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                        Data="M 10,1.5 A 8.5,8.5 0 1 1 1.5,10" RenderTransformOrigin="0.5,0.5" VerticalAlignment="Center">
+                    <Path.RenderTransform><RotateTransform x:Name="SpinnerRotate"/></Path.RenderTransform>
+                  </Path>
+                  <TextBlock x:Name="ConnectingText" Grid.Column="1" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  <Button x:Name="CancelConnectBtn" Grid.Column="2" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="CancelConnect_Click"/>
                 </Grid>
                 <StackPanel x:Name="BandIdle">
                   <TextBlock x:Name="BandNone" FontSize="16" Margin="0,0,0,10"/>
@@ -89,13 +121,21 @@
                 </StackPanel>
               </StackPanel>
             </Border>
+
             <Border Style="{StaticResource CardBox}">
               <StackPanel>
                 <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                  <Border x:Name="Capsule" Width="96" Height="236" CornerRadius="48" Background="#222222" BorderBrush="#8A8A8A" BorderThickness="3">
-                    <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
+                  <!-- Капсула як в iOS: сіре обведення 3 px, рівне закруглення, вміст обрізано по капсулі -->
+                  <Border x:Name="Capsule" Width="102" Height="242" CornerRadius="51" Background="#7A7A7A" Padding="3">
+                    <Grid x:Name="CapsuleInner" Width="96" Height="236" Background="Black">
+                      <Grid.Clip><RectangleGeometry Rect="0,0,96,236" RadiusX="48" RadiusY="48"/></Grid.Clip>
+                      <Viewbox x:Name="PreviewPlaceholder" Width="30" Height="30">
+                        <Canvas Width="26" Height="26"><Path Data="{StaticResource BandGeometry}" Fill="#666666"/></Canvas>
+                      </Viewbox>
+                      <Image x:Name="PreviewImage" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Grid>
                   </Border>
                   <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
                     <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
@@ -103,7 +143,7 @@
                     <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
                     <Grid Margin="0,18,0,0">
                       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                      <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
+                      <Button x:Name="PickBtn" Style="{StaticResource PrimaryBtn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
                     </Grid>
                     <Grid Margin="0,20,0,0" MinHeight="34">
@@ -123,49 +163,62 @@
           </StackPanel>
         </ScrollViewer>
 
-        <!-- Налаштування -->
+        <!-- Налаштування: як «Параметри» Windows 11 -->
         <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-          <StackPanel Margin="0,0,0,24">
-            <TextBlock x:Name="TitleSettings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
-            <Border Style="{StaticResource CardBox}" Padding="8,12">
-              <StackPanel>
-                <TextBlock x:Name="DeviceSectionLabel" FontSize="13" Margin="10,0,0,6" Foreground="{DynamicResource Sub}"/>
-                <Button Style="{StaticResource RowBtn}" Click="OpenKey_Click">
-                  <DockPanel>
-                    <Border Style="{StaticResource Tile}" Background="#E8A400"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE192;"/></Border>
-                    <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11" VerticalAlignment="Center" Margin="12,0,4,0" Foreground="{DynamicResource Sub}"/>
-                    <TextBlock x:Name="KeyStateIcon" DockPanel.Dock="Right" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="RowKeyText" FontSize="14" VerticalAlignment="Center"/>
-                  </DockPanel>
-                </Button>
-                <Button Style="{StaticResource RowBtn}" Click="OpenLog_Click">
-                  <DockPanel>
-                    <Border Style="{StaticResource Tile}" Background="#6B7A90"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE8A5;"/></Border>
-                    <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11" VerticalAlignment="Center" Margin="12,0,4,0" Foreground="{DynamicResource Sub}"/>
-                    <TextBlock x:Name="RowLogText" FontSize="14" VerticalAlignment="Center"/>
-                  </DockPanel>
-                </Button>
-              </StackPanel>
+          <StackPanel Margin="0,0,0,24" MaxWidth="1000" HorizontalAlignment="Stretch">
+            <TextBlock x:Name="TitleSettings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock x:Name="DeviceSectionLabel" Style="{StaticResource GroupHeader}"/>
+            <Button Style="{StaticResource SettingRow}" Click="OpenKey_Click">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE192;"/>
+                <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0" Foreground="{DynamicResource Sub}"/>
+                <TextBlock x:Name="KeyStateIcon" DockPanel.Dock="Right" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12">
+                  <TextBlock x:Name="RowKeyText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="RowKeyDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
+            </Button>
+            <Button Style="{StaticResource SettingRow}" Click="OpenLog_Click">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE8A5;"/>
+                <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0" Foreground="{DynamicResource Sub}"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12">
+                  <TextBlock x:Name="RowLogText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="RowLogDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
+            </Button>
+
+            <TextBlock x:Name="AppSectionLabel" Style="{StaticResource GroupHeader}"/>
+            <Border Style="{StaticResource SettingCard}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE790;"/>
+                <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" Width="200" VerticalAlignment="Center" SelectionChanged="Theme_Changed"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
+                  <TextBlock x:Name="RowThemeText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="RowThemeDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
             </Border>
-            <Border Style="{StaticResource CardBox}" Padding="8,12">
-              <StackPanel>
-                <TextBlock x:Name="AppSectionLabel" FontSize="13" Margin="10,0,0,6" Foreground="{DynamicResource Sub}"/>
-                <DockPanel Margin="10,6">
-                  <Border Style="{StaticResource Tile}" Background="#5B5FC7"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE790;"/></Border>
-                  <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" Width="200" SelectionChanged="Theme_Changed"/>
-                  <TextBlock x:Name="RowThemeText" FontSize="14" VerticalAlignment="Center"/>
-                </DockPanel>
-                <DockPanel Margin="10,6">
-                  <Border Style="{StaticResource Tile}" Background="#2D8FD5"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE774;"/></Border>
-                  <ComboBox x:Name="LangBox" DockPanel.Dock="Right" Width="200" SelectionChanged="Lang_Changed"/>
-                  <TextBlock x:Name="RowLangText" FontSize="14" VerticalAlignment="Center"/>
-                </DockPanel>
-                <DockPanel Margin="10,6">
-                  <Border Style="{StaticResource Tile}" Background="#8A8A8A"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE946;"/></Border>
-                  <TextBlock x:Name="VersionValue" DockPanel.Dock="Right" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource Sub}" Margin="0,0,4,0"/>
-                  <TextBlock x:Name="RowVersionText" FontSize="14" VerticalAlignment="Center"/>
-                </DockPanel>
-              </StackPanel>
+            <Border Style="{StaticResource SettingCard}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE774;"/>
+                <ComboBox x:Name="LangBox" DockPanel.Dock="Right" Width="200" VerticalAlignment="Center" SelectionChanged="Lang_Changed"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
+                  <TextBlock x:Name="RowLangText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="RowLangDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource SettingCard}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE946;"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12">
+                  <TextBlock x:Name="RowVersionText" Style="{StaticResource SettingTitle}"/>
+                  <TextBlock x:Name="VersionValue" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
             </Border>
           </StackPanel>
         </ScrollViewer>
@@ -231,26 +284,27 @@
         </ScrollViewer>
       </Grid>
 
-      <!-- Редактор (колишній BandFace Creator): свої відступи, на всю ширину вкладки -->
+      <!-- Редактор: свої відступи, на всю ширину вкладки -->
       <creator:CreatorView x:Name="EditorTab" Visibility="Collapsed"/>
     </Grid>
 
     <!-- Затемнення під розгорнутим меню в редакторі: клік — згорнути -->
     <Border x:Name="Shade" Background="#40000000" Visibility="Collapsed" MouseLeftButtonDown="Shade_MouseDown"/>
 
-    <!-- Бічне меню: 228 px; у редакторі — смуга іконок 56 px, «☰» розгортає поверх -->
+    <!-- Бічне меню: 228 px; у редакторі — смуга іконок 60 px, «☰» розгортає поверх -->
     <Border x:Name="Sidebar" Width="228" HorizontalAlignment="Left" Background="{DynamicResource Bg}">
       <DockPanel Margin="10,8">
         <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
         <StackPanel>
-          <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="36" Height="36" BorderThickness="0" Background="Transparent"
+          <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="40" Height="36" BorderThickness="0" Background="Transparent"
                   HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click"/>
           <RadioButton x:Name="NavFaces" Style="{StaticResource Nav}" IsChecked="True" GroupName="nav" Checked="Nav_Checked">
-            <StackPanel Orientation="Horizontal"><Viewbox Width="20" Height="20"><Canvas Width="30" Height="30">
-<Path Data="F0 M13.35,0.5 H16.65 A1.6,1.6 0 0 1 18.25,2.1 V4.4 A1.6,1.6 0 0 1 16.65,6 H13.35 A1.6,1.6 0 0 1 11.75,4.4 V2.1 A1.6,1.6 0 0 1 13.35,0.5 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F0 M13.35,24 H16.65 A1.6,1.6 0 0 1 18.25,25.6 V27.9 A1.6,1.6 0 0 1 16.65,29.5 H13.35 A1.6,1.6 0 0 1 11.75,27.9 V25.6 A1.6,1.6 0 0 1 13.35,24 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F0 M15.0,3 H15.0 A5.75,5.75 0 0 1 20.75,8.75 V21.25 A5.75,5.75 0 0 1 15.0,27 H15.0 A5.75,5.75 0 0 1 9.25,21.25 V8.75 A5.75,5.75 0 0 1 15.0,3 Z M15,4.75 H15 A4,4 0 0 1 19,8.75 V21.25 A4,4 0 0 1 15,25.25 H15 A4,4 0 0 1 11,21.25 V8.75 A4,4 0 0 1 15,4.75 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-</Canvas></Viewbox><TextBlock x:Name="NavFacesText" Style="{StaticResource NavText}"/></StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
+                <Path Data="{StaticResource BandGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+              </Canvas></Viewbox>
+              <TextBlock x:Name="NavFacesText" Style="{StaticResource NavText}"/>
+            </StackPanel>
           </RadioButton>
           <!-- Магазин: поки сірий і неактивний -->
           <RadioButton x:Name="NavStore" Style="{StaticResource Nav}" GroupName="nav" IsEnabled="False" ToolTipService.ShowOnDisabled="True">
@@ -273,7 +327,7 @@
               <Grid>
                 <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE713;"/>
                 <!-- немає ключа — червоний «!» на значку, як в iOS -->
-                <Border x:Name="KeyBadge" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource Err}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-7,0" Visibility="Collapsed">
+                <Border x:Name="KeyBadge" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource Err}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0" Visibility="Collapsed">
                   <TextBlock Text="!" FontSize="10" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
                 </Border>
               </Grid>

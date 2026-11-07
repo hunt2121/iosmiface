@@ -15,7 +15,7 @@ namespace BandFace
 {
     sealed class FoundBand
     {
-        public string Name; public ulong Address;
+        public string Name; public ulong Address; public short Rssi;
         public override string ToString() => Name;
     }
 
@@ -39,8 +39,6 @@ namespace BandFace
         public event Action Restored;
         public event Action<string> Info;
         public string ConnectedName { get; private set; }
-        /// <summary>Скільки байтів даних уміщує один BLE-пакет (20 — старі адаптери, ~180–500 — сучасні).</summary>
-        public int PacketSize => _chunk;
         public bool IsConnected => _tx != null && _dev != null && _dev.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
         public void StartScan(Action<FoundBand> found)
@@ -54,7 +52,7 @@ namespace BandFace
                 bool ours = a.Advertisement.ServiceUuids.Contains(Service)
                     || name.IndexOf("Band", StringComparison.OrdinalIgnoreCase) >= 0
                     || name.IndexOf("Xiaomi", StringComparison.OrdinalIgnoreCase) >= 0;
-                if (ours) found(new FoundBand { Name = name, Address = a.BluetoothAddress });
+                if (ours) found(new FoundBand { Name = name, Address = a.BluetoothAddress, Rssi = a.RawSignalStrengthInDBm });
             };
             _watcher.Start();
         }
