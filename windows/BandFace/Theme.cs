@@ -56,8 +56,7 @@ namespace BandFace
             // тонкі смуги прокрутки як у Windows 11
             r["ScrollThumb"] = B(dark ? "#8C8C8C" : "#8A8A8A");
             // підказка «Незабаром» і бічна панель-шторка
-            r["Chip"] = B(dark ? "#3A3A3A" : "#EAEAEA");
-            r["Shade"] = B(dark ? "#000000" : "#000000");
+            r["ChipBg"] = B(dark ? "#3A3A3A" : "#EAEAEA");
             if (window != null) TitleBar(window, dark);
             foreach (Window w in Application.Current.Windows) if (w != window) TitleBar(w, dark);
         }

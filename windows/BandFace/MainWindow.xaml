@@ -257,7 +257,7 @@
             <StackPanel Orientation="Horizontal">
               <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE719;"/>
               <TextBlock x:Name="NavStoreText" Style="{StaticResource NavText}"/>
-              <Border x:Name="StoreChip" Background="{DynamicResource Chip}" CornerRadius="9" Padding="7,0" Margin="10,0,0,0" VerticalAlignment="Center">
+              <Border x:Name="StoreChip" Background="{DynamicResource ChipBg}" CornerRadius="9" Padding="7,0" Margin="10,0,0,0" VerticalAlignment="Center">
                 <TextBlock x:Name="StoreChipText" FontSize="11" Foreground="{DynamicResource Sub}"/>
               </Border>
             </StackPanel>
