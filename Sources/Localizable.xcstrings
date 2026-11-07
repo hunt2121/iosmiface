@@ -9959,6 +9959,98 @@
           }
         }
       }
+    },
+    "Встановити все одно": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install anyway"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё равно установить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановити все одно"
+          }
+        }
+      }
+    },
+    "Не перевірено на браслеті": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not tested on the band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не проверено на браслете"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не перевірено на браслеті"
+          }
+        }
+      }
+    },
+    "У циферблаті є текст, який малює сам браслет. Його немає в жодному відомому циферблаті Smart Band 10, тож на браслеті він не перевірений і може зламати прошивку. Для чисел і дати безпечніше взяти «Цифри».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The watch face has text drawn by the band itself. No known Smart Band 10 watch face uses it, so it hasn't been tested on the band and may break the firmware. For numbers and the date, “Digits” are safer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В циферблате есть текст, который рисует сам браслет. Его нет ни в одном известном циферблате Smart Band 10, поэтому на браслете он не проверен и может сломать прошивку. Для чисел и даты безопаснее взять «Цифры»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У циферблаті є текст, який малює сам браслет. Його немає в жодному відомому циферблаті Smart Band 10, тож на браслеті він не перевірений і може зламати прошивку. Для чисел і дати безпечніше взяти «Цифри»."
+          }
+        }
+      }
+    },
+    "не перевірено на браслеті": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not tested on the band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не проверено на браслете"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не перевірено на браслеті"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

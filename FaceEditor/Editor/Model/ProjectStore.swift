@@ -41,7 +41,9 @@ final class ProjectStore: ObservableObject {
         let digits = Generator(kind: .digits, color: "#FFFFFF", fontSize: 66, weight: 800, style: "rounded")
         ElementFactory.addDigits(p, source: "timeHour", gen: digits, theme: 0, center: (w / 2, 120))
         ElementFactory.addDigits(p, source: "timeMinute", gen: digits, theme: 0, center: (w / 2, 200))
-        ElementFactory.addText(p, string: "%s", sources: ["dateDay"], theme: 0, center: (w / 2, 280), color: "#4DE1FF")
+        // дата — картинками цифр: текст (DataItemText) на браслеті не перевірено (Б-1)
+        let date = Generator(kind: .digits, color: "#4DE1FF", fontSize: 34, weight: 700, style: "rounded")
+        ElementFactory.addDigits(p, source: "dateDay", gen: date, theme: 0, center: (w / 2, 280))
         p.save()
         projects.insert(p, at: 0)
         return p

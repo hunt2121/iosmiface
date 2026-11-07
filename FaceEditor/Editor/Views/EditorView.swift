@@ -13,6 +13,8 @@ struct EditorView: View {
     @Environment(\.faceInstall) private var install
 
     @State private var theme = 0
+    /// Циферблат має елементи, не перевірені на браслеті (Б-1) — питаємо перед встановленням
+    @State private var askUntested = false
     /// Який кольоровий варіант показує полотно (0 — основний)
     @State private var variant = 0
     @State private var selected: XNode?
@@ -76,6 +78,12 @@ struct EditorView: View {
         .confirmationDialog("Відкинути зміни, зроблені після відкриття?", isPresented: $confirmDiscard, titleVisibility: .visible) {
             Button("Відкинути зміни", role: .destructive) { discard() }
             Button("Зберегти й закрити") { dismiss() }
+        }
+        .alert("Не перевірено на браслеті", isPresented: $askUntested) {
+            Button("Встановити все одно", role: .destructive) { installOnBand(force: true) }
+            Button("Скасувати", role: .cancel) {}
+        } message: {
+            Text("У циферблаті є текст, який малює сам браслет. Його немає в жодному відомому циферблаті Smart Band 10, тож на браслеті він не перевірений і може зламати прошивку. Для чисел і дати безпечніше взяти «Цифри».")
         }
         .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
             Button("Гаразд", role: .cancel) {}
@@ -243,8 +251,9 @@ struct EditorView: View {
     }
 
     /// Збирає .bin і передає BandFace: та встановлює його на браслет (або підказує, що спершу підключити).
-    private func installOnBand() {
+    private func installOnBand(force: Bool = false) {
         guard let install else { return }
+        if !force && !Band10.untested(project.root).isEmpty { askUntested = true; return }
         do {
             let (data, _) = try project.compile()
             FacePreviews.alias(data, from: project)

@@ -9,9 +9,10 @@ struct RGBAImage {
     var w: Int
     var h: Int
     var px: [UInt8]
-    var png: Data { Data(PNG.encode(w, h, px)) }
-    /// Формат для компілятора: indexed8, якщо вистачає 256 кольорів, інакше RGB565A8.
-    var bestFormat: String { FaceCatalog.colorCount(px) <= 256 ? "indexed8" : "RGB565A8" }
+    /// PNG ресурсу циферблата: завжди не більше 256 кольорів (Band 10/11 знає лише indexed8 — Б-1, див. Band10.swift)
+    var png: Data { Data(PNG.encode(w, h, Band10.to256(px, w, h))) }
+    /// Формат для компілятора: на Band 10/11 усі картинки — indexed8 (фото зменшуються до 256 кольорів).
+    var bestFormat: String { "indexed8" }
 }
 
 enum AssetFactory {
@@ -190,65 +191,6 @@ extension RGBAImage {
 }
 
 extension RGBAImage {
-    /// Зменшення до `maxColors` кольорів (медіанний поділ), щоб картинка йшла у форматі indexed8:
-    /// він без втрат при розпакуванні/збиранні (на відміну від RGB565A8) і менший. Альфа зберігається
-    /// як є, якщо вона одна для всіх пікселів; інакше картинку не чіпаємо.
-    func quantized(maxColors: Int = 256) -> RGBAImage {
-        let n = w * h
-        guard n > 0, FaceCatalog.colorCount(px) > maxColors else { return self }
-        let a0 = px[3]
-        for i in 0..<n where px[i * 4 + 3] != a0 { return self }
-        // гістограма на 5 біт на канал
-        var count = [Int](repeating: 0, count: 32768)
-        var sum = [(Int, Int, Int)](repeating: (0, 0, 0), count: 32768)
-        for i in 0..<n {
-            let r = Int(px[i * 4]), g = Int(px[i * 4 + 1]), b = Int(px[i * 4 + 2])
-            let k = (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3)
-            count[k] += 1
-            sum[k].0 += r; sum[k].1 += g; sum[k].2 += b
-        }
-        let bins = (0..<32768).filter { count[$0] > 0 }
-        func ch(_ k: Int, _ c: Int) -> Int { c == 0 ? k >> 10 : c == 1 ? (k >> 5) & 31 : k & 31 }
-        // коробки: ділимо найбільшу (за кількістю пікселів × розмахом) по медіані найдовшого каналу
-        var boxes: [[Int]] = [bins]
-        while boxes.count < maxColors {
-            var best = -1, bestScore = 0, bestCh = 0
-            for (i, box) in boxes.enumerated() where box.count > 1 {
-                var lo = [31, 31, 31], hi = [0, 0, 0], pixels = 0
-                for k in box {
-                    for c in 0..<3 { lo[c] = min(lo[c], ch(k, c)); hi[c] = max(hi[c], ch(k, c)) }
-                    pixels += count[k]
-                }
-                let spans = (0..<3).map { hi[$0] - lo[$0] }
-                let c = spans.firstIndex(of: spans.max()!)!
-                let score = spans[c] * pixels
-                if score > bestScore { bestScore = score; best = i; bestCh = c }
-            }
-            guard best >= 0 else { break }
-            let sorted = boxes[best].sorted { ch($0, bestCh) < ch($1, bestCh) }
-            let total = sorted.reduce(0) { $0 + count[$1] }
-            var acc = 0, cut = 1
-            for (j, k) in sorted.enumerated() {
-                acc += count[k]
-                if acc * 2 >= total { cut = max(1, min(sorted.count - 1, j + 1)); break }
-            }
-            boxes[best] = Array(sorted[..<cut])
-            boxes.append(Array(sorted[cut...]))
-        }
-        // колір коробки — середнє її пікселів; кожен бін іде у свою коробку
-        var map = [Int](repeating: 0, count: 32768)
-        var palette: [(UInt8, UInt8, UInt8)] = []
-        for (i, box) in boxes.enumerated() {
-            var r = 0, g = 0, b = 0, c = 0
-            for k in box { r += sum[k].0; g += sum[k].1; b += sum[k].2; c += count[k]; map[k] = i }
-            palette.append((UInt8(r / max(c, 1)), UInt8(g / max(c, 1)), UInt8(b / max(c, 1))))
-        }
-        var out = px
-        for i in 0..<n {
-            let k = (Int(px[i * 4]) >> 3) << 10 | (Int(px[i * 4 + 1]) >> 3) << 5 | (Int(px[i * 4 + 2]) >> 3)
-            let p = palette[map[k]]
-            out[i * 4] = p.0; out[i * 4 + 1] = p.1; out[i * 4 + 2] = p.2
-        }
-        return RGBAImage(w: w, h: h, px: out)
-    }
+    /// Не більше 256 кольорів (разом із прозорістю) — для indexed8
+    func quantized() -> RGBAImage { RGBAImage(w: w, h: h, px: Band10.to256(px, w, h)) }
 }

@@ -15,6 +15,8 @@ struct ProjectsView: View {
     @State private var showNew = false
     @State private var showImporter = false
     @State private var alert: String?
+    /// Проєкт з елементами, не перевіреними на браслеті (Б-1) — питаємо перед встановленням
+    @State private var askUntested: FaceProject?
     @State private var share: ShareItem?
     /// Мініатюри й анімації за ключем проєкту (змінюється після кожної зміни), тож після закриття редактора
     /// незмінені проєкти показуються одразу, без чорних капсул
@@ -80,6 +82,12 @@ struct ProjectsView: View {
                 .environment(\.faceInstall, install)
         }
         .sheet(item: $share) { item in ActivityView(items: [item.url]) }
+        .alert("Не перевірено на браслеті", isPresented: Binding(get: { askUntested != nil }, set: { if !$0 { askUntested = nil } }), presenting: askUntested) { p in
+            Button("Встановити все одно", role: .destructive) { installProject(p, force: true) }
+            Button("Скасувати", role: .cancel) {}
+        } message: { _ in
+            Text("У циферблаті є текст, який малює сам браслет. Його немає в жодному відомому циферблаті Smart Band 10, тож на браслеті він не перевірений і може зламати прошивку. Для чисел і дати безпечніше взяти «Цифри».")
+        }
         .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
             Button("Гаразд", role: .cancel) {}
         }
@@ -180,8 +188,9 @@ struct ProjectsView: View {
         }
     }
 
-    private func installProject(_ p: FaceProject) {
+    private func installProject(_ p: FaceProject, force: Bool = false) {
         guard let install else { return }
+        if !force && !Band10.untested(p.root).isEmpty { askUntested = p; return }
         do {
             let (data, _) = try p.compile()
             FacePreviews.alias(data, from: p)

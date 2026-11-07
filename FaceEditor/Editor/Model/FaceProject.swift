@@ -269,6 +269,8 @@ final class FaceProject: ObservableObject, Identifiable {
         // при виборі кольору (перевірено на Smart Band 10, збірка 235)
         let st = needsPreview ? storageWithFreshPreviews() : storage()
         if ColorVariants.isEnabled(self) { addBackgroundFill(st) }
+        // Band 10/11 знає лише indexed8: картинки інших форматів (фото, циферблати від інших браслетів) — у 256 кольорів (Б-1)
+        Band10.fixImages(st)
         let data = try WatchfaceCompiler.build(from: st, log: log)
         return (data, log.warnings)
     }

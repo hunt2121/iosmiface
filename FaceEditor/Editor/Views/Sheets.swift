@@ -33,7 +33,7 @@ struct AddElementSheet: View {
         var id: String { preset ?? kind.rawValue }
     }
     private let tiles: [Tile] = [
-        Tile(kind: .text, caption: "рядок із даних", filter: .data, enabled: true),
+        Tile(kind: .text, caption: "не перевірено на браслеті", filter: .data, enabled: true),
         Tile(kind: .digits, caption: "картинки цифр", filter: .data, enabled: true),
         Tile(kind: .values, caption: "картинка за значенням", filter: .data, enabled: true),
         Tile(kind: .pointer, caption: "три стрілки", filter: .gauges, enabled: true, preset: "clock"),
