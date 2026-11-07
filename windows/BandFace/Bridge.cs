@@ -33,6 +33,13 @@ namespace BandFace
         public bool IsConnected => _connected && IsOpen;
         public string PortName => _port?.PortName;
 
+        /// <summary>Браслет, з яким спарена плата (зберігається у flash ESP32), або null.</summary>
+        public string PairedAddr { get; private set; }
+        public int PairedType { get; private set; }
+        public string PairedName { get; private set; }
+        /// <summary>Змінився стан плати: знайдено / втрачено, спарено / забуто.</summary>
+        public event Action StateChanged;
+
         /// <summary>Шукає плату: на кожен COM-порт надсилає HELLO і чекає «OK BRIDGE».</summary>
         public Task OpenAsync()
         {
@@ -64,6 +71,8 @@ namespace BandFace
                 _port.ReadTimeout = SerialPort.InfiniteTimeout;
                 var reader = new Thread(ReadLoop) { IsBackground = true, Name = "ESP32 bridge" };
                 reader.Start(_port);
+                Send("INFO");
+                StateChanged?.Invoke();
             });
         }
 
@@ -88,6 +97,7 @@ namespace BandFace
             var p = _port;
             _port = null;
             try { p?.Close(); } catch (Exception) { }
+            StateChanged?.Invoke();
         }
 
         void ReadLoop(object arg)
@@ -107,6 +117,7 @@ namespace BandFace
             _port = null;
             try { port.Close(); } catch (Exception) { }
             Info?.Invoke("bridge: USB lost");
+            StateChanged?.Invoke();
             Complete("C", "ERR usb");
             Complete("W", "E usb");
             bool was = _connected;
@@ -131,7 +142,40 @@ namespace BandFace
                 Complete("W", "E disconnected");
                 if (was) Disconnected?.Invoke();
             }
+            else if (l.StartsWith("PAIRED ")) Paired(l);
             else if (l.StartsWith("LOG ")) Info?.Invoke("bridge: " + l.Substring(4));
+        }
+
+        // PAIRED <адреса> <тип> <назва> | PAIRED -
+        void Paired(string l)
+        {
+            var p = l.Split(new[] { ' ' }, 4);
+            if (p.Length < 3 || p[1] == "-") { PairedAddr = null; PairedName = null; PairedType = 0; }
+            else
+            {
+                int t;
+                int.TryParse(p[2], out t);
+                PairedAddr = p[1]; PairedType = t;
+                PairedName = p.Length > 3 && p[3].Trim().Length > 0 ? p[3].Trim() : "Xiaomi Smart Band";
+            }
+            Info?.Invoke("bridge: paired " + (PairedAddr == null ? "-" : PairedName + " " + PairedAddr));
+            StateChanged?.Invoke();
+        }
+
+        /// <summary>Підключити спарений браслет без пошуку.</summary>
+        public Task ConnectPairedAsync()
+        {
+            if (PairedAddr == null) throw new BandException(ErrorKind.NotConnected);
+            ulong a;
+            ulong.TryParse(PairedAddr.Replace(":", ""), System.Globalization.NumberStyles.HexNumber, null, out a);
+            return ConnectAsync(new FoundBand { Name = PairedName, Address = a, BridgeAddr = PairedAddr, AddrType = PairedType });
+        }
+
+        /// <summary>Забути спарювання (ключі на ESP32 стираються).</summary>
+        public void Unpair()
+        {
+            _connected = false; ConnectedName = null;
+            Send("UNPAIR");
         }
 
         // ADV <адреса> <тип> <rssi> <fe95> <назва>
@@ -140,9 +184,14 @@ namespace BandFace
             var f = _found;
             if (f == null) return;
             var p = l.Split(new[] { ' ' }, 6);
-            if (p.Length < 6) return;
+            if (p.Length < 5) return;
+            if (p.Length < 6) p = new[] { p[0], p[1], p[2], p[3], p[4], "" };
             string name = p[5].Trim();
-            if (name.Length == 0) return;
+            if (name.Length == 0)
+            {
+                if (p[4] != "1") return;
+                name = "Xiaomi (" + p[1] + ")";   // браслет без назви в рекламі (буває після спарювання)
+            }
             bool ours = p[4] == "1"
                 || name.IndexOf("Band", StringComparison.OrdinalIgnoreCase) >= 0
                 || name.IndexOf("Xiaomi", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -205,7 +254,7 @@ namespace BandFace
             {
                 _connected = false; ConnectedName = null;
                 var t = Expect("C");
-                Send("CONN " + band.BridgeAddr + " " + band.AddrType);
+                Send("CONN " + band.BridgeAddr + " " + band.AddrType + " " + (band.Name ?? "").Replace("\n", " "));
                 string r;
                 try { r = await Wait(t, 60000); }
                 catch (BandException) { try { Send("DISC"); } catch (Exception) { } throw; }

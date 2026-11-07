@@ -32,6 +32,26 @@ namespace BandFace
             catch (Exception) { }
         }
 
+        public static string LogPath => PathOf("log.txt");
+
+        /// <summary>Журнал дописується у файл, щоб його можна було надіслати й після закриття програми.</summary>
+        public static void AppendLog(string line)
+        {
+            try
+            {
+                var p = PathOf("log.txt");
+                var fi = new FileInfo(p);
+                if (fi.Exists && fi.Length > 2_000_000)
+                {
+                    var old = PathOf("log.old.txt");
+                    if (File.Exists(old)) File.Delete(old);
+                    File.Move(p, old);
+                }
+                File.AppendAllText(p, line + Environment.NewLine, Encoding.UTF8);
+            }
+            catch (Exception) { }
+        }
+
         public static bool LoadFlag(string name)
         {
             try { return File.Exists(PathOf(name)); } catch (Exception) { return false; }

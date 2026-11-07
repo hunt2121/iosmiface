@@ -74,6 +74,18 @@ namespace BandFace
             ["connectedBridge"] = new[] { "Підключено через ESP32", "Connected via ESP32", "Подключено через ESP32" },
             ["bridgeLooking"] = new[] { "Шукаю плату ESP32 на USB-портах…", "Looking for the ESP32 board on USB ports…", "Ищу плату ESP32 на USB-портах…" },
             ["noBridge"] = new[] { "Плату ESP32 не знайдено: підключіть її по USB і перевірте, що на ній прошивка BandFace bridge", "ESP32 board not found: plug it in over USB and check that it runs the BandFace bridge firmware", "Плата ESP32 не найдена: подключите её по USB и проверьте, что на ней прошивка BandFace bridge" },
+            ["bridgeCard"] = new[] { "ESP32-міст", "ESP32 bridge", "ESP32-мост" },
+            ["bridgeNoBoard"] = new[] { "Плату не знайдено", "Board not found", "Плата не найдена" },
+            ["bridgeOn"] = new[] { "Плата ESP32 на {0}", "ESP32 board on {0}", "Плата ESP32 на {0}" },
+            ["bridgeFind"] = new[] { "Знайти плату", "Find board", "Найти плату" },
+            ["pairedWith"] = new[] { "Спарено з {0}", "Paired with {0}", "Сопряжено с {0}" },
+            ["pairedConnected"] = new[] { "Спарено й підключено: {0}", "Paired and connected: {0}", "Сопряжено и подключено: {0}" },
+            ["notPaired"] = new[] { "Не спарено з браслетом — знайдіть браслет пошуком", "Not paired with a band — find the band by searching", "Не сопряжено с браслетом — найдите браслет поиском" },
+            ["pairUnknown"] = new[] { "Стан спарювання невідомий", "Pairing state unknown", "Состояние сопряжения неизвестно" },
+            ["pairConnect"] = new[] { "Підключити спарений", "Connect paired band", "Подключить сопряжённый" },
+            ["unpair"] = new[] { "Забути спарювання", "Forget pairing", "Забыть сопряжение" },
+            ["pairHint"] = new[] { "Браслет не відповідає. Вимкніть Bluetooth на телефоні (браслет тримає лише одне з'єднання) і спробуйте ще раз.", "The band does not respond. Turn off Bluetooth on the phone (the band keeps only one connection) and try again.", "Браслет не отвечает. Выключите Bluetooth на телефоне (браслет держит только одно соединение) и попробуйте снова." },
+            ["logFile"] = new[] { "Файл журналу", "Log file", "Файл журнала" },
             ["noBle"] = new[] { "Bluetooth недоступний на цьому комп'ютері", "Bluetooth is not available on this PC", "Bluetooth недоступен на этом компьютере" },
         };
 

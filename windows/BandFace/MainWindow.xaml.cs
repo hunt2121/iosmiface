@@ -19,7 +19,7 @@ namespace BandFace
     {
         readonly BleTransport _ble = new BleTransport();
         readonly BridgeTransport _bridge = new BridgeTransport();
-        bool _useBridge, _bridgeOpening;
+        bool _useBridge, _bridgeOpening, _bridgeConnecting;
         /// <summary>Поточний канал: Bluetooth Windows або (експериментально) ESP32-міст.</summary>
         ILink _link => _useBridge ? (ILink)_bridge : _ble;
         readonly StringBuilder _log = new StringBuilder();
@@ -44,6 +44,9 @@ namespace BandFace
             ApplyTexts();
             RefreshBand();
             RefreshFace();
+            _bridge.StateChanged += () => Dispatcher.BeginInvoke(new Action(RefreshBridge));
+            AddLog("BandFace " + ver + " started" + (_useBridge ? " (ESP32 bridge mode)" : ""));
+            if (_useBridge) ContentRendered += async (s, e) => await OpenBridgeAsync();
             foreach (var link in new ILink[] { _ble, _bridge })
             {
                 link.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
@@ -143,6 +146,11 @@ namespace BandFace
             CloudNote.Text = S.Get("cloudNote");
             DevLabel.Text = S.Get("dev");
             ExpLabel.Text = S.Get("experimental").ToUpperInvariant();
+            BridgeCardLabel.Text = S.Get("bridgeCard").ToUpperInvariant() + " · " + S.Get("experimental").ToUpperInvariant();
+            BridgeFindBtn.Content = S.Get("bridgeFind");
+            PairConnectBtn.Content = S.Get("pairConnect");
+            UnpairBtn.Content = S.Get("unpair");
+            LogFileBtn.Content = S.Get("logFile");
             BridgeLabel.Text = S.Get("bridge");
             BridgeNote.Text = S.Get("bridgeNote");
             CopyBtn.Content = S.Get("copy");
@@ -169,6 +177,84 @@ namespace BandFace
             BandStatus.Text = S.Get(_useBridge ? "connectedBridge" : "connected");
             ScanBtn.Content = S.Get(_useBridge ? "scanBridge" : "scan");
             InstallBtn.IsEnabled = !_busy && _face != null;
+            RefreshBridge();
+        }
+
+        // ---------- ESP32-міст (експериментально) ----------
+        void RefreshBridge()
+        {
+            BridgeCard.Visibility = _useBridge ? Visibility.Visible : Visibility.Collapsed;
+            if (!_useBridge) return;
+            bool open = _bridge.IsOpen, paired = open && _bridge.PairedAddr != null, conn = _bridge.IsConnected;
+            BridgePort.Text = _bridgeOpening ? S.Get("bridgeLooking") : open ? S.Get("bridgeOn", _bridge.PortName) : S.Get("bridgeNoBoard");
+            BridgeDot.Fill = (Brush)FindResource(open ? "Ok" : "Sub");
+            if (!open) { PairText.Text = S.Get("pairUnknown"); PairAddr.Text = ""; }
+            else if (paired)
+            {
+                PairText.Text = S.Get(conn ? "pairedConnected" : "pairedWith", _bridge.PairedName);
+                PairAddr.Text = _bridge.PairedAddr.ToUpperInvariant();
+            }
+            else { PairText.Text = S.Get("notPaired"); PairAddr.Text = ""; }
+            PairDot.Fill = (Brush)FindResource(paired ? "Ok" : "Sub");
+            PairText.Foreground = (Brush)FindResource(paired ? "Ok" : "Text");
+            BridgeFindBtn.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
+            BridgeFindBtn.IsEnabled = !_bridgeOpening;
+            PairConnectBtn.Visibility = paired && !conn ? Visibility.Visible : Visibility.Collapsed;
+            PairConnectBtn.IsEnabled = !_busy && !_bridgeConnecting;
+            UnpairBtn.Visibility = paired ? Visibility.Visible : Visibility.Collapsed;
+            UnpairBtn.IsEnabled = !_busy && !_bridgeConnecting;
+        }
+
+        async Task<bool> OpenBridgeAsync()
+        {
+            if (_bridge.IsOpen) return true;
+            if (_bridgeOpening) return false;
+            _bridgeOpening = true;
+            RefreshBridge();
+            try
+            {
+                await _bridge.OpenAsync();
+                AddLog("connect: ESP32 bridge on " + _bridge.PortName);
+                return true;
+            }
+            catch (Exception) { AddLog("connect: ESP32 bridge not found"); return false; }
+            finally { _bridgeOpening = false; RefreshBridge(); }
+        }
+
+        async void BridgeFind_Click(object sender, RoutedEventArgs e)
+        {
+            if (!await OpenBridgeAsync()) SetStatus(S.Get("noBridge"), true);
+        }
+
+        async void PairConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bridgeConnecting || _bridge.PairedAddr == null) return;
+            _bridgeConnecting = true;
+            _bridge.StopScan();
+            DeviceList.Children.Clear();
+            SetStatus(S.Get("phConnect"), false);
+            RefreshBridge();
+            try
+            {
+                await _bridge.ConnectPairedAsync();
+                AddLog("connected " + _bridge.PairedName + " (paired)");
+                SetStatus("", false);
+                RefreshBand();
+                await ActivateAsync();
+            }
+            catch (Exception ex)
+            {
+                AddLog("connect: " + ex.Message);
+                SetStatus(ex.Message.Contains("connect") ? S.Get("pairHint") : Describe(ex), true);
+            }
+            finally { _bridgeConnecting = false; RefreshBand(); }
+        }
+
+        void Unpair_Click(object sender, RoutedEventArgs e)
+        {
+            try { _bridge.Unpair(); AddLog("connect: ESP32 pairing forgotten"); } catch (Exception ex) { AddLog("connect: unpair " + ex.Message); }
+            SetStatus("", false);
+            RefreshBand();
         }
 
         async void Scan_Click(object sender, RoutedEventArgs e)
@@ -181,11 +267,8 @@ namespace BandFace
             {
                 if (link == _bridge && !_bridge.IsOpen)
                 {
-                    if (_bridgeOpening) return;
-                    _bridgeOpening = true;
                     SetStatus(S.Get("bridgeLooking"), false);
-                    try { await _bridge.OpenAsync(); } finally { _bridgeOpening = false; }
-                    AddLog("connect: ESP32 bridge on " + _bridge.PortName);
+                    if (!await OpenBridgeAsync()) throw new InvalidOperationException("bridge");
                     SetStatus("", false);
                 }
                 if (link != _link) return;   // перемикач змінили, поки шукали плату
@@ -207,7 +290,7 @@ namespace BandFace
             ScanBtn.Content = S.Get("phConnect");
             SetStatus(S.Get("phPair"), false);
             try { await _link.ConnectAsync(f); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
-            catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
+            catch (Exception ex) { SetStatus(_useBridge && ex.Message == "ESP32: connect" ? S.Get("pairHint") : Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
         }
 
@@ -424,8 +507,10 @@ namespace BandFace
         // ---------- Журнал ----------
         void AddLog(string m)
         {
-            if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc")) return;
-            _log.AppendLine(DateTime.Now.ToString("HH:mm:ss") + " " + m);
+            if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc") && !m.StartsWith("bridge") && !m.StartsWith("BandFace")) return;
+            string line = DateTime.Now.ToString("HH:mm:ss") + " " + m;
+            _log.AppendLine(line);
+            Storage.AppendLog(DateTime.Now.ToString("yyyy-MM-dd ") + line);
             if (_log.Length > 60000) _log.Remove(0, 20000);
             LogText.Text = _log.ToString();
         }
@@ -446,8 +531,16 @@ namespace BandFace
             DeviceList.Children.Clear();
             SetStatus("", false);
             RefreshBand();
+            AddLog("connect: ESP32 bridge mode " + (on ? "on" : "off"));
+            if (on) _ = OpenBridgeAsync();
         }
         void Copy_Click(object sender, RoutedEventArgs e) { try { Clipboard.SetText(_log.Length == 0 ? S.Get("logEmpty") : _log.ToString()); } catch (Exception) { } }
         void Clear_Click(object sender, RoutedEventArgs e) { _log.Clear(); LogText.Text = ""; }
+
+        /// <summary>Показати файл журналу в провіднику (його можна надіслати).</summary>
+        void LogFile_Click(object sender, RoutedEventArgs e)
+        {
+            try { System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + Storage.LogPath + "\""); } catch (Exception) { }
+        }
     }
 }
