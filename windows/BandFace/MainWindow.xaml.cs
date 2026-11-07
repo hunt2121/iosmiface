@@ -586,7 +586,7 @@ namespace BandFace
             bool ok = KeyValid;
             KeyBadge.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
             KeyNotice.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
-            KeyStateIcon.Text = ok ? "" : "";
+            KeyStateIcon.Text = ok ? "\uE73E" : "\uE783";   // ✓ або «!» у колі, як в iOS
             KeyStateIcon.Foreground = (Brush)FindResource(ok ? "Ok" : "Err");
         }
 
