@@ -71,6 +71,38 @@ static int hexVal(char c) {
   return -1;
 }
 
+// MARK: Діагностика: причина розриву, зміна параметрів, шифрування (видно в журналі BandFace)
+
+static int gapEvents(ble_gap_event* e, void* arg) {
+  char b[96];
+  switch (e->type) {
+    case BLE_GAP_EVENT_DISCONNECT:
+      // 0x213 — браслет сам завершив з'єднання, 0x208 — втрачено радіозв'язок, 0x216 — завершила ESP32, 0x23d — помилка шифрування
+      snprintf(b, sizeof(b), "LOG link closed, reason=0x%03x", e->disconnect.reason);
+      out(b);
+      break;
+    case BLE_GAP_EVENT_CONN_UPDATE: {
+      ble_gap_conn_desc d;
+      if (ble_gap_conn_find(e->conn_update.conn_handle, &d) == 0) {
+        snprintf(b, sizeof(b), "LOG link params: status=%d interval=%u latency=%u timeout=%u", e->conn_update.status,
+                 d.conn_itvl, d.conn_latency, d.supervision_timeout);
+        out(b);
+      }
+      break;
+    }
+    case BLE_GAP_EVENT_ENC_CHANGE:
+      snprintf(b, sizeof(b), "LOG encryption change: status=%d", e->enc_change.status);
+      out(b);
+      break;
+    case BLE_GAP_EVENT_REPEAT_PAIRING:
+      out("LOG band asked to pair again");
+      break;
+    default:
+      break;
+  }
+  return 0;
+}
+
 // MARK: Пошук
 
 class ScanCb : public NimBLEAdvertisedDeviceCallbacks {
@@ -316,6 +348,7 @@ void setup() {
   NimBLEDevice::setMTU(247);
   NimBLEDevice::setSecurityAuth(true, false, true);  // зв'язування, без MITM, Secure Connections
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
+  NimBLEDevice::setCustomGapHandler(gapEvents);
   loadPaired();
 }
 
