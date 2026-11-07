@@ -16,11 +16,27 @@ namespace BandFace
     sealed class FoundBand
     {
         public string Name; public ulong Address;
+        /// <summary>Лише для ESP32-моста: адреса «aa:bb:..» і тип адреси BLE.</summary>
+        public string BridgeAddr; public int AddrType;
         public override string ToString() => Name;
     }
 
+    /// <summary>Канал до браслета: вбудований Bluetooth Windows або ESP32-міст.</summary>
+    interface ILink : IBandTransport
+    {
+        event Action<byte[]> Data;
+        event Action Disconnected;
+        event Action<string> Info;
+        string ConnectedName { get; }
+        bool IsConnected { get; }
+        void StartScan(Action<FoundBand> found);
+        void StopScan();
+        Task ConnectAsync(FoundBand band);
+        void Disconnect();
+    }
+
     /// <summary>BLE: сервіс FE95, сповіщення з 0x5E, запис без відповіді в 0x5F.</summary>
-    sealed class BleTransport : IBandTransport
+    sealed class BleTransport : ILink
     {
         static readonly Guid Service = Guid.Parse("0000fe95-0000-1000-8000-00805f9b34fb");
         static readonly Guid RxUuid = Guid.Parse("0000005e-0000-1000-8000-00805f9b34fb");
@@ -60,6 +76,8 @@ namespace BandFace
             try { _watcher?.Stop(); } catch (Exception) { }
             _watcher = null;
         }
+
+        public Task ConnectAsync(FoundBand band) => ConnectAsync(band.Address);
 
         public async Task ConnectAsync(ulong address)
         {

@@ -4,3 +4,4 @@ build/
 windows/**/bin/
 windows/**/obj/
 windows/out/
+.pio/

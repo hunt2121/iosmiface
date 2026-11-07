@@ -67,6 +67,13 @@ namespace BandFace
             ["cloudPick"] = new[] { "Оберіть браслет:", "Choose your band:", "Выберите браслет:" },
             ["cloudCancel"] = new[] { "Скасувати", "Cancel", "Отмена" },
             ["cloudNote"] = new[] { "Вхід потрібен лише щоб прочитати ключ браслета. Дані входу не зберігаються й нікуди не надсилаються, крім серверів Xiaomi.", "Sign-in is only used to read the band key. Sign-in data is not stored and is sent nowhere except Xiaomi's servers.", "Вход нужен только чтобы прочитать ключ браслета. Данные входа не сохраняются и никуда не отправляются, кроме серверов Xiaomi." },
+            ["experimental"] = new[] { "Експериментальне", "Experimental", "Экспериментальное" },
+            ["bridge"] = new[] { "ESP32-міст замість Bluetooth", "ESP32 bridge instead of Bluetooth", "ESP32-мост вместо Bluetooth" },
+            ["bridgeNote"] = new[] { "Для комп'ютера без Bluetooth: плата ESP32-S3 або ESP32-C3 з прошивкою «BandFace bridge», підключена по USB, підключається до браслета замість Bluetooth. Після вмикання натисніть «Шукати браслет через ESP32».", "For a PC without Bluetooth: an ESP32-S3 or ESP32-C3 board with the “BandFace bridge” firmware, plugged in over USB, talks to the band instead of Bluetooth. After turning it on, click “Find band via ESP32”.", "Для компьютера без Bluetooth: плата ESP32-S3 или ESP32-C3 с прошивкой «BandFace bridge», подключённая по USB, подключается к браслету вместо Bluetooth. После включения нажмите «Найти браслет через ESP32»." },
+            ["scanBridge"] = new[] { "Шукати браслет через ESP32", "Find band via ESP32", "Найти браслет через ESP32" },
+            ["connectedBridge"] = new[] { "Підключено через ESP32", "Connected via ESP32", "Подключено через ESP32" },
+            ["bridgeLooking"] = new[] { "Шукаю плату ESP32 на USB-портах…", "Looking for the ESP32 board on USB ports…", "Ищу плату ESP32 на USB-портах…" },
+            ["noBridge"] = new[] { "Плату ESP32 не знайдено: підключіть її по USB і перевірте, що на ній прошивка BandFace bridge", "ESP32 board not found: plug it in over USB and check that it runs the BandFace bridge firmware", "Плата ESP32 не найдена: подключите её по USB и проверьте, что на ней прошивка BandFace bridge" },
             ["noBle"] = new[] { "Bluetooth недоступний на цьому комп'ютері", "Bluetooth is not available on this PC", "Bluetooth недоступен на этом компьютере" },
         };
 

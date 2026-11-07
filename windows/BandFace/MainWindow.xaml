@@ -148,6 +148,16 @@
           </Border>
           <Border Style="{StaticResource CardBox}">
             <StackPanel>
+              <TextBlock x:Name="ExpLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+              <Grid>
+                <TextBlock x:Name="BridgeLabel" FontSize="14" VerticalAlignment="Center" Margin="0,0,60,0" TextWrapping="Wrap"/>
+                <CheckBox x:Name="BridgeSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" Click="Bridge_Click"/>
+              </Grid>
+              <TextBlock x:Name="BridgeNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource CardBox}">
+            <StackPanel>
               <TextBlock x:Name="VersionLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
               <StackPanel Orientation="Horizontal">
                 <Image Source="Assets/app.ico" Width="40" Height="40"/>

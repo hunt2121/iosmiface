@@ -10,7 +10,7 @@ on:
       app:
         description: "Що збирати"
         type: choice
-        options: [bandface, creator]
+        options: [bandface, creator, bridge]
         default: bandface
   push:
     branches: [windows]
@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   build:
-    if: ${{ inputs.app != 'creator' }}
+    if: ${{ inputs.app != 'creator' && inputs.app != 'bridge' }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,3 +144,41 @@ jobs:
         run: |
           VER="0.1.${{ github.run_number }}"
           gh release create "creator-$VER" BandFaceCreator-windows.zip --draft --title "BandFace Creator $VER" --notes "BandFace Creator (Windows) $VER" --target "${{ github.sha }}"
+
+  # Експериментально: прошивка ESP32-моста (лише ручний запуск з app=bridge)
+  bridge:
+    if: ${{ inputs.app == 'bridge' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        working-directory: windows/EspBridge
+        run: |
+          pip install -q platformio==6.1.16
+          pio run -e esp32s3 -e esp32c3
+      - name: Merge
+        working-directory: windows/EspBridge
+        run: |
+          PK=~/.platformio/packages
+          for env in esp32s3 esp32c3; do
+            B=.pio/build/$env
+            python $PK/tool-esptoolpy/esptool.py --chip $env merge_bin -o ../../BandFaceBridge-$env.bin \
+              --flash_mode keep --flash_freq keep --flash_size 4MB \
+              0x0 $B/bootloader.bin 0x8000 $B/partitions.bin \
+              0xe000 $PK/framework-arduinoespressif32/tools/partitions/boot_app0.bin 0x10000 $B/firmware.bin
+          done
+          ls -l ../../BandFaceBridge-*.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BandFaceBridge
+          path: BandFaceBridge-*.bin
+      - name: Release
+        if: ${{ inputs.release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "bridge-${{ github.run_number }}" BandFaceBridge-esp32s3.bin BandFaceBridge-esp32c3.bin --draft \
+            --title "BandFace ESP32 bridge ${{ github.run_number }}" --notes "Експериментально: прошивка ESP32-S3 / ESP32-C3. Прошивати з адреси 0x0." --target "${{ github.sha }}"
