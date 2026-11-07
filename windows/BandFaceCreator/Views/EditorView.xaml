@@ -54,7 +54,7 @@
                         PreviewMouseWheel="Workspace_Wheel" SizeChanged="Workspace_SizeChanged">
             <Grid x:Name="StageHost" MinWidth="{Binding ViewportWidth, ElementName=Workspace}" MinHeight="{Binding ViewportHeight, ElementName=Workspace}"
                   Background="Transparent" MouseLeftButtonDown="Stage_Down" MouseMove="Stage_Move" MouseLeftButtonUp="Stage_Up">
-              <Grid x:Name="Stage" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40">
+              <Grid x:Name="Stage" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
                 <Border x:Name="Ring" BorderThickness="3" BorderBrush="#8A8A8A" Margin="-3"/>
                 <Grid x:Name="Face" ClipToBounds="False">
                   <Image x:Name="ImgBelow" Stretch="Fill"/>

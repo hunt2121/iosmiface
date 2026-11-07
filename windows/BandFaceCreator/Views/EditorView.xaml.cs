@@ -251,7 +251,7 @@ namespace BandFace.Creator
             double vw = Workspace.ViewportWidth > 0 ? Workspace.ViewportWidth : Workspace.ActualWidth;
             double vh = Workspace.ViewportHeight > 0 ? Workspace.ViewportHeight : Workspace.ActualHeight;
             if (vw <= 0 || vh <= 0) return 1;
-            return Math.Max(0.4, Math.Min(6, Math.Min((vw - 90) / dev.Width, (vh - 90) / dev.Height)));
+            return Math.Max(0.4, Math.Min(6, Math.Min((vw - 40) / dev.Width, (vh - 40) / dev.Height)));
         }
 
         public void Redraw()

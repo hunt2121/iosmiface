@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BandFace.Faces;
 using Xunit;
@@ -151,7 +152,8 @@ public class FaceKitTests
         var c = new MemoryStorage();
         WatchfaceCompiler.Unpack(bin2, c);
         Assert.Equal(bin2, WatchfaceCompiler.Build(c));
-        // маніфест розпакованого оригіналу й зібраного порту однаковий
-        Assert.Equal(Encoding.UTF8.GetString(a.Files["manifest.xml"]), Encoding.UTF8.GetString(b.Files["manifest.xml"]));
+        // ті самі елементи в тому самому порядку (номери ресурсів можуть відрізнятися: exe лишає пропуски в нумерації)
+        string Tags(MemoryStorage m) => string.Join(",", Xml.Parse(m.Files["manifest.xml"]).First("Resources").Elements.Select(e => e.Tag));
+        Assert.Equal(Tags(a), Tags(b));
     }
 }
