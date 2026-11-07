@@ -9,11 +9,16 @@
     <DockPanel Margin="18,10,18,10">
       <Button x:Name="BackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" Click="Back_Click"/>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+        <!-- Візуально / XML -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+          <ToggleButton x:Name="VisualMode" Style="{StaticResource Chip}" IsChecked="True" Padding="10,0" Height="30" Click="VisualMode_Click"/>
+          <ToggleButton x:Name="XmlMode" Style="{StaticResource Chip}" Padding="10,0" Height="30" Margin="4,0,0,0" Click="XmlMode_Click"/>
+        </StackPanel>
         <Button x:Name="UndoBtn" Style="{StaticResource IconBtn}" Content="&#xE7A7;" Click="Undo_Click"/>
         <Button x:Name="RedoBtn" Style="{StaticResource IconBtn}" Content="&#xE7A6;" Margin="6,0,0,0" Click="Redo_Click"/>
         <ComboBox x:Name="ScreenBox" Width="190" Margin="14,0,0,0" SelectionChanged="Screen_Changed"/>
         <Button x:Name="PreviewBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Preview_Click"/>
-        <Button x:Name="ExportBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Export_Click"/>
+        <Button x:Name="FileBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="File_Click"/>
         <Button x:Name="InstallBtn" Style="{StaticResource PrimaryBtn}" Margin="10,0,0,0" Click="Install_Click"/>
       </StackPanel>
       <StackPanel Orientation="Vertical" Margin="14,0,0,0" VerticalAlignment="Center">
@@ -22,9 +27,36 @@
       </StackPanel>
     </DockPanel>
 
-    <Grid Grid.Row="1" Margin="18,0,18,16">
+    <!-- Режим XML: manifest.xml з підсвіткою зліва, превʼю справа -->
+    <Grid x:Name="XmlView" Grid.Row="1" Margin="18,0,18,16" Visibility="Collapsed">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="300"/></Grid.ColumnDefinitions>
+      <Border Style="{StaticResource CardBox}" Padding="0" Margin="0">
+        <DockPanel>
+          <DockPanel DockPanel.Dock="Bottom" Margin="14,10,14,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button x:Name="XmlRevertBtn" Style="{StaticResource Btn}" Click="XmlRevert_Click"/>
+              <Button x:Name="XmlApplyBtn" Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Click="XmlApply_Click"/>
+            </StackPanel>
+            <TextBlock x:Name="XmlStatus" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Cursor="Hand" MouseLeftButtonUp="XmlStatus_Click"/>
+          </DockPanel>
+          <Border DockPanel.Dock="Bottom" Height="1" Background="{DynamicResource CardBorder}"/>
+          <Border x:Name="XmlHost" Margin="0,6,0,0"/>
+        </DockPanel>
+      </Border>
+      <Border Grid.Column="1" Margin="14,0,0,0" CornerRadius="8" Background="{DynamicResource Workspace}">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <TextBlock x:Name="XmlPreviewTitle" FontSize="12" Foreground="{DynamicResource Sub}" Margin="14,10,14,0"/>
+          <Border Grid.Row="1" x:Name="XmlPreviewRing" BorderThickness="3" BorderBrush="#8A8A8A" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12">
+            <Image x:Name="XmlPreview" Stretch="Uniform"/>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Grid x:Name="VisualView" Grid.Row="1" Margin="18,0,18,16">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="260"/>
+        <ColumnDefinition Width="284"/>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="370"/>
       </Grid.ColumnDefinitions>
@@ -32,18 +64,43 @@
       <!-- Шари -->
       <Border Style="{StaticResource CardBox}" Padding="10" Margin="0">
         <DockPanel>
-          <Grid DockPanel.Dock="Top" Margin="6,2,0,8">
-            <TextBlock x:Name="LayersTitle" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          <Grid DockPanel.Dock="Top" Margin="2,2,0,8">
+            <!-- вкладки «Шари» / «Зображення» -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <ToggleButton x:Name="LayersTab" Style="{StaticResource Chip}" IsChecked="True" Padding="10,0" Height="30" Click="LayersTab_Click"/>
+              <ToggleButton x:Name="ImagesTab" Style="{StaticResource Chip}" Padding="10,0" Height="30" Margin="4,0,0,0" Click="ImagesTab_Click"/>
+            </StackPanel>
             <Button x:Name="AddBtn" Style="{StaticResource PrimaryBtn}" Height="30" Padding="10,0" HorizontalAlignment="Right" Click="Add_Click"/>
           </Grid>
-          <UniformGrid DockPanel.Dock="Bottom" Rows="1" Margin="0,8,0,0">
+          <!-- Рядок «Циферблат» завжди зверху: повертає до назви, фону й кольорів циферблата -->
+          <Border x:Name="FaceRow" DockPanel.Dock="Top" CornerRadius="6" Padding="8,6" Margin="0,0,0,2" Cursor="Hand" Background="Transparent"
+                  MouseLeftButtonUp="FaceRow_Click">
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Viewbox Width="18" Height="18" HorizontalAlignment="Left"><Canvas Width="26" Height="26"><Path Data="{StaticResource BandGeometry}" Fill="{DynamicResource Accent}"/></Canvas></Viewbox>
+              <StackPanel Grid.Column="1">
+                <TextBlock x:Name="FaceRowTitle" FontSize="13" FontWeight="SemiBold"/>
+                <TextBlock x:Name="FaceRowSub" FontSize="11" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border x:Name="FaceRowLine" DockPanel.Dock="Top" Height="1" Background="{DynamicResource CardBorder}" Margin="6,4,6,6"/>
+          <UniformGrid x:Name="LayerButtons" DockPanel.Dock="Bottom" Rows="1" Margin="0,8,0,0">
             <Button x:Name="UpBtn" Style="{StaticResource IconBtn}" Width="Auto" Margin="0,0,4,0" Content="&#xE74A;" Click="Up_Click"/>
             <Button x:Name="DownBtn" Style="{StaticResource IconBtn}" Width="Auto" Margin="0,0,4,0" Content="&#xE74B;" Click="Down_Click"/>
             <Button x:Name="DupBtn" Style="{StaticResource IconBtn}" Width="Auto" Margin="0,0,4,0" Content="&#xE8C8;" Click="Dup_Click"/>
             <Button x:Name="DelBtn" Style="{StaticResource IconBtn}" Width="Auto" Content="&#xE74D;" Foreground="{DynamicResource Err}" Click="Del_Click"/>
           </UniformGrid>
-          <ListBox x:Name="LayersList" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource LayerItem}"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="Layers_SelectionChanged"/>
+          <Grid>
+            <ListBox x:Name="LayersList" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource LayerItem}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="Layers_SelectionChanged"/>
+            <!-- Зображення: заміна по одній, перетягування PNG на рядок -->
+            <DockPanel x:Name="ImagesPane" Visibility="Collapsed" AllowDrop="True">
+              <TextBlock x:Name="ImagesHint" DockPanel.Dock="Top" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Sub}" Margin="6,0,6,8"/>
+              <ListBox x:Name="ImagesList" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource LayerItem}"
+                       ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="Images_SelectionChanged"/>
+            </DockPanel>
+          </Grid>
         </DockPanel>
       </Border>
 
@@ -75,7 +132,8 @@
               <TextBlock x:Name="GridText" FontSize="12" VerticalAlignment="Center" Margin="16,0,8,0"/>
               <ComboBox x:Name="GridBox" Width="64" Height="28" SelectionChanged="Grid_Changed"/>
               <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Margin="16,0,0,0" Content="&#xE71F;" Click="ZoomOut_Click"/>
-              <TextBlock x:Name="ZoomText" FontSize="12" Width="48" TextAlignment="Center" VerticalAlignment="Center"/>
+              <!-- масштаб можна ввести числом (25–800 %) -->
+              <TextBox x:Name="ZoomBox" Width="64" Height="28" FontSize="12" Margin="4,0" HorizontalContentAlignment="Center" KeyDown="ZoomBox_KeyDown" LostKeyboardFocus="ZoomBox_LostFocus"/>
               <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Content="&#xE8A3;" Click="ZoomIn_Click"/>
               <Button x:Name="FitBtn" Style="{StaticResource Btn}" Height="28" Padding="10,0" FontSize="12" Margin="6,0,0,0" Click="Fit_Click"/>
             </StackPanel>

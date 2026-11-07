@@ -19,6 +19,8 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Net.Http" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
+    <!-- редактор XML у редакторі циферблатів: підсвітка, номери рядків (MIT) -->
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
     <Resource Include="Assets\app.ico" />
     <!-- компілятор циферблатів (спільний з тестами FaceKit.Tests) -->
     <Compile Include="..\FaceKit\*.cs" Link="FaceKit\%(Filename)%(Extension)" />

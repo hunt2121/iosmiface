@@ -313,21 +313,15 @@ namespace BandFace.Creator
                     break;
                 }
                 case ElementKind.Image:
-                    if (res.Tag == "Image")
-                        Add(Ui.Button(S.Get("replaceImage") + "…", () =>
-                        {
-                            var dev = project.Meta.Device;
-                            var imgs = PickImages(false, Math.Max(dev.Width, dev.Height));
-                            if (imgs.Count == 0) return;
-                            project.Edit(p => { ElementFactory.ReplaceImage(p, res, imgs[0]); ColorVariants.Refresh(p, res); });
-                        }));
-                    else Add(Ui.Note(S.Get("framesNote")));
+                    // заміна картинки — у блоці «Зображення» нижче
+                    if (res.Tag != "Image") Add(Ui.Note(S.Get("framesNote")));
                     break;
                 default:
                     Add(Ui.Note(S.Get("otherNote")));
                     break;
             }
 
+            BuildImageActions(res);
             BuildVariantRow(res);
 
             if (res.Tag.StartsWith("DataItem", StringComparison.Ordinal))
@@ -478,6 +472,9 @@ namespace BandFace.Creator
         void GaugeLook(XNode res, ElementKind kind, Generator gen)
         {
             var name = res.Str("name") ?? "";
+            bool drawn = gen != null && gen.Drawn;
+            if (kind == ElementKind.Arc && drawn) { ArcLook(res, ElementFactory.Synced(res, gen)); return; }
+            if (kind == ElementKind.Line && drawn) { LineLook(res, ElementFactory.Synced(res, gen)); return; }
             if (kind == ElementKind.Arc || kind == ElementKind.Pointer)
                 Add(Ui.Slider(S.Get("startAngle"), res.Int("angleStart"), -360, 360, 1, v => EditRes(() => res.Set("angleStart", (int)v))));
             if (kind == ElementKind.Arc)
@@ -504,34 +501,108 @@ namespace BandFace.Creator
                     });
                 }));
             }
-            if (kind == ElementKind.Arc)
+            if (kind == ElementKind.Arc || kind == ElementKind.Line)
+                Add(Ui.Chips(S.Get("ends"), new[] { P("round", S.Get("endsRound")), P("normal", S.Get("endsFlat")) },
+                             res.Str("endingStyle") == "normal" ? "normal" : "round", v => EditRes(() => res.Set("endingStyle", v))));
+            if (!res.Has("valueRangeSource"))
+                Add(Ui.NumberRow(S.Get("maxValue"), res.Int("valueRange"), v => EditRes(() => res.Set("valueRange", v)), 1, 1000000));
+            if (drawn)
             {
-                Add(Ui.Switch(S.Get("roundEnds"), res.Str("endingStyle") != "normal", v => EditRes(() => res.Set("endingStyle", v ? "round" : "normal"))));
-                Add(Ui.Switch(S.Get("endDot"), res.Has("indicatorImage"), v =>
+                Add(Ui.Slider(S.Get("length"), gen.Length, 10, 400, 1, v => Regen(name, gen, g => g.Length = v)));
+                Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));
+                Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
+            }
+            else Add(Ui.Note(S.Get("colorByImages")));
+        }
+
+        /// <summary>Швидкі форми дуги: (початок, довжина)</summary>
+        static readonly Tuple<string, double, double>[] ArcShapes =
+        {
+            Tuple.Create("shapeCircle", 0.0, 360.0), Tuple.Create("shapeHorseshoe", 220.0, 280.0),
+            Tuple.Create("shapeHalf", 270.0, 180.0), Tuple.Create("shapeQuarter", 315.0, 90.0),
+        };
+
+        void ArcLook(XNode res, Generator gen)
+        {
+            var name = res.Str("name") ?? "";
+            var cur = ArcShapes.FirstOrDefault(t => Math.Abs(Norm(gen.Start) - t.Item2) < 0.5 && Math.Abs(Math.Abs(gen.Range) - t.Item3) < 0.5)?.Item1 ?? "";
+            Add(Ui.Chips(S.Get("shape"), ArcShapes.Select(t => P(t.Item1, S.Get(t.Item1) + " " + t.Item3 + "°")), cur, v =>
+            {
+                var t = ArcShapes.First(x => x.Item1 == v);
+                Regen(name, gen, g => { g.Start = t.Item2; g.Range = Math.Sign(gen.Range == 0 ? 1 : gen.Range) * t.Item3; });
+            }));
+            Add(Ui.Slider(S.Get("arcStart"), Norm(gen.Start), 0, 359, 1, v => Regen(name, gen, g => g.Start = v)));
+            Add(Ui.Slider(S.Get("arcLength"), Math.Abs(gen.Range), 1, 360, 1, v => Regen(name, gen, g => g.Range = (gen.Range < 0 ? -1 : 1) * v)));
+            Add(Ui.Chips(S.Get("direction"), new[] { P("cw", S.Get("dirCw")), P("ccw", S.Get("dirCcw")) }, gen.Range < 0 ? "ccw" : "cw",
+                         v => Regen(name, gen, g => g.Range = (v == "ccw" ? -1 : 1) * Math.Abs(gen.Range))));
+            Add(Ui.Note(S.Get("arcHandlesHint")));
+            Add(Ui.Slider(S.Get("radius"), gen.Radius, 10, 300, 1, v => Regen(name, gen, g => g.Radius = v)));
+            Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));
+            Add(Ui.Chips(S.Get("ends"), new[] { P("round", S.Get("endsRound")), P("normal", S.Get("endsFlat")) }, gen.Round ? "round" : "normal",
+                         v => Regen(name, gen, g => g.Round = v == "round")));
+            Add(Ui.Switch(S.Get("endDot"), res.Has("indicatorImage"), v => project.Edit(p => ElementFactory.SetIndicator(p, res, v, gen.Width))));
+            if (!res.Has("valueRangeSource"))
+                Add(Ui.NumberRow(S.Get("maxValue"), res.Int("valueRange"), v => EditRes(() => res.Set("valueRange", v)), 1, 1000000));
+            Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
+            Add(Ui.ColorRow(S.Get("trackColor"), gen.BgColor, h => Regen(name, gen, g => g.BgColor = h)));
+        }
+
+        static double Norm(double a) { a %= 360; return a < 0 ? a + 360 : a; }
+
+        static readonly Tuple<string, double>[] LineDirs =
+            { Tuple.Create("→", 0.0), Tuple.Create("←", 180.0), Tuple.Create("↑", -90.0), Tuple.Create("↓", 90.0) };
+
+        void LineLook(XNode res, Generator gen)
+        {
+            var name = res.Str("name") ?? "";
+            var layout = selected;
+            double ang = Math.Round(gen.Angle, 1);
+            var dir = LineDirs.FirstOrDefault(d => Math.Abs(Norm(d.Item2) - Norm(ang)) < 0.05)?.Item1 ?? "custom";
+            var items = LineDirs.Select(d => P(d.Item1, d.Item1)).ToList();
+            items.Add(P("custom", S.Get("customAngle")));
+            Add(Ui.Chips(S.Get("direction"), items, dir, v =>
+            {
+                if (v == "custom") { Regen(name, gen, g => g.Angle = Math.Abs(Norm(ang) % 90) < 0.05 ? 45 : ang); return; }
+                Regen(name, gen, g => g.Angle = LineDirs.First(d => d.Item1 == v).Item2);
+            }));
+            if (dir == "custom")
+                Add(Ui.Slider(S.Get("angle"), ang > 180 ? ang - 360 : ang, -180, 180, 1, v => Regen(name, gen, g => g.Angle = v)));
+            Add(Ui.Slider(S.Get("length"), gen.Length, 4, 600, 1, v => Regen(name, gen, g => g.Length = v)));
+            Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));
+            Add(Ui.Chips(S.Get("ends"), new[] { P("round", S.Get("endsRound")), P("normal", S.Get("endsFlat")) }, gen.Round ? "round" : "normal",
+                         v => Regen(name, gen, g => g.Round = v == "round")));
+            if (Math.Abs(Norm(ang) % 180) > 0.05)
+            {
+                var warn = Ui.Note(S.Get("lineUntested"));
+                warn.Foreground = (Brush)FindResource("Err");
+                Add(warn);
+            }
+            // кінці лінії в координатах циферблата
+            if (layout != null)
+            {
+                double x1 = layout.Int("x") + res.Int("startX"), y1 = layout.Int("y") + res.Int("startY");
+                double x2 = layout.Int("x") + res.Int("endX"), y2 = layout.Int("y") + res.Int("endY");
+                var g4 = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 6) };
+                FrameworkElement Cell(string label, double v, Action<int> set)
                 {
-                    double width = gen?.Width ?? res.Int("barWidth", 10);
-                    project.Edit(p => ElementFactory.SetIndicator(p, res, v, width));
-                }));
+                    var sp = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
+                    sp.Children.Add(new TextBlock { Text = label, FontSize = 11, Foreground = (Brush)FindResource("Sub"), Margin = new Thickness(0, 0, 0, 3) });
+                    sp.Children.Add(Ui.Number((int)Math.Round(v), set));
+                    return sp;
+                }
+                void Place(double a, double b, double c, double d) => project.Edit(p => ElementFactory.PlaceLine(p, res, layout, gen, a, b, c, d));
+                g4.Children.Add(Cell("X1", x1, v => Place(v, y1, x2, y2)));
+                g4.Children.Add(Cell("Y1", y1, v => Place(x1, v, x2, y2)));
+                g4.Children.Add(Cell("X2", x2, v => Place(x1, y1, v, y2)));
+                g4.Children.Add(Cell("Y2", y2, v => Place(x1, y1, x2, v)));
+                Add(new TextBlock { Text = S.Get("lineEnds"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+                Add(g4);
+                Add(Ui.Note(S.Get("lineHandlesHint")));
             }
             if (!res.Has("valueRangeSource"))
                 Add(Ui.NumberRow(S.Get("maxValue"), res.Int("valueRange"), v => EditRes(() => res.Set("valueRange", v)), 1, 1000000));
-            if (gen != null && gen.Drawn)
-            {
-                if (kind == ElementKind.Arc)
-                {
-                    Add(Ui.Slider(S.Get("radius"), gen.Radius, 10, 300, 1, v => Regen(name, gen, g => g.Radius = v)));
-                    Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));
-                }
-                else
-                {
-                    Add(Ui.Slider(S.Get("length"), gen.Length, 10, 400, 1, v => Regen(name, gen, g => g.Length = v)));
-                    Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));
-                }
-                Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
-                if (kind != ElementKind.Pointer)
-                    Add(Ui.ColorRow(S.Get("trackColor"), gen.BgColor, h => Regen(name, gen, g => g.BgColor = h)));
-            }
-            else Add(Ui.Note(S.Get("colorByImages")));
+            Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
+            Add(Ui.ColorRow(S.Get("trackColor"), gen.BgColor, h => Regen(name, gen, g => g.BgColor = h)));
         }
 
         // MARK: Кольорові варіанти елемента

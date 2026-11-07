@@ -29,6 +29,12 @@ namespace BandFace.Creator
         public string Unit = "";
         /// <summary>Рядок напису (Label): малюється шрифтом у картинку</summary>
         public string Text = "";
+        /// <summary>Дуга: початок і довжина (градуси, 0° — угорі, за годинниковою); трек і заповнення малюються лише в цих межах</summary>
+        public double Start = 220, Range = 280;
+        /// <summary>Лінія: напрямок у градусах (0° — праворуч, 90° — донизу)</summary>
+        public double Angle = 0;
+        /// <summary>Кінці дуги й лінії: круглі (типово) або прямі</summary>
+        public bool Round = true;
 
         public Generator(GenKind kind) { Kind = kind; }
         public Generator Copy() => (Generator)MemberwiseClone();
@@ -39,6 +45,7 @@ namespace BandFace.Creator
         {
             ["kind"] = KindNames[(int)Kind], ["color"] = Color, ["bgColor"] = BgColor, ["fontSize"] = FontSize, ["weight"] = Weight,
             ["style"] = Style, ["font"] = Font, ["radius"] = Radius, ["width"] = Width, ["length"] = Length, ["unit"] = Unit, ["text"] = Text,
+            ["start"] = Start, ["range"] = Range, ["angle"] = Angle, ["round"] = Round,
         };
 
         public static Generator FromJson(Dictionary<string, object> d)
@@ -51,6 +58,8 @@ namespace BandFace.Creator
                 Style = Json.Str(d, "style", "rounded"), Font = Json.Str(d, "font", ""),
                 Radius = Json.Num(d, "radius", 60), Width = Json.Num(d, "width", 10), Length = Json.Num(d, "length", 120),
                 Unit = Json.Str(d, "unit", ""), Text = Json.Str(d, "text", ""),
+                // старі проєкти без цих полів: дуга була повним кільцем, лінія — горизонтальною
+                Start = Json.Num(d, "start", 0), Range = Json.Num(d, "range", 360), Angle = Json.Num(d, "angle", 0), Round = Json.Bool(d, "round", true),
             };
         }
 

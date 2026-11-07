@@ -279,7 +279,11 @@ namespace BandFace.Creator
             double a0 = res.Int("angleStart"), span = res.Int("angleRange") * Fraction(res);
             if (dc != null && Math.Abs(span) > 0.01)
             {
-                dc.PushClip(Pie(c, rad + 4, a0, span));
+                // круглі кінці виходять за кут на пів товщини — сектор ширший на цю величину з обох боків
+                double cap = res.Str("endingStyle") == "normal" || res.Int("barRadius") <= 0 ? 0
+                           : res.Int("barWidth") / 2.0 / res.Int("barRadius") * 180 / Math.PI + 1;
+                double sg = span >= 0 ? 1 : -1;
+                dc.PushClip(Pie(c, rad + 4, a0 - sg * cap, span + sg * 2 * cap));
                 dc.DrawImage(fg, r);
                 dc.Pop();
             }
@@ -305,6 +309,26 @@ namespace BandFace.Creator
             var r = new Rect(o.X, o.Y, fg.PixelWidth, fg.PixelHeight);
             double f = Fraction(res);
             double sx = res.Int("startX"), ex = res.Int("endX"), sy = res.Int("startY"), ey = res.Int("endY");
+            if (sx != ex && sy != ey)
+            {
+                // похила лінія: заповнення до точки start + (end − start)·f, межа — перпендикуляр до лінії
+                double len = Math.Sqrt((ex - sx) * (ex - sx) + (ey - sy) * (ey - sy));
+                double ux = (ex - sx) / len, uy = (ey - sy) / len, nx = -uy, ny = ux, big = 2000, t = len * f;
+                if (dc != null && f > 0)
+                {
+                    Point Q(double a, double b) => new Point(o.X + sx + ux * a + nx * b, o.Y + sy + uy * a + ny * b);
+                    var fig = new PathFigure { StartPoint = Q(-big, -big), IsClosed = true };
+                    fig.Segments.Add(new LineSegment(Q(t, -big), false));
+                    fig.Segments.Add(new LineSegment(Q(t, big), false));
+                    fig.Segments.Add(new LineSegment(Q(-big, big), false));
+                    var geo = new PathGeometry();
+                    geo.Figures.Add(fig);
+                    dc.PushClip(geo);
+                    dc.DrawImage(fg, r);
+                    dc.Pop();
+                }
+                return Union(u, r);
+            }
             Rect clip;
             if (Math.Abs(ex - sx) >= Math.Abs(ey - sy))
             {

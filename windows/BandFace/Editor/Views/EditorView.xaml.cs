@@ -54,9 +54,14 @@ namespace BandFace.Creator
             UndoBtn.ToolTip = S.Get("undo") + " (Ctrl+Z)";
             RedoBtn.ToolTip = S.Get("redo") + " (Ctrl+Y)";
             PreviewBtn.Content = S.Get("preview");
-            ExportBtn.Content = S.Get("exportBin");
+            FileBtn.Content = S.Get("fileMenu") + "  \uE70D";
+            FileBtn.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
             InstallBtn.Content = S.Get("installBand");
-            LayersTitle.Text = S.Get("layers");
+            VisualMode.Content = S.Get("modeVisual");
+            XmlMode.Content = "XML";
+            LayersTab.Content = S.Get("layers");
+            ImagesTab.Content = S.Get("imagesTab");
+            ImagesHint.Text = S.Get("imagesHint");
             AddBtn.Content = "+ " + S.Get("add");
             UpBtn.ToolTip = S.Get("layerUp") + " (Ctrl+])";
             DownBtn.ToolTip = S.Get("layerDown") + " (Ctrl+[)";
@@ -66,6 +71,9 @@ namespace BandFace.Creator
             GridText.Text = S.Get("grid");
             FitBtn.Content = S.Get("fit");
             NameText.ToolTip = S.Get("faceProps");
+            FaceRowTitle.Text = S.Get("face");
+            FaceRowSub.Text = S.Get("faceRowSub");
+            FaceRow.ToolTip = S.Get("faceProps") + " (Esc)";
         }
 
         // MARK: Відкриття
@@ -75,8 +83,13 @@ namespace BandFace.Creator
             if (project != null) project.Changed -= OnChanged;
             project = p;
             p.Changed += OnChanged;
+            Watch();
             renderer = new FaceRenderer(p);
             theme = 0; variant = 0; selected = null; fit = true;
+            // новий проєкт відкривається у візуальному режимі
+            xmlBase = null;
+            VisualMode.IsChecked = true; XmlMode.IsChecked = false;
+            XmlView.Visibility = Visibility.Collapsed; VisualView.Visibility = Visibility.Visible;
             if (p.Themes.Count == 0) p.Edit(x => x.Root.Add("Theme").Set("type", "normal").Set("name", "").Set("bgColor", "#000000"));
             RefreshAll();
             Focus();
@@ -89,6 +102,7 @@ namespace BandFace.Creator
             if (selected != null && !project.Layouts(theme).Contains(selected)) selected = null;
             if (variant >= ColorVariants.Colors(project).Count) variant = 0;
             RefreshAll();
+            XmlProjectChanged();
         }
 
         void RefreshAll()
@@ -100,6 +114,7 @@ namespace BandFace.Creator
             RedoBtn.IsEnabled = project.CanRedo;
             RefreshScreens();
             RefreshLayers();
+            if (ImagesPane.Visibility == Visibility.Visible) RefreshImages();
             RefreshSwatches();
             Redraw();
             BuildInspector();
@@ -185,6 +200,7 @@ namespace BandFace.Creator
                 if (l == selected) LayersList.SelectedItem = item;
             }
             bool has = selected != null;
+            FaceRow.Background = has ? Brushes.Transparent : (Brush)FindResource("NavSel");
             UpBtn.IsEnabled = DownBtn.IsEnabled = DupBtn.IsEnabled = DelBtn.IsEnabled = has;
             syncingList = false;
         }
@@ -205,6 +221,7 @@ namespace BandFace.Creator
             LayersList.SelectedItem?.Let(it => LayersList.ScrollIntoView(it));
             syncingList = false;
             UpBtn.IsEnabled = DownBtn.IsEnabled = DupBtn.IsEnabled = DelBtn.IsEnabled = l != null;
+            FaceRow.Background = l == null ? (Brush)FindResource("NavSel") : Brushes.Transparent;
             DrawOverlay();
             BuildInspector();
         }
@@ -275,11 +292,30 @@ namespace BandFace.Creator
             double rad = dev.Corner * zoom;
             Face.Clip = new RectangleGeometry(new Rect(0, 0, w, h), rad, rad);
             Ring.CornerRadius = new CornerRadius(rad + 3);
-            ZoomText.Text = Math.Round(zoom * 100) + "%";
+            if (!ZoomBox.IsKeyboardFocused) ZoomBox.Text = Math.Round(zoom * 100) + " %";
             DrawOverlay();
         }
 
-        void SetZoom(double z) { fit = false; zoom = Math.Max(0.4, Math.Min(8, z)); Redraw(); }
+        void SetZoom(double z) { fit = false; zoom = Math.Max(0.25, Math.Min(8, z)); Redraw(); }
+
+        /// <summary>Масштаб числом: «150», «150%» або «150 %», Enter — застосувати, Esc — повернути.</summary>
+        void ZoomBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) { ApplyZoomText(); Workspace.Focus(); e.Handled = true; }
+            else if (e.Key == Key.Escape) { ZoomBox.Text = Math.Round(zoom * 100) + " %"; Workspace.Focus(); e.Handled = true; }
+        }
+
+        void ZoomBox_LostFocus(object sender, KeyboardFocusChangedEventArgs e) => ApplyZoomText();
+
+        void ApplyZoomText()
+        {
+            var t = new string(ZoomBox.Text.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray()).Replace(',', '.');
+            if (double.TryParse(t, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0)
+                SetZoom(Math.Max(25, Math.Min(800, v)) / 100.0);
+            else ZoomBox.Text = Math.Round(zoom * 100) + " %";
+        }
+
+        void FaceRow_Click(object sender, MouseButtonEventArgs e) => Select(null);
         void ZoomIn_Click(object sender, RoutedEventArgs e) => SetZoom(zoom * 1.25);
         void ZoomOut_Click(object sender, RoutedEventArgs e) => SetZoom(zoom / 1.25);
         void Fit_Click(object sender, RoutedEventArgs e) { fit = true; Redraw(); }
@@ -332,6 +368,7 @@ namespace BandFace.Creator
                     Overlay.Children.Add(tag);
                 }
             }
+            DrawHandles(sel);
             var guide = (Brush)FindResource("Guide");
             if (guideV) { var ln = new Rectangle { Width = 1, Height = dev.Height * zoom, Fill = guide }; Canvas.SetLeft(ln, dev.Width * zoom / 2); Overlay.Children.Add(ln); }
             if (guideH) { var ln = new Rectangle { Width = dev.Width * zoom, Height = 1, Fill = guide }; Canvas.SetTop(ln, dev.Height * zoom / 2); Overlay.Children.Add(ln); }
@@ -360,6 +397,7 @@ namespace BandFace.Creator
             if (project == null) return;
             Focus();
             var pt = FacePoint(e);
+            if (StartHandleDrag(pt)) { StageHost.CaptureMouse(); e.Handled = true; return; }
             var l = Hit(pt);
             if (l == null) { if (selected != null) Select(null); return; }
             if (l != selected) Select(l);
@@ -373,6 +411,7 @@ namespace BandFace.Creator
 
         void Stage_Move(object sender, MouseEventArgs e)
         {
+            if (handle != null) { MoveHandle(FacePoint(e)); return; }
             if (dragLayout == null) return;
             var pt = FacePoint(e);
             double dx = pt.X - mouseStart.X, dy = pt.Y - mouseStart.Y;
@@ -408,6 +447,7 @@ namespace BandFace.Creator
 
         void Stage_Up(object sender, MouseButtonEventArgs e)
         {
+            if (handle != null) { StageHost.ReleaseMouseCapture(); EndHandleDrag(); return; }
             if (dragLayout == null) return;
             StageHost.ReleaseMouseCapture();
             var l = dragLayout;
@@ -442,7 +482,8 @@ namespace BandFace.Creator
         /// <summary>Клавіші редактора (викликає вікно, коли фокус не в полі введення)</summary>
         public bool HandleKey(KeyEventArgs e)
         {
-            if (project == null) return false;
+            // у режимі XML клавіші належать текстовому редактору
+            if (project == null || XmlShown) return false;
             bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control), shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
             switch (e.Key)
             {
@@ -487,23 +528,26 @@ namespace BandFace.Creator
 
         // MARK: Додавання елементів
 
+        /// <summary>Галерея «Додати елемент»: що додати, потім (для чисел і шкал) — що показувати</summary>
         void Add_Click(object sender, RoutedEventArgs e)
         {
-            var menu = new ContextMenu { PlacementTarget = AddBtn, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-            void Item(string title, Action a) { var m = new MenuItem { Header = title }; m.Click += (s, ev) => a(); menu.Items.Add(m); }
-            Item(S.Get("elDigits") + " — " + S.Get("addDigitsHint"), () => AddWithSource(ElementKind.Digits));
-            Item(S.Get("elLabel") + " — " + S.Get("addLabelHint"), AddLabel);
-            Item(S.Get("elValues") + " — " + S.Get("addValuesHint"), () => AddWithSource(ElementKind.Values));
-            menu.Items.Add(new Separator());
-            Item(S.Get("clock") + " — " + S.Get("addClockHint"), () => { Center(out var cx, out var cy); AddAndSelect(p => ElementFactory.AddAnalogClock(p, theme, cx, cy)); });
-            Item(S.Get("elPointer"), () => AddWithSource(ElementKind.Pointer));
-            Item(S.Get("elArc"), () => AddWithSource(ElementKind.Arc));
-            Item(S.Get("elLine"), () => AddWithSource(ElementKind.Line));
-            menu.Items.Add(new Separator());
-            Item(S.Get("elImage") + "…", AddImage);
-            Item(S.Get("elAnimation") + "…", AddAnimation);
-            Item(S.Get("bgImage") + "…", AddBackground);
-            menu.IsOpen = true;
+            if (project == null) return;
+            var c = AddGallery.Pick(Owner);
+            if (c == null) return;
+            Center(out var cx, out var cy);
+            switch (c.Kind)
+            {
+                case "digits": AddWithSource(ElementKind.Digits, c.Source); break;
+                case "values": AddWithSource(ElementKind.Values, c.Source); break;
+                case "pointer": AddWithSource(ElementKind.Pointer, c.Source); break;
+                case "arc": AddWithSource(ElementKind.Arc, c.Source); break;
+                case "line": AddWithSource(ElementKind.Line, c.Source); break;
+                case "clock": AddAndSelect(p => ElementFactory.AddAnalogClock(p, theme, cx, cy)); break;
+                case "label": AddLabel(); break;
+                case "image": AddImage(); break;
+                case "animation": AddAnimation(); break;
+                case "background": AddBackground(); break;
+            }
         }
 
         void Center(out int cx, out int cy) { cx = project.Meta.Device.Width / 2; cy = project.Meta.Device.Height / 2; }
@@ -515,9 +559,8 @@ namespace BandFace.Creator
             if (ls.Count > 0) Select(ls[ls.Count - 1]);
         }
 
-        void AddWithSource(ElementKind k)
+        void AddWithSource(ElementKind k, string src)
         {
-            var src = SourcePicker.Pick(Owner, null);
             if (src == null) return;
             Center(out var cx, out var cy);
             switch (k)

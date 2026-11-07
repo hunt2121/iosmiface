@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-// Проєкт циферблата: manifest.xml (дерево XNode без втрат) + файли ресурсів + налаштування редактора.
+// Проєкт циферблата — звичайна тека: manifest.xml (дерево XNode без втрат), files/ (картинки) і прихований
+// .bandface.json (шрифти, кольори, назви — параметри редактора). Тека лежить там, де вибрав користувач;
+// зміни у файлах ззовні (інший редактор, заміна PNG у Провіднику) підхоплюються автоматично.
 // Будь-який розпакований .bin стає проєктом і після редагування збирається назад тим самим компілятором.
 
 using System;
@@ -15,7 +17,11 @@ namespace BandFace.Creator
     public sealed class FaceProject
     {
         public readonly string Id;
-        public readonly string Folder;
+        public string Folder { get; private set; }
+        /// <summary>Прихований файл налаштувань редактора в теці проєкту</summary>
+        public const string MetaFile = ".bandface.json";
+        /// <summary>Стара назва (до прихованого файла) — читається й замінюється при збереженні</summary>
+        const string OldMetaFile = "editor.json";
         public XNode Root { get; private set; }
         /// <summary>Усі файли проєкту, крім manifest.xml і editor.json (шлях → вміст)</summary>
         public Dictionary<string, byte[]> Files { get; private set; }
@@ -57,6 +63,9 @@ namespace BandFace.Creator
         public List<XNode> Layouts(int theme) => Theme(theme)?.All("Layout") ?? new List<XNode>();
 
         public string Name => Root.Str("name") ?? "";
+
+        /// <summary>Новий маніфест цілком (режим XML) — лише всередині Edit, щоб можна було скасувати</summary>
+        public void SetRoot(XNode root) { Root = root; Images.Clear(); }
         public string DisplayName => Name.Length == 0 ? S.Get("untitled") : Name;
 
         public XNode Resource(string name) => name == null ? null : Resources.Elements.FirstOrDefault(e => e.Str("name") == name);
@@ -149,15 +158,32 @@ namespace BandFace.Creator
 
         static string Disk(string root, string rel) => Path.Combine(root, rel.Replace('/', Path.DirectorySeparatorChar));
 
+        /// <summary>manifest.xml так, як він лежить на диску (рядки через CRLF)</summary>
+        byte[] ManifestBytes()
+        {
+            var xml = new List<byte>();
+            foreach (var c in Xml.Print(Root)) { if (c == 0x0A) xml.Add(0x0D); xml.Add(c); }
+            return xml.ToArray();
+        }
+
+        /// <summary>Прихований файл не можна перезаписати напряму — знімаємо атрибут, пишемо, ставимо знову</summary>
+        static void WriteHidden(string path, string text)
+        {
+            if (System.IO.File.Exists(path)) System.IO.File.SetAttributes(path, FileAttributes.Normal);
+            System.IO.File.WriteAllText(path, text, new UTF8Encoding(false));
+            System.IO.File.SetAttributes(path, FileAttributes.Hidden);
+        }
+
         public void Save()
         {
+            if (Folder == null) return;
             try
             {
                 Directory.CreateDirectory(Folder);
-                var xml = new List<byte>();
-                foreach (var c in Xml.Print(Root)) { if (c == 0x0A) xml.Add(0x0D); xml.Add(c); }
-                System.IO.File.WriteAllBytes(Path.Combine(Folder, "manifest.xml"), xml.ToArray());
-                System.IO.File.WriteAllText(Path.Combine(Folder, "editor.json"), Meta.ToJson(), new UTF8Encoding(false));
+                System.IO.File.WriteAllBytes(Path.Combine(Folder, "manifest.xml"), ManifestBytes());
+                WriteHidden(Path.Combine(Folder, MetaFile), Meta.ToJson());
+                var old = Path.Combine(Folder, OldMetaFile);
+                if (System.IO.File.Exists(old)) System.IO.File.Delete(old);
                 var filesDir = Path.Combine(Folder, "files");
                 // лише змінені файли; повністю — після відкату й при першому збереженні
                 if (fullSave && Directory.Exists(filesDir)) Directory.Delete(filesDir, true);
@@ -182,21 +208,97 @@ namespace BandFace.Creator
                 if (!System.IO.File.Exists(mf)) return null;
                 var root = Xml.Parse(System.IO.File.ReadAllBytes(mf));
                 if (root == null) return null;
-                var jf = Path.Combine(folder, "editor.json");
-                var meta = System.IO.File.Exists(jf) ? ProjectMeta.FromJson(System.IO.File.ReadAllText(jf)) : new ProjectMeta();
-                var files = new Dictionary<string, byte[]>();
-                var filesDir = Path.Combine(folder, "files");
-                if (Directory.Exists(filesDir))
-                    foreach (var f in Directory.GetFiles(filesDir, "*", SearchOption.AllDirectories))
-                    {
-                        var rel = f.Substring(filesDir.Length).TrimStart(Path.DirectorySeparatorChar, '/');
-                        files[MemoryStorage.Normalize(rel)] = System.IO.File.ReadAllBytes(f);
-                    }
+                var meta = ReadMeta(folder);
+                var files = ReadFiles(folder);
                 var p = new FaceProject(Path.GetFileName(folder), folder, root, files, meta);
                 p.MarkSaved();
                 return p;
             }
             catch (Exception) { return null; }
+        }
+
+        static ProjectMeta ReadMeta(string folder)
+        {
+            foreach (var n in new[] { MetaFile, OldMetaFile })
+            {
+                var f = Path.Combine(folder, n);
+                if (System.IO.File.Exists(f)) return ProjectMeta.FromJson(System.IO.File.ReadAllText(f));
+            }
+            return new ProjectMeta();
+        }
+
+        static Dictionary<string, byte[]> ReadFiles(string folder)
+        {
+            var files = new Dictionary<string, byte[]>();
+            var filesDir = Path.Combine(folder, "files");
+            if (Directory.Exists(filesDir))
+                foreach (var f in Directory.GetFiles(filesDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = f.Substring(filesDir.Length).TrimStart(Path.DirectorySeparatorChar, '/');
+                    files[MemoryStorage.Normalize(rel)] = System.IO.File.ReadAllBytes(f);
+                }
+            return files;
+        }
+
+        /// <summary>Тека в нашому форматі (manifest.xml + files/ або файл налаштувань), а не просто розпакований .bin</summary>
+        public static bool IsProjectFolder(string folder)
+            => System.IO.File.Exists(Path.Combine(folder, "manifest.xml"))
+               && (Directory.Exists(Path.Combine(folder, "files")) || System.IO.File.Exists(Path.Combine(folder, MetaFile))
+                   || System.IO.File.Exists(Path.Combine(folder, OldMetaFile)));
+
+        /// <summary>Файли в теці змінили ззовні (не цей редактор): перечитати. true — щось змінилося.
+        /// Як звичайна зміна: її можна скасувати.</summary>
+        public bool ReloadFromDisk()
+        {
+            if (Folder == null) return false;
+            try
+            {
+                var mf = Path.Combine(Folder, "manifest.xml");
+                if (!System.IO.File.Exists(mf)) return false;
+                var bytes = System.IO.File.ReadAllBytes(mf);
+                var files = ReadFiles(Folder);
+                var metaPath = Path.Combine(Folder, MetaFile);
+                var metaText = System.IO.File.Exists(metaPath) ? System.IO.File.ReadAllText(metaPath) : null;
+                bool sameXml = bytes.SequenceEqual(ManifestBytes());
+                bool sameFiles = files.Count == Files.Count && files.All(kv => Files.TryGetValue(kv.Key, out var d) && d.SequenceEqual(kv.Value));
+                bool sameMeta = metaText == null || metaText == Meta.ToJson();
+                if (sameXml && sameFiles && sameMeta) return false;
+                var root = sameXml ? Root : Xml.Parse(bytes);
+                // XML ще дописується або з помилкою — чекаємо наступної зміни
+                if (root == null) return false;
+                undo.Add(Snap());
+                if (undo.Count > 60) undo.RemoveAt(0);
+                redo.Clear();
+                Root = root; Files = files;
+                if (!sameMeta) Meta = ProjectMeta.FromJson(metaText);
+                Images.Clear();
+                MarkSaved();
+                Revision++;
+                Changed?.Invoke();
+                return true;
+            }
+            catch (Exception) { return false; }
+        }
+
+        /// <summary>Перенести теку проєкту в іншу (нової ще не існує)</summary>
+        public void MoveTo(string target)
+        {
+            if (Folder == null || string.Equals(Path.GetFullPath(Folder).TrimEnd('\\'), Path.GetFullPath(target).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return;
+            try { Directory.Move(Folder, target); }
+            catch (IOException)
+            {
+                // інший диск: копія, потім видалення старої теки
+                CopyDir(Folder, target);
+                Directory.Delete(Folder, true);
+            }
+            Folder = target;
+        }
+
+        public static void CopyDir(string src, string dst)
+        {
+            Directory.CreateDirectory(dst);
+            foreach (var f in Directory.GetFiles(src)) { var t = Path.Combine(dst, Path.GetFileName(f)); System.IO.File.Copy(f, t); System.IO.File.SetAttributes(t, System.IO.File.GetAttributes(f)); }
+            foreach (var d in Directory.GetDirectories(src)) CopyDir(d, Path.Combine(dst, Path.GetFileName(d)));
         }
 
         /// <summary>Розпаковує .bin у дерево маніфесту й файли (без запису на диск).</summary>

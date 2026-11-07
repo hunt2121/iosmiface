@@ -156,10 +156,30 @@ namespace BandFace.Creator
             return new[] { 100, 360 };
         }
 
+        static RgbaImage ArcImage(Generator g, string color) => AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
+
+        static RgbaImage LineImage(Generator g, string color, out System.Windows.Point s, out System.Windows.Point e)
+            => AssetFactory.LineSegment(g.Length, g.Width, color, g.Angle, g.Round, out s, out e);
+
+        /// <summary>Параметри дуги/лінії з самого маніфесту (кут, кінці) — для старих проєктів і після правки XML</summary>
+        public static Generator Synced(XNode res, Generator gen)
+        {
+            if (gen == null) return null;
+            var g = gen.Copy();
+            g.Round = res.Str("endingStyle") != "normal";
+            if (gen.Kind == GenKind.Arc) { g.Start = res.Int("angleStart"); g.Range = res.Int("angleRange"); }
+            if (gen.Kind == GenKind.Line)
+            {
+                double dx = res.Int("endX") - res.Int("startX"), dy = res.Int("endY") - res.Int("startY");
+                if (dx != 0 || dy != 0) { g.Angle = Math.Round(Math.Atan2(dy, dx) * 180 / Math.PI, 1); g.Length = Math.Round(Math.Sqrt(dx * dx + dy * dy)); }
+            }
+            return g;
+        }
+
         public static void AddArc(FaceProject p, string source, Generator gen, int theme, int cx, int cy)
         {
-            var fg = AssetFactory.Ring(gen.Radius, gen.Width, gen.Color);
-            var bg = AssetFactory.Ring(gen.Radius, gen.Width, gen.BgColor);
+            var fg = ArcImage(gen, gen.Color);
+            var bg = ArcImage(gen, gen.BgColor);
             // фон перед основною — як їх упорядковує компілятор (стабільні id після розпакування)
             var bgName = AddImageResource(p, bg, "arcBg");
             var fgName = AddImageResource(p, fg, "arc");
@@ -167,8 +187,8 @@ namespace BandFace.Creator
             p.Meta.Generators[name] = gen;
             var e = new XNode("DataItemArcProgressBar");
             e.Set("name", name).Set("source", source).Set("ref", "@" + fgName).Set("bg", "@" + bgName)
-             .Set("endingStyle", "round").Set("renderRule", "alwaysShow").Set("valueStart", 0).Set("valueRange", 100)
-             .Set("angleStart", 220).Set("angleRange", 280).Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2)
+             .Set("endingStyle", gen.Round ? "round" : "normal").Set("renderRule", "alwaysShow").Set("valueStart", 0).Set("valueRange", 100)
+             .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range)).Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2)
              .Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width);
             p.Resources.Kids.Add(e);
             AddLayout(p, name, theme, cx - fg.W / 2, cy - fg.H / 2);
@@ -176,16 +196,16 @@ namespace BandFace.Creator
 
         public static void AddLine(FaceProject p, string source, Generator gen, int theme, int cx, int cy)
         {
-            var fg = AssetFactory.Bar(gen.Length, gen.Width, gen.Color);
-            var bg = AssetFactory.Bar(gen.Length, gen.Width, gen.BgColor);
+            var fg = LineImage(gen, gen.Color, out var s, out var en);
+            var bg = LineImage(gen, gen.BgColor, out _, out _);
             var bgName = AddImageResource(p, bg, "barBg");
             var fgName = AddImageResource(p, fg, "bar");
             var name = p.UniqueName("line");
             p.Meta.Generators[name] = gen;
             var e = new XNode("DataItemLineProgressBar");
             e.Set("name", name).Set("source", source).Set("ref", "@" + fgName).Set("bg", "@" + bgName)
-             .Set("endingStyle", "round").Set("renderRule", "alwaysShow").Set("valueStart", 0).Set("valueRange", 100)
-             .Set("startX", 0).Set("startY", fg.H / 2).Set("endX", fg.W).Set("endY", fg.H / 2).Set("barWidth", fg.H);
+             .Set("endingStyle", gen.Round ? "round" : "normal").Set("renderRule", "alwaysShow").Set("valueStart", 0).Set("valueRange", 100);
+            SetEnds(e, s, en, gen.Width);
             p.Resources.Kids.Add(e);
             AddLayout(p, name, theme, cx - fg.W / 2, cy - fg.H / 2);
         }
@@ -354,22 +374,32 @@ namespace BandFace.Creator
                 }
                 case GenKind.Arc:
                 {
-                    var fg = AssetFactory.Ring(gen.Radius, gen.Width, gen.Color);
+                    // центр дуги лишається на місці, хоч би як змінився розмір картинки
+                    var keep = Anchors(p, res, true);
+                    var fg = ArcImage(gen, gen.Color);
                     var r = p.ResourceRef(res.Str("ref"));
                     if (r != null) ReplaceImage(p, r, fg);
                     var bg = p.ResourceRef(res.Str("bg"));
-                    if (bg != null) ReplaceImage(p, bg, AssetFactory.Ring(gen.Radius, gen.Width, gen.BgColor));
-                    res.Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2).Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width);
+                    if (bg != null) ReplaceImage(p, bg, ArcImage(gen, gen.BgColor));
+                    res.Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2).Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width)
+                       .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range))
+                       .Set("endingStyle", gen.Round ? "round" : "normal");
+                    if (res.Has("indicatorRadius")) res.Set("indicatorRadius", (int)gen.Radius);
+                    Restore(keep, res, true);
                     break;
                 }
                 case GenKind.Line:
                 {
-                    var fg = AssetFactory.Bar(gen.Length, gen.Width, gen.Color);
+                    // початок лінії лишається на місці
+                    var keep = Anchors(p, res, false);
+                    var fg = LineImage(gen, gen.Color, out var s, out var en);
                     var r = p.ResourceRef(res.Str("ref"));
                     if (r != null) ReplaceImage(p, r, fg);
                     var bg = p.ResourceRef(res.Str("bg"));
-                    if (bg != null) ReplaceImage(p, bg, AssetFactory.Bar(gen.Length, gen.Width, gen.BgColor));
-                    res.Set("startX", 0).Set("startY", fg.H / 2).Set("endX", fg.W).Set("endY", fg.H / 2).Set("barWidth", fg.H);
+                    if (bg != null) ReplaceImage(p, bg, LineImage(gen, gen.BgColor, out _, out _));
+                    SetEnds(res, s, en, gen.Width);
+                    res.Set("endingStyle", gen.Round ? "round" : "normal");
+                    Restore(keep, res, false);
                     break;
                 }
                 case GenKind.Pointer:
@@ -388,6 +418,40 @@ namespace BandFace.Creator
                 }
             }
             ColorVariants.Refresh(p, res);
+        }
+
+        static void SetEnds(XNode res, System.Windows.Point s, System.Windows.Point e, double width)
+            => res.Set("startX", (int)Math.Round(s.X)).Set("startY", (int)Math.Round(s.Y)).Set("endX", (int)Math.Round(e.X)).Set("endY", (int)Math.Round(e.Y))
+                  .Set("barWidth", (int)Math.Round(width));
+
+        /// <summary>Усі шари (на всіх екранах), що показують цей ресурс</summary>
+        public static List<XNode> LayoutsOf(FaceProject p, XNode res)
+        {
+            var o = new List<XNode>();
+            for (int t = 0; t < p.Themes.Count; t++) o.AddRange(p.Layouts(t).Where(l => p.ElementOf(l) == res));
+            return o;
+        }
+
+        /// <summary>Точка прив'язки в координатах циферблата: центр дуги або початок лінії</summary>
+        static List<Tuple<XNode, int, int>> Anchors(FaceProject p, XNode res, bool arc)
+            => LayoutsOf(p, res).Select(l => Tuple.Create(l, l.Int("x") + (arc ? res.Int("pivotX") : res.Int("startX")),
+                                                             l.Int("y") + (arc ? res.Int("pivotY") : res.Int("startY")))).ToList();
+
+        static void Restore(List<Tuple<XNode, int, int>> keep, XNode res, bool arc)
+        {
+            foreach (var k in keep)
+                k.Item1.Set("x", k.Item2 - (arc ? res.Int("pivotX") : res.Int("startX"))).Set("y", k.Item3 - (arc ? res.Int("pivotY") : res.Int("startY")));
+        }
+
+        /// <summary>Лінія за двома кінцями в координатах циферблата (перетягування ручок, поля X1 Y1 X2 Y2)</summary>
+        public static void PlaceLine(FaceProject p, XNode res, XNode layout, Generator gen, double x1, double y1, double x2, double y2)
+        {
+            double dx = x2 - x1, dy = y2 - y1;
+            var g = gen.Copy();
+            g.Length = Math.Max(1, Math.Round(Math.Sqrt(dx * dx + dy * dy)));
+            g.Angle = Math.Round(Math.Atan2(dy, dx) * 180 / Math.PI, 1);
+            Regenerate(p, res.Str("name"), g);
+            layout.Set("x", (int)Math.Round(x1) - res.Int("startX")).Set("y", (int)Math.Round(y1) - res.Int("startY"));
         }
 
         /// <summary>Значок одиниці біля числа (порожній текст — прибрати)</summary>

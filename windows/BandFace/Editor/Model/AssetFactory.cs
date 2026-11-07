@@ -253,6 +253,47 @@ namespace BandFace.Creator
             return Imaging.Render(size, size, dc => dc.DrawEllipse(null, pen, new Point(m, m), radius, radius));
         }
 
+        static Point OnCircle(double m, double r, double deg)
+        {
+            double t = deg * Math.PI / 180;
+            return new Point(m + r * Math.Sin(t), m - r * Math.Cos(t));
+        }
+
+        /// <summary>Дуга від start на range градусів (0° — угорі, за годинниковою; від'ємна — проти).
+        /// Розмір картинки — як у повного кільця, центр посередині (pivot не залежить від кута).</summary>
+        public static RgbaImage ArcSegment(double radius, double width, string color, double start, double range, bool round)
+        {
+            if (Math.Abs(range) >= 359.99) return Ring(radius, width, color);
+            int size = (int)Math.Ceiling(radius * 2 + width + 4);
+            double m = size / 2.0;
+            var cap = round ? PenLineCap.Round : PenLineCap.Flat;
+            var pen = new Pen(Imaging.Brush(color), width) { StartLineCap = cap, EndLineCap = cap };
+            var fig = new PathFigure { StartPoint = OnCircle(m, radius, start), IsClosed = false };
+            fig.Segments.Add(new System.Windows.Media.ArcSegment(OnCircle(m, radius, start + range), new Size(radius, radius), 0, Math.Abs(range) > 180,
+                range >= 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise, true));
+            var g = new PathGeometry();
+            g.Figures.Add(fig);
+            return Imaging.Render(size, size, dc => { if (Math.Abs(range) > 0.01) dc.DrawGeometry(null, pen, g); });
+        }
+
+        /// <summary>Лінія під будь-яким кутом (0° — праворуч, 90° — донизу). Повертає картинку й кінці лінії в ній.</summary>
+        public static RgbaImage LineSegment(double length, double width, string color, double angle, bool round, out Point start, out Point end)
+        {
+            double t = angle * Math.PI / 180;
+            double dx = Math.Cos(t) * length, dy = Math.Sin(t) * length;
+            // майже горизонтальна/вертикальна — рівно, без «сходинки» в пів пікселя
+            if (Math.Abs(dx) < 0.01) dx = 0;
+            if (Math.Abs(dy) < 0.01) dy = 0;
+            double pad = width / 2 + 1;
+            int w = (int)Math.Ceiling(Math.Abs(dx) + pad * 2), h = (int)Math.Ceiling(Math.Abs(dy) + pad * 2);
+            var s = new Point(pad - Math.Min(0, dx), pad - Math.Min(0, dy));
+            var e = new Point(s.X + dx, s.Y + dy);
+            start = s; end = e;
+            var cap = round ? PenLineCap.Round : PenLineCap.Flat;
+            var pen = new Pen(Imaging.Brush(color), width) { StartLineCap = cap, EndLineCap = cap };
+            return Imaging.Render(w, h, dc => dc.DrawLine(pen, s, e));
+        }
+
         /// <summary>Смуга для лінійної шкали.</summary>
         public static RgbaImage Bar(double length, double width, string color)
         {

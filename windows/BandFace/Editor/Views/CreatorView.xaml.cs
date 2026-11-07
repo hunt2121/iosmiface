@@ -66,7 +66,9 @@ namespace BandFace.Creator
             PageFaces.Visibility = page == PageFaces ? Visibility.Visible : Visibility.Collapsed;
             Editor.Visibility = page == Editor ? Visibility.Visible : Visibility.Collapsed;
             PageFonts.Visibility = page == PageFonts ? Visibility.Visible : Visibility.Collapsed;
-            if (page == PageFaces) RefreshProjects();
+            if (page != Editor) Editor.StopWatching();
+            // теки проєктів могли змінити ззовні — список читається заново
+            if (page == PageFaces) { if (wasEditor) store.Reload(); RefreshProjects(); }
             if (page == PageFonts) RefreshFonts();
             if (page == Editor) Editor.Focus();
             if (wasEditor != EditorShown) EditorShownChanged?.Invoke(EditorShown);
@@ -130,7 +132,8 @@ namespace BandFace.Creator
             menu.Items.Add(new Separator());
             Item(S.Get("deleteFace"), () =>
             {
-                if (MessageBox.Show(Owner, S.Get("deleteFaceAsk", p.DisplayName), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+                var ask = ProjectStore.IsExternal(p) ? S.Get("removeFaceAsk", p.DisplayName, p.Folder) : S.Get("deleteFaceAsk", p.DisplayName);
+                if (MessageBox.Show(Owner, ask, "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
                 store.Delete(p);
                 RefreshProjects();
             });
