@@ -86,6 +86,53 @@ public class FaceKitTests
         Assert.Equal(bin, WatchfaceCompiler.Build(o));
     }
 
+    /// <summary>Фото з прозорістю → не більше 256 кольорів, прозорі пікселі лишаються прозорими (Б-1)</summary>
+    [Fact]
+    public void To256KeepsAlpha()
+    {
+        int w = 212, h = 520;
+        var px = new byte[w * h * 4];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                int o = (y * w + x) * 4;
+                px[o] = (byte)x; px[o + 1] = (byte)(y / 2); px[o + 2] = (byte)((x + y) & 255);
+                px[o + 3] = (byte)(x < 10 ? 0 : x < 40 ? x * 6 : 255);
+            }
+        Assert.True(FaceCatalog.ColorCount(px) > 256);
+        var q = Band10.To256(new RgbaImage(w, h, px));
+        Assert.True(FaceCatalog.ColorCount(q.Px) <= 256);
+        Assert.Equal(0, q.Px[3]);                       // x = 0 — прозорий
+        Assert.Equal(255, q.Px[(100 * w + 100) * 4 + 3]);
+        Assert.True(System.Math.Abs(q.Px[(100 * w + 100) * 4] - 100) <= 48);   // колір приблизно той самий
+    }
+
+    /// <summary>RGB565A8 перед збиранням стає indexed8, і .bin збирається (раніше такий фон ламав Band 10)</summary>
+    [Fact]
+    public void FixImagesMakesIndexed8()
+    {
+        int w = 64, h = 64;
+        var px = new byte[w * h * 4];
+        for (int i = 0; i < w * h; i++) { px[i * 4] = (byte)(i * 7); px[i * 4 + 1] = (byte)(i / 3); px[i * 4 + 2] = (byte)i; px[i * 4 + 3] = 255; }
+        var manifest = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<Watchface id=""123456789"" name=""Bg"">
+    <Resources>
+        <Image name=""bg"" src=""bg.png"" compressMethod=""RLEReversed"" format=""RGB565A8"" recolorEnable=""false""/>
+    </Resources>
+    <Theme type=""normal"" name="""" bgColor=""#000000"">
+        <Layout ref=""@bg"" x=""0"" y=""0""/>
+    </Theme>
+</Watchface>";
+        var st = new MemoryStorage(new Dictionary<string, byte[]> { ["manifest.xml"] = U(manifest), ["bg.png"] = Png.Encode(w, h, px) });
+        Assert.Equal(1, Band10.FixImages(st));
+        Assert.Contains("format=\"indexed8\"", Encoding.UTF8.GetString(st.Files["manifest.xml"]));
+        var bin = WatchfaceCompiler.Build(st);
+        var o = new MemoryStorage();
+        WatchfaceCompiler.Unpack(bin, o);
+        Assert.Contains("format=\"indexed8\"", Encoding.UTF8.GetString(o.Files["manifest.xml"]));
+        Assert.Empty(Band10.Untested(Xml.Parse(st.Files["manifest.xml"])));
+    }
+
     /// <summary>Справжні циферблати: після першого розпакування й збирання наступні кола дають той самий .bin
     /// (перше коло може змінитися — RGB565A8 у exe не ідемпотентний).</summary>
     [Theory]

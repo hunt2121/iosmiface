@@ -56,7 +56,8 @@ namespace BandFace.Creator
             var digits = new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 66, Weight = 800, Style = "rounded" };
             ElementFactory.AddDigits(p, "timeHour", digits, 0, w / 2, 120);
             ElementFactory.AddDigits(p, "timeMinute", digits.Copy(), 0, w / 2, 200);
-            ElementFactory.AddText(p, "%s", new[] { "dateDay" }, 0, w / 2, 280, "#4DE1FF");
+            // дата — картинками цифр: текст (DataItemText) на браслеті не перевірено (Б-1)
+            ElementFactory.AddDigits(p, "dateDay", new Generator(GenKind.Digits) { Color = "#4DE1FF", FontSize = 34, Weight = 700, Style = "rounded" }, 0, w / 2, 280);
             p.Save();
             Projects.Insert(0, p);
             return p;

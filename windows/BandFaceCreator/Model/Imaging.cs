@@ -12,10 +12,11 @@ namespace BandFace.Creator
 {
     static class Imaging
     {
-        public static byte[] Png(this RgbaImage img) => Faces.Png.Encode(img.W, img.H, img.Px);
+        /// <summary>PNG ресурсу циферблата: завжди не більше 256 кольорів (Band 10/11 знає лише indexed8, див. Band10.cs)</summary>
+        public static byte[] Png(this RgbaImage img) { var q = Band10.To256(img); return Faces.Png.Encode(q.W, q.H, q.Px); }
 
-        /// <summary>Формат для компілятора: indexed8, якщо вистачає 256 кольорів, інакше RGB565A8.</summary>
-        public static string BestFormat(this RgbaImage img) => FaceCatalog.ColorCount(img.Px) <= 256 ? "indexed8" : "RGB565A8";
+        /// <summary>Формат для компілятора: на Band 10/11 усі картинки — indexed8 (фото зменшуються до 256 кольорів).</summary>
+        public static string BestFormat(this RgbaImage img) => "indexed8";
 
         /// <summary>RGBA → картинка WPF (Bgra32, без розмноження).</summary>
         public static BitmapSource ToBitmap(this RgbaImage img)
@@ -137,95 +138,7 @@ namespace BandFace.Creator
             return b;
         }
 
-        /// <summary>Зменшення до maxColors кольорів (медіанний поділ), щоб картинка йшла в indexed8 (без втрат при повторному збиранні).
-        /// Альфа має бути однакова для всіх пікселів; інакше картинка лишається як є.</summary>
-        public static RgbaImage Quantized(this RgbaImage img, int maxColors = 256)
-        {
-            int n = img.W * img.H;
-            var px = img.Px;
-            if (n == 0 || FaceCatalog.ColorCount(px) <= maxColors) return img;
-            byte a0 = px[3];
-            for (int i = 0; i < n; i++) if (px[i * 4 + 3] != a0) return img;
-            var q = Quantizer.Build(new[] { px }, maxColors);
-            var o = (byte[])px.Clone();
-            for (int i = 0; i < n; i++)
-            {
-                int k = Quantizer.Bin(px, i * 4), c = q.Map[k];
-                o[i * 4] = q.Palette[c * 3]; o[i * 4 + 1] = q.Palette[c * 3 + 1]; o[i * 4 + 2] = q.Palette[c * 3 + 2];
-            }
-            return new RgbaImage(img.W, img.H, o);
-        }
-    }
-
-    /// <summary>Палітра медіанним поділом гістограми 5-5-5 (спільна для превʼю й GIF).</summary>
-    sealed class Quantizer
-    {
-        public byte[] Palette = new byte[768];
-        public byte[] Map = new byte[32768];
-        public int Count;
-
-        public static int Bin(byte[] p, int i) => (p[i] >> 3) << 10 | (p[i + 1] >> 3) << 5 | p[i + 2] >> 3;
-        static int Ch(int k, int c) => c == 0 ? k >> 10 : c == 1 ? (k >> 5) & 31 : k & 31;
-
-        public static Quantizer Build(System.Collections.Generic.IEnumerable<byte[]> frames, int colors)
-        {
-            var count = new long[32768];
-            var sr = new long[32768]; var sg = new long[32768]; var sb = new long[32768];
-            foreach (var p in frames)
-                for (int i = 0; i + 3 < p.Length; i += 4)
-                {
-                    int k = Bin(p, i);
-                    count[k]++; sr[k] += p[i]; sg[k] += p[i + 1]; sb[k] += p[i + 2];
-                }
-            var boxes = new System.Collections.Generic.List<System.Collections.Generic.List<int>>();
-            var all = new System.Collections.Generic.List<int>();
-            for (int k = 0; k < 32768; k++) if (count[k] > 0) all.Add(k);
-            boxes.Add(all);
-            while (boxes.Count < colors)
-            {
-                int best = -1, bestCh = 0;
-                long bestScore = 0;
-                for (int i = 0; i < boxes.Count; i++)
-                {
-                    var box = boxes[i];
-                    if (box.Count <= 1) continue;
-                    int[] lo = { 31, 31, 31 }, hi = { 0, 0, 0 };
-                    long n = 0;
-                    foreach (var k in box)
-                    {
-                        for (int c = 0; c < 3; c++) { int v = Ch(k, c); if (v < lo[c]) lo[c] = v; if (v > hi[c]) hi[c] = v; }
-                        n += count[k];
-                    }
-                    int ch = 0;
-                    for (int c = 1; c < 3; c++) if (hi[c] - lo[c] > hi[ch] - lo[ch]) ch = c;
-                    long score = (hi[ch] - lo[ch]) * n;
-                    if (score > bestScore) { bestScore = score; best = i; bestCh = ch; }
-                }
-                if (best < 0) break;
-                int bc = bestCh;
-                var sorted = boxes[best];
-                sorted.Sort((x, y) => Ch(x, bc).CompareTo(Ch(y, bc)));
-                long total = 0;
-                foreach (var k in sorted) total += count[k];
-                long acc = 0;
-                int cut = 1;
-                for (int j = 0; j < sorted.Count; j++)
-                {
-                    acc += count[sorted[j]];
-                    if (acc * 2 >= total) { cut = Math.Max(1, Math.Min(sorted.Count - 1, j + 1)); break; }
-                }
-                boxes[best] = sorted.GetRange(0, cut);
-                boxes.Add(sorted.GetRange(cut, sorted.Count - cut));
-            }
-            var q = new Quantizer { Count = boxes.Count };
-            for (int i = 0; i < boxes.Count; i++)
-            {
-                long r = 0, g = 0, b = 0, n = 0;
-                foreach (var k in boxes[i]) { r += sr[k]; g += sg[k]; b += sb[k]; n += count[k]; q.Map[k] = (byte)i; }
-                n = Math.Max(n, 1);
-                q.Palette[i * 3] = (byte)(r / n); q.Palette[i * 3 + 1] = (byte)(g / n); q.Palette[i * 3 + 2] = (byte)(b / n);
-            }
-            return q;
-        }
+        /// <summary>Не більше 256 кольорів (разом із прозорістю)</summary>
+        public static RgbaImage Quantized(this RgbaImage img) => Band10.To256(img);
     }
 }

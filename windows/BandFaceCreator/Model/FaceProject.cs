@@ -227,6 +227,8 @@ namespace BandFace.Creator
             // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується
             var st = needsPreview ? StorageWithFreshPreviews() : Storage();
             if (ColorVariants.IsEnabled(this)) AddBackgroundFill(st);
+            // Band 10/11 знає лише indexed8: картинки інших форматів (фото, циферблати від інших браслетів) — у 256 кольорів (Б-1)
+            Band10.FixImages(st);
             var data = WatchfaceCompiler.Build(st, null, log);
             return Tuple.Create(data, log.Warnings.ToList());
         }

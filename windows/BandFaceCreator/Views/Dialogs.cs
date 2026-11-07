@@ -161,8 +161,18 @@ namespace BandFace.Creator
         }
 
         /// <summary>Збирає .bin і зберігає у вибране місце; попередження компілятора — у повідомленні</summary>
+        /// <summary>Елементи, не перевірені на браслеті: попередження й підтвердження. false — користувач відмовився.</summary>
+        public static bool ConfirmUntested(Window owner, FaceProject p)
+        {
+            var u = Band10.Untested(p.Root);
+            if (u.Count == 0) return true;
+            var list = string.Join(", ", u.Select(kv => S.Get(kv.Key == "DataItemText" ? "elText" : "elOther") + " × " + kv.Value));
+            return MessageBox.Show(owner, S.Get("untestedAsk", list), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+        }
+
         public static void ExportBin(Window owner, FaceProject p)
         {
+            if (!ConfirmUntested(owner, p)) return;
             Tuple<byte[], List<string>> r;
             try { owner.Cursor = Cursors.Wait; r = p.Compile(); }
             catch (Exception ex)

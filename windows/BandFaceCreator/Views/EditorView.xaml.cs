@@ -518,7 +518,11 @@ namespace BandFace.Creator
             Center(out var cx, out var cy);
             switch (k)
             {
-                case ElementKind.Text: AddAndSelect(p => ElementFactory.AddText(p, "%s", new[] { src }, theme, cx, cy, "#FFFFFF")); break;
+                case ElementKind.Text:
+                    // DataItemText немає в жодному відомому циферблаті Band 10 — спершу попередження (Б-1)
+                    if (MessageBox.Show(Owner, S.Get("textUntested"), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                    AddAndSelect(p => ElementFactory.AddText(p, "%s", new[] { src }, theme, cx, cy, "#FFFFFF"));
+                    break;
                 case ElementKind.Digits:
                     AddAndSelect(p => ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, theme, cx, cy));
                     break;
