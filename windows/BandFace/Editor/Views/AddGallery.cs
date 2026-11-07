@@ -431,6 +431,15 @@ namespace BandFace.Creator
             return p;
         }
 
+        /// <summary>Для знімків екрана: вікно без очікування, на кроці 1 або 2 (дуга)</summary>
+        public static Window Demo(Window owner, int step)
+        {
+            var w = new AddGallery { Owner = owner, ShowActivated = false };
+            if (step == 2) { w.item = Items.First(i => i.Kind == "arc"); w.ShowStep(2); }
+            w.Show();
+            return w;
+        }
+
         public static Choice Pick(Window owner)
         {
             var w = new AddGallery { Owner = owner };

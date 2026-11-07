@@ -362,6 +362,7 @@ namespace BandFace.Creator
                 Add(Ui.Row(S.Get("weight"), Ui.Combo(WeightValues.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), gen.Weight.ToString(),
                                                      v => Regen(name, gen, g => g.Weight = int.Parse(v))), 190));
                 Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
+                DigitEffects(name, gen);
                 // одиниця біля числа — тим самим шрифтом
                 var unit = new TextBox { Text = gen.Unit, Width = 70 };
                 void CommitUnit(string u) { if (u != gen.Unit) Regen(name, gen, g => g.Unit = u); }
@@ -369,7 +370,7 @@ namespace BandFace.Creator
                 unit.LostKeyboardFocus += (s, e) => CommitUnit(unit.Text.Trim());
                 var up = new StackPanel { Orientation = Orientation.Horizontal };
                 up.Children.Add(unit);
-                foreach (var u in new[] { "%", "°", "км" })
+                foreach (var u in new[] { "%", "°", "км", ":", "/", "bpm" })
                 {
                     var b = new Button { Content = u, Style = (Style)FindResource("Btn"), Width = 36, Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0) };
                     var uu = u;
@@ -391,6 +392,80 @@ namespace BandFace.Creator
             Add(Ui.NumberRow(S.Get("digitSpace"), res.Int("space"), v => EditRes(() => res.Set("space", v)), -20, 60));
             Add(Ui.Switch(S.Get("leadingZero"), res.Bool("leadingZero"), v => EditRes(() => res.Set("leadingZero", v))));
         }
+
+        /// <summary>Набір цифр: готові й свої стилі, ефекти (градієнт, обвідка, тінь, ширина), застосування до всіх чисел</summary>
+        void DigitEffects(string name, Generator gen)
+        {
+            Add(Ui.Header(S.Get("digitSet")));
+            var sets = DigitSets.All();
+            var combo = new ComboBox { MaxDropDownHeight = 420, Margin = new Thickness(0, 0, 0, 8) };
+            combo.Items.Add(new ComboBoxItem { Content = S.Get("dsPick"), IsEnabled = false });
+            foreach (var st in sets)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                var prev = AssetFactory.DigitFrames(Sized(st.Style, 22));
+                foreach (var d in new[] { 1, 2, 3, 4 }) if (d < prev.Count) row.Children.Add(new Image { Source = prev[d].ToBitmap(), Height = 22, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 1, 0) });
+                row.Children.Add(new TextBlock { Text = "  " + st.Name + (st.BuiltIn ? "" : "  ·  " + S.Get("dsMine")), VerticalAlignment = VerticalAlignment.Center });
+                combo.Items.Add(new ComboBoxItem { Content = row, Tag = st });
+            }
+            combo.SelectedIndex = 0;
+            combo.SelectionChanged += (s, e) =>
+            {
+                if ((combo.SelectedItem as ComboBoxItem)?.Tag is DigitSets.Set st) Regen(name, gen, g => g.ApplyStyle(st.Style));
+            };
+            Add(combo);
+            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 10) };
+            var save = new Button { Content = S.Get("dsSave"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, 4, 0) };
+            save.Click += (s, e) =>
+            {
+                var n = InputBox.Ask(Owner, S.Get("digitSet"), S.Get("dsName"), S.Get("dsMine") + " " + (DigitSets.User().Count + 1));
+                if (n != null) { DigitSets.Add(n, gen); BuildInspector(); }
+            };
+            var all = new Button { Content = S.Get("dsApplyAll"), Style = (Style)FindResource("Btn"), Margin = new Thickness(4, 0, 0, 0) };
+            all.Click += (s, e) => project.Edit(p =>
+            {
+                // інші числа отримують той самий вигляд, розмір кожного лишається своїм
+                foreach (var kv in p.Meta.Generators.Where(x => x.Value.Kind == GenKind.Digits && x.Key != name).ToList())
+                {
+                    var g = kv.Value.Copy();
+                    g.ApplyStyle(gen);
+                    ElementFactory.Regenerate(p, kv.Key, g);
+                }
+            });
+            acts.Children.Add(save); acts.Children.Add(all);
+            Add(acts);
+            var mine = DigitSets.User();
+            if (mine.Count > 0)
+            {
+                var del = new TextBlock { Text = S.Get("dsManage"), FontSize = 12, Foreground = (Brush)FindResource("Accent"), Cursor = Cursors.Hand, Margin = new Thickness(0, -4, 0, 10) };
+                del.MouseLeftButtonUp += (s, e) =>
+                {
+                    var m = new ContextMenu { PlacementTarget = del };
+                    foreach (var st in mine)
+                    {
+                        var it = new MenuItem { Header = S.Get("dsDelete", st.Name) };
+                        var nm = st.Name;
+                        it.Click += (s2, e2) => { DigitSets.Remove(nm); BuildInspector(); };
+                        m.Items.Add(it);
+                    }
+                    m.IsOpen = true;
+                };
+                Add(del);
+            }
+
+            // градієнт згори донизу
+            bool grad = !string.IsNullOrEmpty(gen.Color2);
+            Add(Ui.Switch(S.Get("gradient"), grad, v => Regen(name, gen, g => g.Color2 = v ? (Suggested.FirstOrDefault(c => c != g.Color) ?? "#FF375F") : "")));
+            if (grad) Add(Ui.ColorRow(S.Get("gradientTo"), gen.Color2, h => Regen(name, gen, g => g.Color2 = h)));
+            Add(Ui.Slider(S.Get("outline"), gen.Outline, 0, 8, 0.5, v => Regen(name, gen, g => g.Outline = v)));
+            if (gen.Outline > 0) Add(Ui.ColorRow(S.Get("outlineColor"), gen.OutlineColor, h => Regen(name, gen, g => g.OutlineColor = h)));
+            Add(Ui.Slider(S.Get("shadowX"), gen.ShadowX, -8, 8, 1, v => Regen(name, gen, g => g.ShadowX = v)));
+            Add(Ui.Slider(S.Get("shadowY"), gen.ShadowY, -8, 8, 1, v => Regen(name, gen, g => g.ShadowY = v)));
+            if (gen.ShadowX != 0 || gen.ShadowY != 0) Add(Ui.ColorRow(S.Get("shadowColor"), gen.ShadowColor, h => Regen(name, gen, g => g.ShadowColor = h)));
+            Add(Ui.Slider(S.Get("letterWidth"), gen.WidthPct, 50, 150, 1, v => Regen(name, gen, g => g.WidthPct = v)));
+        }
+
+        static Generator Sized(Generator g, double size) { var c = g.Copy(); c.FontSize = size; c.Outline = Math.Min(c.Outline, 1.5); return c; }
 
         /// <summary>Шрифт: будь-який встановлений у Windows або доданий файл; без вибору — стиль</summary>
         void FontPicker(string name, Generator gen)

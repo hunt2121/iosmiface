@@ -153,6 +153,35 @@ namespace BandFace.Creator
         static FormattedText Text(string s, Typeface tf, double size, Brush b)
             => new FormattedText(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, size, b, 1.0);
 
+        static double K(Generator g) => Math.Max(0.3, Math.Min(2, g.WidthPct / 100.0));
+
+        /// <summary>Поле навколо знака під обвідку й тінь</summary>
+        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Max(Math.Abs(g.ShadowX), Math.Abs(g.ShadowY))) + 1;
+
+        /// <summary>Текст з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
+        /// Ширина літер стискає/розтягує знак відносно його середини.</summary>
+        static void Draw(DrawingContext dc, FormattedText t, Point at, Generator g)
+        {
+            if (!g.Styled) { dc.DrawText(t, at); return; }
+            var geo = t.BuildGeometry(at);
+            double k = K(g);
+            if (Math.Abs(k - 1) > 0.001)
+            {
+                geo = geo.Clone();
+                geo.Transform = new ScaleTransform(k, 1, at.X + t.WidthIncludingTrailingWhitespace / 2, 0);
+            }
+            if (g.ShadowX != 0 || g.ShadowY != 0)
+            {
+                dc.PushTransform(new TranslateTransform(g.ShadowX, g.ShadowY));
+                dc.DrawGeometry(Imaging.Brush(g.ShadowColor, 0.6), g.Outline > 0 ? new Pen(Imaging.Brush(g.ShadowColor, 0.6), g.Outline * 2) { LineJoin = PenLineJoin.Round } : null, geo);
+                dc.Pop();
+            }
+            if (g.Outline > 0) dc.DrawGeometry(null, new Pen(Imaging.Brush(g.OutlineColor), g.Outline * 2) { LineJoin = PenLineJoin.Round }, geo);
+            Brush fill = string.IsNullOrEmpty(g.Color2) ? (Brush)Imaging.Brush(g.Color)
+                : new LinearGradientBrush(Imaging.ParseColor(g.Color), Imaging.ParseColor(g.Color2), new Point(0, 0), new Point(0, 1));
+            dc.DrawGeometry(fill, null, geo);
+        }
+
         /// <summary>Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).</summary>
         public static List<RgbaImage> DigitFrames(Generator g)
         {
@@ -166,15 +195,16 @@ namespace BandFace.Creator
                 adv = Math.Max(adv, t.WidthIncludingTrailingWhitespace);
                 lh = Math.Max(lh, t.Height);
             }
-            int w = (int)Math.Ceiling(adv) + 2;
+            int pad = Pad(g);
+            int w = (int)Math.Ceiling(adv * K(g)) + 2 + pad * 2;
             lh = Math.Ceiling(lh);
-            int tall = (int)(lh * 2);
-            double top = lh / 2;
+            int tall = (int)(lh * 2) + pad * 2;
+            double top = lh / 2 + pad;
             var full = new List<RgbaImage>();
             for (int d = 0; d <= 9; d++)
             {
                 var t = Text(d.ToString(), tf, size, brush);
-                full.Add(Imaging.Render(w, tall, dc => dc.DrawText(t, new Point((w - t.WidthIncludingTrailingWhitespace) / 2, top))));
+                full.Add(Imaging.Render(w, tall, dc => Draw(dc, t, new Point((w - t.WidthIncludingTrailingWhitespace) / 2, top), g)));
             }
             int minY = tall, maxY = -1;
             foreach (var img in full)
@@ -194,10 +224,12 @@ namespace BandFace.Creator
             if (t.Length == 0) return null;
             var tf = FontOf(g);
             var s = Text(t, tf, Math.Max(4, g.FontSize), Imaging.Brush(g.Color));
-            int w = (int)Math.Ceiling(s.WidthIncludingTrailingWhitespace) + 8;
+            int pad = Pad(g);
+            double tw = s.WidthIncludingTrailingWhitespace;
+            int w = (int)Math.Ceiling(tw * K(g)) + 8 + pad * 2;
             double lh = Math.Ceiling(s.Height);
-            int tall = (int)(lh * 2);
-            var full = Imaging.Render(w, tall, dc => dc.DrawText(s, new Point(4, lh / 2)));
+            int tall = (int)(lh * 2) + pad * 2;
+            var full = Imaging.Render(w, tall, dc => Draw(dc, s, new Point((w - tw) / 2, lh / 2 + pad), g));
             int minX = w, maxX = -1, minY = tall, maxY = -1;
             for (int y = 0; y < tall; y++)
                 for (int x = 0; x < w; x++)
@@ -228,12 +260,14 @@ namespace BandFace.Creator
             var s = Text(t, tf, size, brush);
             var z = Text("0", tf, size, brush);
             double lh = Math.Ceiling(Math.Max(s.Height, z.Height));
-            int w = (int)Math.Ceiling(s.WidthIncludingTrailingWhitespace) + 4;
-            int tall = (int)(lh * 2);
-            double top = lh / 2;
-            var full = Imaging.Render(w, tall, dc => dc.DrawText(s, new Point(2, top)));
+            int pad = Pad(g);
+            double sw = s.WidthIncludingTrailingWhitespace;
+            int w = (int)Math.Ceiling(sw * K(g)) + 4 + pad * 2;
+            int tall = (int)(lh * 2) + pad * 2;
+            double top = lh / 2 + pad;
+            var full = Imaging.Render(w, tall, dc => Draw(dc, s, new Point((w - sw) / 2, top), g));
             // та сама вертикальна вирізка, що й у цифр: шукаємо її за кадром «0»
-            var zero = Imaging.Render(digit.W, tall, dc => dc.DrawText(z, new Point((digit.W - z.WidthIncludingTrailingWhitespace) / 2, top)));
+            var zero = Imaging.Render(digit.W, tall, dc => Draw(dc, z, new Point((digit.W - z.WidthIncludingTrailingWhitespace) / 2, top), g));
             int y0 = tall;
             for (int y = 0; y < tall && y0 == tall; y++)
                 for (int x = 0; x < digit.W; x++)

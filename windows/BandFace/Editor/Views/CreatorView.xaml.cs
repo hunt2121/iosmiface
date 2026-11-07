@@ -86,6 +86,13 @@ namespace BandFace.Creator
         /// <summary>Новий демонстраційний проєкт (для знімків екрана).</summary>
         public void Demo() => OpenProject(store.Create(S.Get("newFaceName"), DeviceProfile.Band10));
 
+        /// <summary>Демо для знімків: arc, line, digits, xml, images, gallery, gallery2. Повертає вікно, яке знімати (null — головне).</summary>
+        public Window Demo(string mode)
+        {
+            Demo();
+            return Editor.DemoMode(mode);
+        }
+
         /// <summary>Клавіші редактора; true — оброблено.</summary>
         public bool HandleKey(KeyEventArgs e)
         {

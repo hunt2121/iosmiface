@@ -35,6 +35,24 @@ namespace BandFace.Creator
         public double Angle = 0;
         /// <summary>Кінці дуги й лінії: круглі (типово) або прямі</summary>
         public bool Round = true;
+        /// <summary>Набір цифр (П-2): обвідка, тінь, градієнт, ширина літер</summary>
+        public double Outline = 0;
+        public string OutlineColor = "#000000";
+        public double ShadowX = 0, ShadowY = 0;
+        public string ShadowColor = "#000000";
+        /// <summary>Другий колір градієнта згори донизу; порожньо — суцільний колір</summary>
+        public string Color2 = "";
+        /// <summary>Ширина літер, % (100 — як у шрифті)</summary>
+        public double WidthPct = 100;
+
+        public bool Styled => Outline > 0 || ShadowX != 0 || ShadowY != 0 || !string.IsNullOrEmpty(Color2) || Math.Abs(WidthPct - 100) > 0.01;
+
+        /// <summary>Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту</summary>
+        public void ApplyStyle(Generator s)
+        {
+            Font = s.Font; Style = s.Style; Weight = s.Weight; Color = s.Color; Color2 = s.Color2;
+            Outline = s.Outline; OutlineColor = s.OutlineColor; ShadowX = s.ShadowX; ShadowY = s.ShadowY; ShadowColor = s.ShadowColor; WidthPct = s.WidthPct;
+        }
 
         public Generator(GenKind kind) { Kind = kind; }
         public Generator Copy() => (Generator)MemberwiseClone();
@@ -46,6 +64,8 @@ namespace BandFace.Creator
             ["kind"] = KindNames[(int)Kind], ["color"] = Color, ["bgColor"] = BgColor, ["fontSize"] = FontSize, ["weight"] = Weight,
             ["style"] = Style, ["font"] = Font, ["radius"] = Radius, ["width"] = Width, ["length"] = Length, ["unit"] = Unit, ["text"] = Text,
             ["start"] = Start, ["range"] = Range, ["angle"] = Angle, ["round"] = Round,
+            ["outline"] = Outline, ["outlineColor"] = OutlineColor, ["shadowX"] = ShadowX, ["shadowY"] = ShadowY, ["shadowColor"] = ShadowColor,
+            ["color2"] = Color2, ["widthPct"] = WidthPct,
         };
 
         public static Generator FromJson(Dictionary<string, object> d)
@@ -60,6 +80,9 @@ namespace BandFace.Creator
                 Unit = Json.Str(d, "unit", ""), Text = Json.Str(d, "text", ""),
                 // старі проєкти без цих полів: дуга була повним кільцем, лінія — горизонтальною
                 Start = Json.Num(d, "start", 0), Range = Json.Num(d, "range", 360), Angle = Json.Num(d, "angle", 0), Round = Json.Bool(d, "round", true),
+                Outline = Json.Num(d, "outline", 0), OutlineColor = Json.Str(d, "outlineColor", "#000000"),
+                ShadowX = Json.Num(d, "shadowX", 0), ShadowY = Json.Num(d, "shadowY", 0), ShadowColor = Json.Str(d, "shadowColor", "#000000"),
+                Color2 = Json.Str(d, "color2", ""), WidthPct = Json.Num(d, "widthPct", 100),
             };
         }
 

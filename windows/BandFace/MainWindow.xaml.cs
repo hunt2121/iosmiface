@@ -74,13 +74,14 @@ namespace BandFace
                 else if (a == "--page=editor") NavEditor.IsChecked = true;
                 else if (a == "--page=fonts") { NavEditor.IsChecked = true; EditorTab.ShowFonts(); }
                 else if (a == "--demo") { NavEditor.IsChecked = true; EditorTab.Demo(); }
+                else if (a.StartsWith("--demo=")) { var m = a.Substring(7); NavEditor.IsChecked = true; ContentRendered += (s, e) => _shotWindow = EditorTab.Demo(m); }
                 else if (a.StartsWith("--shot=")) shot = a.Substring(7);
                 else if (!a.StartsWith("--") && File.Exists(a)) openFile = a;
             }
             if (shot != null)
                 ContentRendered += async (s, e) =>
                 {
-                    await Task.Delay(1500);
+                    await Task.Delay(2000);
                     try { SaveShot(shot); } catch (Exception ex) { File.WriteAllText(shot + ".txt", ex.ToString()); }
                     Application.Current.Shutdown();
                 };
@@ -186,9 +187,12 @@ namespace BandFace
             finally { try { session.Dispose(); } catch (Exception) { } _session = null; _bandGate.Release(); }
         }
 
+        /// <summary>Окреме вікно для знімка (галерея «Додати елемент»)</summary>
+        Window _shotWindow;
+
         void SaveShot(string path)
         {
-            var root = (FrameworkElement)Content;
+            var root = (FrameworkElement)(_shotWindow ?? this).Content;
             int w = (int)root.ActualWidth, h = (int)root.ActualHeight;
             var dv = new DrawingVisual();
             using (var dc = dv.RenderOpen())

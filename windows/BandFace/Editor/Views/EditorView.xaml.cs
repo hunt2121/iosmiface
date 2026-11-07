@@ -550,6 +550,38 @@ namespace BandFace.Creator
             }
         }
 
+        /// <summary>Стани редактора для знімків екрана в CI</summary>
+        public Window DemoMode(string mode)
+        {
+            int w = project.Meta.Device.Width;
+            project.Edit(p =>
+            {
+                ElementFactory.AddArc(p, "healthStepProgress", new Generator(GenKind.Arc) { Color = "#30B455", BgColor = "#3A3A3C", Radius = 70, Width = 12, Start = 225, Range = 270 }, theme, w / 2, 400);
+                ElementFactory.AddLine(p, "systemStatusBattery", new Generator(GenKind.Line) { Color = "#0A6CF0", BgColor = "#3A3A3C", Width = 8, Length = 120, Angle = -45 }, theme, w / 2, 400);
+            });
+            var ls = project.Layouts(theme);
+            XNode Find(ElementKind k) => ls.LastOrDefault(l => Elements.Of(project.ElementOf(l), project) == k);
+            switch (mode)
+            {
+                case "arc": Select(Find(ElementKind.Arc)); break;
+                case "line": Select(Find(ElementKind.Line)); break;
+                case "digits":
+                {
+                    var d = Find(ElementKind.Digits);
+                    var res = d != null ? project.ElementOf(d) : null;
+                    var g = project.Meta.Gen(res?.Str("name"));
+                    if (g != null) { var c = g.Copy(); c.Color = "#FFD60A"; c.Color2 = "#FF375F"; c.Outline = 2; c.OutlineColor = "#000000"; c.ShadowY = 3; project.Edit(p => ElementFactory.Regenerate(p, res.Str("name"), c)); }
+                    Select(d);
+                    break;
+                }
+                case "images": ShowImagesTab(true); break;
+                case "xml": Dispatcher.BeginInvoke(new Action(() => SetXmlMode(true)), System.Windows.Threading.DispatcherPriority.Loaded); break;
+                case "gallery": return AddGallery.Demo(Owner, 1);
+                case "gallery2": return AddGallery.Demo(Owner, 2);
+            }
+            return null;
+        }
+
         void Center(out int cx, out int cy) { cx = project.Meta.Device.Width / 2; cy = project.Meta.Device.Height / 2; }
 
         void AddAndSelect(Action<FaceProject> add)
