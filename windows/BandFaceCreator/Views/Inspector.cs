@@ -231,7 +231,7 @@ namespace BandFace.Creator
         void BuildElement(XNode layout)
         {
             var res = project.ElementOf(layout);
-            var kind = Elements.Of(res);
+            var kind = Elements.Of(res, project);
             var resName = res?.Str("name") ?? "";
             var gen = project.Meta.Gen(resName);
 
@@ -275,7 +275,8 @@ namespace BandFace.Creator
             switch (kind)
             {
                 case ElementKind.Digits: DigitsLook(layout, res, gen); break;
-                case ElementKind.Text: TextLook(res); break;
+                case ElementKind.Label: LabelLook(res, gen); break;
+                case ElementKind.Text: Add(Ui.Note(S.Get("textUnsupported"))); break;
                 case ElementKind.Pointer: case ElementKind.Arc: case ElementKind.Line: GaugeLook(res, kind, gen); break;
                 case ElementKind.Animation:
                     Add(Ui.Slider(S.Get("interval"), res.Int("interval", 100), 30, 2000, 10, v => EditRes(() => res.Set("interval", (int)v))));
@@ -362,37 +363,7 @@ namespace BandFace.Creator
             var name = res.Str("name") ?? "";
             if (gen != null)
             {
-                // шрифт: будь-який встановлений у Windows або доданий файл
-                var fonts = new List<KeyValuePair<string, string>> { P("", S.Get("fontStyleDefault")) };
-                fonts.AddRange(FontLibrary.AllNames().Select(f => P(f, f)));
-                var combo = new ComboBox { MaxDropDownHeight = 460 };
-                foreach (var kv in fonts)
-                {
-                    var tb = new TextBlock { Text = kv.Value, FontSize = 13 };
-                    if (kv.Key.Length > 0) { tb.FontFamily = FontLibrary.Family(kv.Key); tb.Text = kv.Value + "   0123456789"; }
-                    var it = new ComboBoxItem { Content = tb, Tag = kv.Key };
-                    combo.Items.Add(it);
-                    if (kv.Key == gen.Font) combo.SelectedItem = it;
-                }
-                combo.SelectionChanged += (s, e) =>
-                {
-                    var f = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-                    if (f != gen.Font) Regen(name, gen, g => g.Font = f);
-                };
-                Add(new TextBlock { Text = S.Get("font"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
-                Add(combo);
-                var cov = gen.Font.Length > 0 ? FontLibrary.Coverage(gen.Font) : "";
-                Add(Ui.Note(cov.Length > 0 ? S.Get("fontHas", cov) : S.Get("fontHint")));
-                var addFont = new TextBlock { Text = S.Get("addFontFile"), FontSize = 12, Foreground = (Brush)FindResource("Accent"), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 10) };
-                addFont.MouseLeftButtonUp += (s, e) =>
-                {
-                    var added = Actions.AddFonts(Owner);
-                    if (added.Count > 0) Regen(name, gen, g => g.Font = added[0]); else BuildInspector();
-                };
-                Add(addFont);
-                if (gen.Font.Length == 0)
-                    Add(Ui.Chips(S.Get("fontStyle"), new[] { P("rounded", S.Get("stRounded")), P("default", S.Get("stDefault")), P("condensed", S.Get("stCondensed")), P("mono", S.Get("stMono")) },
-                                 gen.Style, v => Regen(name, gen, g => g.Style = v)));
+                FontPicker(name, gen);
                 Add(Ui.Slider(S.Get("fontSize"), gen.FontSize, 8, 200, 1, v => Regen(name, gen, g => g.FontSize = v)));
                 Add(Ui.Row(S.Get("weight"), Ui.Combo(WeightValues.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), gen.Weight.ToString(),
                                                      v => Regen(name, gen, g => g.Weight = int.Parse(v))), 190));
@@ -427,6 +398,42 @@ namespace BandFace.Creator
             Add(Ui.Switch(S.Get("leadingZero"), res.Bool("leadingZero"), v => EditRes(() => res.Set("leadingZero", v))));
         }
 
+        /// <summary>Шрифт: будь-який встановлений у Windows або доданий файл; без вибору — стиль</summary>
+        void FontPicker(string name, Generator gen)
+        {
+            // шрифт: будь-який встановлений у Windows або доданий файл
+            var fonts = new List<KeyValuePair<string, string>> { P("", S.Get("fontStyleDefault")) };
+            fonts.AddRange(FontLibrary.AllNames().Select(f => P(f, f)));
+            var combo = new ComboBox { MaxDropDownHeight = 460 };
+            foreach (var kv in fonts)
+            {
+                var tb = new TextBlock { Text = kv.Value, FontSize = 13 };
+                if (kv.Key.Length > 0) { tb.FontFamily = FontLibrary.Family(kv.Key); tb.Text = kv.Value + "   0123456789"; }
+                var it = new ComboBoxItem { Content = tb, Tag = kv.Key };
+                combo.Items.Add(it);
+                if (kv.Key == gen.Font) combo.SelectedItem = it;
+            }
+            combo.SelectionChanged += (s, e) =>
+            {
+                var f = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+                if (f != gen.Font) Regen(name, gen, g => g.Font = f);
+            };
+            Add(new TextBlock { Text = S.Get("font"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            Add(combo);
+            var cov = gen.Font.Length > 0 ? FontLibrary.Coverage(gen.Font) : "";
+            Add(Ui.Note(cov.Length > 0 ? S.Get("fontHas", cov) : S.Get("fontHint")));
+            var addFont = new TextBlock { Text = S.Get("addFontFile"), FontSize = 12, Foreground = (Brush)FindResource("Accent"), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 10) };
+            addFont.MouseLeftButtonUp += (s, e) =>
+            {
+                var added = Actions.AddFonts(Owner);
+                if (added.Count > 0) Regen(name, gen, g => g.Font = added[0]); else BuildInspector();
+            };
+            Add(addFont);
+            if (gen.Font.Length == 0)
+                Add(Ui.Chips(S.Get("fontStyle"), new[] { P("rounded", S.Get("stRounded")), P("default", S.Get("stDefault")), P("condensed", S.Get("stCondensed")), P("mono", S.Get("stMono")) },
+                             gen.Style, v => Regen(name, gen, g => g.Style = v)));
+        }
+
         /// <summary>x числа — точка прив'язки (лівий край / середина / правий край): при зміні вирівнювання число лишається на місці</summary>
         void SetNumberAlign(XNode layout, XNode res, string v)
         {
@@ -440,56 +447,30 @@ namespace BandFace.Creator
             });
         }
 
-        // MARK: Текст
+        // MARK: Напис
 
-        static readonly string[] TextWeights = { "thin", "extralight", "light", "normal", "regular", "medium", "demibold", "semibold", "bold", "heavy" };
-
-        void TextLook(XNode res)
+        /// <summary>Напис: рядок, шрифт (будь-який Windows або доданий), розмір, товщина, колір</summary>
+        void LabelLook(XNode res, Generator gen)
         {
-            var text = new TextBox { Text = res.Str("string") ?? "" };
-            void CommitText() { var t = text.Text; if (t != (res.Str("string") ?? "")) EditRes(() => res.Set("string", t)); }
-            text.KeyDown += (s, e) => { if (e.Key == Key.Enter) { CommitText(); e.Handled = true; } };
-            text.LostKeyboardFocus += (s, e) => CommitText();
-            Add(new TextBlock { Text = S.Get("text"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            if (gen == null) return;
+            var name = res.Str("name") ?? "";
+            var text = new TextBox { Text = gen.Text };
+            void Commit()
+            {
+                var t = text.Text.Trim();
+                if (t.Length == 0) { text.Text = gen.Text; return; }
+                if (t != gen.Text) Regen(name, gen, g => g.Text = t);
+            }
+            text.KeyDown += (s, e) => { if (e.Key == Key.Enter) { Commit(); e.Handled = true; } };
+            text.LostKeyboardFocus += (s, e) => Commit();
+            Add(new TextBlock { Text = S.Get("labelText"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
             Add(text);
-            Add(Ui.Note(S.Get("textHint")));
-            Add(Ui.Slider(S.Get("fontSize"), res.Int("fontSize", 24), 8, 120, 1, v => EditRes(() =>
-            {
-                res.Set("fontSize", (int)v);
-                if (res.Int("h") < (int)(v * 1.3)) res.Set("h", (int)(v * 1.3));   // поле не нижче за рядок
-            })));
-            Add(Ui.Row(S.Get("bandFont"), Ui.Combo(FaceCatalog.FontIds.Select(f => P(f, f)), res.Str("fontId") ?? "", v => EditRes(() => res.Set("fontId", v))), 190));
-            Add(Ui.Row(S.Get("weight"), Ui.Combo(TextWeights.Select(w => P(w, S.Get("tw_" + w))), res.Str("fontWeight") ?? "regular", v => EditRes(() => res.Set("fontWeight", v))), 190));
-            Add(Ui.ColorRow(S.Get("color"), res.Str("color") ?? "#FFFFFF", h => EditRes(() => res.Set("color", h))));
-            Add(Ui.Slider(S.Get("opacity"), res.Int("opacity", 100), 0, 100, 1, v => EditRes(() => res.Set("opacity", (int)v))));
-            Add(Ui.Chips(S.Get("align"), new[] { P("left", S.Get("left")), P("center", S.Get("center")), P("right", S.Get("right")) },
-                         res.Str("align") ?? "left", v => EditRes(() => res.Set("align", v))));
-            bool normal = (res.Str("style") ?? "normal") == "normal";
-            Add(Ui.Chips(S.Get("placement"), new[] { P("normal", S.Get("inLine")), P("arc", S.Get("onArc")) }, normal ? "normal" : "arc", v => EditRes(() =>
-            {
-                res.Set("style", v);
-                if (v == "arc" && !res.Has("radius")) res.Set("radius", 90).Set("startAngle", -60).Set("span", 120).Set("verticalAlign", "top");
-            })));
-            if (normal)
-            {
-                Add(Ui.Slider(S.Get("fieldW"), res.Int("w"), 10, project.Meta.Device.Width, 1, v => EditRes(() => res.Set("w", (int)v))));
-                Add(Ui.Slider(S.Get("fieldH"), res.Int("h"), 8, 300, 1, v => EditRes(() => res.Set("h", (int)v))));
-                Add(Ui.Row(S.Get("longText"), Ui.Combo(new[] { P("clip", S.Get("lmClip")), P("wrap", S.Get("lmWrap")), P("scroll", S.Get("lmScroll")), P("scroll_circular", S.Get("lmCircular")), P("dots", S.Get("lmDots")) },
-                                                       res.Str("longMode") ?? "clip", v => EditRes(() => res.Set("longMode", v))), 190));
-                if (res.Str("longMode") == "wrap")
-                    Add(Ui.NumberRow(S.Get("lineSpace"), res.Int("lineSpace"), v => EditRes(() => res.Set("lineSpace", v)), -20, 60));
-                Add(Ui.Slider(S.Get("rotation"), res.Int("rotation"), -180, 180, 1, v => EditRes(() => res.Set("rotation", (int)v))));
-            }
-            else
-            {
-                Add(Ui.Slider(S.Get("arcRadius"), res.Int("radius"), 20, 260, 1, v => EditRes(() => res.Set("radius", (int)v))));
-                Add(Ui.Slider(S.Get("startAngle"), res.Int("startAngle"), -180, 180, 1, v => EditRes(() => res.Set("startAngle", (int)v))));
-                Add(Ui.Slider(S.Get("span"), res.Int("span"), 10, 360, 1, v => EditRes(() => res.Set("span", (int)v))));
-                Add(Ui.Chips(S.Get("textToArc"), new[] { P("top", S.Get("vaTop")), P("center", S.Get("vaCenter")), P("bottom", S.Get("vaBottom")) },
-                             res.Str("verticalAlign") ?? "top", v => EditRes(() => res.Set("verticalAlign", v))));
-            }
-            Add(Ui.NumberRow(S.Get("letterSpace"), res.Int("letterSpace"), v => EditRes(() => res.Set("letterSpace", v)), 0, 60));
-            Add(Ui.Note(S.Get("textApprox")));
+            Add(Ui.Note(S.Get("labelHint")));
+            FontPicker(name, gen);
+            Add(Ui.Slider(S.Get("fontSize"), gen.FontSize, 8, 200, 1, v => Regen(name, gen, g => g.FontSize = v)));
+            Add(Ui.Row(S.Get("weight"), Ui.Combo(WeightValues.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), gen.Weight.ToString(),
+                                                 v => Regen(name, gen, g => g.Weight = int.Parse(v))), 190));
+            Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
         }
 
         // MARK: Стрілка, дуга, лінія

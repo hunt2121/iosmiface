@@ -135,7 +135,7 @@ namespace BandFace.Creator
         {
             switch (k)
             {
-                case ElementKind.Text: return "Aa";
+                case ElementKind.Text: case ElementKind.Label: return "Aa";
                 case ElementKind.Digits: return "12";
                 case ElementKind.Image: return "▣";
                 case ElementKind.Animation: return "▶";
@@ -158,19 +158,20 @@ namespace BandFace.Creator
             {
                 var l = ls[i];
                 var res = project.ElementOf(l);
-                var kind = Elements.Of(res);
+                var kind = Elements.Of(res, project);
                 var row = new Grid();
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.Children.Add(new TextBlock
                 {
-                    Text = Glyph(kind), FontFamily = new FontFamily("Segoe UI Symbol"), FontSize = kind == ElementKind.Text || kind == ElementKind.Digits ? 12 : 15,
+                    Text = Glyph(kind), FontFamily = new FontFamily("Segoe UI Symbol"), FontSize = kind == ElementKind.Text || kind == ElementKind.Label || kind == ElementKind.Digits ? 12 : 15,
                     FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center, Foreground = (Brush)FindResource("Sub"),
                 });
                 var sp = new StackPanel();
                 sp.Children.Add(new TextBlock { Text = Elements.Title(kind), FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis });
                 var src = res?.Str("source");
-                var sub = src != null ? SampleData.Title(src) : res?.Str("name") ?? "";
+                var sub = src != null ? SampleData.Title(src)
+                        : kind == ElementKind.Label ? "«" + project.Meta.Gen(res?.Str("name"))?.Text + "»" : res?.Str("name") ?? "";
                 var app = ElementFactory.TapApp(project, l);
                 if (app != null) sub += "  ↗ " + S.App(app);
                 sp.Children.Add(new TextBlock { Text = sub, FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextTrimming = TextTrimming.CharacterEllipsis });
@@ -488,7 +489,7 @@ namespace BandFace.Creator
             var menu = new ContextMenu { PlacementTarget = AddBtn, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
             void Item(string title, Action a) { var m = new MenuItem { Header = title }; m.Click += (s, ev) => a(); menu.Items.Add(m); }
             Item(S.Get("elDigits") + " — " + S.Get("addDigitsHint"), () => AddWithSource(ElementKind.Digits));
-            Item(S.Get("elText") + " — " + S.Get("addTextHint"), () => AddWithSource(ElementKind.Text));
+            Item(S.Get("elLabel") + " — " + S.Get("addLabelHint"), AddLabel);
             Item(S.Get("elValues") + " — " + S.Get("addValuesHint"), () => AddWithSource(ElementKind.Values));
             menu.Items.Add(new Separator());
             Item(S.Get("clock") + " — " + S.Get("addClockHint"), () => { Center(out var cx, out var cy); AddAndSelect(p => ElementFactory.AddAnalogClock(p, theme, cx, cy)); });
@@ -518,11 +519,6 @@ namespace BandFace.Creator
             Center(out var cx, out var cy);
             switch (k)
             {
-                case ElementKind.Text:
-                    // DataItemText немає в жодному відомому циферблаті Band 10 — спершу попередження (Б-1)
-                    if (MessageBox.Show(Owner, S.Get("textUntested"), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-                    AddAndSelect(p => ElementFactory.AddText(p, "%s", new[] { src }, theme, cx, cy, "#FFFFFF"));
-                    break;
                 case ElementKind.Digits:
                     AddAndSelect(p => ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, theme, cx, cy));
                     break;
@@ -558,6 +554,15 @@ namespace BandFace.Creator
                 catch (Exception ex) { MessageBox.Show(Owner, S.Get("imageFail", System.IO.Path.GetFileName(f), ex.Message), "BandFace Creator"); }
             }
             return o;
+        }
+
+        /// <summary>Напис картинкою: одразу по центру, рядок і шрифт — у властивостях
+        /// (текст, який малює сам браслет, не підтримується — на Smart Band 10 не перевірений)</summary>
+        void AddLabel()
+        {
+            Center(out var cx, out var cy);
+            var g = new Generator(GenKind.Label) { Color = "#FFFFFF", FontSize = 28, Weight = 600, Style = "rounded", Text = S.Get("labelDefault") };
+            AddAndSelect(p => ElementFactory.AddLabel(p, g, theme, cx, cy));
         }
 
         void AddImage()

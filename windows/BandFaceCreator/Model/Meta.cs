@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace BandFace.Creator
 {
-    public enum GenKind { Digits, Arc, Line, Pointer, Image, Frames }
+    public enum GenKind { Digits, Arc, Line, Pointer, Image, Frames, Label }
 
     /// <summary>Параметри, з яких редактор створив ресурс (щоб перемалювати після зміни шрифту, кольору тощо).</summary>
     public sealed class Generator
@@ -27,16 +27,18 @@ namespace BandFace.Creator
         public double Length = 120;
         /// <summary>Одиниця біля числа («%», «°», «км»), малюється тим самим шрифтом</summary>
         public string Unit = "";
+        /// <summary>Рядок напису (Label): малюється шрифтом у картинку</summary>
+        public string Text = "";
 
         public Generator(GenKind kind) { Kind = kind; }
         public Generator Copy() => (Generator)MemberwiseClone();
 
-        static readonly string[] KindNames = { "digits", "arc", "line", "pointer", "image", "frames" };
+        static readonly string[] KindNames = { "digits", "arc", "line", "pointer", "image", "frames", "label" };
 
         public Dictionary<string, object> ToJson() => new Dictionary<string, object>
         {
             ["kind"] = KindNames[(int)Kind], ["color"] = Color, ["bgColor"] = BgColor, ["fontSize"] = FontSize, ["weight"] = Weight,
-            ["style"] = Style, ["font"] = Font, ["radius"] = Radius, ["width"] = Width, ["length"] = Length, ["unit"] = Unit,
+            ["style"] = Style, ["font"] = Font, ["radius"] = Radius, ["width"] = Width, ["length"] = Length, ["unit"] = Unit, ["text"] = Text,
         };
 
         public static Generator FromJson(Dictionary<string, object> d)
@@ -48,7 +50,7 @@ namespace BandFace.Creator
                 FontSize = Json.Num(d, "fontSize", 48), Weight = (int)Json.Num(d, "weight", 700),
                 Style = Json.Str(d, "style", "rounded"), Font = Json.Str(d, "font", ""),
                 Radius = Json.Num(d, "radius", 60), Width = Json.Num(d, "width", 10), Length = Json.Num(d, "length", 120),
-                Unit = Json.Str(d, "unit", ""),
+                Unit = Json.Str(d, "unit", ""), Text = Json.Str(d, "text", ""),
             };
         }
 

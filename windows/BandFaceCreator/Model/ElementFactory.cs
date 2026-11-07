@@ -10,7 +10,7 @@ using BandFace.Faces;
 
 namespace BandFace.Creator
 {
-    public enum ElementKind { Text, Digits, Image, Animation, Pointer, Arc, Line, Values, Widget, Slot, Other }
+    public enum ElementKind { Text, Label, Digits, Image, Animation, Pointer, Arc, Line, Values, Widget, Slot, Other }
 
     static class Elements
     {
@@ -30,6 +30,14 @@ namespace BandFace.Creator
                 case "Slot": return ElementKind.Slot;
                 default: return ElementKind.Other;
             }
+        }
+
+        /// <summary>Тип із урахуванням редактора: картинка-напис показується як «Напис»</summary>
+        public static ElementKind Of(XNode res, FaceProject p)
+        {
+            var k = Of(res);
+            if (k == ElementKind.Image && p.Meta.Gen(res?.Str("name"))?.Kind == GenKind.Label) return ElementKind.Label;
+            return k;
         }
 
         public static string Title(ElementKind k) => S.Get("el" + k);
@@ -96,17 +104,14 @@ namespace BandFace.Creator
             AddLayout(p, name, theme, cx - w / 2, cy - h / 2);
         }
 
-        public static void AddText(FaceProject p, string text, IEnumerable<string> sources, int theme, int cx, int cy, string color)
+        /// <summary>Напис картинкою (рядок вибраним шрифтом)</summary>
+        public static void AddLabel(FaceProject p, Generator gen, int theme, int cx, int cy)
         {
-            var name = p.UniqueName("text");
-            var e = new XNode("DataItemText");
-            int w = 160, h = 30;
-            e.Set("name", name).Set("color", color).Set("opacity", 100).Set("fontId", "misans").Set("fontWeight", "bold").Set("fontSize", 24)
-             .Set("letterSpace", 0).Set("align", "center").Set("longMode", "clip").Set("style", "normal")
-             .Set("lineSpace", 0).Set("w", w).Set("h", h).Set("rotation", 0).Set("string", text);
-            foreach (var s in sources) e.Add("Content").Set("source", s);
-            p.Resources.Kids.Add(e);
-            AddLayout(p, name, theme, cx - w / 2, cy - h / 2);
+            var img = AssetFactory.LabelImage(gen);
+            if (img == null) return;
+            var name = AddImageResource(p, img, "label");
+            p.Meta.Generators[name] = gen;
+            AddLayout(p, name, theme, cx - img.W / 2, cy - img.H / 2);
         }
 
         public static void AddImage(FaceProject p, RgbaImage img, int theme, int cx, int cy)
@@ -373,6 +378,12 @@ namespace BandFace.Creator
                     var r = p.ResourceRef(res.Str("ref"));
                     if (r != null) ReplaceImage(p, r, img);
                     res.Set("pivotX", img.W / 2).Set("pivotY", img.H - img.W / 2);
+                    break;
+                }
+                case GenKind.Label:
+                {
+                    var img = AssetFactory.LabelImage(gen);
+                    if (img != null) ReplaceImage(p, res, img);
                     break;
                 }
             }

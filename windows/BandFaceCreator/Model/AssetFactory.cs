@@ -186,6 +186,34 @@ namespace BandFace.Creator
             return full.Select(img => new RgbaImage(w, h, img.Px.Slice(y0 * w * 4, h * w * 4))).ToList();
         }
 
+        /// <summary>Напис: рядок вибраним шрифтом і кольором, щільно обрізаний за справжніми пікселями (поле 1 px).
+        /// Текст на браслеті — лише картинками: власний текст браслета (DataItemText) на Smart Band 10 не перевірений.</summary>
+        public static RgbaImage LabelImage(Generator g)
+        {
+            var t = (g.Text ?? "").Trim();
+            if (t.Length == 0) return null;
+            var tf = FontOf(g);
+            var s = Text(t, tf, Math.Max(4, g.FontSize), Imaging.Brush(g.Color));
+            int w = (int)Math.Ceiling(s.WidthIncludingTrailingWhitespace) + 8;
+            double lh = Math.Ceiling(s.Height);
+            int tall = (int)(lh * 2);
+            var full = Imaging.Render(w, tall, dc => dc.DrawText(s, new Point(4, lh / 2)));
+            int minX = w, maxX = -1, minY = tall, maxY = -1;
+            for (int y = 0; y < tall; y++)
+                for (int x = 0; x < w; x++)
+                    if (full.Px[(y * w + x) * 4 + 3] != 0)
+                    {
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    }
+            if (maxX < minX) return null;
+            int x0 = Math.Max(0, minX - 1), x1 = Math.Min(w - 1, maxX + 1), y0 = Math.Max(0, minY - 1), y1 = Math.Min(tall - 1, maxY + 1);
+            int cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+            var px = new byte[cw * ch * 4];
+            for (int y = 0; y < ch; y++) Buffer.BlockCopy(full.Px, ((y0 + y) * w + x0) * 4, px, y * cw * 4, cw * 4);
+            return new RgbaImage(cw, ch, px);
+        }
+
         /// <summary>Значок одиниці («%», «°», «км») тим самим шрифтом і кольором, тієї ж висоти, що й цифри.</summary>
         public static RgbaImage UnitImage(string text, Generator g)
         {

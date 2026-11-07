@@ -229,6 +229,7 @@ namespace BandFace.Creator
                         case GenKind.Arc: images = new List<RgbaImage> { AssetFactory.Ring(g.Radius, g.Width, c) }; break;
                         case GenKind.Line: images = new List<RgbaImage> { AssetFactory.Bar(g.Length, g.Width, c) }; break;
                         case GenKind.Pointer: images = new List<RgbaImage> { AssetFactory.Hand(g.Length, g.Width, c) }; break;
+                        case GenKind.Label: { var li = AssetFactory.LabelImage(g); images = li == null ? new List<RgbaImage>() : new List<RgbaImage> { li }; break; }
                         default: images = new List<RgbaImage>(); break;
                     }
                 }
