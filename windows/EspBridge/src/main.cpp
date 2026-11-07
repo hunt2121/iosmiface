@@ -110,7 +110,14 @@ class ScanCb : public NimBLEAdvertisedDeviceCallbacks {
     scanSeen++;
     String name = d->haveName() ? String(d->getName().c_str()) : String("");
     bool fe95 = d->isAdvertisingService(SVC);
+    // Спрямоване оголошення (тип 1): прив'язаний браслет кличе саме цю ESP32 — без назви й сервісів
+    bool directed = d->getAdvType() == 1;
+    String addrS = String(d->getAddress().toString().c_str());
+    bool isPaired = pAddr.length() && pAddr.equalsIgnoreCase(addrS);
+    if (name.length() == 0 && (directed || isPaired)) name = pName.length() ? pName + " (paired)" : String("Smart Band (paired)");
+    if (directed) fe95 = true;
     if (name.length() == 0 && !fe95) return;
+    if (directed && scanShown == 0) out("LOG directed advertising from " + addrS);
     scanShown++;
     name.replace("\n", " ");
     name.replace("\r", " ");
@@ -282,7 +289,15 @@ static void doWrite(const char* hex) {
 // MARK: Команди
 
 static void handle(Stream* from, char* l) {
-  if (strcmp(l, "HELLO") == 0) { io = from; out("OK BRIDGE 2"); reportPaired(); return; }
+  if (strcmp(l, "HELLO") == 0) {
+    io = from;
+    // BandFace перезапустили, а ESP32 досі тримає браслет — відпускаємо, інакше він не рекламується
+    if (scanning) stopScan();
+    if (client && client->isConnected()) { connected = false; txChar = nullptr; client->disconnect(); led(20, 20, 20); }
+    out("OK BRIDGE 2");
+    reportPaired();
+    return;
+  }
   if (from != io) return;  // поки ПК не привітався — нічого не робимо
   if (strncmp(l, "SCAN ", 5) == 0) { if (l[5] == '1') startScan(); else stopScan(); return; }
   if (strncmp(l, "CONN ", 5) == 0) {
