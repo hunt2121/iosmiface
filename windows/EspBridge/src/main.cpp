@@ -207,7 +207,8 @@ static void handle(Stream* from, char* l) {
 struct LineReader {
   Stream* port;
   char buf[2600];
-  size_t len = 0;
+  size_t len;
+  explicit LineReader(Stream* p) : port(p), len(0) {}
   void poll() {
     while (port->available()) {
       int c = port->read();
@@ -224,8 +225,8 @@ struct LineReader {
   }
 };
 
-static LineReader usbReader{&Serial};    // вбудований USB (S3-Zero, C3 Super Mini)
-static LineReader uartReader{&Serial0};  // USB-UART міст на платі (CH340 / CP2102)
+static LineReader usbReader(&Serial);    // вбудований USB (S3-Zero, C3 Super Mini)
+static LineReader uartReader(&Serial0);  // USB-UART міст на платі (CH340 / CP2102)
 
 void setup() {
   outLock = xSemaphoreCreateMutex();
