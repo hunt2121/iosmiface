@@ -147,6 +147,13 @@ namespace BandFace
                     var r = await custom.PairAsync(DevicePairingKinds.ConfirmOnly, level);
                     Info?.Invoke("connect pair(" + level + "): " + r.Status + " used=" + r.ProtectionLevelUsed);
                     if (r.Status == DevicePairingResultStatus.Paired && r.ProtectionLevelUsed != DevicePairingProtectionLevel.None) return;
+                    // Старі адаптери (Bluetooth 4.0) звітують «зв'язано, рівень None», а суворіший рівень не вміють узагалі.
+                    // Пробуємо працювати з тим, що є: браслет сам відмовить, якщо йому мало.
+                    if (r.Status == DevicePairingResultStatus.Paired && level == DevicePairingProtectionLevel.Encryption)
+                    {
+                        Info?.Invoke("connect pair: level None reported, continuing without stricter pairing");
+                        return;
+                    }
                     if (r.Status == DevicePairingResultStatus.Paired || r.Status == DevicePairingResultStatus.AlreadyPaired)
                     {
                         // «зв'язано» без шифрування — скидаємо й пробуємо суворіший рівень

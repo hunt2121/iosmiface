@@ -283,6 +283,8 @@ namespace BandFace.Protocol
                 lock (_gate) { count = _unacked.Count; status = InstallStatus; first = _unacked.FirstOrDefault(); }
                 if (count < limit) return;
                 if (status.HasValue && status.Value != InstalledStatus) throw new BandException(ErrorKind.InstallAborted, "", status.Value);
+                // браслет уже повідомив «встановлено» (4/5 зі статусом 3) — решта підтверджень не потрібна
+                if (status == InstalledStatus) { Log("file: band reports installed, " + count + " acks not needed"); return; }
                 if (State == SessionState.Closed) throw new BandException(ErrorKind.Disconnected);
                 if (await _ackSignal.WaitAsync(_cfg.FileAckTimeoutMs).ConfigureAwait(false)) { resends = 0; continue; }
                 resends++;
