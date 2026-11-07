@@ -18,10 +18,6 @@ namespace BandFace
     public partial class MainWindow : Window
     {
         readonly BleTransport _ble = new BleTransport();
-        readonly BridgeTransport _bridge = new BridgeTransport();
-        bool _useBridge, _bridgeOpening, _bridgeConnecting;
-        /// <summary>Поточний канал: Bluetooth Windows або (експериментально) ESP32-міст.</summary>
-        ILink _link => _useBridge ? (ILink)_bridge : _ble;
         readonly StringBuilder _log = new StringBuilder();
         readonly HashSet<ulong> _seen = new HashSet<ulong>();
         BandSession _session;
@@ -34,8 +30,6 @@ namespace BandFace
             InitializeComponent();
             _dev = Storage.LoadDev();
             DevSwitch.IsChecked = _dev;
-            _useBridge = Storage.LoadFlag("bridge.flag");
-            BridgeSwitch.IsChecked = _useBridge;
             KeyBox.Text = Storage.LoadKey();
             var v = Assembly.GetExecutingAssembly().GetName().Version;
             string ver = v.Major + "." + v.Minor + "." + v.Build;
@@ -44,15 +38,11 @@ namespace BandFace
             ApplyTexts();
             RefreshBand();
             RefreshFace();
-            _bridge.StateChanged += () => Dispatcher.BeginInvoke(new Action(RefreshBridge));
-            AddLog("BandFace " + ver + " started" + (_useBridge ? " (ESP32 bridge mode)" : ""));
-            if (_useBridge) ContentRendered += async (s, e) => await OpenBridgeAsync();
-            foreach (var link in new ILink[] { _ble, _bridge })
-            {
-                link.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
-                link.Data += b => _session?.Receive(b);
-                link.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
-            }
+            _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
+            _ble.Data += b => _session?.Receive(b);
+            _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
+            _ble.Restored += () => Dispatcher.BeginInvoke(new Action(() => { AddLog("connected again"); RefreshBand(); }));
+            AddLog("BandFace " + ver + " started");
             foreach (var a in Environment.GetCommandLineArgs())
             {
                 if (a == "--page=key") NavKey.IsChecked = true;
@@ -69,7 +59,7 @@ namespace BandFace
                 };
             SourceInitialized += (s, e) => Theme.Apply(this);
             Microsoft.Win32.SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(() => Theme.Apply(this)));
-            Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); _bridge.Close(); };
+            Closed += (s, e) => { _ble.StopScan(); _ble.Disconnect(); };
         }
 
         /// <summary>Параметри відкриття сесії, як у Mi Fitness (з назвою телефона).</summary>
@@ -79,6 +69,9 @@ namespace BandFace
             return new SessionConfig
             {
                 Log = m => Dispatcher.BeginInvoke(new Action(() => AddLog(m))),
+                // повільні адаптери (Bluetooth 4.0, пакет 20 байтів) передають частину файлу кілька секунд:
+                // з 3 с браслет не встигав підтвердити, і повторні надсилання лише гальмували передачу
+                FileAckTimeoutMs = 10000,
                 OpenParameters = new List<KeyValuePair<int, byte[]>>
                 {
                     kv(1, new byte[] { 0x01, 0x00, 0x00 }), kv(7, new byte[] { 0x1b, 0x02, 0x00 }), kv(2, new byte[] { 0xff, 0xff }),
@@ -91,9 +84,9 @@ namespace BandFace
         async Task ActivateAsync()
         {
             var key = Bytes.ParseHex(KeyBox.Text);
-            if (key == null || key.Length != 16 || !_link.IsConnected) return;
+            if (key == null || key.Length != 16 || !_ble.IsConnected) return;
             SetStatus(S.Get("phPair"), false);
-            var session = new BandSession(_link, NewConfig());
+            var session = new BandSession(_ble, NewConfig());
             _session = session;
             try
             {
@@ -152,14 +145,7 @@ namespace BandFace
             CloudCancelBtn.Content = S.Get("cloudCancel");
             CloudNote.Text = S.Get("cloudNote");
             DevLabel.Text = S.Get("dev");
-            ExpLabel.Text = S.Get("experimental").ToUpperInvariant();
-            BridgeCardLabel.Text = S.Get("bridgeCard").ToUpperInvariant() + " · " + S.Get("experimental").ToUpperInvariant();
-            BridgeFindBtn.Content = S.Get("bridgeFind");
-            PairConnectBtn.Content = S.Get("pairConnect");
-            UnpairBtn.Content = S.Get("unpair");
             LogFileBtn.Content = S.Get("logFile");
-            BridgeLabel.Text = S.Get("bridge");
-            BridgeNote.Text = S.Get("bridgeNote");
             CopyBtn.Content = S.Get("copy");
             ClearBtn.Content = S.Get("clear");
             InstallBtn.Content = S.Get("install");
@@ -177,109 +163,23 @@ namespace BandFace
         // ---------- Браслет ----------
         void RefreshBand()
         {
-            bool c = _link.IsConnected;
+            bool c = _ble.IsConnected;
             BandConnected.Visibility = c ? Visibility.Visible : Visibility.Collapsed;
             BandIdle.Visibility = c ? Visibility.Collapsed : Visibility.Visible;
-            BandName.Text = _link.ConnectedName ?? "";
-            BandStatus.Text = S.Get(_useBridge ? "connectedBridge" : "connected");
-            ScanBtn.Content = S.Get(_useBridge ? "scanBridge" : "scan");
+            BandName.Text = _ble.ConnectedName ?? "";
+            BandStatus.Text = S.Get("connected");
+            ScanBtn.Content = S.Get("scan");
             InstallBtn.IsEnabled = !_busy && _face != null;
-            RefreshBridge();
         }
 
-        // ---------- ESP32-міст (експериментально) ----------
-        void RefreshBridge()
-        {
-            BridgeCard.Visibility = _useBridge ? Visibility.Visible : Visibility.Collapsed;
-            if (!_useBridge) return;
-            bool open = _bridge.IsOpen, paired = open && _bridge.PairedAddr != null, conn = _bridge.IsConnected;
-            BridgePort.Text = _bridgeOpening ? S.Get("bridgeLooking") : open ? S.Get("bridgeOn", _bridge.PortName) : S.Get("bridgeNoBoard");
-            BridgeDot.Fill = (Brush)FindResource(open ? "Ok" : "Sub");
-            if (!open) { PairText.Text = S.Get("pairUnknown"); PairAddr.Text = ""; }
-            else if (paired)
-            {
-                PairText.Text = S.Get(conn ? "pairedConnected" : "pairedWith", _bridge.PairedName);
-                PairAddr.Text = _bridge.PairedAddr.ToUpperInvariant();
-            }
-            else { PairText.Text = S.Get("notPaired"); PairAddr.Text = ""; }
-            PairDot.Fill = (Brush)FindResource(paired ? "Ok" : "Sub");
-            PairText.Foreground = (Brush)FindResource(paired ? "Ok" : "Text");
-            BridgeFindBtn.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
-            BridgeFindBtn.IsEnabled = !_bridgeOpening;
-            PairConnectBtn.Visibility = paired && !conn ? Visibility.Visible : Visibility.Collapsed;
-            PairConnectBtn.IsEnabled = !_busy && !_bridgeConnecting;
-            UnpairBtn.Visibility = paired ? Visibility.Visible : Visibility.Collapsed;
-            UnpairBtn.IsEnabled = !_busy && !_bridgeConnecting;
-        }
-
-        async Task<bool> OpenBridgeAsync()
-        {
-            if (_bridge.IsOpen) return true;
-            if (_bridgeOpening) return false;
-            _bridgeOpening = true;
-            RefreshBridge();
-            try
-            {
-                await _bridge.OpenAsync();
-                AddLog("connect: ESP32 bridge on " + _bridge.PortName);
-                return true;
-            }
-            catch (Exception) { AddLog("connect: ESP32 bridge not found"); return false; }
-            finally { _bridgeOpening = false; RefreshBridge(); }
-        }
-
-        async void BridgeFind_Click(object sender, RoutedEventArgs e)
-        {
-            if (!await OpenBridgeAsync()) SetStatus(S.Get("noBridge"), true);
-        }
-
-        async void PairConnect_Click(object sender, RoutedEventArgs e)
-        {
-            if (_bridgeConnecting || _bridge.PairedAddr == null) return;
-            _bridgeConnecting = true;
-            _bridge.StopScan();
-            DeviceList.Children.Clear();
-            SetStatus(S.Get("phConnect"), false);
-            RefreshBridge();
-            try
-            {
-                await _bridge.ConnectPairedAsync();
-                AddLog("connected " + _bridge.PairedName + " (paired)");
-                SetStatus("", false);
-                RefreshBand();
-                await ActivateAsync();
-            }
-            catch (Exception ex)
-            {
-                AddLog("connect: " + ex.Message);
-                SetStatus(ex.Message.Contains("connect") ? S.Get("pairHint") : Describe(ex), true);
-            }
-            finally { _bridgeConnecting = false; RefreshBand(); }
-        }
-
-        void Unpair_Click(object sender, RoutedEventArgs e)
-        {
-            try { _bridge.Unpair(); AddLog("connect: ESP32 pairing forgotten"); } catch (Exception ex) { AddLog("connect: unpair " + ex.Message); }
-            SetStatus("", false);
-            RefreshBand();
-        }
-
-        async void Scan_Click(object sender, RoutedEventArgs e)
+        void Scan_Click(object sender, RoutedEventArgs e)
         {
             DeviceList.Children.Clear();
             _seen.Clear();
             ScanBtn.Content = S.Get("scanning");
-            var link = _link;
             try
             {
-                if (link == _bridge && !_bridge.IsOpen)
-                {
-                    SetStatus(S.Get("bridgeLooking"), false);
-                    if (!await OpenBridgeAsync()) throw new InvalidOperationException("bridge");
-                    SetStatus("", false);
-                }
-                if (link != _link) return;   // перемикач змінили, поки шукали плату
-                link.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
+                _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
                 {
                     if (!_seen.Add(f.Address)) return;
                     var b = new Button { Content = f.Name, Style = (Style)FindResource("Btn"), Height = 34, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0) };
@@ -287,21 +187,21 @@ namespace BandFace
                     DeviceList.Children.Add(b);
                 })));
             }
-            catch (Exception) { SetStatus(S.Get(link == _bridge ? "noBridge" : "noBle"), true); ScanBtn.Content = S.Get(_useBridge ? "scanBridge" : "scan"); }
+            catch (Exception) { SetStatus(S.Get("noBle"), true); ScanBtn.Content = S.Get("scan"); }
         }
 
         async Task ConnectTo(FoundBand f)
         {
-            _link.StopScan();
+            _ble.StopScan();
             DeviceList.Children.Clear();
             ScanBtn.Content = S.Get("phConnect");
             SetStatus(S.Get("phPair"), false);
-            try { await _link.ConnectAsync(f); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
-            catch (Exception ex) { SetStatus(_useBridge && ex.Message == "ESP32: connect" ? S.Get("pairHint") : Describe(ex), true); AddLog("connect: " + ex.Message); }
+            try { await _ble.ConnectAsync(f.Address); AddLog("connected " + f.Name); SetStatus("", false); RefreshBand(); await ActivateAsync(); }
+            catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("connect: " + ex.Message); }
             RefreshBand();
         }
 
-        void Disconnect_Click(object sender, RoutedEventArgs e) { _link.Disconnect(); RefreshBand(); }
+        void Disconnect_Click(object sender, RoutedEventArgs e) { _ble.Disconnect(); RefreshBand(); }
 
         // ---------- Циферблат ----------
         void Pick_Click(object sender, RoutedEventArgs e)
@@ -355,13 +255,13 @@ namespace BandFace
             if (_busy || _face == null) return;
             var key = Bytes.ParseHex(KeyBox.Text);
             if (key == null || key.Length != 16) { SetStatus(S.Get("keyInvalid"), true); return; }
-            if (!_link.IsConnected) { SetStatus(S.Get("errConnect"), true); return; }
+            if (!_ble.IsConnected) { SetStatus(S.Get("errConnect"), true); return; }
             _busy = true; InstallBtn.IsEnabled = false; PickBtn.IsEnabled = false;
             SetStatus("", false);
             ProgressPanel.Visibility = Visibility.Visible;
             Bar.Value = 0; ProgressPercent.Text = ""; ProgressText.Text = S.Get("phConnect");
             var cfg = NewConfig();
-            _session = new BandSession(_link, cfg);
+            _session = new BandSession(_ble, cfg);
             try
             {
                 // параметри входу точно як у Mi Fitness / iOS-версії (з іншими Band 10 розриває з'єднання після входу)
@@ -516,7 +416,7 @@ namespace BandFace
         // ---------- Журнал ----------
         void AddLog(string m)
         {
-            if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc") && !m.StartsWith("bridge") && !m.StartsWith("BandFace")) return;
+            if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc") && !m.StartsWith("BandFace")) return;
             string line = DateTime.Now.ToString("HH:mm:ss") + " " + m;
             _log.AppendLine(line);
             Storage.AppendLog(DateTime.Now.ToString("yyyy-MM-dd ") + line);
@@ -525,24 +425,6 @@ namespace BandFace
         }
 
         void Dev_Click(object sender, RoutedEventArgs e) { _dev = DevSwitch.IsChecked == true; Storage.SaveDev(_dev); }
-
-        /// <summary>Експериментально: ESP32-міст замість Bluetooth Windows.</summary>
-        void Bridge_Click(object sender, RoutedEventArgs e)
-        {
-            bool on = BridgeSwitch.IsChecked == true;
-            if (on == _useBridge) return;
-            if (_busy) { BridgeSwitch.IsChecked = _useBridge; return; }
-            _link.StopScan();
-            _link.Disconnect();
-            if (!on) _bridge.Close();
-            _useBridge = on;
-            Storage.SaveFlag("bridge.flag", on);
-            DeviceList.Children.Clear();
-            SetStatus("", false);
-            RefreshBand();
-            AddLog("connect: ESP32 bridge mode " + (on ? "on" : "off"));
-            if (on) _ = OpenBridgeAsync();
-        }
         void Copy_Click(object sender, RoutedEventArgs e) { try { Clipboard.SetText(_log.Length == 0 ? S.Get("logEmpty") : _log.ToString()); } catch (Exception) { } }
         void Clear_Click(object sender, RoutedEventArgs e) { _log.Clear(); LogText.Text = ""; }
 

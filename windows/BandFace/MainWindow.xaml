@@ -60,30 +60,6 @@
               </StackPanel>
             </StackPanel>
           </Border>
-          <!-- Експериментально: ESP32-міст -->
-          <Border x:Name="BridgeCard" Style="{StaticResource CardBox}" Visibility="Collapsed">
-            <StackPanel>
-              <TextBlock x:Name="BridgeCardLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Ellipse x:Name="BridgeDot" Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center" Fill="{DynamicResource Sub}"/>
-                <TextBlock x:Name="BridgePort" Grid.Column="1" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-              </Grid>
-              <Grid Margin="0,10,0,0">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Ellipse x:Name="PairDot" Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center" Fill="{DynamicResource Sub}"/>
-                <StackPanel Grid.Column="1">
-                  <TextBlock x:Name="PairText" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock x:Name="PairAddr" FontSize="12" FontFamily="Consolas" Foreground="{DynamicResource Sub}"/>
-                </StackPanel>
-              </Grid>
-              <WrapPanel Margin="0,14,0,0">
-                <Button x:Name="BridgeFindBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="0,0,10,0" Click="BridgeFind_Click"/>
-                <Button x:Name="PairConnectBtn" Style="{StaticResource PrimaryBtn}" Height="34" Padding="18,0" Margin="0,0,10,0" Click="PairConnect_Click"/>
-                <Button x:Name="UnpairBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Foreground="{DynamicResource Err}" Click="Unpair_Click"/>
-              </WrapPanel>
-            </StackPanel>
-          </Border>
           <Border Style="{StaticResource CardBox}">
             <StackPanel>
               <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
@@ -169,16 +145,6 @@
                 <Button x:Name="LogFileBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Click="LogFile_Click"/>
               </StackPanel>
               <TextBlock x:Name="LogText" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="ExpLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <Grid>
-                <TextBlock x:Name="BridgeLabel" FontSize="14" VerticalAlignment="Center" Margin="0,0,60,0" TextWrapping="Wrap"/>
-                <CheckBox x:Name="BridgeSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" Click="Bridge_Click"/>
-              </Grid>
-              <TextBlock x:Name="BridgeNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource CardBox}">

@@ -16,27 +16,11 @@ namespace BandFace
     sealed class FoundBand
     {
         public string Name; public ulong Address;
-        /// <summary>Лише для ESP32-моста: адреса «aa:bb:..» і тип адреси BLE.</summary>
-        public string BridgeAddr; public int AddrType;
         public override string ToString() => Name;
     }
 
-    /// <summary>Канал до браслета: вбудований Bluetooth Windows або ESP32-міст.</summary>
-    interface ILink : IBandTransport
-    {
-        event Action<byte[]> Data;
-        event Action Disconnected;
-        event Action<string> Info;
-        string ConnectedName { get; }
-        bool IsConnected { get; }
-        void StartScan(Action<FoundBand> found);
-        void StopScan();
-        Task ConnectAsync(FoundBand band);
-        void Disconnect();
-    }
-
     /// <summary>BLE: сервіс FE95, сповіщення з 0x5E, запис без відповіді в 0x5F.</summary>
-    sealed class BleTransport : ILink
+    sealed class BleTransport : IBandTransport
     {
         static readonly Guid Service = Guid.Parse("0000fe95-0000-1000-8000-00805f9b34fb");
         static readonly Guid RxUuid = Guid.Parse("0000005e-0000-1000-8000-00805f9b34fb");
@@ -51,6 +35,8 @@ namespace BandFace
 
         public event Action<byte[]> Data;
         public event Action Disconnected;
+        /// <summary>Windows сам відновив з'єднання (після короткого обриву).</summary>
+        public event Action Restored;
         public event Action<string> Info;
         public string ConnectedName { get; private set; }
         public bool IsConnected => _tx != null && _dev != null && _dev.ConnectionStatus == BluetoothConnectionStatus.Connected;
@@ -77,14 +63,42 @@ namespace BandFace
             _watcher = null;
         }
 
-        public Task ConnectAsync(FoundBand band) => ConnectAsync(band.Address);
-
         public async Task ConnectAsync(ulong address)
         {
             Disconnect();
             _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
             if (_dev == null) throw new BandException(ErrorKind.NotConnected);
             await EnsurePaired(address);
+            // Одразу після нового спарювання Windows іноді ще не готовий (E_UNEXPECTED) — одна повторна спроба
+            try { await OpenGatt(); }
+            catch (Exception ex) when (!(ex is BandException))
+            {
+                Info?.Invoke("connect gatt: " + ex.Message + " — retrying");
+                await Task.Delay(1500);
+                await OpenGatt();
+            }
+            try
+            {
+                // одна GattSession на все з'єднання: якщо її загубити, Windows сам розриває «непотрібне» з'єднання
+                if (_session == null) _session = await GattSession.FromDeviceIdAsync(_dev.BluetoothDeviceId);
+                _session.MaintainConnection = true;
+                _chunk = Math.Max(_session.MaxPduSize - 3, 20);
+                _session.MaxPduSizeChanged += (gs, o) => { _chunk = Math.Max(gs.MaxPduSize - 3, 20); Info?.Invoke("connect packet: " + _chunk + " bytes"); };
+            }
+            catch (Exception) { _chunk = 20; }
+            Info?.Invoke("connect packet: " + _chunk + " bytes");
+            _dev.ConnectionStatusChanged += (d, o) =>
+            {
+                if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { ConnectedName = null; Disconnected?.Invoke(); }
+                else if (d.ConnectionStatus == BluetoothConnectionStatus.Connected && _tx != null) { ConnectedName = d.Name; Restored?.Invoke(); }
+            };
+            ConnectedName = _dev.Name;
+        }
+
+        async Task OpenGatt()
+        {
+            if (_rx != null) { try { _rx.ValueChanged -= OnValue; } catch (Exception) { } }
+            _rx = null; _tx = null;
             var svc = await _dev.GetGattServicesForUuidAsync(Service, BluetoothCacheMode.Uncached);
             if (svc.Status != GattCommunicationStatus.Success || svc.Services.Count == 0) throw new BandException(ErrorKind.CharacteristicNotFound);
             var s = svc.Services[0];
@@ -92,22 +106,10 @@ namespace BandFace
             var tx = await s.GetCharacteristicsForUuidAsync(TxUuid, BluetoothCacheMode.Uncached);
             if (rx.Characteristics.Count == 0 || tx.Characteristics.Count == 0) throw new BandException(ErrorKind.CharacteristicNotFound);
             _rx = rx.Characteristics[0];
-            _tx = tx.Characteristics[0];
             _rx.ValueChanged += OnValue;
             var st = await _rx.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
             if (st != GattCommunicationStatus.Success) throw new BandException(ErrorKind.NotConnected, "notify");
-            try
-            {
-                _session = await GattSession.FromDeviceIdAsync(_dev.BluetoothDeviceId);
-                _session.MaintainConnection = true;
-                _chunk = Math.Max(_session.MaxPduSize - 3, 20);
-            }
-            catch (Exception) { _chunk = 20; }
-            _dev.ConnectionStatusChanged += (d, o) =>
-            {
-                if (d.ConnectionStatus == BluetoothConnectionStatus.Disconnected) { ConnectedName = null; Disconnected?.Invoke(); }
-            };
-            ConnectedName = _dev.Name;
+            _tx = tx.Characteristics[0];
         }
 
         /// <summary>
@@ -148,10 +150,10 @@ namespace BandFace
                     Info?.Invoke("connect pair(" + level + "): " + r.Status + " used=" + r.ProtectionLevelUsed);
                     if (r.Status == DevicePairingResultStatus.Paired && r.ProtectionLevelUsed != DevicePairingProtectionLevel.None) return;
                     // Старі адаптери (Bluetooth 4.0) звітують «зв'язано, рівень None», а суворіший рівень не вміють узагалі.
-                    // Пробуємо працювати з тим, що є: браслет сам відмовить, якщо йому мало.
+                    // Браслет із таким з'єднанням працює (перевірено), тож продовжуємо.
                     if (r.Status == DevicePairingResultStatus.Paired && level == DevicePairingProtectionLevel.Encryption)
                     {
-                        Info?.Invoke("connect pair: level None reported, continuing without stricter pairing");
+                        Info?.Invoke("connect pair: level None reported, continuing");
                         return;
                     }
                     if (r.Status == DevicePairingResultStatus.Paired || r.Status == DevicePairingResultStatus.AlreadyPaired)

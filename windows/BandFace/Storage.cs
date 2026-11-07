@@ -52,17 +52,6 @@ namespace BandFace
             catch (Exception) { }
         }
 
-        public static bool LoadFlag(string name)
-        {
-            try { return File.Exists(PathOf(name)); } catch (Exception) { return false; }
-        }
-
-        public static void SaveFlag(string name, bool on)
-        {
-            try { var p = PathOf(name); if (on) File.WriteAllText(p, "1"); else if (File.Exists(p)) File.Delete(p); }
-            catch (Exception) { }
-        }
-
         public static bool LoadDev()
         {
             try { return File.Exists(PathOf("dev.flag")); } catch (Exception) { return false; }
