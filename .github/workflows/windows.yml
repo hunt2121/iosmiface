@@ -7,6 +7,11 @@ on:
         description: "Створити чернетку релізу"
         type: boolean
         default: false
+      app:
+        description: "Що збирати"
+        type: choice
+        options: [bandface, creator]
+        default: bandface
   push:
     branches: [windows]
 
@@ -15,6 +20,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ inputs.app != 'creator' }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,3 +87,59 @@ jobs:
           else
             gh release create "windows-$VER" BandFace-windows.zip --draft --title "Windows build $VER" --notes "Windows" --target "${{ github.sha }}"
           fi
+
+  # BandFace Creator — редактор циферблатів (лише ручний запуск з app=creator)
+  creator:
+    if: ${{ inputs.app == 'creator' }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Compiler tests
+        shell: bash
+        working-directory: windows
+        run: |
+          dotnet test FaceKit.Tests/FaceKit.Tests.csproj -c Release 2>&1 | tee test.log || { grep -E "error [A-Z]+[0-9]+|\[FAIL\]|Assert|Expected|Actual|Exception" test.log | sort -u | head -25 | sed 's/^/::error::/'; exit 1; }
+      - name: Build
+        shell: bash
+        working-directory: windows
+        run: |
+          dotnet build BandFaceCreator/BandFaceCreator.csproj -c Release -p:Version=0.1.${{ github.run_number }} -o creator 2>&1 | tee build.log || { grep -E "error [A-Z]+[0-9]+" build.log | sort -u | head -25 | sed 's/^/::error::/'; exit 1; }
+          grep -E "warning CS" build.log | sort -u | head -15 | sed 's/^/::warning::/' || true
+          ls -l creator
+      - name: Screenshots
+        shell: pwsh
+        run: |
+          function Shot($name, $arg) {
+            $p = Start-Process -FilePath "$PWD\windows\creator\BandFaceCreator.exe" -ArgumentList $arg,"--shot=$PWD\$name.png" -PassThru
+            $p.WaitForExit(40000) | Out-Null
+            if (!$p.HasExited) { Stop-Process $p -Force; Write-Output "::warning::timeout $name" }
+          }
+          $k = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+          New-Item $k -Force | Out-Null
+          Set-ItemProperty $k AppsUseLightTheme 1 -Type DWord
+          Shot "creator-light-editor" "--demo"; Shot "creator-light-faces" "--page=faces"; Shot "creator-light-fonts" "--page=fonts"
+          Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
+          Shot "creator-dark-editor" "--demo"; Shot "creator-dark-bin" "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
+          if (Test-Path "$env:TEMP\bandface-creator-crash.txt") { Write-Output ("::error::" + ((Get-Content "$env:TEMP\bandface-creator-crash.txt" -Raw) -replace "`r?`n"," | ")) }
+          foreach ($t in Get-ChildItem *.png.txt) { Write-Output ("::error::" + ((Get-Content $t -Raw) -replace "`r?`n"," | ")) }
+          $shots = Get-ChildItem creator-*.png | ForEach-Object { $_.Name }
+          Write-Output "shots: $shots"
+          if ($shots) { gh release create "creator-shots-${{ github.run_number }}" @shots --draft --title "Creator shots ${{ github.run_number }}" --notes shots }
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Package
+        shell: pwsh
+        working-directory: windows
+        run: |
+          Compress-Archive -Path creator\* -DestinationPath ..\BandFaceCreator-windows.zip -CompressionLevel Optimal
+          (Get-Item ..\BandFaceCreator-windows.zip).Length
+      - name: Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="0.1.${{ github.run_number }}"
+          gh release create "creator-$VER" BandFaceCreator-windows.zip --draft --title "BandFace Creator $VER" --notes "BandFace Creator (Windows) $VER" --target "${{ github.sha }}"
