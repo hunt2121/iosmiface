@@ -39,6 +39,8 @@ namespace BandFace
         public event Action Restored;
         public event Action<string> Info;
         public string ConnectedName { get; private set; }
+        /// <summary>Скільки байтів даних уміщує один BLE-пакет (20 — старі адаптери, ~180–500 — сучасні).</summary>
+        public int PacketSize => _chunk;
         public bool IsConnected => _tx != null && _dev != null && _dev.ConnectionStatus == BluetoothConnectionStatus.Connected;
 
         public void StartScan(Action<FoundBand> found)

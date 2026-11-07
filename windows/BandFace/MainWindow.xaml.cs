@@ -69,9 +69,10 @@ namespace BandFace
             return new SessionConfig
             {
                 Log = m => Dispatcher.BeginInvoke(new Action(() => AddLog(m))),
-                // повільні адаптери (Bluetooth 4.0, пакет 20 байтів) передають частину файлу кілька секунд:
+                // Сучасний Bluetooth (великий пакет): 3 с, як в iOS-версії.
+                // Повільні адаптери (Bluetooth 4.0, пакет 20 байтів) передають частину файлу кілька секунд:
                 // з 3 с браслет не встигав підтвердити, і повторні надсилання лише гальмували передачу
-                FileAckTimeoutMs = 10000,
+                FileAckTimeoutMs = _ble.PacketSize >= 100 ? 3000 : 10000,
                 OpenParameters = new List<KeyValuePair<int, byte[]>>
                 {
                     kv(1, new byte[] { 0x01, 0x00, 0x00 }), kv(7, new byte[] { 0x1b, 0x02, 0x00 }), kv(2, new byte[] { 0xff, 0xff }),
