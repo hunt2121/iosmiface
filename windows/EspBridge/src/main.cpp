@@ -156,8 +156,15 @@ class ClientCb : public NimBLEClientCallbacks {
     NimBLEAddress id(desc->peer_id_addr);
     idAddr = String(id.toString().c_str());
     idType = id.getType();
+    // який протокол спарювання вийшов: LE Secure Connections (BT 4.2+) чи старий Legacy (BT 4.0)
+    String proto = "?";
+    struct ble_store_key_sec k;
+    memset(&k, 0, sizeof(k));
+    k.peer_addr = desc->peer_id_addr;
+    struct ble_store_value_sec v;
+    if (ble_store_read_peer_sec(&k, &v) == 0) proto = v.sc ? "LE Secure Connections" : "Legacy";
     out("LOG auth encrypted=" + String(desc->sec_state.encrypted) + " bonded=" + String(desc->sec_state.bonded) +
-        " key=" + String(desc->sec_state.key_size) + " id=" + idAddr);
+        " key=" + String(desc->sec_state.key_size) + " pairing=" + proto + " id=" + idAddr);
   }
 };
 static ClientCb clientCb;
