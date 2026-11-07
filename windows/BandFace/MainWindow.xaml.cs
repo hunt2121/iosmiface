@@ -92,6 +92,9 @@ namespace BandFace
         {
             var key = Bytes.ParseHex(KeyBox.Text);
             if (key == null || key.Length != 16 || !_link.IsConnected) return;
+            // Через ESP32 — як в iOS-версії: без окремого входу одразу після підключення;
+            // вхід відбувається вже під час встановлення, в одній сесії з передачею циферблата
+            if (_useBridge) { AddLog("connect: activation skipped (iOS-style, auth at install)"); return; }
             SetStatus(S.Get("phPair"), false);
             var session = new BandSession(_link, NewConfig());
             _session = session;
