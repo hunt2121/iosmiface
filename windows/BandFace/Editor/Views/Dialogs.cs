@@ -167,7 +167,20 @@ namespace BandFace.Creator
             var u = Band10.Untested(p.Root);
             if (u.Count == 0) return true;
             var list = string.Join(", ", u.Select(kv => S.Get(kv.Key == "DataItemText" ? "elText" : "elOther") + " × " + kv.Value));
-            return MessageBox.Show(owner, S.Get("untestedAsk", list), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+            return MessageBox.Show(owner, S.Get("untestedAsk", list), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+        }
+
+        /// <summary>Збирає .bin для встановлення на браслет; null — помилка (показано) або користувач відмовився.</summary>
+        public static byte[] Build(Window owner, FaceProject p)
+        {
+            if (!ConfirmUntested(owner, p)) return null;
+            try { owner.Cursor = Cursors.Wait; return p.Compile().Item1; }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, S.Get("buildFail", ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+            finally { owner.Cursor = null; }
         }
 
         public static void ExportBin(Window owner, FaceProject p)
@@ -177,19 +190,19 @@ namespace BandFace.Creator
             try { owner.Cursor = Cursors.Wait; r = p.Compile(); }
             catch (Exception ex)
             {
-                MessageBox.Show(owner, S.Get("buildFail", ex.Message), "BandFace Creator", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(owner, S.Get("buildFail", ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             finally { owner.Cursor = null; }
             var dlg = new SaveFileDialog { FileName = SafeName(p.DisplayName) + ".bin", Filter = S.Get("binFilter") + "|*.bin", DefaultExt = ".bin" };
             if (dlg.ShowDialog(owner) != true) return;
             try { File.WriteAllBytes(dlg.FileName, r.Item1); }
-            catch (Exception ex) { MessageBox.Show(owner, ex.Message, "BandFace Creator", MessageBoxButton.OK, MessageBoxImage.Error); return; }
+            catch (Exception ex) { MessageBox.Show(owner, ex.Message, "BandFace", MessageBoxButton.OK, MessageBoxImage.Error); return; }
             // однакові імена — це кольорові варіанти однієї картинки, так і має бути
             var shown = r.Item2.Where(w => !w.Contains("same name")).Take(5).ToList();
             var msg = S.Get("saved", Path.GetFileName(dlg.FileName), (r.Item1.Length + 1023) / 1024);
             if (shown.Count > 0) msg += "\n\n" + S.Get("warnings") + "\n" + string.Join("\n", shown);
-            MessageBox.Show(owner, msg, "BandFace Creator", MessageBoxButton.OK, shown.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+            MessageBox.Show(owner, msg, "BandFace", MessageBoxButton.OK, shown.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
         }
 
         /// <summary>Додає файли шрифтів у бібліотеку; повертає назви нових сімейств</summary>
@@ -201,9 +214,9 @@ namespace BandFace.Creator
             foreach (var f in dlg.FileNames)
             {
                 try { added.AddRange(FontLibrary.Add(f)); }
-                catch (Exception ex) { MessageBox.Show(owner, S.Get("fontFail", Path.GetFileName(f), ex.Message), "BandFace Creator"); }
+                catch (Exception ex) { MessageBox.Show(owner, S.Get("fontFail", Path.GetFileName(f), ex.Message), "BandFace"); }
             }
-            if (added.Count == 0 && dlg.FileNames.Length > 0) MessageBox.Show(owner, S.Get("fontKnown"), "BandFace Creator");
+            if (added.Count == 0 && dlg.FileNames.Length > 0) MessageBox.Show(owner, S.Get("fontKnown"), "BandFace");
             return added;
         }
     }

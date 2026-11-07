@@ -7,14 +7,19 @@ using Microsoft.Win32;
 
 namespace BandFace
 {
-    /// <summary>Світла/темна тема за налаштуваннями Windows.</summary>
+    /// <summary>Світла/темна тема: за Windows або вибрана в Налаштуваннях (system / light / dark).</summary>
     static class Theme
     {
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+        /// <summary>"system", "light" або "dark".</summary>
+        public static string Mode = "system";
+
         public static bool SystemIsDark()
         {
+            if (Mode == "dark") return true;
+            if (Mode == "light") return false;
             try
             {
                 using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
@@ -44,15 +49,25 @@ namespace BandFace
             r["Ok"] = B(dark ? "#6CCB6C" : "#107C10");
             r["Err"] = B(dark ? "#FF8A80" : "#B3261E");
             r["Field"] = B(dark ? "#323232" : "#FFFFFF");
-            if (window != null)
-            {
-                var h = new WindowInteropHelper(window).Handle;
-                if (h != IntPtr.Zero)
-                {
-                    int v = dark ? 1 : 0;
-                    DwmSetWindowAttribute(h, 20, ref v, 4);
-                }
-            }
+            // редактор
+            r["Workspace"] = B(dark ? "#1A1A1A" : "#E9E9EB");
+            r["Select"] = B(dark ? "#4C8DFF" : "#2563EB");
+            r["Guide"] = B("#FF2D78");
+            // тонкі смуги прокрутки як у Windows 11
+            r["ScrollThumb"] = B(dark ? "#8C8C8C" : "#8A8A8A");
+            // підказка «Незабаром» і бічна панель-шторка
+            r["Chip"] = B(dark ? "#3A3A3A" : "#EAEAEA");
+            r["Shade"] = B(dark ? "#000000" : "#000000");
+            if (window != null) TitleBar(window, dark);
+            foreach (Window w in Application.Current.Windows) if (w != window) TitleBar(w, dark);
+        }
+
+        static void TitleBar(Window window, bool dark)
+        {
+            var h = new WindowInteropHelper(window).Handle;
+            if (h == IntPtr.Zero) return;
+            int v = dark ? 1 : 0;
+            DwmSetWindowAttribute(h, 20, ref v, 4);
         }
     }
 }

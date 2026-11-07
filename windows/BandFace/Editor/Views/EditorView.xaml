@@ -13,7 +13,8 @@
         <Button x:Name="RedoBtn" Style="{StaticResource IconBtn}" Content="&#xE7A6;" Margin="6,0,0,0" Click="Redo_Click"/>
         <ComboBox x:Name="ScreenBox" Width="190" Margin="14,0,0,0" SelectionChanged="Screen_Changed"/>
         <Button x:Name="PreviewBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Preview_Click"/>
-        <Button x:Name="ExportBtn" Style="{StaticResource PrimaryBtn}" Margin="10,0,0,0" Click="Export_Click"/>
+        <Button x:Name="ExportBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="Export_Click"/>
+        <Button x:Name="InstallBtn" Style="{StaticResource PrimaryBtn}" Margin="10,0,0,0" Click="Install_Click"/>
       </StackPanel>
       <StackPanel Orientation="Vertical" Margin="14,0,0,0" VerticalAlignment="Center">
         <TextBlock x:Name="NameText" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Cursor="Hand" MouseLeftButtonUp="Name_Click"/>

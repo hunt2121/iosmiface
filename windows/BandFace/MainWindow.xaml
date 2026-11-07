@@ -1,163 +1,294 @@
 <Window x:Class="BandFace.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BandFace" Width="980" Height="640" MinWidth="760" MinHeight="520"
-        Background="{DynamicResource Bg}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True">
-  <Grid>
-    <Grid.ColumnDefinitions><ColumnDefinition Width="228"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        xmlns:creator="clr-namespace:BandFace.Creator"
+        Title="BandFace" Width="1240" Height="800" MinWidth="1000" MinHeight="640"
+        Background="{DynamicResource Bg}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        AllowDrop="True" Icon="Assets/app.ico">
+  <Window.Resources>
+    <!-- Рядок налаштувань (як у списках iOS): уся ширина, підсвічування під мишею -->
+    <Style x:Key="RowBtn" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="b" Background="Transparent" CornerRadius="6" Padding="10,8">
+              <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="{DynamicResource NavSel}"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- Кольорова плитка зі значком (як в iOS) -->
+    <Style x:Key="Tile" TargetType="Border">
+      <Setter Property="Width" Value="28"/>
+      <Setter Property="Height" Value="28"/>
+      <Setter Property="CornerRadius" Value="7"/>
+      <Setter Property="Margin" Value="0,0,14,0"/>
+    </Style>
+    <Style x:Key="TileGlyph" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="NavGlyph" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="TextAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+    </Style>
+    <Style x:Key="NavText" TargetType="TextBlock">
+      <Setter Property="Margin" Value="14,0,0,0"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+    </Style>
+  </Window.Resources>
 
-    <DockPanel Margin="10,8">
-      <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6">
-        <TextBlock.Foreground><StaticResource ResourceKey="Sub"/></TextBlock.Foreground>
-      </TextBlock>
-      <StackPanel>
-        <RadioButton x:Name="NavFaces" Style="{StaticResource Nav}" IsChecked="True" GroupName="nav" Checked="Nav_Checked">
-          <StackPanel Orientation="Horizontal"><Viewbox Width="20" Height="20"><Canvas Width="30" Height="30">
+  <Grid>
+    <!-- Вміст вкладок; лівий відступ = ширина бічного меню (228 або 56 у редакторі) -->
+    <Grid x:Name="ContentHost" Margin="228,0,0,0">
+      <Grid x:Name="PagesHost" Margin="26,6,36,0">
+
+        <!-- Циферблати -->
+        <ScrollViewer x:Name="PageFaces" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,0,0,24">
+            <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
+            <!-- Немає ключа: як в iOS, кнопка веде в Налаштування → Ключ -->
+            <Border x:Name="KeyNotice" Style="{StaticResource CardBox}" Visibility="Collapsed">
+              <StackPanel>
+                <TextBlock x:Name="KeyNoticeLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <Button x:Name="AddKeyBtn" Style="{StaticResource PrimaryBtn}" Height="34" Padding="18,0" HorizontalAlignment="Left" Click="AddKey_Click"/>
+                <TextBlock x:Name="KeyNoticeText" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBox}">
+              <StackPanel>
+                <TextBlock x:Name="BandLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <Grid x:Name="BandConnected" Visibility="Collapsed">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock x:Name="BandName" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="BandStatus" FontSize="12" Foreground="{DynamicResource Ok}"/>
+                  </StackPanel>
+                  <Button x:Name="DisconnectBtn" Grid.Column="1" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Disconnect_Click"/>
+                </Grid>
+                <StackPanel x:Name="BandIdle">
+                  <TextBlock x:Name="BandNone" FontSize="16" Margin="0,0,0,10"/>
+                  <Button x:Name="ScanBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" HorizontalAlignment="Left" Click="Scan_Click"/>
+                  <StackPanel x:Name="DeviceList" Margin="0,10,0,0"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBox}">
+              <StackPanel>
+                <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                  <Border x:Name="Capsule" Width="96" Height="236" CornerRadius="48" Background="#222222" BorderBrush="#8A8A8A" BorderThickness="3">
+                    <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
+                    <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="FaceInfo" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+                    <Grid Margin="0,18,0,0">
+                      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                      <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
+                      <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
+                    </Grid>
+                    <Grid Margin="0,20,0,0" MinHeight="34">
+                      <StackPanel x:Name="ProgressPanel" Visibility="Collapsed">
+                        <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
+                        <Grid Margin="0,6,0,0">
+                          <TextBlock x:Name="ProgressText" FontSize="12" Foreground="{DynamicResource Sub}"/>
+                          <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource Sub}"/>
+                        </Grid>
+                      </StackPanel>
+                      <TextBlock x:Name="StatusText" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Налаштування -->
+        <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+          <StackPanel Margin="0,0,0,24">
+            <TextBlock x:Name="TitleSettings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
+            <Border Style="{StaticResource CardBox}" Padding="8,12">
+              <StackPanel>
+                <TextBlock x:Name="DeviceSectionLabel" FontSize="13" Margin="10,0,0,6" Foreground="{DynamicResource Sub}"/>
+                <Button Style="{StaticResource RowBtn}" Click="OpenKey_Click">
+                  <DockPanel>
+                    <Border Style="{StaticResource Tile}" Background="#E8A400"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE192;"/></Border>
+                    <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11" VerticalAlignment="Center" Margin="12,0,4,0" Foreground="{DynamicResource Sub}"/>
+                    <TextBlock x:Name="KeyStateIcon" DockPanel.Dock="Right" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="RowKeyText" FontSize="14" VerticalAlignment="Center"/>
+                  </DockPanel>
+                </Button>
+                <Button Style="{StaticResource RowBtn}" Click="OpenLog_Click">
+                  <DockPanel>
+                    <Border Style="{StaticResource Tile}" Background="#6B7A90"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE8A5;"/></Border>
+                    <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11" VerticalAlignment="Center" Margin="12,0,4,0" Foreground="{DynamicResource Sub}"/>
+                    <TextBlock x:Name="RowLogText" FontSize="14" VerticalAlignment="Center"/>
+                  </DockPanel>
+                </Button>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBox}" Padding="8,12">
+              <StackPanel>
+                <TextBlock x:Name="AppSectionLabel" FontSize="13" Margin="10,0,0,6" Foreground="{DynamicResource Sub}"/>
+                <DockPanel Margin="10,6">
+                  <Border Style="{StaticResource Tile}" Background="#5B5FC7"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE790;"/></Border>
+                  <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" Width="200" SelectionChanged="Theme_Changed"/>
+                  <TextBlock x:Name="RowThemeText" FontSize="14" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Margin="10,6">
+                  <Border Style="{StaticResource Tile}" Background="#2D8FD5"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE774;"/></Border>
+                  <ComboBox x:Name="LangBox" DockPanel.Dock="Right" Width="200" SelectionChanged="Lang_Changed"/>
+                  <TextBlock x:Name="RowLangText" FontSize="14" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Margin="10,6">
+                  <Border Style="{StaticResource Tile}" Background="#8A8A8A"><TextBlock Style="{StaticResource TileGlyph}" Text="&#xE946;"/></Border>
+                  <TextBlock x:Name="VersionValue" DockPanel.Dock="Right" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource Sub}" Margin="0,0,4,0"/>
+                  <TextBlock x:Name="RowVersionText" FontSize="14" VerticalAlignment="Center"/>
+                </DockPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Налаштування → Ключ -->
+        <ScrollViewer x:Name="PageKey" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+          <StackPanel Margin="0,0,0,24">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+              <Button x:Name="KeyBackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" VerticalAlignment="Center" Click="SettingsBack_Click"/>
+              <TextBlock x:Name="TitleKey" FontSize="28" FontWeight="SemiBold" Margin="14,0,0,0"/>
+            </StackPanel>
+            <Border Style="{StaticResource CardBox}">
+              <StackPanel>
+                <TextBlock x:Name="CloudLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button x:Name="CloudBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Cloud_Click"/>
+                  <Button x:Name="CloudCancelBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Visibility="Collapsed" Click="CloudCancel_Click"/>
+                </StackPanel>
+                <Image x:Name="QrImage" Width="220" Height="220" HorizontalAlignment="Left" Margin="0,14,0,0" Visibility="Collapsed" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                <TextBlock x:Name="CloudStatus" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" Foreground="{DynamicResource Sub}"/>
+                <StackPanel x:Name="CloudDevices" Margin="0,8,0,0"/>
+                <TextBlock x:Name="CloudNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardBox}">
+              <StackPanel>
+                <TextBlock x:Name="KeyLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <TextBox x:Name="KeyBox" Height="36" FontFamily="Consolas" FontSize="14" TextChanged="KeyBox_TextChanged"/>
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                  <Button x:Name="PasteBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Paste_Click"/>
+                  <Button x:Name="FromFileBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Click="FromFile_Click"/>
+                  <TextBlock x:Name="KeyMessage" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource Ok}"/>
+                </StackPanel>
+                <TextBlock x:Name="KeyNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Налаштування → Журнал -->
+        <ScrollViewer x:Name="PageLog" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+          <StackPanel Margin="0,0,0,24">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+              <Button x:Name="LogBackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" VerticalAlignment="Center" Click="SettingsBack_Click"/>
+              <TextBlock x:Name="TitleLog" FontSize="28" FontWeight="SemiBold" Margin="14,0,0,0"/>
+            </StackPanel>
+            <Border Style="{StaticResource CardBox}">
+              <StackPanel>
+                <TextBlock x:Name="ActivityLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <Grid>
+                  <TextBlock x:Name="DevLabel" FontSize="14" VerticalAlignment="Center"/>
+                  <CheckBox x:Name="DevSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" Click="Dev_Click"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,14">
+                  <Button x:Name="CopyBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Copy_Click"/>
+                  <Button x:Name="ClearBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Foreground="{DynamicResource Err}" Click="Clear_Click"/>
+                  <Button x:Name="LogFileBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Click="LogFile_Click"/>
+                </StackPanel>
+                <TextBlock x:Name="LogText" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+
+      <!-- Редактор (колишній BandFace Creator): свої відступи, на всю ширину вкладки -->
+      <creator:CreatorView x:Name="EditorTab" Visibility="Collapsed"/>
+    </Grid>
+
+    <!-- Затемнення під розгорнутим меню в редакторі: клік — згорнути -->
+    <Border x:Name="Shade" Background="#40000000" Visibility="Collapsed" MouseLeftButtonDown="Shade_MouseDown"/>
+
+    <!-- Бічне меню: 228 px; у редакторі — смуга іконок 56 px, «☰» розгортає поверх -->
+    <Border x:Name="Sidebar" Width="228" HorizontalAlignment="Left" Background="{DynamicResource Bg}">
+      <DockPanel Margin="10,8">
+        <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
+        <StackPanel>
+          <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="36" Height="36" BorderThickness="0" Background="Transparent"
+                  HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click"/>
+          <RadioButton x:Name="NavFaces" Style="{StaticResource Nav}" IsChecked="True" GroupName="nav" Checked="Nav_Checked">
+            <StackPanel Orientation="Horizontal"><Viewbox Width="20" Height="20"><Canvas Width="30" Height="30">
 <Path Data="F0 M13.35,0.5 H16.65 A1.6,1.6 0 0 1 18.25,2.1 V4.4 A1.6,1.6 0 0 1 16.65,6 H13.35 A1.6,1.6 0 0 1 11.75,4.4 V2.1 A1.6,1.6 0 0 1 13.35,0.5 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
 <Path Data="F0 M13.35,24 H16.65 A1.6,1.6 0 0 1 18.25,25.6 V27.9 A1.6,1.6 0 0 1 16.65,29.5 H13.35 A1.6,1.6 0 0 1 11.75,27.9 V25.6 A1.6,1.6 0 0 1 13.35,24 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
 <Path Data="F0 M15.0,3 H15.0 A5.75,5.75 0 0 1 20.75,8.75 V21.25 A5.75,5.75 0 0 1 15.0,27 H15.0 A5.75,5.75 0 0 1 9.25,21.25 V8.75 A5.75,5.75 0 0 1 15.0,3 Z M15,4.75 H15 A4,4 0 0 1 19,8.75 V21.25 A4,4 0 0 1 15,25.25 H15 A4,4 0 0 1 11,21.25 V8.75 A4,4 0 0 1 15,4.75 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-</Canvas></Viewbox><TextBlock x:Name="NavFacesText" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
-        </RadioButton>
-        <RadioButton x:Name="NavKey" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
-          <StackPanel Orientation="Horizontal"><Viewbox Width="20" Height="20"><Canvas Width="30" Height="30">
-<Path Data="F0 M8.6,8.3 A6.4,6.4 0 1 0 21.4,8.3 A6.4,6.4 0 1 0 8.6,8.3 Z M10.8,8.3 A4.2,4.2 0 1 0 19.2,8.3 A4.2,4.2 0 1 0 10.8,8.3 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F1 M15.0,13.6 H15.0 A1.2,1.2 0 0 1 16.2,14.799999999999999 V27.2 A1.2,1.2 0 0 1 15.0,28.4 H15.0 A1.2,1.2 0 0 1 13.8,27.2 V14.799999999999999 A1.2,1.2 0 0 1 15.0,13.6 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F1 M16.2,19.6 H19.400000000000002 A1.2,1.2 0 0 1 20.6,20.8 V20.8 A1.2,1.2 0 0 1 19.400000000000002,22.0 H16.2 A1.2,1.2 0 0 1 15,20.8 V20.8 A1.2,1.2 0 0 1 16.2,19.6 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F1 M16.2,24.0 H18.2 A1.2,1.2 0 0 1 19.4,25.2 V25.2 A1.2,1.2 0 0 1 18.2,26.4 H16.2 A1.2,1.2 0 0 1 15,25.2 V25.2 A1.2,1.2 0 0 1 16.2,24.0 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-</Canvas></Viewbox><TextBlock x:Name="NavKeyText" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
-        </RadioButton>
-        <RadioButton x:Name="NavLog" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
-          <StackPanel Orientation="Horizontal"><Viewbox Width="20" Height="20"><Canvas Width="30" Height="30">
-<Path Data="F0 M7.5,3.9 H22.5 A4.6,4.6 0 0 1 27.1,8.5 V21.5 A4.6,4.6 0 0 1 22.5,26.1 H7.5 A4.6,4.6 0 0 1 2.9,21.5 V8.5 A4.6,4.6 0 0 1 7.5,3.9 Z M7.5,6.1 H22.5 A2.4,2.4 0 0 1 24.9,8.5 V21.5 A2.4,2.4 0 0 1 22.5,23.9 H7.5 A2.4,2.4 0 0 1 5.1,21.5 V8.5 A2.4,2.4 0 0 1 7.5,6.1 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F0 M10.1,9.9 H19.9 A1.1,1.1 0 0 1 21,11.0 V11.0 A1.1,1.1 0 0 1 19.9,12.1 H10.1 A1.1,1.1 0 0 1 9,11.0 V11.0 A1.1,1.1 0 0 1 10.1,9.9 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F0 M10.1,13.9 H19.9 A1.1,1.1 0 0 1 21,15.0 V15.000000000000002 A1.1,1.1 0 0 1 19.9,16.1 H10.1 A1.1,1.1 0 0 1 9,15.000000000000002 V15.0 A1.1,1.1 0 0 1 10.1,13.9 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-<Path Data="F0 M10.1,17.9 H15.9 A1.1,1.1 0 0 1 17,19.0 V19.0 A1.1,1.1 0 0 1 15.9,20.1 H10.1 A1.1,1.1 0 0 1 9,19.0 V19.0 A1.1,1.1 0 0 1 10.1,17.9 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="0.9" StrokeLineJoin="Round"/>
-</Canvas></Viewbox><TextBlock x:Name="NavLogText" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></StackPanel>
-        </RadioButton>
-      </StackPanel>
-    </DockPanel>
-
-    <Grid Grid.Column="1" Margin="26,6,36,0">
-      <!-- Циферблати -->
-      <ScrollViewer x:Name="PageFaces" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,0,24">
-          <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="BandLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <Grid x:Name="BandConnected" Visibility="Collapsed">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <StackPanel>
-                  <TextBlock x:Name="BandName" FontSize="16" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock x:Name="BandStatus" FontSize="12" Foreground="{DynamicResource Ok}"/>
-                </StackPanel>
-                <Button x:Name="DisconnectBtn" Grid.Column="1" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Disconnect_Click"/>
-              </Grid>
-              <StackPanel x:Name="BandIdle">
-                <TextBlock x:Name="BandNone" FontSize="16" Margin="0,0,0,10"/>
-                <Button x:Name="ScanBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" HorizontalAlignment="Left" Click="Scan_Click"/>
-                <StackPanel x:Name="DeviceList" Margin="0,10,0,0"/>
-              </StackPanel>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Border x:Name="Capsule" Width="96" Height="236" CornerRadius="48" Background="#222222" BorderBrush="#8A8A8A" BorderThickness="3">
-                  <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
-                </Border>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
-                  <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock x:Name="FaceInfo" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                  <Grid Margin="0,18,0,0">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <Button x:Name="PickBtn" Style="{StaticResource Btn}" Click="Pick_Click"/>
-                    <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Click="Install_Click"/>
-                  </Grid>
-                  <Grid Margin="0,20,0,0" Height="34">
-                    <StackPanel x:Name="ProgressPanel" Visibility="Collapsed">
-                      <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
-                      <Grid Margin="0,6,0,0">
-                        <TextBlock x:Name="ProgressText" FontSize="12" Foreground="{DynamicResource Sub}"/>
-                        <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource Sub}"/>
-                      </Grid>
-                    </StackPanel>
-                    <TextBlock x:Name="StatusText" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top"/>
-                  </Grid>
-                </StackPanel>
-              </Grid>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-      </ScrollViewer>
-
-      <!-- Ключ -->
-      <ScrollViewer x:Name="PageKey" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-        <StackPanel Margin="0,0,0,24">
-          <TextBlock x:Name="TitleKey" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="CloudLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <StackPanel Orientation="Horizontal">
-                <Button x:Name="CloudBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Cloud_Click"/>
-                <Button x:Name="CloudCancelBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Visibility="Collapsed" Click="CloudCancel_Click"/>
-              </StackPanel>
-              <Image x:Name="QrImage" Width="220" Height="220" HorizontalAlignment="Left" Margin="0,14,0,0" Visibility="Collapsed" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-              <TextBlock x:Name="CloudStatus" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" Foreground="{DynamicResource Sub}"/>
-              <StackPanel x:Name="CloudDevices" Margin="0,8,0,0"/>
-              <TextBlock x:Name="CloudNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="KeyLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <Border BorderBrush="{DynamicResource BtnBorder}" BorderThickness="1" CornerRadius="5" Background="{DynamicResource Field}">
-                <TextBox x:Name="KeyBox" Height="36" Padding="10,0" FontFamily="Consolas" FontSize="14" BorderThickness="0" Background="Transparent" Foreground="{DynamicResource Text}" CaretBrush="{DynamicResource Text}" VerticalContentAlignment="Center" TextChanged="KeyBox_TextChanged"/>
+</Canvas></Viewbox><TextBlock x:Name="NavFacesText" Style="{StaticResource NavText}"/></StackPanel>
+          </RadioButton>
+          <!-- Магазин: поки сірий і неактивний -->
+          <RadioButton x:Name="NavStore" Style="{StaticResource Nav}" GroupName="nav" IsEnabled="False" ToolTipService.ShowOnDisabled="True">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE719;"/>
+              <TextBlock x:Name="NavStoreText" Style="{StaticResource NavText}"/>
+              <Border x:Name="StoreChip" Background="{DynamicResource Chip}" CornerRadius="9" Padding="7,0" Margin="10,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="StoreChipText" FontSize="11" Foreground="{DynamicResource Sub}"/>
               </Border>
-              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                <Button x:Name="PasteBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Paste_Click"/>
-                <Button x:Name="FromFileBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Click="FromFile_Click"/>
-                <TextBlock x:Name="KeyMessage" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource Ok}"/>
-              </StackPanel>
-              <TextBlock x:Name="KeyNote" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
             </StackPanel>
-          </Border>
-        </StackPanel>
-      </ScrollViewer>
-
-      <!-- Журнал -->
-      <ScrollViewer x:Name="PageLog" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-        <StackPanel Margin="0,0,0,24">
-          <TextBlock x:Name="TitleLog" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="ActivityLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+          </RadioButton>
+          <RadioButton x:Name="NavEditor" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE70F;"/>
+              <TextBlock x:Name="NavEditorText" Style="{StaticResource NavText}"/>
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="NavSettings" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
+            <StackPanel Orientation="Horizontal">
               <Grid>
-                <TextBlock x:Name="DevLabel" FontSize="14" VerticalAlignment="Center"/>
-                <CheckBox x:Name="DevSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" Click="Dev_Click"/>
+                <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE713;"/>
+                <!-- немає ключа — червоний «!» на значку, як в iOS -->
+                <Border x:Name="KeyBadge" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource Err}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-7,0" Visibility="Collapsed">
+                  <TextBlock Text="!" FontSize="10" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                </Border>
               </Grid>
-              <StackPanel Orientation="Horizontal" Margin="0,14,0,14">
-                <Button x:Name="CopyBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Click="Copy_Click"/>
-                <Button x:Name="ClearBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Foreground="{DynamicResource Err}" Click="Clear_Click"/>
-                <Button x:Name="LogFileBtn" Style="{StaticResource Btn}" Height="34" Padding="18,0" Margin="10,0,0,0" Click="LogFile_Click"/>
-              </StackPanel>
-              <TextBlock x:Name="LogText" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              <TextBlock x:Name="NavSettingsText" Style="{StaticResource NavText}"/>
             </StackPanel>
-          </Border>
-          <Border Style="{StaticResource CardBox}">
-            <StackPanel>
-              <TextBlock x:Name="VersionLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-              <StackPanel Orientation="Horizontal">
-                <Image Source="Assets/app.ico" Width="40" Height="40"/>
-                <TextBlock x:Name="VersionCard" FontSize="14" VerticalAlignment="Center" Margin="12,0,0,0"/>
-              </StackPanel>
-            </StackPanel>
-          </Border>
+          </RadioButton>
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
+      </DockPanel>
+    </Border>
+
+    <!-- Підказка під час перетягування файла у вікно -->
+    <Border x:Name="DropHint" Background="#99000000" Visibility="Collapsed" IsHitTestVisible="False">
+      <Border Background="{DynamicResource Card}" CornerRadius="10" Padding="28,20" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock x:Name="DropText" FontSize="16" FontWeight="SemiBold"/>
+      </Border>
+    </Border>
   </Grid>
 </Window>

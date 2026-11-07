@@ -65,19 +65,31 @@ namespace BandFace
             _watcher = null;
         }
 
-        public async Task ConnectAsync(ulong address)
+        /// <param name="reusePairing">Автопідключення: якщо браслет уже спарений, спершу пробуємо наявне спарювання
+        /// (без запиту на браслеті); не вийшло — спарюємо наново, як під час ручного підключення.</param>
+        public async Task ConnectAsync(ulong address, bool reusePairing = false)
         {
             Disconnect();
             _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
             if (_dev == null) throw new BandException(ErrorKind.NotConnected);
-            await EnsurePaired(address);
-            // Одразу після нового спарювання Windows іноді ще не готовий (E_UNEXPECTED) — одна повторна спроба
-            try { await OpenGatt(); }
-            catch (Exception ex) when (!(ex is BandException))
+            bool ready = false;
+            if (reusePairing && _dev.DeviceInformation.Pairing.IsPaired)
             {
-                Info?.Invoke("connect gatt: " + ex.Message + " — retrying");
-                await Task.Delay(1500);
-                await OpenGatt();
+                try { await OpenGatt(); ready = true; Info?.Invoke("connect: using existing pairing"); }
+                catch (BandException be) when (be.Kind == ErrorKind.NotConnected) { throw; }
+                catch (Exception ex) { Info?.Invoke("connect existing pairing: " + ex.Message + " — pairing again"); }
+            }
+            if (!ready)
+            {
+                await EnsurePaired(address);
+                // Одразу після нового спарювання Windows іноді ще не готовий (E_UNEXPECTED) — одна повторна спроба
+                try { await OpenGatt(); }
+                catch (Exception ex) when (!(ex is BandException))
+                {
+                    Info?.Invoke("connect gatt: " + ex.Message + " — retrying");
+                    await Task.Delay(1500);
+                    await OpenGatt();
+                }
             }
             try
             {
@@ -102,6 +114,8 @@ namespace BandFace
             if (_rx != null) { try { _rx.ValueChanged -= OnValue; } catch (Exception) { } }
             _rx = null; _tx = null;
             var svc = await _dev.GetGattServicesForUuidAsync(Service, BluetoothCacheMode.Uncached);
+            // браслета просто немає поруч — це не привід чіпати спарювання
+            if (svc.Status == GattCommunicationStatus.Unreachable) throw new BandException(ErrorKind.NotConnected, "unreachable");
             if (svc.Status != GattCommunicationStatus.Success || svc.Services.Count == 0) throw new BandException(ErrorKind.CharacteristicNotFound);
             var s = svc.Services[0];
             var rx = await s.GetCharacteristicsForUuidAsync(RxUuid, BluetoothCacheMode.Uncached);
@@ -110,7 +124,7 @@ namespace BandFace
             _rx = rx.Characteristics[0];
             _rx.ValueChanged += OnValue;
             var st = await _rx.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
-            if (st != GattCommunicationStatus.Success) throw new BandException(ErrorKind.NotConnected, "notify");
+            if (st != GattCommunicationStatus.Success) throw new InvalidOperationException("notify: " + st);   // зазвичай — застаріле спарювання
             _tx = tx.Characteristics[0];
         }
 

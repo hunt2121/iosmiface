@@ -124,7 +124,7 @@ namespace BandFace.Creator
                 Add(Ui.Button(theme == 0 ? S.Get("goAod") : S.Get("goMain"), () => ShowTheme(theme == 0 ? 1 : 0)));
                 Add(Ui.Button(S.Get("deleteAod"), () =>
                 {
-                    if (MessageBox.Show(Owner, S.Get("deleteAodAsk"), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                    if (MessageBox.Show(Owner, S.Get("deleteAodAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                     theme = 0;
                     project.Edit(p => ElementFactory.DeleteTheme(p, 1));
                 }, "DangerBtn"));

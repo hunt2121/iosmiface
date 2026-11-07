@@ -34,6 +34,8 @@ namespace BandFace.Creator
         bool moved, guideV, guideH;
 
         public event Action BackRequested;
+        /// <summary>«Встановити на браслет»: зібраний .bin і назва; встановлює BandFace звичним шляхом.</summary>
+        public event Action<byte[], string> InstallRequested;
         public FaceProject Project => project;
 
         public EditorView()
@@ -53,6 +55,7 @@ namespace BandFace.Creator
             RedoBtn.ToolTip = S.Get("redo") + " (Ctrl+Y)";
             PreviewBtn.Content = S.Get("preview");
             ExportBtn.Content = S.Get("exportBin");
+            InstallBtn.Content = S.Get("installBand");
             LayersTitle.Text = S.Get("layers");
             AddBtn.Content = "+ " + S.Get("add");
             UpBtn.ToolTip = S.Get("layerUp") + " (Ctrl+])";
@@ -551,7 +554,7 @@ namespace BandFace.Creator
             foreach (var f in dlg.FileNames.OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase))
             {
                 try { o.Add(Imaging.Load(f, maxSide)); }
-                catch (Exception ex) { MessageBox.Show(Owner, S.Get("imageFail", System.IO.Path.GetFileName(f), ex.Message), "BandFace Creator"); }
+                catch (Exception ex) { MessageBox.Show(Owner, S.Get("imageFail", System.IO.Path.GetFileName(f), ex.Message), "BandFace"); }
             }
             return o;
         }
@@ -608,6 +611,13 @@ namespace BandFace.Creator
         void Export_Click(object sender, RoutedEventArgs e)
         {
             if (project != null) Actions.ExportBin(Owner, project);
+        }
+
+        void Install_Click(object sender, RoutedEventArgs e)
+        {
+            if (project == null) return;
+            var bin = Actions.Build(Owner, project);
+            if (bin != null) InstallRequested?.Invoke(bin, project.DisplayName);
         }
     }
 

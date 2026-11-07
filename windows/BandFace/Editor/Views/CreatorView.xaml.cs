@@ -1,125 +1,100 @@
 // SPDX-License-Identifier: MIT
-// Головне вікно BandFace Creator: список циферблатів (проєктів), редактор, бібліотека шрифтів.
-// .bin / .face відкриваються з меню, з командного рядка (подвійний клік у Провіднику) і перетягуванням у вікно.
+// Вкладка «Редактор» BandFace: список циферблатів (проєктів), редактор, бібліотека шрифтів.
+// Колишнє головне вікно BandFace Creator; відкриття файлів і перетягування обробляє головне вікно BandFace.
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
 
 namespace BandFace.Creator
 {
-    public partial class MainWindow : Window
+    public partial class CreatorView : UserControl
     {
         readonly ProjectStore store = new ProjectStore();
         /// <summary>Мініатюри карток: ключ — проєкт і його версія (перемальовуються лише після змін)</summary>
         readonly Dictionary<string, ImageSource> thumbs = new Dictionary<string, ImageSource>();
 
-        public MainWindow(string[] args)
+        /// <summary>Редактор відкрито (true) чи закрито (false) — головне вікно згортає бічне меню.</summary>
+        public event Action<bool> EditorShownChanged;
+        /// <summary>«Встановити на браслет» у редакторі: .bin і назва.</summary>
+        public event Action<byte[], string> InstallRequested;
+
+        public bool EditorShown => Editor.Visibility == Visibility.Visible;
+        Window Owner => Window.GetWindow(this);
+
+        public CreatorView()
         {
             InitializeComponent();
-            var v = Assembly.GetExecutingAssembly().GetName().Version;
-            VersionText.Text = "v" + v.Major + "." + v.Minor + "." + v.Build;
             ApplyTexts();
-            Editor.BackRequested += () => NavFaces.IsChecked = true;
+            Editor.BackRequested += ShowList;
+            Editor.InstallRequested += (bin, name) => InstallRequested?.Invoke(bin, name);
             RefreshProjects();
-            SourceInitialized += (s, e) => Theme.Apply(this);
-            SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(() => Theme.Apply(this)));
-            PreviewKeyDown += Window_PreviewKeyDown;
-            DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
-            Drop += Window_Drop;
-
-            string shot = null;
-            foreach (var a in args)
-            {
-                if (a.StartsWith("--shot=")) shot = a.Substring(7);
-                else if (a == "--demo") OpenProject(store.Create(S.Get("newFaceName"), DeviceProfile.Band10));
-                else if (a == "--page=fonts") NavFonts.IsChecked = true;
-                else if (!a.StartsWith("--") && File.Exists(a)) OpenFile(a);
-            }
-            if (shot != null)
-                ContentRendered += async (s, e) =>
-                {
-                    await Task.Delay(1500);
-                    try { SaveShot(shot); } catch (Exception ex) { File.WriteAllText(shot + ".txt", ex.ToString()); }
-                    Application.Current.Shutdown();
-                };
         }
 
         void ApplyTexts()
         {
-            NavFacesText.Text = TitleFaces.Text = S.Get("faces");
-            NavEditorText.Text = S.Get("editor");
-            NavFontsText.Text = TitleFonts.Text = S.Get("fonts");
+            TitleFaces.Text = S.Get("editor");
+            FontsBtn.Content = S.Get("fonts");
+            TitleFonts.Text = S.Get("fonts");
             NewBtn.Content = S.Get("newFace");
             OpenBinBtn.Content = S.Get("openBin");
             OpenFolderBtn.Content = S.Get("openFolder");
             FacesHint.Text = S.Get("facesHint");
             EmptyTitle.Text = S.Get("emptyTitle");
             EmptyText.Text = S.Get("emptyText");
-            DropText.Text = S.Get("dropHint");
             AddFontBtn.Content = S.Get("addFont");
+            FontsBackBtn.ToolTip = S.Get("back");
             FontsLabel.Text = S.Get("userFonts").ToUpper();
             FontsNote.Text = S.Get("userFontsNote");
             SysFontsLabel.Text = S.Get("sysFonts").ToUpper();
             FontSearch.ToolTip = S.Get("searchFonts");
         }
 
-        void SaveShot(string path)
+        // MARK: Сторінки
+
+        void Show(FrameworkElement page)
         {
-            var root = (FrameworkElement)Content;
-            int w = (int)root.ActualWidth, h = (int)root.ActualHeight;
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                dc.DrawRectangle((Brush)FindResource("Bg"), null, new Rect(0, 0, w, h));
-                dc.DrawRectangle(new VisualBrush(root), null, new Rect(0, 0, w, h));
-            }
-            var bmp = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
-            bmp.Render(dv);
-            var enc = new PngBitmapEncoder();
-            enc.Frames.Add(BitmapFrame.Create(bmp));
-            using (var f = File.Create(path)) enc.Save(f);
+            bool wasEditor = EditorShown;
+            PageFaces.Visibility = page == PageFaces ? Visibility.Visible : Visibility.Collapsed;
+            Editor.Visibility = page == Editor ? Visibility.Visible : Visibility.Collapsed;
+            PageFonts.Visibility = page == PageFonts ? Visibility.Visible : Visibility.Collapsed;
+            if (page == PageFaces) RefreshProjects();
+            if (page == PageFonts) RefreshFonts();
+            if (page == Editor) Editor.Focus();
+            if (wasEditor != EditorShown) EditorShownChanged?.Invoke(EditorShown);
         }
 
-        // MARK: Навігація
-
-        void Nav_Checked(object sender, RoutedEventArgs e)
-        {
-            if (PageFaces == null) return;
-            PageFaces.Visibility = NavFaces.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            Editor.Visibility = NavEditor.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            PageFonts.Visibility = NavFonts.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            if (NavFaces.IsChecked == true) RefreshProjects();
-            if (NavFonts.IsChecked == true) RefreshFonts();
-            if (NavEditor.IsChecked == true) Editor.Focus();
-        }
+        public void ShowList() => Show(PageFaces);
+        public void ShowFonts() => Show(PageFonts);
 
         void OpenProject(FaceProject p)
         {
             Editor.Open(p);
-            NavEditor.IsEnabled = true;
-            NavEditor.IsChecked = true;
-            Title = p.DisplayName + " — BandFace Creator";
+            Show(Editor);
         }
 
-        void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        /// <summary>Новий демонстраційний проєкт (для знімків екрана).</summary>
+        public void Demo() => OpenProject(store.Create(S.Get("newFaceName"), DeviceProfile.Band10));
+
+        /// <summary>Клавіші редактора; true — оброблено.</summary>
+        public bool HandleKey(KeyEventArgs e)
         {
-            if (Editor.Visibility != Visibility.Visible) return;
+            if (!EditorShown) return false;
             // у полях введення клавіші належать полю
-            if (Keyboard.FocusedElement is TextBox || Keyboard.FocusedElement is ComboBox || Keyboard.FocusedElement is ComboBoxItem) return;
-            if (Editor.HandleKey(e)) e.Handled = true;
+            if (Keyboard.FocusedElement is TextBox || Keyboard.FocusedElement is ComboBox || Keyboard.FocusedElement is ComboBoxItem) return false;
+            return Editor.HandleKey(e);
         }
+
+        void Fonts_Click(object sender, RoutedEventArgs e) => ShowFonts();
+        void FontsBack_Click(object sender, RoutedEventArgs e) => ShowList();
 
         // MARK: Проєкти
 
@@ -148,14 +123,14 @@ namespace BandFace.Creator
             var menu = new ContextMenu();
             void Item(string t, Action a) { var m = new MenuItem { Header = t }; m.Click += (s, e) => a(); menu.Items.Add(m); }
             Item(S.Get("open"), () => OpenProject(p));
+            Item(S.Get("installBand"), () => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); });
             Item(S.Get("duplicate"), () => { store.Duplicate(p); RefreshProjects(); });
-            Item(S.Get("saveBin"), () => Actions.ExportBin(this, p));
+            Item(S.Get("saveBin"), () => Actions.ExportBin(Owner, p));
             Item(S.Get("showInFolder"), () => { try { Process.Start("explorer.exe", "\"" + p.Folder + "\""); } catch (Exception) { } });
             menu.Items.Add(new Separator());
             Item(S.Get("deleteFace"), () =>
             {
-                if (MessageBox.Show(this, S.Get("deleteFaceAsk", p.DisplayName), "BandFace Creator", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-                if (Editor.Project == p) { NavEditor.IsEnabled = false; NavFaces.IsChecked = true; Title = "BandFace Creator"; }
+                if (MessageBox.Show(Owner, S.Get("deleteFaceAsk", p.DisplayName), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
                 store.Delete(p);
                 RefreshProjects();
             });
@@ -182,9 +157,9 @@ namespace BandFace.Creator
         void OpenBin_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog { Multiselect = true, Filter = S.Get("faceFilter") + "|*.bin;*.face" };
-            if (dlg.ShowDialog(this) != true) return;
+            if (dlg.ShowDialog(Owner) != true) return;
             foreach (var f in dlg.FileNames) OpenFile(f);
-            if (dlg.FileNames.Length > 1) { NavFaces.IsChecked = true; RefreshProjects(); }
+            if (dlg.FileNames.Length > 1) ShowList();
         }
 
         void OpenFolder_Click(object sender, RoutedEventArgs e)
@@ -197,7 +172,7 @@ namespace BandFace.Creator
         }
 
         /// <summary>Файл .bin/.face або тека з manifest.xml → новий проєкт, відкритий у редакторі</summary>
-        void OpenPath(string path)
+        public void OpenPath(string path)
         {
             if (Directory.Exists(path))
             {
@@ -206,13 +181,13 @@ namespace BandFace.Creator
                     if (!File.Exists(Path.Combine(path, "manifest.xml"))) throw new Exception(S.Get("notFace"));
                     OpenProject(store.ImportFolder(path));
                 }
-                catch (Exception ex) { MessageBox.Show(this, S.Get("openFail", Path.GetFileName(path), ex.Message), "BandFace Creator", MessageBoxButton.OK, MessageBoxImage.Error); }
+                catch (Exception ex) { MessageBox.Show(Owner, S.Get("openFail", Path.GetFileName(path), ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error); }
                 return;
             }
             OpenFile(path);
         }
 
-        void OpenFile(string path)
+        public void OpenFile(string path)
         {
             try
             {
@@ -222,36 +197,15 @@ namespace BandFace.Creator
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, S.Get("openFail", Path.GetFileName(path), ex.Message), "BandFace Creator", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Owner, S.Get("openFail", Path.GetFileName(path), ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        // MARK: Перетягування файлів
-
-        static string[] Dropped(DragEventArgs e) => e.Data.GetDataPresent(DataFormats.FileDrop) ? (string[])e.Data.GetData(DataFormats.FileDrop) : new string[0];
-
-        static bool Acceptable(string f) =>
-            Directory.Exists(f) || f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".face", StringComparison.OrdinalIgnoreCase);
-
-        void Window_DragEnter(object sender, DragEventArgs e)
-        {
-            bool ok = Dropped(e).Any(Acceptable);
-            e.Effects = ok ? DragDropEffects.Copy : DragDropEffects.None;
-            DropHint.Visibility = ok ? Visibility.Visible : Visibility.Collapsed;
-            e.Handled = true;
-        }
-
-        void Window_Drop(object sender, DragEventArgs e)
-        {
-            DropHint.Visibility = Visibility.Collapsed;
-            foreach (var f in Dropped(e).Where(Acceptable)) OpenPath(f);
         }
 
         // MARK: Шрифти
 
         void AddFont_Click(object sender, RoutedEventArgs e)
         {
-            Actions.AddFonts(this);
+            Actions.AddFonts(Owner);
             RefreshFonts();
         }
 
@@ -273,7 +227,7 @@ namespace BandFace.Creator
                 b.Click += (s, e) =>
                 {
                     // файл може бути відкритий Windows — тоді прибирається під час наступного запуску
-                    if (!FontLibrary.Remove(name)) MessageBox.Show(this, S.Get("removeFontNote"), "BandFace Creator");
+                    if (!FontLibrary.Remove(name)) MessageBox.Show(Owner, S.Get("removeFontNote"), "BandFace");
                     RefreshFonts();
                 };
                 Grid.SetColumn(b, 1);

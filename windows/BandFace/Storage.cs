@@ -52,6 +52,24 @@ namespace BandFace
             catch (Exception) { }
         }
 
+        /// <summary>Невеликі налаштування (тема, мова, останній браслет) — текстові файли поруч із ключем.</summary>
+        public static string LoadText(string name, string fallback = "")
+        {
+            try { var p = PathOf(name + ".txt"); return File.Exists(p) ? File.ReadAllText(p).Trim() : fallback; }
+            catch (Exception) { return fallback; }
+        }
+
+        public static void SaveText(string name, string value)
+        {
+            try
+            {
+                var p = PathOf(name + ".txt");
+                if (string.IsNullOrEmpty(value)) { if (File.Exists(p)) File.Delete(p); }
+                else File.WriteAllText(p, value);
+            }
+            catch (Exception) { }
+        }
+
         public static bool LoadDev()
         {
             try { return File.Exists(PathOf("dev.flag")); } catch (Exception) { return false; }
