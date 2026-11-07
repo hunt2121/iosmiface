@@ -288,18 +288,18 @@ namespace BandFace.Faces
             if (idat.Count <= 2) return null;
             var raw = Inflate.Run(idat.GetRange(2, idat.Count - 2).ToArray());
             if (raw == null) return null;
-            return new Decoder(w, h, depth, ctype, chans, pal, trns, raw).Run();
+            return new Decoder(w, h, depth, ctype, chans, interlace, pal, trns, raw).Run();
         }
 
         sealed class Decoder
         {
-            readonly int w, h, depth, ctype, chans, bitsPP, bpp;
+            readonly int w, h, depth, ctype, chans, interlace, bitsPP, bpp;
             readonly byte[] pal, trns, raw, rgba;
             int src;
 
-            public Decoder(int w, int h, int depth, int ctype, int chans, byte[] pal, byte[] trns, byte[] raw)
+            public Decoder(int w, int h, int depth, int ctype, int chans, int interlace, byte[] pal, byte[] trns, byte[] raw)
             {
-                this.w = w; this.h = h; this.depth = depth; this.ctype = ctype; this.chans = chans;
+                this.w = w; this.h = h; this.depth = depth; this.ctype = ctype; this.chans = chans; this.interlace = interlace;
                 this.pal = pal; this.trns = trns; this.raw = raw;
                 bitsPP = chans * depth; bpp = Math.Max(1, bitsPP / 8);
                 rgba = new byte[w * h * 4];
