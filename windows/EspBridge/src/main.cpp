@@ -82,11 +82,35 @@ static int gapEvents(ble_gap_event* e, void* arg) {
       out(b);
       break;
     case BLE_GAP_EVENT_CONN_UPDATE: {
+      // браслет може просити це кожні пів секунди — пишемо лише зміни, щоб не забивати USB
+      static uint32_t last = 0, repeats = 0;
       ble_gap_conn_desc d;
       if (ble_gap_conn_find(e->conn_update.conn_handle, &d) == 0) {
-        snprintf(b, sizeof(b), "LOG link params: status=%d interval=%u latency=%u timeout=%u", e->conn_update.status,
-                 d.conn_itvl, d.conn_latency, d.supervision_timeout);
-        out(b);
+        uint32_t key = (uint32_t)e->conn_update.status << 24 ^ (uint32_t)d.conn_itvl << 12 ^ d.conn_latency << 8 ^ d.supervision_timeout;
+        if (key != last) {
+          snprintf(b, sizeof(b), "LOG link params: status=%d interval=%u latency=%u timeout=%u (same x%u before)",
+                   e->conn_update.status, d.conn_itvl, d.conn_latency, d.supervision_timeout, (unsigned)repeats);
+          out(b);
+          last = key;
+          repeats = 0;
+        } else {
+          repeats++;
+        }
+      }
+      break;
+    }
+    case BLE_GAP_EVENT_L2CAP_UPDATE_REQ:
+    case BLE_GAP_EVENT_CONN_UPDATE_REQ: {
+      static uint32_t lastReq = 0;
+      const ble_gap_upd_params* p = e->conn_update_req.peer_params;
+      if (p) {
+        uint32_t key = p->itvl_min ^ (uint32_t)p->itvl_max << 8 ^ (uint32_t)p->latency << 16 ^ (uint32_t)p->supervision_timeout << 20;
+        if (key != lastReq) {
+          snprintf(b, sizeof(b), "LOG band asks params: interval=%u..%u latency=%u timeout=%u", p->itvl_min, p->itvl_max,
+                   p->latency, p->supervision_timeout);
+          out(b);
+          lastReq = key;
+        }
       }
       break;
     }

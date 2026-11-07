@@ -82,7 +82,7 @@ namespace BandFace
                 OpenParameters = new List<KeyValuePair<int, byte[]>>
                 {
                     kv(1, new byte[] { 0x01, 0x00, 0x00 }), kv(7, new byte[] { 0x1b, 0x02, 0x00 }), kv(2, new byte[] { 0xff, 0xff }),
-                    kv(5, new byte[] { 0x01 }), kv(6, Encoding.ASCII.GetBytes("Windows PC")), kv(3, new byte[] { 0x10, 0x00 }), kv(4, new byte[] { 0x98, 0x3a }),
+                    kv(5, new byte[] { 0x01 }), kv(6, Encoding.ASCII.GetBytes("iPhone")), kv(3, new byte[] { 0x10, 0x00 }), kv(4, new byte[] { 0x98, 0x3a }),
                 },
             };
         }
@@ -101,7 +101,8 @@ namespace BandFace
             try
             {
                 await session.OpenAsync();
-                await session.AuthenticateAsync(key, "Windows PC", "UK");
+                await session.AuthenticateAsync(key, "Windows PC", "UK", Command.PhoneInfoMiFitness(Region()));
+                try { await session.CommandAsync(Command.AfterAuthMiFitness, 3000); } catch (BandException) { }
                 await Task.Delay(300);
                 await session.CloseAsync();
                 AddLog("connect activate: ok");
@@ -109,6 +110,12 @@ namespace BandFace
             }
             catch (Exception ex) { AddLog("connect activate: " + ex.Message); SetStatus(Describe(ex), true); }
             finally { try { session.Dispose(); } catch (Exception) { } _session = null; }
+        }
+
+        static string Region()
+        {
+            try { var r = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName; return r.Length == 2 ? r : "UA"; }
+            catch (Exception) { return "UA"; }
         }
 
         void SaveShot(string path)
@@ -360,7 +367,9 @@ namespace BandFace
             _session = new BandSession(_link, cfg);
             try
             {
-                var inst = new WatchfaceInstaller();
+                // параметри входу точно як у Mi Fitness / iOS-версії (з іншими Band 10 розриває з'єднання після входу)
+                var inst = new WatchfaceInstaller { PhoneInfo = Command.PhoneInfoMiFitness(Region()) };
+                inst.CommandsAfterAuth.Add(Command.AfterAuthMiFitness);
                 bool already = false;
                 await inst.InstallAsync(_face, key, _session, p => Dispatcher.BeginInvoke(new Action(() =>
                 {

@@ -19,6 +19,10 @@ namespace BandFace.Protocol
     {
         public string PhoneModel = "Windows";
         public string Region = "UK";
+        /// <summary>Дані про телефон для автентифікації (null — старі типові).</summary>
+        public byte[] PhoneInfo;
+        /// <summary>Команди одразу після автентифікації, відповіді не обов'язкові.</summary>
+        public System.Collections.Generic.List<byte[]> CommandsAfterAuth = new System.Collections.Generic.List<byte[]>();
         public int PauseAfterAuthMs = 500, PauseBeforeInstallMs = 300, WaitForInstallStatusMs = 1500;
         public int ActivationTimeoutMs = 4000, ActivationAttempts = 2;
 
@@ -32,7 +36,11 @@ namespace BandFace.Protocol
             try
             {
                 ph(Phase.Authenticating);
-                await s.AuthenticateAsync(authKey, PhoneModel, Region).ConfigureAwait(false);
+                await s.AuthenticateAsync(authKey, PhoneModel, Region, PhoneInfo).ConfigureAwait(false);
+                foreach (var body in CommandsAfterAuth)
+                {
+                    try { await s.CommandAsync(body, 3000).ConfigureAwait(false); } catch (BandException) { }
+                }
                 await Task.Delay(PauseAfterAuthMs, ct).ConfigureAwait(false);
                 try { await s.CommandAsync(Command.DeviceInfoRequest()).ConfigureAwait(false); } catch (BandException) { }
                 try { await s.CommandAsync(Command.BatteryRequest()).ConfigureAwait(false); } catch (BandException) { }

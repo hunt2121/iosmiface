@@ -45,6 +45,8 @@ public class ProtocolTests
         Assert.Equal(H("08161000c201180a16081012105d41402abc4b2a76b9719d911017c5921805"),
             Command.UploadRequest(BandCrypto.Md5(Encoding.ASCII.GetBytes("hello")), 5));
         Assert.Equal(H("080015000008421a066950686f6e6520e0012a02554b"), Command.PhoneInfo("iPhone", "UK"));
+        // ті самі байти, що й у Mi Fitness / iOS-версії
+        Assert.Equal(H("0801159a99d9411a07556e6b6e6f776e20a08c810c2a025541"), Command.PhoneInfoMiFitness("UA"));
     }
 
     [Fact]

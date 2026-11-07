@@ -44,6 +44,13 @@ namespace BandFace.Protocol
         public static byte[] PhoneInfo(string model = "Windows", string region = "UK") =>
             new ProtoWriter().WriteVarint(1, 0).WriteFloat(2, 34.0f).WriteString(3, model).WriteVarint(4, 224).WriteString(5, region).Output;
 
+        /// <summary>Дані про телефон точно як у Mi Fitness (з запису HCI; те саме надсилає iOS-версія, перевірено на Band 10).</summary>
+        public static byte[] PhoneInfoMiFitness(string region) =>
+            new ProtoWriter().WriteVarint(1, 1).WriteFloat(2, 27.2f).WriteString(3, "Unknown").WriteVarint(4, 25183776).WriteString(5, region).Output;
+
+        /// <summary>Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2), як в iOS-версії.</summary>
+        public static readonly byte[] AfterAuthMiFitness = { 0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02 };
+
         public static byte[] DeviceInfoRequest() => Build(System, 2);
         public static byte[] BatteryRequest() => Build(System, 1);
         public static byte[] WatchfaceListRequest() => Build(Watchface, 0);

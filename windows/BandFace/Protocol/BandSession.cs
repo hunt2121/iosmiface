@@ -163,7 +163,7 @@ namespace BandFace.Protocol
         public Task SendPlainAsync(byte[] body) =>
             WriteData(new DataPacket(DataChannel.Protobuf, DataOpcode.Plain, body), false);
 
-        public async Task AuthenticateAsync(byte[] authKey, string model = "Windows", string region = "UK")
+        public async Task AuthenticateAsync(byte[] authKey, string model = "Windows", string region = "UK", byte[] phoneInfo = null)
         {
             if (authKey.Length != 16) throw new BandException(ErrorKind.InvalidAuthKey);
             if (State != SessionState.Open) throw new BandException(ErrorKind.SessionNotOpen);
@@ -194,7 +194,7 @@ namespace BandFace.Protocol
             }
 
             var keys = new SessionKeys(authKey, phoneNonce, bandNonce);
-            var info = keys.EncryptPhoneInfo(Command.PhoneInfo(model, region));
+            var info = keys.EncryptPhoneInfo(phoneInfo ?? Command.PhoneInfo(model, region));
             var confirmation = keys.PhoneConfirmation(phoneNonce, bandNonce);
             Log("auth: step 3");
             lock (_gate) _keys = keys;
