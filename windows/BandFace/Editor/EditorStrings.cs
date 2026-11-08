@@ -280,6 +280,10 @@ namespace BandFace.Creator
             ["nudgeHint"] = new[] { "Стрілки на клавіатурі зсувають на 1 px, із Shift — на 10.", "Arrow keys nudge by 1 px, with Shift — by 10.", "Стрелки на клавиатуре сдвигают на 1 px, с Shift — на 10." },
 
             // ---------- Групи джерел ----------
+            ["imagesOfLayer"] = new[] { "Картинки шару «{0}»", "Images of “{0}”", "Картинки слоя «{0}»" },
+            ["imagesAll"] = new[] { "Усі картинки циферблата", "All face images", "Все картинки циферблата" },
+            ["imagesShowAll"] = new[] { "Показати всі", "Show all", "Показать все" },
+            ["imagesOnlyLayer"] = new[] { "Лише цього шару", "This layer only", "Только этого слоя" },
             ["grpAll"] = new[] { "Усе", "All", "Всё" },
             ["grp_time"] = new[] { "Час", "Time", "Время" },
             ["grp_date"] = new[] { "Дата", "Date", "Дата" },

@@ -229,6 +229,9 @@ namespace BandFace.Creator
             FaceRow.Background = l == null ? (Brush)FindResource("NavSel") : Brushes.Transparent;
             DrawOverlay();
             BuildInspector();
+            // вкладка «Зображення» показує картинки вибраного шару — оновити після зміни вибору
+            if (ImagesPane.Visibility == Visibility.Visible)
+                Dispatcher.BeginInvoke(new Action(RefreshImages), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         void MoveSelected(int delta)

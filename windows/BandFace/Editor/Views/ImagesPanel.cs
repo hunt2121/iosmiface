@@ -21,6 +21,9 @@ namespace BandFace.Creator
     {
         sealed class ImageRef { public string Src; public XNode Owner; public XNode Node; }
 
+        /// <summary>У вкладці «Зображення» показати всі картинки, навіть коли вибрано шар</summary>
+        bool imagesShowAll;
+
         /// <summary>Усі картинки, на які посилаються ресурси (для масиву кадрів — кожен кадр окремо)</summary>
         List<ImageRef> AllImages()
         {
@@ -66,7 +69,22 @@ namespace BandFace.Creator
             if (project == null) return;
             syncingList = true;
             ImagesList.Items.Clear();
-            foreach (var im in AllImages())
+            // вибрано шар — лише його картинки (з кнопкою «Показати всі»); нічого не вибрано — усі картинки циферблата
+            var res = selected != null && !imagesShowAll ? project.ElementOf(selected) : null;
+            var list = res != null ? ImagesOf(res) : AllImages();
+            if (selected != null)
+            {
+                var head = new Grid { Margin = new Thickness(4, 2, 4, 6) };
+                head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                var title = imagesShowAll ? S.Get("imagesAll") : S.Get("imagesOfLayer", Elements.Title(Elements.Of(project.ElementOf(selected), project)));
+                head.Children.Add(new TextBlock { Text = title, FontSize = 12, Foreground = (Brush)FindResource("Sub"), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+                var toggle = new Button { Content = S.Get(imagesShowAll ? "imagesOnlyLayer" : "imagesShowAll"), Style = (Style)FindResource("Btn"), Height = 26, Padding = new Thickness(10, 0, 10, 0), FontSize = 12 };
+                toggle.Click += (s, e) => { imagesShowAll = !imagesShowAll; RefreshImages(); };
+                Grid.SetColumn(toggle, 1); head.Children.Add(toggle);
+                ImagesList.Items.Add(new ListBoxItem { Content = head, IsEnabled = true, Focusable = false, IsHitTestVisible = true, Background = Brushes.Transparent });
+            }
+            foreach (var im in list)
             {
                 var data = project.File(im.Src);
                 var bmp = project.Images.Get(MemoryStorage.Normalize(im.Src), () => Imaging.Decode(data)?.ToBitmap());
