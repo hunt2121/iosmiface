@@ -225,6 +225,7 @@ namespace BandFace
             RowWelcomeDesc.Text = S.Get("welcomeDesc");
             RowForwardText.Text = S.Get("forwardRow");
             AppOther.Content = S.Get("otherApps");
+            TgHint.Text = S.Get("tgHint");
             TestNotifyBtn.Content = S.Get("testNotify");
             RowKeyText.Text = TitleKey.Text = S.Get("key");
             RowLogText.Text = TitleLog.Text = S.Get("log");

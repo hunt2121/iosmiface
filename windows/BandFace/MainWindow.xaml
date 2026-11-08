@@ -223,6 +223,8 @@
                   <CheckBox x:Name="AppOther" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
                   <Button x:Name="TestNotifyBtn" Style="{StaticResource Btn}" Click="TestNotify_Click"/>
                 </StackPanel>
+                <!-- Telegram Desktop за замовчуванням показує власні вікна, яких Windows (і ми) не бачить -->
+                <TextBlock x:Name="TgHint" Style="{StaticResource SettingDesc}" Margin="44,-4,16,12"/>
               </StackPanel>
             </Border>
 
