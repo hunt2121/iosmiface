@@ -49,19 +49,14 @@ namespace BandFace.Creator
         void File_Click(object sender, RoutedEventArgs e)
         {
             if (project == null) return;
-            var menu = new ContextMenu { PlacementTarget = FileBtn, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-            void Item(string title, string glyph, Action a)
-            {
-                var m = new MenuItem { Header = title, Icon = new TextBlock { Text = glyph, FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"), FontSize = 14 } };
-                m.Click += (s, ev) => a();
-                menu.Items.Add(m);
-            }
-            Item(S.Get("openProjectFolder"), "", () => { try { Process.Start("explorer.exe", "\"" + project.Folder + "\""); } catch (Exception) { } });
-            Item(S.Get("moveProject"), "", MoveProject);
+            var menu = new ContextMenu();
+            Ui.MenuBelow(menu, FileBtn, alignRight: true);
+            Ui.MenuAdd(menu, S.Get("openProjectFolder"), "\uE838", () => { try { Process.Start("explorer.exe", "\"" + project.Folder + "\""); } catch (Exception) { } });
+            Ui.MenuAdd(menu, S.Get("moveProject"), "\uE8DE", MoveProject);
             menu.Items.Add(new Separator());
-            Item(S.Get("saveBin"), "", () => Actions.ExportBin(Owner, project));
+            Ui.MenuAdd(menu, S.Get("saveBin"), "\uE74E", () => Actions.ExportBin(Owner, project));
             menu.Items.Add(new Separator());
-            menu.Items.Add(new MenuItem { Header = project.Folder, IsEnabled = false, FontSize = 11 });
+            Ui.MenuPath(menu, project.Folder);
             menu.IsOpen = true;
         }
 

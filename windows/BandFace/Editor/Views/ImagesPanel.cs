@@ -122,16 +122,11 @@ namespace BandFace.Creator
 
         ContextMenu ImageMenu(ImageRef im, FrameworkElement target)
         {
-            var menu = new ContextMenu { PlacementTarget = target, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-            void Item(string t, string glyph, Action a)
-            {
-                var m = new MenuItem { Header = t, Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14 } };
-                m.Click += (s, e) => a();
-                menu.Items.Add(m);
-            }
-            Item(S.Get("replaceImage") + "…", "", () => ReplaceImageFile(im));
-            Item(S.Get("showInFolderShort"), "", () => ShowImageInFolder(im.Src));
-            Item(S.Get("savePng"), "", () => SaveImagePng(im.Src));
+            var menu = new ContextMenu();
+            Ui.MenuBelow(menu, target);
+            Ui.MenuAdd(menu, S.Get("replaceImage") + "…", "\uE8AB", () => ReplaceImageFile(im));
+            Ui.MenuAdd(menu, S.Get("showInFolderShort"), "\uE838", () => ShowImageInFolder(im.Src));
+            Ui.MenuAdd(menu, S.Get("savePng"), "\uE74E", () => SaveImagePng(im.Src));
             return menu;
         }
 

@@ -117,20 +117,19 @@ namespace BandFace.Creator
             var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 14, 14), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
             card.MouseLeftButtonUp += (s, e) => OpenProject(p);
             var menu = new ContextMenu();
-            void Item(string t, Action a) { var m = new MenuItem { Header = t }; m.Click += (s, e) => a(); menu.Items.Add(m); }
-            Item(S.Get("open"), () => OpenProject(p));
-            Item(S.Get("installBand"), () => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); });
-            Item(S.Get("duplicate"), () => { store.Duplicate(p); RefreshProjects(); });
-            Item(S.Get("saveBin"), () => Actions.ExportBin(Owner, p));
-            Item(S.Get("showInFolder"), () => { try { Process.Start("explorer.exe", "\"" + p.Folder + "\""); } catch (Exception) { } });
+            Ui.MenuAdd(menu, S.Get("open"), "\uE8E5", () => OpenProject(p));
+            Ui.MenuAdd(menu, S.Get("installBand"), "\uE896", () => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); });
+            Ui.MenuAdd(menu, S.Get("duplicate"), "\uE8C8", () => { store.Duplicate(p); RefreshProjects(); });
+            Ui.MenuAdd(menu, S.Get("saveBin"), "\uE74E", () => Actions.ExportBin(Owner, p));
+            Ui.MenuAdd(menu, S.Get("showInFolder"), "\uE838", () => { try { Process.Start("explorer.exe", "\"" + p.Folder + "\""); } catch (Exception) { } });
             menu.Items.Add(new Separator());
-            Item(S.Get("deleteFace"), () =>
+            Ui.MenuAdd(menu, S.Get("deleteFace"), "\uE74D", () =>
             {
                 var ask = ProjectStore.IsExternal(p) ? S.Get("removeFaceAsk", p.DisplayName, p.Folder) : S.Get("deleteFaceAsk", p.DisplayName);
                 if (MessageBox.Show(Owner, ask, "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
                 store.Delete(p);
                 RefreshProjects();
-            });
+            }, danger: true);
             card.ContextMenu = menu;
             // мініатюра — коли картки вже на екрані
             var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks;

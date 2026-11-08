@@ -17,6 +17,44 @@ namespace BandFace.Creator
     static class Ui
     {
         static Brush Res(string k) => (Brush)Application.Current.Resources[k];
+
+        // ---------- Меню (однакові в усьому застосунку) ----------
+
+        /// <summary>Пункт меню зі значком (символ Segoe MDL2); danger — червоний (видалення)</summary>
+        public static MenuItem MenuAdd(ItemsControl menu, string title, string glyph, Action click, bool danger = false)
+        {
+            var m = new MenuItem
+            {
+                Header = title,
+                Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14 },
+                Tag = danger ? "danger" : null,
+            };
+            m.Click += (s, e) => click();
+            menu.Items.Add(m);
+            return m;
+        }
+
+        /// <summary>Нижній рядок меню зі шляхом: дрібно й сіро, задовгий обрізається з початку (кінець видно завжди), повний — у підказці</summary>
+        public static void MenuPath(ItemsControl menu, string path, int maxChars = 52)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            var shown = path.Length <= maxChars ? path : "…" + path.Substring(path.Length - (maxChars - 1));
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 6, 10, 4), ToolTip = path, Focusable = false };
+            row.Children.Add(new TextBlock { Text = "\uE707", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = Res("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            row.Children.Add(new TextBlock { Text = shown, FontSize = 11.5, Foreground = Res("Sub"), VerticalAlignment = VerticalAlignment.Center });
+            menu.Items.Add(row);
+        }
+
+        /// <summary>Меню під елементом, на 4 px нижче; alignRight — по правому краю елемента (для кнопок справа)</summary>
+        public static void MenuBelow(ContextMenu menu, FrameworkElement target, bool alignRight = false)
+        {
+            menu.PlacementTarget = target;
+            menu.Placement = PlacementMode.Custom;
+            menu.CustomPopupPlacementCallback = (popup, t, off) => new[]
+            {
+                new CustomPopupPlacement(new Point(alignRight ? t.Width - popup.Width : 0, t.Height + 4), PopupPrimaryAxis.Horizontal),
+            };
+        }
         static Style St(string k) => (Style)Application.Current.Resources[k];
 
         public static TextBlock Header(string text) => new TextBlock

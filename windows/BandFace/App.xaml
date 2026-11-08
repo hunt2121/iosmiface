@@ -255,13 +255,16 @@
       </Setter>
     </Style>
 
-    <!-- Контекстні меню в кольорах теми -->
+    <!-- Контекстні меню в кольорах теми, як у Windows 11: значок ліворуч, однакова висота пунктів,
+         тонкі розділювачі з відступами. Однакові для всіх меню застосунку (будуються через Ui.Menu*). -->
     <Style TargetType="ContextMenu">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="HasDropShadow" Value="False"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ContextMenu">
-            <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="4">
+            <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="4">
               <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
             </Border>
           </ControlTemplate>
@@ -273,15 +276,20 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="MenuItem">
-            <Border x:Name="b" CornerRadius="4" Background="Transparent" Padding="10,7" MinWidth="200">
+            <Border x:Name="b" CornerRadius="5" Background="Transparent" Height="34" Padding="10,0" MinWidth="220">
               <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="{TemplateBinding InputGestureText}" Margin="24,0,0,0" Foreground="{DynamicResource Sub}" FontSize="12" VerticalAlignment="Center"/>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <ContentPresenter x:Name="ico" ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Center" TextElement.Foreground="{DynamicResource Sub}"/>
+                <ContentPresenter Grid.Column="1" Margin="12,0,0,0" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Margin="24,0,0,0" Foreground="{DynamicResource Sub}" FontSize="12" VerticalAlignment="Center"/>
               </Grid>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="b" Property="Background" Value="{DynamicResource NavSel}"/></Trigger>
+              <Trigger Property="Tag" Value="danger">
+                <Setter Property="Foreground" Value="{DynamicResource Err}"/>
+                <Setter TargetName="ico" Property="TextElement.Foreground" Value="{DynamicResource Err}"/>
+              </Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
