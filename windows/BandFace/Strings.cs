@@ -24,7 +24,7 @@ namespace BandFace
             ["pickHint"] = new[] { "Натисніть «Вибрати файл»", "Click “Choose file”", "Нажмите «Выбрать файл»" },
             ["pick"] = new[] { "Вибрати файл", "Choose file", "Выбрать файл" },
             ["pickOther"] = new[] { "Вибрати інший файл", "Choose another file", "Выбрать другой файл" },
-            ["install"] = new[] { "Встановити на пристрій", "Install on device", "Установить на устройство" },
+            ["install"] = new[] { "Встановити", "Install", "Установить" },
             ["progress"] = new[] { "Передача {0}/{1}", "Sending {0}/{1}", "Передача {0}/{1}" },
             ["keyTitle"] = new[] { "Auth key пристрою", "Device auth key", "Auth key устройства" },
             ["paste"] = new[] { "Вставити з буфера", "Paste from clipboard", "Вставить из буфера" },
