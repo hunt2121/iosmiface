@@ -12972,6 +12972,144 @@
           }
         }
       }
+    },
+    "Число росте" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number grows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Число растёт"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Число росте"
+          }
+        }
+      }
+    },
+    "праворуч" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "right"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вправо"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "праворуч"
+          }
+        }
+      }
+    },
+    "від центру" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "from center"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "от центра"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "від центру"
+          }
+        }
+      }
+    },
+    "ліворуч" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "влево"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ліворуч"
+          }
+        }
+      }
+    },
+    "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15»." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red mark is the X point. The dashed box is the digit added when “5” becomes “15”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Красная черта — точка X. Пунктир — цифра, которая добавляется, когда «5» становится «15»."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15»."
+          }
+        }
+      }
+    },
+    "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No effect: with leading zeros there are always %d digits, so the number doesn't grow. Turn off “Leading zeros” to use it."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не действует: с нулями впереди цифр всегда %d, число не растёт. Выключите «Нули впереди», чтобы это имело смысл."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

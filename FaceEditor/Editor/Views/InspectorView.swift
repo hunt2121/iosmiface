@@ -148,9 +148,9 @@ struct InspectorView: View {
 
     @ViewBuilder private func digitsLook(_ r: XNode) -> some View {
         Text("Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.").font(.caption).foregroundStyle(.secondary)
-        Chips(title: "Вирівнювання", hint: "куди росте число",
-              items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
-              selected: r.string("align") ?? "left") { v in setNumberAlign(r, v) }
+        // «Число росте»: діє лише коли кількість цифр змінюється (без нулів попереду)
+        let fixedWidth = r.bool("leadingZero") && r.int("totalDigits") > 0
+        GrowChips(selected: r.string("align") ?? "left", enabled: !fixedWidth, digits: Int(r.int("totalDigits"))) { v in setNumberAlign(r, v) }
         StepperRow(title: "Кількість цифр", value: Int(r.int("totalDigits")), range: 0...9) { v in edit { $0.set("totalDigits", int: v) } }
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
@@ -457,6 +457,66 @@ struct StepperRow: View {
         Stepper(value: Binding(get: { value }, set: { onChange($0) }), in: range) {
             HStack { Text(loc(title)).font(.subheadline); Spacer(); Text(verbatim: "\(value)").font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
         }
+    }
+}
+
+/// «Число росте»: праворуч / від центру / ліворуч — кнопки зі схемою (червона риска — точка X,
+/// пунктир — цифра, що додається, коли «5» стає «15») і стрілками; сіре з поясненням, коли не діє.
+struct GrowChips: View {
+    let selected: String
+    let enabled: Bool
+    let digits: Int
+    var onSelect: (String) -> Void
+
+    private let keys: [(String, String)] = [("left", "праворуч"), ("center", "від центру"), ("right", "ліворуч")]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(loc("Число росте")).font(.subheadline)
+            HStack(spacing: 6) {
+                ForEach(keys, id: \.0) { k in
+                    let on = k.0 == selected
+                    let fg: Color = on ? .white : .primary
+                    Button { onSelect(k.0) } label: {
+                        VStack(spacing: 5) {
+                            schema(k.0, fg)
+                            HStack(spacing: 3) {
+                                if k.0 != "left" { Image(systemName: "arrow.left").font(.system(size: 9, weight: .semibold)) }
+                                Text(loc(k.1)).font(.caption2.weight(on ? .semibold : .medium)).lineLimit(1).minimumScaleFactor(0.7)
+                                if k.0 != "right" { Image(systemName: "arrow.right").font(.system(size: 9, weight: .semibold)) }
+                            }
+                        }
+                        .foregroundStyle(fg)
+                        .frame(maxWidth: .infinity).padding(.vertical, 7)
+                        .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .disabled(!enabled).opacity(enabled ? 1 : 0.4)
+            Text(enabled ? loc("Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15».")
+                         : String(format: loc("Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс."), digits))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    /// дві цифри 12×18 з проміжком 2; риска — точка X
+    private func schema(_ key: String, _ fg: Color) -> some View {
+        ZStack(alignment: .leading) {
+            HStack(spacing: 2) {
+                ForEach(0..<2, id: \.self) { d in
+                    let added = key == "left" ? d == 1 : d == 0
+                    if added {
+                        RoundedRectangle(cornerRadius: 2).strokeBorder(fg, style: StrokeStyle(lineWidth: 1, dash: [2, 2])).frame(width: 12, height: 18)
+                    } else {
+                        RoundedRectangle(cornerRadius: 2).fill(fg).frame(width: 12, height: 18)
+                    }
+                }
+            }
+            RoundedRectangle(cornerRadius: 1).fill(Color.red).frame(width: 2, height: 22)
+                .offset(x: CGFloat(key == "left" ? 0 : key == "center" ? 13 : 26) - 1)
+        }
+        .frame(width: 26, height: 22)
     }
 }
 
