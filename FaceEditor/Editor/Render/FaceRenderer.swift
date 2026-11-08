@@ -230,19 +230,27 @@ final class FaceRenderer {
         let cx = o.x + CGFloat(res.int("pivotX")), cy = o.y + CGFloat(res.int("pivotY"))
         let rad = CGFloat(res.int("barRadius")) + CGFloat(res.int("barWidth"))
         let a0 = CGFloat(res.int("angleStart")), span = CGFloat(res.int("angleRange")) * fraction(res)
-        // круглі кінці виходять за кут на пів товщини — сектор ширший на цю величину з обох боків
-        let br = CGFloat(res.int("barRadius"))
-        let cap: CGFloat = res.string("endingStyle") == "normal" || br <= 0 ? 0 : CGFloat(res.int("barWidth")) / 2 / br * 180 / .pi + 1
-        let sg: CGFloat = span >= 0 ? 1 : -1
+        // круглі кінці: як на браслеті (endingStyle=round) — і на початку, і на кінці заповнення півколо
+        // радіусом у пів товщини. Сектор + два кола; працює й для повного кільця, де в картинці кінців немає.
+        let br = CGFloat(res.int("barRadius")), hw = CGFloat(res.int("barWidth")) / 2
+        let round = res.string("endingStyle") != "normal" && hw > 0
         // 0° — угорі, за годинниковою стрілкою
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: cx, y: cy))
         if abs(span) > 0.01 {
-            path.addArc(withCenter: CGPoint(x: cx, y: cy), radius: rad + 4, startAngle: (a0 - sg * cap - 90) * .pi / 180,
-                        endAngle: (a0 + span + sg * cap - 90) * .pi / 180, clockwise: span >= 0)
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: cx, y: cy))
+            path.addArc(withCenter: CGPoint(x: cx, y: cy), radius: rad + 4, startAngle: (a0 - 90) * .pi / 180,
+                        endAngle: (a0 + span - 90) * .pi / 180, clockwise: span >= 0)
+            path.close()
+            c.saveGState(); c.addPath(path.cgPath); c.clip(); put(fg, r, c); c.restoreGState()
+            // кожне коло — окремим вирізом (обʼєднання шляхів могло б «вирізати» перетин через напрям обходу)
+            if round {
+                for deg in [a0, a0 + span] {
+                    let t = deg * .pi / 180
+                    let p = CGPoint(x: cx + br * sin(t), y: cy - br * cos(t))
+                    c.saveGState(); c.addEllipse(in: CGRect(x: p.x - hw, y: p.y - hw, width: hw * 2, height: hw * 2)); c.clip(); put(fg, r, c); c.restoreGState()
+                }
+            }
         }
-        path.close()
-        c.saveGState(); c.addPath(path.cgPath); c.clip(); put(fg, r, c); c.restoreGState()
         // крапка-індикатор на кінці заповнення
         if let ind = image(pick(res.string("indicatorImage"))?.string("src")) {
             let ir = CGFloat(res.has("indicatorRadius") ? res.int("indicatorRadius") : res.int("barRadius"))
