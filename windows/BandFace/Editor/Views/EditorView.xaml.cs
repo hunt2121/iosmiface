@@ -54,8 +54,11 @@ namespace BandFace.Creator
             UndoBtn.ToolTip = S.Get("undo") + " (Ctrl+Z)";
             RedoBtn.ToolTip = S.Get("redo") + " (Ctrl+Y)";
             PreviewBtn.Content = S.Get("preview");
-            FileBtn.Content = S.Get("fileMenu") + "  \uE70D";
-            FileBtn.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
+            // текст і стрілка окремо: стрілка зі шрифту значків, по центру висоти (у спільному рядку вона «стрибала» вгору)
+            var fileContent = new StackPanel { Orientation = Orientation.Horizontal };
+            fileContent.Children.Add(new TextBlock { Text = S.Get("fileMenu"), VerticalAlignment = VerticalAlignment.Center });
+            fileContent.Children.Add(new TextBlock { Text = "\uE70D", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 1, 0, 0) });
+            FileBtn.Content = fileContent;
             InstallBtn.Content = S.Get("installBand");
             VisualMode.Content = S.Get("modeVisual");
             XmlMode.Content = "XML";
