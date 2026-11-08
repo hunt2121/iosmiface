@@ -78,8 +78,8 @@ namespace BandFace
         }
 
         /// <summary>Тимчасово: перевірка кольорових смайлів пристрою. Спершу звичайні смайли (їх замінить BandText),
-        /// потім коди з «дірок» у відомій таблиці — можливо, там ❤️ та інші.</summary>
-        const string EmojiProbe = "\U0001F600\U0001F60D\U0001F44D\U0001F525\U0001F602 | a\uA010 b\uA015 c\uA016 d\uA023 e\uA02A f\uA04B g\uA04C h\uA050 i\uA051 j\uA05B k\uA05F";
+        /// потім коди поза відомою таблицею (до U+A002 і після U+A064) — шукаємо ❤️.</summary>
+        const string EmojiProbe = "\u2764\uFE0F\u2728\u2B50 | a\uA000 b\uA001 c\uA065 d\uA066 e\uA067 f\uA068 g\uA069 h\uA06A i\uA06B j\uA06C k\uA06D l\uA06E m\uA06F n\uA070 o\uA071 p\uA072 q\uA073 r\uA074";
 
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
