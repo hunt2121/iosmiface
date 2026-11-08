@@ -372,6 +372,22 @@ namespace BandFace.Creator
                     if (gen.Unit.Length > 0 || res.Has("unitIcon")) SetUnit(p, res, gen);
                     break;
                 }
+                case GenKind.Texts:
+                {
+                    // кожна картинка елемента — свій рядок шрифтом (дні тижня, місяці, значки…); шляхи файлів лишаються
+                    var target = MainImages(p, res);
+                    if (target == null) return;
+                    var slots = target.Tag == "Image" ? new List<XNode> { target } : target.All("Image");
+                    var frames = AssetFactory.TextFrames(gen, gen.Texts);
+                    int n = Math.Min(slots.Count, frames.Count);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var src = slots[i].Str("src");
+                        if (src != null) p.SetFile(src, frames[i].Png());
+                    }
+                    if (n > 0) target.Set("format", frames.Take(n).Any(f => f.BestFormat() == "RGB565A8") ? "RGB565A8" : "indexed8");
+                    break;
+                }
                 case GenKind.Arc:
                 {
                     // центр дуги лишається на місці, хоч би як змінився розмір картинки
@@ -418,6 +434,22 @@ namespace BandFace.Creator
                 }
             }
             ColorVariants.Refresh(p, res);
+        }
+
+        /// <summary>Основні картинки елемента: те, на що посилається ref (масив чи одна картинка), або сам ресурс-картинка</summary>
+        public static XNode MainImages(FaceProject p, XNode res)
+        {
+            if (res == null) return null;
+            if (res.Tag == "Image" || res.Tag == "ImageArray") return res;
+            var r = p.ResourceRef(res.Str("ref"));
+            return r != null && (r.Tag == "Image" || r.Tag == "ImageArray") ? r : null;
+        }
+
+        /// <summary>Скільки картинок намалювати шрифтом</summary>
+        public static int SlotCount(FaceProject p, XNode res)
+        {
+            var t = MainImages(p, res);
+            return t == null ? 0 : t.Tag == "Image" ? 1 : t.All("Image").Count;
         }
 
         static void SetEnds(XNode res, System.Windows.Point s, System.Windows.Point e, double width)

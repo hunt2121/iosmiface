@@ -59,6 +59,13 @@ namespace BandFace.Creator
             Write(p, nw);
             if (nw.Count < 2) return;
             foreach (var t in redraw) Rebuild(p, t, null);
+            // елементи з галочкою, у яких варіантів ще не було (кольори щойно з'явилися)
+            foreach (var n in p.Meta.ColorFollow.ToList())
+            {
+                var el = p.Resource(n);
+                if (el == null || Check(p, el, out _) == Availability.Unavailable) continue;
+                foreach (var t in Targets(p, el)) if (Variants(p, t).Count == 0) Rebuild(p, t, el);
+            }
         }
 
         /// <summary>Вимикає варіанти повністю</summary>
@@ -160,8 +167,13 @@ namespace BandFace.Creator
 
         public static void Set(FaceProject p, XNode res, bool on)
         {
+            var n = res.Str("name") ?? "";
+            if (on) p.Meta.ColorFollow.Add(n); else p.Meta.ColorFollow.Remove(n);
             foreach (var t in Targets(p, res)) { if (on) Rebuild(p, t, res); else RemoveVariants(p, t); }
         }
+
+        /// <summary>Галочку поставили, але кольорів у циферблата ще немає</summary>
+        public static bool Wanted(FaceProject p, XNode res) => p.Meta.ColorFollow.Contains(res.Str("name") ?? "");
 
         /// <summary>Після зміни картинок елемента — варіанти малюються заново</summary>
         public static void Refresh(FaceProject p, XNode res)
@@ -230,6 +242,7 @@ namespace BandFace.Creator
                         case GenKind.Arc: images = new List<RgbaImage> { ElementFactory.ArcImage(ElementFactory.Synced(el, g), c) }; break;
                         case GenKind.Line: images = new List<RgbaImage> { ElementFactory.LineImage(ElementFactory.Synced(el, g), c, out _, out _) }; break;
                         case GenKind.Pointer: images = new List<RgbaImage> { AssetFactory.Hand(g.Length, g.Width, c) }; break;
+                        case GenKind.Texts: images = AssetFactory.TextFrames(g, g.Texts); break;
                         case GenKind.Label: { var li = AssetFactory.LabelImage(g); images = li == null ? new List<RgbaImage>() : new List<RgbaImage> { li }; break; }
                         default: images = new List<RgbaImage>(); break;
                     }

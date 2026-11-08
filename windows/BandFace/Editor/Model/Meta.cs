@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace BandFace.Creator
 {
-    public enum GenKind { Digits, Arc, Line, Pointer, Image, Frames, Label }
+    public enum GenKind { Digits, Arc, Line, Pointer, Image, Frames, Label, Texts }
 
     /// <summary>Параметри, з яких редактор створив ресурс (щоб перемалювати після зміни шрифту, кольору тощо).</summary>
     public sealed class Generator
@@ -44,6 +44,8 @@ namespace BandFace.Creator
         public string Color2 = "";
         /// <summary>Ширина літер, % (100 — як у шрифті)</summary>
         public double WidthPct = 100;
+        /// <summary>Kind == Texts: рядок для кожної картинки масиву (дні тижня, місяці, AM/PM…)</summary>
+        public List<string> Texts = new List<string>();
 
         public bool Styled => Outline > 0 || ShadowX != 0 || ShadowY != 0 || !string.IsNullOrEmpty(Color2) || Math.Abs(WidthPct - 100) > 0.01;
 
@@ -55,9 +57,9 @@ namespace BandFace.Creator
         }
 
         public Generator(GenKind kind) { Kind = kind; }
-        public Generator Copy() => (Generator)MemberwiseClone();
+        public Generator Copy() { var c = (Generator)MemberwiseClone(); c.Texts = new List<string>(Texts); return c; }
 
-        static readonly string[] KindNames = { "digits", "arc", "line", "pointer", "image", "frames", "label" };
+        static readonly string[] KindNames = { "digits", "arc", "line", "pointer", "image", "frames", "label", "texts" };
 
         public Dictionary<string, object> ToJson() => new Dictionary<string, object>
         {
@@ -65,7 +67,7 @@ namespace BandFace.Creator
             ["style"] = Style, ["font"] = Font, ["radius"] = Radius, ["width"] = Width, ["length"] = Length, ["unit"] = Unit, ["text"] = Text,
             ["start"] = Start, ["range"] = Range, ["angle"] = Angle, ["round"] = Round,
             ["outline"] = Outline, ["outlineColor"] = OutlineColor, ["shadowX"] = ShadowX, ["shadowY"] = ShadowY, ["shadowColor"] = ShadowColor,
-            ["color2"] = Color2, ["widthPct"] = WidthPct,
+            ["color2"] = Color2, ["widthPct"] = WidthPct, ["texts"] = Texts.Cast<object>().ToList(),
         };
 
         public static Generator FromJson(Dictionary<string, object> d)
@@ -83,6 +85,7 @@ namespace BandFace.Creator
                 Outline = Json.Num(d, "outline", 0), OutlineColor = Json.Str(d, "outlineColor", "#000000"),
                 ShadowX = Json.Num(d, "shadowX", 0), ShadowY = Json.Num(d, "shadowY", 0), ShadowColor = Json.Str(d, "shadowColor", "#000000"),
                 Color2 = Json.Str(d, "color2", ""), WidthPct = Json.Num(d, "widthPct", 100),
+                Texts = (d.TryGetValue("texts", out var tx) && tx is List<object> tl) ? tl.Select(o => o?.ToString() ?? "").ToList() : new List<string>(),
             };
         }
 
@@ -111,11 +114,14 @@ namespace BandFace.Creator
         /// <summary>Циферблат змінювали в редакторі: при збиранні превʼю для браслета малюється заново</summary>
         public bool Edited;
         public string SourceKey;
+        /// <summary>Елементи з увімкненою галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)</summary>
+        public HashSet<string> ColorFollow = new HashSet<string>();
 
         public ProjectMeta Copy()
         {
             var m = (ProjectMeta)MemberwiseClone();
             m.Generators = Generators.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
+            m.ColorFollow = new HashSet<string>(ColorFollow);
             return m;
         }
 
@@ -136,6 +142,7 @@ namespace BandFace.Creator
                 ["edited"] = Edited,
             };
             if (SourceKey != null) d["sourceKey"] = SourceKey;
+            if (ColorFollow.Count > 0) d["colorFollow"] = ColorFollow.Cast<object>().ToList();
             return Json.Write(d);
         }
 
@@ -154,6 +161,7 @@ namespace BandFace.Creator
                 if (d.TryGetValue("modified", out var mv) && mv is double secs) m.Modified = Ref2001.AddSeconds(secs);
                 m.Edited = Json.Bool(d, "edited", false);
                 m.SourceKey = Json.Str(d, "sourceKey", null);
+                if (d.TryGetValue("colorFollow", out var cf) && cf is List<object> cl) m.ColorFollow = new HashSet<string>(cl.Select(o => o?.ToString() ?? ""));
             }
             catch (Exception) { }
             return m;

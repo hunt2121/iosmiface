@@ -184,15 +184,22 @@ namespace BandFace.Creator
         }
 
         /// <summary>Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).</summary>
-        public static List<RgbaImage> DigitFrames(Generator g)
+        static readonly string[] Digits = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
+        public static List<RgbaImage> DigitFrames(Generator g) => TextFrames(g, Digits);
+
+        /// <summary>Набір рядків одним шрифтом (цифри, дні тижня, місяці, AM/PM…): усі кадри однакової ширини
+        /// (рядок по центру) і однаково обрізані по висоті — щоб на браслеті не стрибали.</summary>
+        public static List<RgbaImage> TextFrames(Generator g, IList<string> texts)
         {
             var tf = FontOf(g);
             var brush = Imaging.Brush(g.Color);
             double size = Math.Max(4, g.FontSize);
             double adv = 0, lh = 0;
-            for (int d = 0; d <= 9; d++)
+            if (texts.Count == 0) return new List<RgbaImage>();
+            foreach (var s in texts)
             {
-                var t = Text(d.ToString(), tf, size, brush);
+                var t = Text(s.Length == 0 ? " " : s, tf, size, brush);
                 adv = Math.Max(adv, t.WidthIncludingTrailingWhitespace);
                 lh = Math.Max(lh, t.Height);
             }
@@ -202,9 +209,9 @@ namespace BandFace.Creator
             int tall = (int)(lh * 2) + padY * 2;
             double top = lh / 2 + padY;
             var full = new List<RgbaImage>();
-            for (int d = 0; d <= 9; d++)
+            foreach (var s in texts)
             {
-                var t = Text(d.ToString(), tf, size, brush);
+                var t = Text(s.Length == 0 ? " " : s, tf, size, brush);
                 full.Add(Imaging.Render(w, tall, dc => Draw(dc, t, new Point((w - t.WidthIncludingTrailingWhitespace) / 2, top), g)));
             }
             int minY = tall, maxY = -1;

@@ -211,25 +211,56 @@ namespace BandFace.Creator
             catch (Exception ex) { MessageBox.Show(Owner, ex.Message, "BandFace"); }
         }
 
-        /// <summary>Блок «Зображення» в інспекторі вибраного елемента</summary>
+        /// <summary>Блок «Зображення» в інспекторі будь-якого елемента: усі його картинки мініатюрами
+        /// (клік — замінити, перетягування PNG — замінити), «Відкрити теку», «Намалювати шрифтом…»</summary>
         void BuildImageActions(XNode res)
         {
             var list = ImagesOf(res);
-            if (list.Count == 0) return;
-            Add(Ui.Header(S.Get("imagesTab")));
-            if (list.Count == 1)
+            var kind = Elements.Of(res, project);
+            // шрифтом малюються лише текстові елементи: числа, написи, значки за значенням (дні тижня, місяці, AM/PM);
+            // фон, картинки, стрілки, шкали, анімації — лише свої картинки
+            bool canFont = ElementFactory.SlotCount(project, res) > 0 &&
+                           (kind == ElementKind.Digits || kind == ElementKind.Label || kind == ElementKind.Values);
+            if (list.Count == 0 && !canFont) return;
+            Add(Ui.Header(S.Get("imagesTab") + (list.Count > 1 ? " · " + list.Count : "")));
+            if (list.Count > 0)
             {
-                var im = list[0];
-                Add(Ui.Button(S.Get("replaceImage") + "…", () => ReplaceImageFile(im)));
-                Add(Ui.Button(S.Get("showInFolderShort"), () => ShowImageInFolder(im.Src)));
-                Add(Ui.Button(S.Get("savePng"), () => SaveImagePng(im.Src)));
+                var wrap = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
+                foreach (var im in list)
+                {
+                    var data = project.File(im.Src);
+                    var bmp = project.Images.Get(MemoryStorage.Normalize(im.Src), () => Imaging.Decode(data)?.ToBitmap());
+                    var cell = new Border
+                    {
+                        Width = 52, Height = 52, Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(6), Background = Checker(),
+                        Cursor = Cursors.Hand, AllowDrop = true, ClipToBounds = true,
+                        ToolTip = im.Src + (bmp != null ? "\n" + bmp.PixelWidth + "×" + bmp.PixelHeight : "") + "\n" + S.Get("imageRowTip"),
+                        Child = new Image { Source = bmp, Stretch = Stretch.Uniform, Margin = new Thickness(3) },
+                    };
+                    RenderOptions.SetBitmapScalingMode(cell.Child, BitmapScalingMode.HighQuality);
+                    var r = im;
+                    cell.MouseLeftButtonUp += (s, e) => { var m = ImageMenu(r, cell); m.IsOpen = true; };
+                    cell.DragEnter += ImageDragOver; cell.DragOver += ImageDragOver;
+                    cell.Drop += (s, e) => { var f = DroppedImage(e); if (f != null) { ReplaceImageFile(r, f); e.Handled = true; } };
+                    wrap.Children.Add(cell);
+                }
+                Add(wrap);
+                Add(Ui.Note(S.Get("elementImagesHint")));
             }
-            else
+            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = canFont && list.Count > 0 ? 2 : 1, Margin = new Thickness(0, 0, 0, 10) };
+            if (list.Count > 0)
             {
-                Add(Ui.Note(S.Get("imagesOfElement", list.Count)));
-                Add(Ui.Button(S.Get("openImagesTab"), () => { ShowImagesTab(true); var first = ImagesList.Items.Cast<ListBoxItem>().FirstOrDefault(i => (i.Tag as ImageRef)?.Src == list[0].Src); if (first != null) ImagesList.ScrollIntoView(first); }));
-                Add(Ui.Button(S.Get("showInFolderShort"), () => ShowImageInFolder(list[0].Src)));
+                var open = new Button { Content = S.Get("openImagesFolder"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, canFont ? 4 : 0, 0) };
+                open.Click += (s, e) => ShowImageInFolder(list[0].Src);
+                acts.Children.Add(open);
             }
+            if (canFont)
+            {
+                var font = new Button { Content = S.Get("fontArtButton"), Style = (Style)FindResource(list.Count == 0 ? "PrimaryBtn" : "Btn"), Margin = new Thickness(list.Count > 0 ? 4 : 0, 0, 0, 0) };
+                font.Click += (s, e) => FontArtWindow.Show(Owner, project, res);
+                acts.Children.Add(font);
+            }
+            Add(acts);
         }
     }
 }

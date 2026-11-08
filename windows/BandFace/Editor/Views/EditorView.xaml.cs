@@ -613,8 +613,22 @@ namespace BandFace.Creator
                     break;
                 case ElementKind.Values:
                 {
-                    var imgs = PickImages(true, 200);
-                    if (imgs.Count > 0) AddAndSelect(p => ElementFactory.AddValues(p, src, imgs, theme, cx, cy));
+                    // картинки — свої файли або намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
+                    var how = MessageBox.Show(Owner, S.Get("valuesHowAsk"), S.Get("kind_values"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    if (how == MessageBoxResult.Cancel) break;
+                    if (how == MessageBoxResult.No)
+                    {
+                        var imgs = PickImages(true, 200);
+                        if (imgs.Count > 0) AddAndSelect(p => ElementFactory.AddValues(p, src, imgs, theme, cx, cy));
+                        break;
+                    }
+                    var l = src.ToLowerInvariant();
+                    int n = l.Contains("week") ? 7 : l.Contains("month") ? 12 : l.Contains("ampm") ? 2 : 5;
+                    var blank = Enumerable.Range(0, n).Select(_ => new RgbaImage(40, 40, new byte[40 * 40 * 4])).ToList();
+                    AddAndSelect(p => ElementFactory.AddValues(p, src, blank, theme, cx, cy));
+                    var res = selected != null ? project.ElementOf(selected) : null;
+                    // одразу — вікно «Намалювати шрифтом»; скасували — порожній елемент прибираємо
+                    if (res != null && !FontArtWindow.Show(Owner, project, res)) { project.Undo(); Select(null); }
                     break;
                 }
             }

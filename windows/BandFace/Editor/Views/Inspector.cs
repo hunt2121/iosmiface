@@ -305,10 +305,12 @@ namespace BandFace.Creator
                         var pr = prm[i];
                         Add(Ui.NumberRow(S.Get("threshold", i + 1), pr.Int("value"), v => EditRes(() => pr.Set("value", v))));
                     }
+                    if (gen != null && gen.Kind == GenKind.Texts)
+                        Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(res.Str("name") ?? "", gen, g => g.Color = h)));
                     Add(Ui.Button(S.Get("replaceImages") + "…", () =>
                     {
                         var imgs = PickImages(true, 200);
-                        if (imgs.Count > 0) project.Edit(p => ElementFactory.ReplaceValueImages(p, res, imgs));
+                        if (imgs.Count > 0) project.Edit(p => { ElementFactory.ReplaceValueImages(p, res, imgs); p.Meta.Generators.Remove(res.Str("name") ?? ""); });
                     }));
                     break;
                 }
@@ -355,14 +357,11 @@ namespace BandFace.Creator
         void DigitsLook(XNode layout, XNode res, Generator gen)
         {
             var name = res.Str("name") ?? "";
-            if (gen != null)
+            if (gen != null && gen.Drawn)
             {
-                FontPicker(name, gen);
-                Add(Ui.Slider(S.Get("fontSize"), gen.FontSize, 8, 200, 1, v => Regen(name, gen, g => g.FontSize = v)));
-                Add(Ui.Row(S.Get("weight"), Ui.Combo(WeightValues.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), gen.Weight.ToString(),
-                                                     v => Regen(name, gen, g => g.Weight = int.Parse(v))), 190));
+                // шрифт, розмір, ефекти — у вікні «Намалювати шрифтом» (блок «Зображення» нижче); тут лише швидкий колір
+                Add(Ui.Note(S.Get("fontSummary", gen.Font.Length > 0 ? gen.Font : S.Get("st" + char.ToUpper(gen.Style[0]) + gen.Style.Substring(1)), (int)gen.FontSize)));
                 Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
-                DigitEffects(name, gen);
                 // одиниця біля числа — тим самим шрифтом
                 var unit = new TextBox { Text = gen.Unit, Width = 70 };
                 void CommitUnit(string u) { if (u != gen.Unit) Regen(name, gen, g => g.Unit = u); }
@@ -379,12 +378,7 @@ namespace BandFace.Creator
                 }
                 Add(Ui.Row(S.Get("unit"), up, 0));
             }
-            else
-            {
-                Add(Ui.Note(S.Get("digitsNoGen")));
-                Add(Ui.Button(S.Get("drawDigits"), () =>
-                    project.Edit(p => ElementFactory.Regenerate(p, name, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }))));
-            }
+            else Add(Ui.Note(S.Get("digitsNoGen")));
             Add(Ui.Chips(S.Get("align"), new[] { P("left", S.Get("left")), P("center", S.Get("center")), P("right", S.Get("right")) },
                          res.Str("align") ?? "left", v => SetNumberAlign(layout, res, v)));
             Add(Ui.Note(S.Get("alignHint")));
@@ -535,10 +529,6 @@ namespace BandFace.Creator
             Add(new TextBlock { Text = S.Get("labelText"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
             Add(text);
             Add(Ui.Note(S.Get("labelHint")));
-            FontPicker(name, gen);
-            Add(Ui.Slider(S.Get("fontSize"), gen.FontSize, 8, 200, 1, v => Regen(name, gen, g => g.FontSize = v)));
-            Add(Ui.Row(S.Get("weight"), Ui.Combo(WeightValues.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), gen.Weight.ToString(),
-                                                 v => Regen(name, gen, g => g.Weight = int.Parse(v))), 190));
             Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
         }
 
@@ -684,21 +674,15 @@ namespace BandFace.Creator
 
         void BuildVariantRow(XNode res)
         {
+            // галочка «кольорові варіанти» — у кожного елемента; де неможливо, видно чому
             var avail = ColorVariants.Check(project, res, out var why);
-            bool on = ColorVariants.IsOn(project, res);
-            if (ColorVariants.IsEnabled(project))
-            {
-                Add(Ui.Header(S.Get("faceColors")));
-                Add(Ui.Switch(S.Get("cvFollows"), on, v => project.Edit(p => ColorVariants.Set(p, res, v)),
-                              avail != ColorVariants.Availability.Unavailable || on));
-                if (why != null) Add(Ui.Note(why));
-                else if (on) Add(Ui.Note(S.Get("cvOnHint")));
-            }
-            else if (avail != ColorVariants.Availability.Unavailable)
-            {
-                Add(Ui.Header(S.Get("faceColors")));
-                Add(Ui.Note(S.Get("cvOffHint")));
-            }
+            bool on = ColorVariants.IsOn(project, res) || ColorVariants.Wanted(project, res);
+            Add(Ui.Header(S.Get("faceColors")));
+            Add(Ui.Switch(S.Get("cvFollows"), on, v => project.Edit(p => ColorVariants.Set(p, res, v)),
+                          avail != ColorVariants.Availability.Unavailable || on));
+            if (why != null) Add(Ui.Note(why));
+            else if (!ColorVariants.IsEnabled(project)) Add(Ui.Note(S.Get("cvOffHint")));
+            else if (on) Add(Ui.Note(S.Get("cvOnHint")));
         }
 
         // MARK: Позиція
