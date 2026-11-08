@@ -44,6 +44,8 @@ namespace BandFace.Creator
             foreach (var g in new[] { 1, 2, 4, 8 }) GridBox.Items.Add(new ComboBoxItem { Content = g.ToString(), Tag = g });
             GridBox.SelectedIndex = 0;
             ApplyTexts();
+            // XML-редактор (AvalonEdit) при першому відкритті довго «прогрівається» — готуємо його заздалегідь, коли застосунок нічим не зайнятий
+            Loaded += (s, e) => Dispatcher.BeginInvoke(new Action(WarmUpXmlEditor), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         Window Owner => Window.GetWindow(this);

@@ -76,6 +76,27 @@ namespace BandFace.Creator
             XmlPreviewTitle.Text = S.Get("preview");
         }
 
+        /// <summary>Створити редактор і підсвітку наперед і один раз прогнати розмітку на зразку, щоб перше відкриття XML було миттєвим</summary>
+        void WarmUpXmlEditor()
+        {
+            try
+            {
+                if (xmlEditor != null && xmlWarm) return;
+                EnsureXmlEditor();
+                Highlighting(false); Highlighting(true);
+                ApplyXmlColors();
+                xmlLoading = true;
+                xmlEditor.Text = "<?xml version=\"1.0\"?>\n<Watchface name=\"x\">\n  <!-- warm -->\n  <Image x=\"0\" y=\"0\" src=\"a.png\"/>\n</Watchface>";
+                xmlLoading = false;
+                xmlEditor.Measure(new Size(800, 600));
+                xmlEditor.Arrange(new Rect(0, 0, 800, 600));
+                xmlEditor.TextArea.TextView.EnsureVisualLines();
+                xmlWarm = true;
+            }
+            catch (Exception) { }
+        }
+        bool xmlWarm;
+
         static IHighlightingDefinition hlLight, hlDark;
 
         /// <summary>Своя проста підсвітка XML (теги, атрибути, значення, коментарі) — окремо для світлої й темної теми</summary>
@@ -112,7 +133,8 @@ namespace BandFace.Creator
 
         string CurrentXml() => Encoding.UTF8.GetString(Xml.Print(project.Root));
 
-        void LoadXml()
+        /// <param name="deferCheck">перевірку й превʼю — після показу тексту, щоб редактор зʼявлявся одразу</param>
+        void LoadXml(bool deferCheck = false)
         {
             xmlLoading = true;
             var t = CurrentXml();
@@ -123,7 +145,8 @@ namespace BandFace.Creator
             xmlEditor.CaretOffset = Math.Min(caret, t.Length);
             xmlEditor.ScrollToVerticalOffset(scroll);
             xmlLoading = false;
-            CheckXml();
+            if (deferCheck) Dispatcher.BeginInvoke(new Action(() => CheckXml()), System.Windows.Threading.DispatcherPriority.Background);
+            else CheckXml();
             RefreshXmlButtons();
         }
 
@@ -148,7 +171,7 @@ namespace BandFace.Creator
             {
                 EnsureXmlEditor();
                 ApplyXmlColors();
-                LoadXml();
+                LoadXml(deferCheck: true);
                 xmlEditor.Focus();
             }
             else { xmlBase = null; Redraw(); }
