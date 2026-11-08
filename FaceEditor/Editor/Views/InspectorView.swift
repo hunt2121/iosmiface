@@ -84,7 +84,7 @@ struct InspectorView: View {
 
     @ViewBuilder private var look: some View {
         if let r = res {
-            if r.has("source") { Row(title: "Що показує", value: SampleData.title(r.string("source") ?? ""), action: onSource) }
+            if r.has("source") { SourceButton(source: r.string("source") ?? "", action: onSource) }
             switch kind {
             case .digits: digitsLook(r)
             case .label:

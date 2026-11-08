@@ -64,6 +64,26 @@ enum SampleData {
 
     static func title(_ source: String) -> String { titles[source].map(loc) ?? source }
 
+    /// Група джерела за префіксом (time, date, health…; інакше other)
+    static func groupOf(_ s: String) -> String {
+        for p in ["time", "date", "health", "weather", "system", "app", "dualtime"] where s.hasPrefix(p) { return p }
+        return "other"
+    }
+
+    /// Значок групи (SF Symbols)
+    static func symbol(_ group: String) -> String {
+        switch group {
+        case "time": return "clock"
+        case "date": return "calendar"
+        case "health": return "heart"
+        case "weather": return "cloud.sun"
+        case "system": return "battery.75"
+        case "app": return "square.grid.2x2"
+        case "dualtime": return "globe"
+        default: return "ellipsis.circle"
+        }
+    }
+
     struct Group: Identifiable {
         let id: String
         let title: String

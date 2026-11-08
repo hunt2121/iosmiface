@@ -234,6 +234,8 @@ struct DataSourcePicker: View {
     var onPick: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
+    /// вибрана група ("" — усі)
+    @State private var group = ""
     /// у потоці «Додати елемент» аркуш закриває сам себе
     var keepOpen = false
     /// для якого елемента — зверху «Найчастіше»
@@ -260,7 +262,8 @@ struct DataSourcePicker: View {
 
     private func row(_ s: String) -> some View {
         Button { onPick(s); if !keepOpen { dismiss() } } label: {
-            HStack {
+            HStack(spacing: 12) {
+                SourceTile(source: s)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(SampleData.title(s)).foregroundStyle(.primary)
                     if SampleData.titles[s] != nil { Text(verbatim: s).font(.caption2).foregroundStyle(.secondary) }
@@ -277,13 +280,35 @@ struct DataSourcePicker: View {
         .accessibilityLabel(Text(SampleData.title(s)))
     }
 
+    private func groupChip(_ id: String, _ title: String) -> some View {
+        let on = id == group
+        return Button { group = id } label: {
+            Text(verbatim: title).font(.subheadline.weight(on ? .semibold : .regular))
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .foregroundStyle(on ? Color.white : Color.primary)
+                .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+        }
+        .buttonStyle(.plain)
+    }
+
     var body: some View {
         List {
-            if let k = kind, let rec = Self.recommended[k] {
+            // перемикачі груп
+            Section {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        groupChip("", loc("Усе"))
+                        ForEach(SampleData.groups) { g in groupChip(g.id, loc(g.title)) }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+            if group.isEmpty, let k = kind, let rec = Self.recommended[k] {
                 let items = rec.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || SampleData.title($0).localizedCaseInsensitiveContains(query) }
                 if !items.isEmpty { Section(loc("Найчастіше")) { ForEach(items, id: \.self) { row($0) } } }
             }
-            ForEach(SampleData.groups) { g in
+            ForEach(SampleData.groups.filter { group.isEmpty || $0.id == group }) { g in
                 let items = g.sources.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || SampleData.title($0).localizedCaseInsensitiveContains(query) }
                 if !items.isEmpty {
                     Section(loc(g.title)) {
@@ -299,6 +324,42 @@ struct DataSourcePicker: View {
         .searchable(text: $query, prompt: "Пошук")
         .navigationTitle("Що показувати")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Плитка зі значком групи джерела
+struct SourceTile: View {
+    let source: String
+    var body: some View {
+        Image(systemName: SampleData.symbol(SampleData.groupOf(source)))
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(Color.accentColor)
+            .frame(width: 30, height: 30)
+            .background(RoundedRectangle(cornerRadius: 7).fill(Color(.tertiarySystemGroupedBackground)))
+    }
+}
+
+/// Кнопка «Що показує»: значок групи, назва (і технічне імʼя, якщо є назва), приклад значення, стрілка
+struct SourceButton: View {
+    let source: String
+    var action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                SourceTile(source: source)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: SampleData.title(source)).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+                    if SampleData.titles[source] != nil { Text(verbatim: source).font(.caption2.monospaced()).foregroundStyle(.secondary).lineLimit(1) }
+                }
+                Spacer(minLength: 6)
+                Text(verbatim: DataSourcePicker.example(source)).font(.caption.weight(.semibold)).monospacedDigit()
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 5).fill(Color(.tertiarySystemGroupedBackground)))
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
