@@ -219,12 +219,13 @@ namespace BandFace.Creator
                 Canvas.SetLeft(pin, pinX - 1); c.Children.Add(pin);
                 // підпис зі стрілками з того самого шрифту значків, що й решта застосунку
                 var cap = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
-                TextBlock Arrow(string glyph) => new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 3, 0) };
+                TextBlock Arrow(string glyph) => new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 1, 2, 0) };
                 if (key != "left") cap.Children.Add(Arrow("\uE72B"));
                 cap.Children.Add(new TextBlock { Text = titles[i], FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
                 if (key != "right") cap.Children.Add(Arrow("\uE72A"));
                 var content = new StackPanel();
-                content.Children.Add(c); content.Children.Add(cap);
+                // підпис ніколи не обрізається: якщо кнопка вузька (довгий переклад), він лише трохи зменшується
+                content.Children.Add(c); content.Children.Add(new Viewbox { Child = cap, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Center });
                 t.Content = content;
                 t.Click += (s, e) => { t.IsChecked = true; if (key != selected) pick(key); };
                 g.Children.Add(t);
