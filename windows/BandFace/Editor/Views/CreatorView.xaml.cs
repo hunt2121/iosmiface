@@ -103,18 +103,18 @@ namespace BandFace.Creator
 
         FrameworkElement Card(FaceProject p)
         {
-            // капсула така сама, як на вкладці «Циферблати»: 102×242, сіре обведення 3 px, вміст 96×236 обрізано по капсулі,
+            // капсула така сама, як на вкладці «Циферблати»: 140×334, сіре обведення 3 px, вміст 134×328 (розмір офіційного превʼю) обрізано по капсулі,
             // картинка масштабується якісно (без змазування)
             var img = new Image { Stretch = Stretch.UniformToFill };
             RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-            var inner = new Grid { Width = 96, Height = 236, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, 96, 236), 48, 48) };
+            var inner = new Grid { Width = 134, Height = 328, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, 134, 328), 67, 67) };
             inner.Children.Add(img);
             var capsule = new Border
             {
-                Width = 102, Height = 242, CornerRadius = new CornerRadius(51), Background = new SolidColorBrush(Color.FromRgb(0x7A, 0x7A, 0x7A)),
+                Width = 140, Height = 334, CornerRadius = new CornerRadius(70), Background = new SolidColorBrush(Color.FromRgb(0x7A, 0x7A, 0x7A)),
                 Padding = new Thickness(3), Child = inner,
             };
-            var sp = new StackPanel { Width = 150 };
+            var sp = new StackPanel { Width = 170 };
             sp.Children.Add(capsule);
             sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 10, 0, 0) });
             sp.Children.Add(new TextBlock { Text = p.Meta.Modified.ToLocalTime().ToString("g"), FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextAlignment = TextAlignment.Center });
@@ -143,7 +143,7 @@ namespace BandFace.Creator
                 try
                 {
                     double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                    var src = new FaceRenderer(p).Render(0, 236.0 / p.Meta.Device.Height * dpi).Image;
+                    var src = new FaceRenderer(p).Render(0, 328.0 / p.Meta.Device.Height * dpi).Image;
                     thumbs[key] = src;
                     img.Source = src;
                 }

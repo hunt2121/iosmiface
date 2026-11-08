@@ -135,9 +135,9 @@
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                   <!-- Капсула як в iOS: сіре обведення 3 px, рівне закруглення, вміст обрізано по капсулі -->
-                  <Border x:Name="Capsule" Width="102" Height="242" CornerRadius="51" Background="#7A7A7A" Padding="3">
-                    <Grid x:Name="CapsuleInner" Width="96" Height="236" Background="Black">
-                      <Grid.Clip><RectangleGeometry Rect="0,0,96,236" RadiusX="48" RadiusY="48"/></Grid.Clip>
+                  <Border x:Name="Capsule" Width="140" Height="334" CornerRadius="70" Background="#7A7A7A" Padding="3">
+                    <Grid x:Name="CapsuleInner" Width="134" Height="328" Background="Black">
+                      <Grid.Clip><RectangleGeometry Rect="0,0,134,328" RadiusX="67" RadiusY="67"/></Grid.Clip>
                       <Viewbox x:Name="PreviewPlaceholder" Width="30" Height="30">
                         <Canvas Width="26" Height="26"><Path Data="{StaticResource BandGeometry}" Fill="#666666"/></Canvas>
                       </Viewbox>
