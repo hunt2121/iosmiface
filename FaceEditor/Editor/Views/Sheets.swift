@@ -26,6 +26,9 @@ struct AddElementSheet: View {
     @State private var valuesSource: String?
     @State private var showValuePhotos = false
     @State private var valuePhotos: [PhotosPickerItem] = []
+    /// Картинки значків: свої фото чи намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
+    @State private var askValuesHow = false
+    @State private var fontArtFor: XNode?
 
     private struct Tile: Identifiable {
         let kind: ElementKind; let caption: String; let filter: Filter; let enabled: Bool
@@ -96,6 +99,15 @@ struct AddElementSheet: View {
         .photosPicker(isPresented: $showPhoto, selection: $photo, matching: .images)
         .photosPicker(isPresented: $showFrames, selection: $photos, maxSelectionCount: 60, matching: .images)
         .photosPicker(isPresented: $showValuePhotos, selection: $valuePhotos, maxSelectionCount: 30, matching: .images)
+        .confirmationDialog("Як створити картинки?", isPresented: $askValuesHow, titleVisibility: .visible) {
+            Button("Намалювати шрифтом (дні тижня, місяці, числа)") { addValuesByFont() }
+            Button("Вибрати фото") { showValuePhotos = true }
+            Button("Скасувати", role: .cancel) {}
+        }
+        .sheet(item: Binding(get: { fontArtFor.map { NodeBox(node: $0) } }, set: { fontArtFor = $0?.node })) { box in
+            FontArtSheet(project: project, res: box.node, onCancel: { project.undo() })
+                .onDisappear { finish() }
+        }
         .onChange(of: valuePhotos) { items in
             guard !items.isEmpty, let src = valuesSource else { return }
             Task { @MainActor in
@@ -179,7 +191,7 @@ struct AddElementSheet: View {
         if k == .values {
             // далі — картинки для значень
             valuesSource = source
-            showValuePhotos = true
+            askValuesHow = true
             return
         }
         let c = center
@@ -197,6 +209,17 @@ struct AddElementSheet: View {
             }
         }
         finish()
+    }
+
+    /// Елемент значків з порожніми картинками → одразу «Намалювати шрифтом»; скасували — прибираємо
+    private func addValuesByFont() {
+        guard let src = valuesSource else { return }
+        let l = src.lowercased()
+        let n = l.contains("week") ? 7 : l.contains("month") ? 12 : l.contains("ampm") ? 2 : 5
+        let blank = (0..<n).map { _ in RGBAImage(w: 40, h: 40, px: [UInt8](repeating: 0, count: 40 * 40 * 4)) }
+        let c = center
+        project.edit { ElementFactory.addValues($0, source: src, images: blank, theme: theme, center: c) }
+        fontArtFor = project.layouts(theme).last.flatMap { project.element(of: $0) }
     }
 
     private func finish() {

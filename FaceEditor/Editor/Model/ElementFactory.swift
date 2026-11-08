@@ -165,6 +165,20 @@ enum ElementFactory {
         return g
     }
 
+    /// Основні картинки елемента: те, на що посилається ref (масив чи одна картинка), або сам ресурс-картинка
+    static func mainImages(_ p: FaceProject, _ res: XNode?) -> XNode? {
+        guard let res else { return nil }
+        if res.tag == "Image" || res.tag == "ImageArray" { return res }
+        guard let r = p.resource(ref: res.string("ref")), r.tag == "Image" || r.tag == "ImageArray" else { return nil }
+        return r
+    }
+
+    /// Скільки картинок намалювати шрифтом
+    static func slotCount(_ p: FaceProject, _ res: XNode?) -> Int {
+        guard let t = mainImages(p, res) else { return 0 }
+        return t.tag == "Image" ? 1 : t.all("Image").count
+    }
+
     static func setEnds(_ res: XNode, _ s: CGPoint, _ e: CGPoint, _ width: Double) {
         res.set("startX", int: Int(s.x.rounded())).set("startY", int: Int(s.y.rounded()))
             .set("endX", int: Int(e.x.rounded())).set("endY", int: Int(e.y.rounded())).set("barWidth", int: Int(width.rounded()))
@@ -306,6 +320,14 @@ enum ElementFactory {
             }
             // одиниця — тим самим шрифтом
             if !gen.unit.isEmpty || res.has("unitIcon") { setUnit(p, element: res, gen: gen) }
+        case .texts:
+            // кожна картинка елемента — свій рядок шрифтом (дні тижня, місяці, значки…); шляхи файлів лишаються
+            guard let target = mainImages(p, res) else { return }
+            let slots = target.tag == "Image" ? [target] : target.all("Image")
+            let frames = AssetFactory.textFrames(gen, gen.texts)
+            let n = min(slots.count, frames.count)
+            for i in 0..<n { if let s = slots[i].string("src") { p.setFile(s, frames[i].png) } }
+            if n > 0 { target.set("format", frames.prefix(n).contains { $0.bestFormat == "RGB565A8" } ? "RGB565A8" : "indexed8") }
         case .arc:
             // центр дуги лишається на місці, хоч би як змінився розмір картинки
             let keep = anchors(p, res, arc: true)

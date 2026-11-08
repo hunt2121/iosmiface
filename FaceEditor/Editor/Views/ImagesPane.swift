@@ -205,39 +205,52 @@ struct Thumb: View {
     }
 }
 
-/// Блок «Зображення» в інспекторі вибраного елемента
+/// Блок «Зображення» в інспекторі будь-якого елемента: усі його картинки мініатюрами (дотик — замінити або поділитися),
+/// «Намалювати шрифтом…» — лише для текстових елементів (числа, написи, значки за значенням)
 struct ElementImages: View {
     @ObservedObject var project: FaceProject
     let res: XNode
     @State private var target: ImageRef?
     @State private var fromFiles = false
+    @State private var fontArt = false
+
+    private var canFont: Bool {
+        let k = ElementKind.of(res, in: project)
+        return ElementFactory.slotCount(project, res) > 0 && (k == .digits || k == .label || k == .values)
+    }
 
     var body: some View {
         let list = ProjectImages.of(project, res)
-        if !list.isEmpty {
+        if !list.isEmpty || canFont {
             VStack(alignment: .leading, spacing: 8) {
-                Text("ЗОБРАЖЕННЯ").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                if list.count == 1, let im = list.first {
-                    HStack(spacing: 8) {
-                        Thumb(image: ProjectImages.uiImage(project, im.src)).frame(width: 40, height: 40)
-                        Menu {
-                            Button { fromFiles = false; target = im } label: { Label("З Фото", systemImage: "photo") }
-                            Button { fromFiles = true; target = im } label: { Label("З Файлів", systemImage: "folder") }
-                        } label: {
-                            Label("Замінити зображення", systemImage: "arrow.triangle.2.circlepath").font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity).frame(height: 36)
-                        }
-                        .buttonStyle(.bordered)
-                        if let url = ProjectImages.exportURL(project, im.src) {
-                            ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(width: 30, height: 36) }.buttonStyle(.bordered)
+                Text(verbatim: loc("ЗОБРАЖЕННЯ") + (list.count > 1 ? " · \(list.count)" : "")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                if !list.isEmpty {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 50, maximum: 60), spacing: 8)], alignment: .leading, spacing: 8) {
+                        ForEach(list) { im in
+                            Menu {
+                                Button { fromFiles = false; target = im } label: { Label("Замінити з Фото", systemImage: "photo") }
+                                Button { fromFiles = true; target = im } label: { Label("Замінити з Файлів", systemImage: "folder") }
+                                if let url = ProjectImages.exportURL(project, im.src) {
+                                    ShareLink(item: url) { Label("Поділитися PNG", systemImage: "square.and.arrow.up") }
+                                }
+                            } label: {
+                                Thumb(image: ProjectImages.uiImage(project, im.src)).frame(width: 52, height: 52)
+                            }
                         }
                     }
-                } else {
-                    Text(String(format: loc("Цей елемент складається з %d картинок — замінюйте їх по одній у «Шари → Зображення»."), list.count))
+                    Text("Торкніться картинки, щоб замінити її. Усі картинки — у «Файлах»: На iPhone → BandFace → FaceProjects.")
                         .font(.caption).foregroundStyle(.secondary)
+                }
+                if canFont {
+                    Button { fontArt = true } label: {
+                        Label("Намалювати шрифтом…", systemImage: "textformat").font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
             .modifier(ImageReplacer(project: project, target: $target, fromFiles: $fromFiles))
+            .sheet(isPresented: $fontArt) { FontArtSheet(project: project, res: res) }
         }
     }
 }

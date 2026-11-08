@@ -127,20 +127,26 @@ enum AssetFactory {
     }
 
     /// Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).
-    static func digitFrames(_ g: Generator) -> [RGBAImage] {
+    static func digitFrames(_ g: Generator) -> [RGBAImage] { textFrames(g, (0...9).map { "\($0)" }) }
+
+    /// Набір рядків одним шрифтом (цифри, дні тижня, місяці, AM/PM…): однакова ширина (рядок по центру)
+    /// й однакова вирізка по висоті — щоб на браслеті не стрибали.
+    static func textFrames(_ g: Generator, _ texts: [String]) -> [RGBAImage] {
+        guard !texts.isEmpty else { return [] }
+        let texts = texts.map { $0.isEmpty ? " " : $0 }
         let f = font(g)
         let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
         var advance: CGFloat = 0
-        for d in 0...9 { advance = max(advance, NSAttributedString(string: "\(d)", attributes: attrs).size().width) }
+        for t in texts { advance = max(advance, NSAttributedString(string: t, attributes: attrs).size().width) }
         let pd = pad(g)
         let w = Int(ceil(advance * widthK(g))) + 2 + pd * 2
         let lh = ceil(f.lineHeight)
         let tall = Int(lh * 2) + pd * 2
         let top = lh / 2 + CGFloat(pd)
-        let full = (0...9).map { d in
+        let full = texts.map { t in
             render(w, tall) { ctx in
-                let sw = NSAttributedString(string: "\(d)", attributes: attrs).size().width
-                drawStyled("\(d)", font: f, at: CGPoint(x: (CGFloat(w) - sw) / 2, y: top), g: g, in: ctx)
+                let sw = NSAttributedString(string: t, attributes: attrs).size().width
+                drawStyled(t, font: f, at: CGPoint(x: (CGFloat(w) - sw) / 2, y: top), g: g, in: ctx)
             }
         }
         // спільні верх і низ усіх цифр

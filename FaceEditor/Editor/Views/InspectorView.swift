@@ -147,21 +147,10 @@ struct InspectorView: View {
 
     @ViewBuilder private func digitsLook(_ r: XNode) -> some View {
         if let g = gen {
-            CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 12...160, step: 1) { v in regen { $0.fontSize = v } }
-            FontRow(gen: g) { f in regen(f) }
-            if g.font.isEmpty {
-                Chips(title: "Товщина", hint: nil,
-                      items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
-                      selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 700 } }
-            }
-        } else {
-            Button {
-                let g = Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded")
-                let name = resName
-                project.edit { ElementFactory.regenerate($0, element: name, gen: g) }
-            } label: {
-                Label("Намалювати цифри шрифтом", systemImage: "textformat.123").font(.subheadline.weight(.semibold))
-            }
+            // шрифт, розмір і ефекти — в «Намалювати шрифтом» (блок «Зображення»); тут — швидкий колір
+            Text(String(format: loc("Шрифт: %@, %d px. Змінити — «Намалювати шрифтом…» нижче."), g.font.isEmpty ? loc(styleTitle(g.style)) : g.font, Int(g.fontSize)))
+                .font(.caption).foregroundStyle(.secondary)
+            ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
         }
         Chips(title: "Вирівнювання", hint: "куди росте число",
               items: [("left", "Ліворуч"), ("center", "Центр"), ("right", "Праворуч")],
@@ -171,20 +160,17 @@ struct InspectorView: View {
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
             .font(.subheadline)
-        if let g = gen { DigitSetSection(project: project, name: resName, gen: g) { f in regen(f) } }
+    }
+
+    private func styleTitle(_ s: String) -> String {
+        switch s { case "default": return "Прямий"; case "condensed": return "Вузький"; case "mono": return "Моно"; default: return "Округлий" }
     }
 
     /// Напис: рядок, шрифт, розмір, товщина (колір — на вкладці «Колір»)
     @ViewBuilder private func labelLook() -> some View {
         if let g = gen {
             LabelField(text: g.text) { t in regen { $0.text = t } }
-            CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 8...160, step: 1) { v in regen { $0.fontSize = v } }
-            FontRow(gen: g) { f in regen(f) }
-            if g.font.isEmpty {
-                Chips(title: "Товщина", hint: nil,
-                      items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
-                      selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 600 } }
-            }
+            ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
         }
     }
 
@@ -317,23 +303,22 @@ struct InspectorView: View {
     /// Чи змінюється елемент разом із кольором циферблата (лише там, де це можливо)
     @ViewBuilder private func variantRow(_ r: XNode) -> some View {
         let avail = ColorVariants.availability(project, element: r)
-        let on = ColorVariants.isOn(project, element: r)
+        let on = ColorVariants.isOn(project, element: r) || project.meta.colorFollow.contains(r.string("name") ?? "")
+        // галочка — у кожного елемента; де неможливо, видно чому
         VStack(alignment: .leading, spacing: 6) {
-            if ColorVariants.isEnabled(project) {
-                Toggle("Змінюється з кольором циферблата", isOn: Binding(get: { on }, set: { v in
-                    project.edit { ColorVariants.set($0, element: r, on: v) }
-                }))
-                .font(.subheadline)
-                // недоступний елемент можна лише вимкнути (якщо варіанти вже були в готовому циферблаті)
-                .disabled(!avail.isAvailable && !on)
-                if case .unavailable(let why) = avail {
-                    Text(why).font(.footnote).foregroundStyle(.secondary)
-                } else if on {
-                    Text("У кожному кольорі циферблата цей елемент буде відповідного кольору.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-            } else if avail.isAvailable {
-                Text("Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.")
+            Toggle("Змінюється з кольором циферблата", isOn: Binding(get: { on }, set: { v in
+                project.edit { ColorVariants.set($0, element: r, on: v) }
+            }))
+            .font(.subheadline)
+            // недоступний елемент можна лише вимкнути (якщо варіанти вже були в готовому циферблаті)
+            .disabled(!avail.isAvailable && !on)
+            if case .unavailable(let why) = avail {
+                Text(why).font(.footnote).foregroundStyle(.secondary)
+            } else if !ColorVariants.isEnabled(project) {
+                Text("Варіанти намалюються, щойно ви додасте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if on {
+                Text("У кожному кольорі циферблата цей елемент буде відповідного кольору.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

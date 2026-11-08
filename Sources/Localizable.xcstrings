@@ -12305,6 +12305,512 @@
           }
         }
       }
+    },
+    "Торкніться картинки, щоб замінити її. Усі картинки — у «Файлах»: На iPhone → BandFace → FaceProjects.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap an image to replace it. All images are in Files: On My iPhone → BandFace → FaceProjects."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коснитесь картинки, чтобы заменить её. Все картинки — в «Файлах»: На iPhone → BandFace → FaceProjects."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Торкніться картинки, щоб замінити її. Усі картинки — у «Файлах»: На iPhone → BandFace → FaceProjects."
+          }
+        }
+      }
+    },
+    "Намалювати шрифтом…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw with a font…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нарисовать шрифтом…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Намалювати шрифтом…"
+          }
+        }
+      }
+    },
+    "Шрифт: %@, %d px. Змінити — «Намалювати шрифтом…» нижче.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font: %@, %d px. To change it, use “Draw with a font…” below."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт: %@, %d px. Изменить — «Нарисовать шрифтом…» ниже."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт: %@, %d px. Змінити — «Намалювати шрифтом…» нижче."
+          }
+        }
+      }
+    },
+    "Варіанти намалюються, щойно ви додасте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Variants are drawn as soon as you add colours on the Watch face panel — tap an empty spot on the canvas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Варианты нарисуются, как только вы добавите цвета на панели «Циферблат» — коснитесь пустого места на холсте."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Варіанти намалюються, щойно ви додасте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні."
+          }
+        }
+      }
+    },
+    "Як створити картинки?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you want to make the images?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как создать картинки?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як створити картинки?"
+          }
+        }
+      }
+    },
+    "Намалювати шрифтом (дні тижня, місяці, числа)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw with a font (weekdays, months, numbers)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нарисовать шрифтом (дни недели, месяцы, числа)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Намалювати шрифтом (дні тижня, місяці, числа)"
+          }
+        }
+      }
+    },
+    "Вибрати фото": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick photos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать фото"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрати фото"
+          }
+        }
+      }
+    },
+    "Дні тижня Пн…Нд": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekdays Mon…Sun (UA)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дни недели Пн…Вс (укр)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дні тижня Пн…Нд"
+          }
+        }
+      }
+    },
+    "Дні тижня Нд…Сб": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekdays Sun…Sat (UA)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дни недели Вс…Сб (укр)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дні тижня Нд…Сб"
+          }
+        }
+      }
+    },
+    "Дні тижня MON…SUN": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekdays MON…SUN"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дни недели MON…SUN"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дні тижня MON…SUN"
+          }
+        }
+      }
+    },
+    "Дні тижня SUN…SAT": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekdays SUN…SAT"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дни недели SUN…SAT"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дні тижня SUN…SAT"
+          }
+        }
+      }
+    },
+    "Дні тижня повністю": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekdays in full (UA)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дни недели полностью (укр)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дні тижня повністю"
+          }
+        }
+      }
+    },
+    "Місяці (СІЧ…ГРУ)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Months (UA)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Месяцы (укр)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Місяці (СІЧ…ГРУ)"
+          }
+        }
+      }
+    },
+    "Місяці (JAN…DEC)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Months JAN…DEC"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Месяцы JAN…DEC"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Місяці (JAN…DEC)"
+          }
+        }
+      }
+    },
+    "Числа від 0": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numbers from 0"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Числа от 0"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Числа від 0"
+          }
+        }
+      }
+    },
+    "Числа від 1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numbers from 1"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Числа от 1"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Числа від 1"
+          }
+        }
+      }
+    },
+    "Перемальовує всі %d картинок елемента одним шрифтом. Свої картинки замінюйте в блоці «Зображення».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redraws all %d images of the element in one font. Replace images with your own in the Images block."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перерисовывает все %d картинок элемента одним шрифтом. Свои картинки заменяйте в блоке «Изображения»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перемальовує всі %d картинок елемента одним шрифтом. Свої картинки замінюйте в блоці «Зображення»."
+          }
+        }
+      }
+    },
+    "Готовий список…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready-made list…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готовый список…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готовий список…"
+          }
+        }
+      }
+    },
+    "Що написати на картинках": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text for each image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что написать на картинках"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що написати на картинках"
+          }
+        }
+      }
+    },
+    "Через кому, по одному на кожну з %d картинок, по порядку.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comma-separated, one for each of the %d images, in order."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Через запятую, по одному на каждую из %d картинок, по порядку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Через кому, по одному на кожну з %d картинок, по порядку."
+          }
+        }
+      }
+    },
+    "Намалювати шрифтом": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw with a font"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нарисовать шрифтом"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Намалювати шрифтом"
+          }
+        }
+      }
+    },
+    "Намалювати": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нарисовать"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Намалювати"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

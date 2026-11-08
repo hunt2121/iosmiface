@@ -188,6 +188,8 @@ struct DigitSetSection: View {
     @ObservedObject var project: FaceProject
     let name: String
     let gen: Generator
+    /// у вікні «Намалювати шрифтом»: зміни застосовуються кнопкою «Намалювати», без «До всіх чисел»
+    var standalone = false
     var regen: ((inout Generator) -> Void) -> Void
     @State private var saving = false
     @State private var setName = ""
@@ -219,7 +221,7 @@ struct DigitSetSection: View {
                     Label("Зберегти як набір", systemImage: "square.and.arrow.down").font(.caption.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 34)
                 }
                 .buttonStyle(.bordered)
-                Button {
+                if !standalone { Button {
                     let me = name, g = gen
                     project.edit { p in
                         // інші числа отримують той самий вигляд, розмір кожного лишається своїм
@@ -230,7 +232,7 @@ struct DigitSetSection: View {
                 } label: {
                     Label("До всіх чисел", systemImage: "square.stack.3d.up").font(.caption.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 34)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.bordered) }
             }
             Toggle("Градієнт згори донизу", isOn: Binding(get: { !gen.color2.isEmpty }, set: { on in
                 regen { $0.color2 = on ? (ColorRow.suggested.first { $0 != gen.color && $0 != "#FFFFFF" } ?? "#FF375F") : "" }

@@ -70,6 +70,11 @@ enum ColorVariants {
         write(p, new)
         guard new.count > 1 else { return }
         for t in redraw { rebuild(p, target: t) }
+        // елементи з галочкою, у яких варіантів ще не було (кольори щойно з'явилися)
+        for n in p.meta.colorFollow {
+            guard let el = p.resource(named: n), availability(p, element: el).isAvailable else { continue }
+            for t in targets(p, element: el) where variants(p, of: t).isEmpty { rebuild(p, target: t, element: el) }
+        }
     }
 
     /// Вимикає варіанти повністю: прибираються таблиці й усі картинки варіантів
@@ -169,6 +174,8 @@ enum ColorVariants {
 
     /// Увімкнути або вимкнути варіанти для елемента
     static func set(_ p: FaceProject, element res: XNode, on: Bool) {
+        let n = res.string("name") ?? ""
+        if on { p.meta.colorFollow.insert(n) } else { p.meta.colorFollow.remove(n) }
         for t in targets(p, element: res) {
             if on { rebuild(p, target: t, element: res) } else { removeVariants(p, of: t) }
         }
@@ -230,6 +237,7 @@ enum ColorVariants {
                 var g = gen; g.color = c
                 switch gen.kind {
                 case .digits: images = AssetFactory.digitFrames(g)
+                case .texts: images = AssetFactory.textFrames(g, g.texts)
                 // дуга й лінія — тієї ж форми (кут, кінці), лише іншого кольору
                 case .arc: images = [ElementFactory.arcImage(el.map { ElementFactory.synced($0, g) } ?? g, c)]
                 case .line: images = [ElementFactory.lineImage(el.map { ElementFactory.synced($0, g) } ?? g, c).0]

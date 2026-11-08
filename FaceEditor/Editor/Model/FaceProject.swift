@@ -8,7 +8,7 @@ import FaceCompiler
 
 /// Параметри, з яких редактор створив ресурс (щоб перегенерувати картинки після зміни шрифту, кольору тощо).
 struct Generator: Codable, Equatable {
-    enum Kind: String, Codable { case digits, arc, line, pointer, image, frames, label }
+    enum Kind: String, Codable { case digits, arc, line, pointer, image, frames, label, texts }
     var kind: Kind
     var color: String = "#FFFFFF"
     var bgColor: String = "#3A3A3C"
@@ -39,6 +39,8 @@ struct Generator: Codable, Equatable {
     var shadowColor: String = "#000000"
     var color2: String = ""
     var widthPct: Double = 100
+    /// kind == .texts: рядок для кожної картинки масиву (дні тижня, місяці, AM/PM…)
+    var texts: [String] = []
 
     /// Картинки намальовані редактором з цих параметрів (а не свої картинки користувача)
     var drawn: Bool { kind != .image && kind != .frames }
@@ -84,6 +86,7 @@ struct Generator: Codable, Equatable {
         shadowColor = (try? c.decodeIfPresent(String.self, forKey: .shadowColor)) ?? "#000000"
         color2 = (try? c.decodeIfPresent(String.self, forKey: .color2)) ?? ""
         widthPct = (try? c.decodeIfPresent(Double.self, forKey: .widthPct)) ?? 100
+        texts = (try? c.decodeIfPresent([String].self, forKey: .texts)) ?? []
     }
 }
 
@@ -107,6 +110,8 @@ struct ProjectMeta: Codable {
     /// Ключ превʼю .bin, з якого відкрито проєкт: поки проєкт не змінювали, превʼю й анімація ті самі,
     /// що в магазині чи для вибраного файла, — не малюються вдруге
     var sourceKey: String?
+    /// Елементи з галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)
+    var colorFollow: Set<String> = []
 
     init() {}
 
@@ -118,6 +123,7 @@ struct ProjectMeta: Codable {
         modified = (try? c.decodeIfPresent(Date.self, forKey: .modified)) ?? Date()
         edited = (try? c.decodeIfPresent(Bool.self, forKey: .edited)) ?? false
         sourceKey = try? c.decodeIfPresent(String.self, forKey: .sourceKey)
+        colorFollow = (try? c.decodeIfPresent(Set<String>.self, forKey: .colorFollow)) ?? []
     }
 }
 
