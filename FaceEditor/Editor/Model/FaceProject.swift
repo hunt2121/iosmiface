@@ -43,7 +43,9 @@ struct Generator: Codable, Equatable {
     var texts: [String] = []
 
     /// Картинки намальовані редактором з цих параметрів (а не свої картинки користувача)
-    var drawn: Bool { kind != .image && kind != .frames }
+    /// Фігури, намальовані редактором (дуга, лінія, стрілка) — перемальовуються з параметрів.
+    /// Цифри й написи шрифтом редактор більше не малює: вони, як і решта, лише картинки.
+    var drawn: Bool { kind == .arc || kind == .line || kind == .pointer }
 
     var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 }
 

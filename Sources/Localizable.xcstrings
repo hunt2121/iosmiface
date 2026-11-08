@@ -12811,6 +12811,75 @@
           }
         }
       }
+    },
+    "Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digits are images 0–9. Replace them one by one in the Images block below."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цифры — это картинки 0–9. Заменяйте их по одной в блоке «Изображения» ниже."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче."
+          }
+        }
+      }
+    },
+    "Напис — це картинка. Замініть її в блоці «Зображення» нижче.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This label is an image. Replace it in the Images block below."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Надпись — это картинка. Замените её в блоке «Изображения» ниже."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напис — це картинка. Замініть її в блоці «Зображення» нижче."
+          }
+        }
+      }
+    },
+    "Після вибору даних виберіть 10 картинок цифр 0–9 у потрібному порядку. Кожну потім можна замінити в блоці «Зображення».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After choosing the data, pick 10 digit images 0–9 in order. Replace any of them later in the Images block."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После выбора данных выберите 10 картинок цифр 0–9 по порядку. Каждую потом можно заменить в блоке «Изображения»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Після вибору даних виберіть 10 картинок цифр 0–9 у потрібному порядку. Кожну потім можна замінити в блоці «Зображення»."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

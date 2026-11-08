@@ -160,7 +160,7 @@ enum ColorVariants {
         }
         let ts = targets(p, element: res)
         guard !ts.isEmpty else { return .unavailable(loc("Для цього елемента кольорових варіантів немає.")) }
-        if let g = generator(p, element: res), g.kind != .image, g.kind != .frames { return .generator }
+        if let g = generator(p, element: res), g.drawn { return .generator }
         for t in ts where !frames(p, t).allSatisfy({ tintBase($0) != nil }) {
             return .unavailable(loc("Картинка багатоколірна — перефарбувати її в інший колір не вийде."))
         }
@@ -215,7 +215,7 @@ enum ColorVariants {
 
     /// Чи може редактор сам намалювати варіанти картинки (параметри малювання або одноколірна)
     private static func canRedraw(_ p: FaceProject, _ base: XNode) -> Bool {
-        if let el = owner(p, of: base), let g = generator(p, element: el), g.kind != .image, g.kind != .frames { return true }
+        if let el = owner(p, of: base), let g = generator(p, element: el), g.drawn { return true }
         let fr = frames(p, base)
         return !fr.isEmpty && fr.allSatisfy { tintBase($0) != nil }
     }
@@ -233,7 +233,7 @@ enum ColorVariants {
         var insertAt = (p.resources.kids.firstIndex { $0 === base } ?? p.resources.kids.count - 1) + 1
         for (i, c) in cols.enumerated() where i > 0 {
             var images: [RGBAImage] = []
-            if let gen, gen.kind != .image, gen.kind != .frames {
+            if let gen, gen.drawn {
                 var g = gen; g.color = c
                 switch gen.kind {
                 case .digits: images = AssetFactory.digitFrames(g)

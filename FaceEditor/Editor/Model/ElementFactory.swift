@@ -106,6 +106,28 @@ enum ElementFactory {
         addLayout(p, ref: name, theme: theme, x: center.0 - w / 2, y: center.1 - h / 2)
     }
 
+    /// Число з ваших картинок 0–9 (усі вписуються в розмір першої)
+    static func addDigitImages(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int)) {
+        guard let f0 = images.first else { return }
+        let frames = images.map { img -> RGBAImage in
+            guard img.w != f0.w || img.h != f0.h, let cg = img.cgImage else { return img }
+            return AssetFactory.render(f0.w, f0.h) { _ in
+                let u = UIImage(cgImage: cg)
+                let s = min(CGFloat(f0.w) / u.size.width, CGFloat(f0.h) / u.size.height)
+                let sz = CGSize(width: u.size.width * s, height: u.size.height * s)
+                u.draw(in: CGRect(x: (CGFloat(f0.w) - sz.width) / 2, y: (CGFloat(f0.h) - sz.height) / 2, width: sz.width, height: sz.height))
+            }
+        }
+        let arr = addFrames(p, frames, base: "digits")
+        let name = p.uniqueName(source)
+        let e = XNode("DataItemImageNumber")
+        e.set("name", name).set("source", source).set("ref", "@" + arr).set("totalDigits", int: 2).set("decimalDigits", int: 0)
+            .set("align", "left").set("leadingZero", bool: true).set("trailingZero", bool: false).set("renderRule", "alwaysShow")
+            .set("rotation", int: 0).set("decimalOffsetX", int: 0).set("space", int: 0)
+        p.resources.kids.append(e)
+        addLayout(p, ref: name, theme: theme, x: center.0 - f0.w, y: center.1 - f0.h / 2)
+    }
+
     static func addImage(_ p: FaceProject, _ img: RGBAImage, theme: Int, center: (Int, Int)) {
         let name = addImageResource(p, img, base: "image")
         p.meta.generators[name] = Generator(kind: .image)

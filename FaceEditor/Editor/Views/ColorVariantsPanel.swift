@@ -120,7 +120,7 @@ struct ColorVariantsPanel: View {
     private var firstGeneratorColor: String? {
         for l in project.layouts(0) {
             if let n = project.resource(ref: l.string("ref"))?.string("name"), let g = project.meta.generators[n],
-               g.kind != .image, g.kind != .frames { return ColorVariants.normalize(g.color) }
+               g.drawn { return ColorVariants.normalize(g.color) }
         }
         return nil
     }

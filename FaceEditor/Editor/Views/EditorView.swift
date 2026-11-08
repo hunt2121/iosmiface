@@ -29,7 +29,6 @@ struct EditorView: View {
     @AppStorage("editorGrid") private var grid = 1
 
     @State private var showXml = false
-    @State private var showFonts = false
     @Environment(\.scenePhase) private var scenePhase
 
     enum EditorSheet: Identifiable { case add, layers, background, source, properties
@@ -57,7 +56,6 @@ struct EditorView: View {
         }
         .onChange(of: scenePhase) { ph in if ph == .active, project.reloadFromDisk() { dropMissingSelection() } }
         .fullScreenCover(isPresented: $showXml) { XmlEditorView(project: project, theme: theme).onDisappear { dropMissingSelection() } }
-        .sheet(isPresented: $showFonts) { FontLibraryView() }
         .sheet(item: $sheet) { s in
             switch s {
             case .add:
@@ -127,7 +125,6 @@ struct EditorView: View {
                 Button { exportBin() } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
                 Section {
                     Button { showXml = true } label: { Label("Редагувати XML", systemImage: "chevron.left.forwardslash.chevron.right") }
-                    Button { showFonts = true } label: { Label("Шрифти", systemImage: "textformat") }
                     Button { share = ShareItem(url: project.folder) } label: { Label("Поділитися текою проєкту", systemImage: "folder") }
                 }
                 Button { dismiss() } label: { Label("Готово", systemImage: "checkmark") }
