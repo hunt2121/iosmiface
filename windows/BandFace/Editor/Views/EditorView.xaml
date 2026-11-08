@@ -47,9 +47,11 @@
         <Grid>
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
           <TextBlock x:Name="XmlPreviewTitle" FontSize="12" Foreground="{DynamicResource Sub}" Margin="14,10,14,0"/>
-          <Border Grid.Row="1" x:Name="XmlPreviewRing" BorderThickness="3" BorderBrush="#8A8A8A" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12">
-            <Image x:Name="XmlPreview" Stretch="Uniform"/>
-          </Border>
+          <Viewbox Grid.Row="1" Margin="16" Stretch="Uniform">
+            <Border x:Name="XmlPreviewRing" BorderThickness="3" BorderBrush="#8A8A8A">
+              <Image x:Name="XmlPreview" Stretch="Fill"/>
+            </Border>
+          </Viewbox>
         </Grid>
       </Border>
     </Grid>
@@ -124,20 +126,23 @@
             </Grid>
           </ScrollViewer>
           <!-- Нижня смуга полотна: колір, масштаб, прив'язка -->
-          <DockPanel Grid.Row="1" Margin="12,6,12,10">
-            <StackPanel x:Name="Swatches" Orientation="Horizontal" VerticalAlignment="Center"/>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <!-- у вузькому вікні групи переносяться на другий рядок, нічого не обрізається -->
+          <WrapPanel Grid.Row="1" Margin="12,6,12,10" HorizontalAlignment="Center">
+            <StackPanel x:Name="Swatches" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,12,2"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,16,2">
               <TextBlock x:Name="SnapText" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
               <CheckBox x:Name="SnapBox" Style="{StaticResource Switch}" IsChecked="True" VerticalAlignment="Center" Click="Snap_Click"/>
               <TextBlock x:Name="GridText" FontSize="12" VerticalAlignment="Center" Margin="16,0,8,0"/>
               <ComboBox x:Name="GridBox" Width="64" Height="28" SelectionChanged="Grid_Changed"/>
-              <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Margin="16,0,0,0" Content="&#xE71F;" Click="ZoomOut_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2">
+              <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Content="&#xE71F;" Click="ZoomOut_Click"/>
               <!-- масштаб можна ввести числом (25–800 %) -->
               <TextBox x:Name="ZoomBox" Width="64" Height="28" FontSize="12" Margin="4,0" HorizontalContentAlignment="Center" KeyDown="ZoomBox_KeyDown" LostKeyboardFocus="ZoomBox_LostFocus"/>
               <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Content="&#xE8A3;" Click="ZoomIn_Click"/>
               <Button x:Name="FitBtn" Style="{StaticResource Btn}" Height="28" Padding="10,0" FontSize="12" Margin="6,0,0,0" Click="Fit_Click"/>
             </StackPanel>
-          </DockPanel>
+          </WrapPanel>
         </Grid>
       </Border>
 

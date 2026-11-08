@@ -304,6 +304,7 @@ namespace BandFace.Creator
             ["src_healthHeartRate"] = new[] { "Пульс", "Heart rate", "Пульс" },
             ["src_healthCalorieValue"] = new[] { "Калорії", "Calories", "Калории" },
             ["src_healthCalorieProgress"] = new[] { "Калорії, % мети", "Calories, % of goal", "Калории, % цели" },
+            ["src_healthStandProgress"] = new[] { "Розминки, % мети", "Stand hours, % of goal", "Разминки, % цели" },
             ["src_healthStandCount"] = new[] { "Розминки", "Stand hours", "Разминки" },
             ["src_healthOxygenSpO2"] = new[] { "Кисень у крові (SpO₂)", "Blood oxygen (SpO₂)", "Кислород в крови (SpO₂)" },
             ["src_healthPressureIndex"] = new[] { "Стрес", "Stress", "Стресс" },

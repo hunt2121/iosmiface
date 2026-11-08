@@ -351,7 +351,9 @@ namespace BandFace.Creator
                 var rect = new Rectangle { Width = r.Width, Height = r.Height, Stroke = sel, StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 4, 2 }, RadiusX = 3, RadiusY = 3 };
                 Canvas.SetLeft(rect, r.X); Canvas.SetTop(rect, r.Y);
                 Overlay.Children.Add(rect);
-                foreach (var pt in new[] { r.TopLeft, r.TopRight, r.BottomLeft, r.BottomRight })
+                // у дуги й лінії — свої ручки на кінцях (DrawHandles), кутові не показуємо
+                bool gauge = GaugeRes(out _) != null;
+                if (!gauge) foreach (var pt in new[] { r.TopLeft, r.TopRight, r.BottomLeft, r.BottomRight })
                 {
                     var hnd = new Ellipse { Width = 9, Height = 9, Fill = Brushes.White, Stroke = sel, StrokeThickness = 1.5 };
                     Canvas.SetLeft(hnd, pt.X - 4.5); Canvas.SetTop(hnd, pt.Y - 4.5);

@@ -155,8 +155,9 @@ namespace BandFace.Creator
 
         static double K(Generator g) => Math.Max(0.3, Math.Min(2, g.WidthPct / 100.0));
 
-        /// <summary>Поле навколо знака під обвідку й тінь</summary>
-        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Max(Math.Abs(g.ShadowX), Math.Abs(g.ShadowY))) + 1;
+        /// <summary>Поле навколо знака під обвідку й тінь: по горизонталі — обвідка й тінь убік, по вертикалі — обвідка й тінь донизу</summary>
+        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowX)) + 1;
+        static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY)) + 1;
 
         /// <summary>Текст з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
         /// Ширина літер стискає/розтягує знак відносно його середини.</summary>
@@ -195,11 +196,11 @@ namespace BandFace.Creator
                 adv = Math.Max(adv, t.WidthIncludingTrailingWhitespace);
                 lh = Math.Max(lh, t.Height);
             }
-            int pad = Pad(g);
+            int pad = Pad(g), padY = PadY(g);
             int w = (int)Math.Ceiling(adv * K(g)) + 2 + pad * 2;
             lh = Math.Ceiling(lh);
-            int tall = (int)(lh * 2) + pad * 2;
-            double top = lh / 2 + pad;
+            int tall = (int)(lh * 2) + padY * 2;
+            double top = lh / 2 + padY;
             var full = new List<RgbaImage>();
             for (int d = 0; d <= 9; d++)
             {

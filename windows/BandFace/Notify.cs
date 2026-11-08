@@ -25,7 +25,7 @@ namespace BandFace
         static HashSet<string> ForwardKinds()
         {
             var v = Storage.LoadText("notifyApps");
-            return new HashSet<string>((v ?? "wa,tg").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+            return new HashSet<string>((string.IsNullOrEmpty(v) ? "wa,tg" : v).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
         }
 
         void Welcome_Click(object sender, RoutedEventArgs e) => Storage.SaveText("notifyWelcome", WelcomeSwitch.IsChecked == true ? "" : "0");

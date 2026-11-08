@@ -328,7 +328,7 @@ namespace BandFace.Creator
             if (l.Contains("progress") || l.Contains("battery") || l.Contains("humidity") || l.Contains("chanceofrain")) return v + " %";
             if (l.Contains("heartrate")) return v + " bpm";
             if (l.Contains("temperature")) return v + "°";
-            if (src.StartsWith("time") && (src.Contains("Hour") || src.Contains("Minute") || src.Contains("Second"))) return v.ToString("00");
+            if (src == "timeHour" || src == "timeMinute" || src == "timeSecond") return v.ToString("00");
             return v.ToString();
         }
 

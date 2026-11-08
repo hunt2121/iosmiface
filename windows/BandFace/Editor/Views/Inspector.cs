@@ -605,7 +605,7 @@ namespace BandFace.Creator
             {
                 var t = ArcShapes.First(x => x.Item1 == v);
                 Regen(name, gen, g => { g.Start = t.Item2; g.Range = Math.Sign(gen.Range == 0 ? 1 : gen.Range) * t.Item3; });
-            }));
+            }, 2));
             Add(Ui.Slider(S.Get("arcStart"), Norm(gen.Start), 0, 359, 1, v => Regen(name, gen, g => g.Start = v)));
             Add(Ui.Slider(S.Get("arcLength"), Math.Abs(gen.Range), 1, 360, 1, v => Regen(name, gen, g => g.Range = (gen.Range < 0 ? -1 : 1) * v)));
             Add(Ui.Chips(S.Get("direction"), new[] { P("cw", S.Get("dirCw")), P("ccw", S.Get("dirCcw")) }, gen.Range < 0 ? "ccw" : "cw",

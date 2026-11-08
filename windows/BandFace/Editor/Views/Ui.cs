@@ -140,15 +140,16 @@ namespace BandFace.Creator
         static string Fmt(double v) => Math.Abs(v - Math.Round(v)) < 1e-9 ? ((int)Math.Round(v)).ToString(CultureInfo.InvariantCulture) : v.ToString("0.#", CultureInfo.InvariantCulture);
 
         /// <summary>Плитки вибору одного значення</summary>
-        public static FrameworkElement Chips(string label, IEnumerable<KeyValuePair<string, string>> items, string selected, Action<string> pick)
+        public static FrameworkElement Chips(string label, IEnumerable<KeyValuePair<string, string>> items, string selected, Action<string> pick, int columns = 0)
         {
             var root = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
             if (!string.IsNullOrEmpty(label)) root.Children.Add(new TextBlock { Text = label, FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
             var list = items.ToList();
-            var g = new UniformGrid { Rows = 1, Columns = list.Count };
+            int cols = columns > 0 ? columns : list.Count;
+            var g = new UniformGrid { Columns = cols, Rows = (list.Count + cols - 1) / cols };
             foreach (var kv in list)
             {
-                var t = new ToggleButton { Content = kv.Value, Style = St("Chip"), IsChecked = kv.Key == selected, Margin = new Thickness(0, 0, 4, 0) };
+                var t = new ToggleButton { Content = kv.Value, Style = St("Chip"), IsChecked = kv.Key == selected, Margin = new Thickness(0, 0, 4, g.Rows > 1 ? 4 : 0) };
                 var key = kv.Key;
                 t.Click += (s, e) => { t.IsChecked = true; if (key != selected) pick(key); };
                 g.Children.Add(t);

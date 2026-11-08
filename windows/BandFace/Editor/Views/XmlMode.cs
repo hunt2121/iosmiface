@@ -194,15 +194,13 @@ namespace BandFace.Creator
             try
             {
                 var p = new FaceProject("xml", null, root, project.Files, project.Meta);
+                // малюємо з запасом, а Viewbox вписує в панель будь-якого розміру
                 var dev = project.Meta.Device;
-                double h = Math.Max(200, XmlView.ActualHeight - 90);
-                double scale = Math.Min(h / dev.Height, 260.0 / dev.Width);
                 var r = new FaceRenderer(p) { ColorVariant = variant };
-                XmlPreview.Source = r.Render(Math.Min(theme, Math.Max(0, p.Themes.Count - 1)), scale * Dpi).Image;
-                XmlPreview.Width = dev.Width * scale; XmlPreview.Height = dev.Height * scale;
-                double rad = dev.Corner * scale;
-                XmlPreview.Clip = new RectangleGeometry(new Rect(0, 0, dev.Width * scale, dev.Height * scale), rad, rad);
-                XmlPreviewRing.CornerRadius = new CornerRadius(rad + 3);
+                XmlPreview.Source = r.Render(Math.Min(theme, Math.Max(0, p.Themes.Count - 1)), 2 * Dpi).Image;
+                XmlPreview.Width = dev.Width; XmlPreview.Height = dev.Height;
+                XmlPreview.Clip = new RectangleGeometry(new Rect(0, 0, dev.Width, dev.Height), dev.Corner, dev.Corner);
+                XmlPreviewRing.CornerRadius = new CornerRadius(dev.Corner + 3);
             }
             catch (Exception ex)
             {
