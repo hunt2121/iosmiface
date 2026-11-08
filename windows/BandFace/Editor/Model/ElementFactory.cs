@@ -156,9 +156,9 @@ namespace BandFace.Creator
             return new[] { 100, 360 };
         }
 
-        static RgbaImage ArcImage(Generator g, string color) => AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
+        public static RgbaImage ArcImage(Generator g, string color) => AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
 
-        static RgbaImage LineImage(Generator g, string color, out System.Windows.Point s, out System.Windows.Point e)
+        public static RgbaImage LineImage(Generator g, string color, out System.Windows.Point s, out System.Windows.Point e)
             => AssetFactory.LineSegment(g.Length, g.Width, color, g.Angle, g.Round, out s, out e);
 
         /// <summary>Параметри дуги/лінії з самого маніфесту (кут, кінці) — для старих проєктів і після правки XML</summary>
