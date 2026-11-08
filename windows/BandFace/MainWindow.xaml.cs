@@ -412,6 +412,13 @@ namespace BandFace
             DeviceList.Children.Clear();
             _seen.Clear();
             _rssi.Clear();
+            // Пристрій, з яким уже працювали, — одразу першим рядком: після «Від'єднати» він може ще довго не з'являтися
+            // в ефірі, а підключитися до нього можна й без пошуку (наявне спарювання, без запиту на браслеті)
+            if (SavedBand(out var savedAddr, out var savedName))
+            {
+                _seen.Add(savedAddr);
+                AddDeviceRow(savedAddr, string.IsNullOrEmpty(savedName) ? "Band" : savedName, S.Get("savedBand"), true);
+            }
             try
             {
                 _ble.StartScan(f => Dispatcher.BeginInvoke(new Action(() =>
@@ -419,22 +426,27 @@ namespace BandFace
                     if (!_scanning) return;
                     // уже в списку — лише оновлюємо силу сигналу
                     if (!_seen.Add(f.Address)) { if (_rssi.TryGetValue(f.Address, out var t)) t.Text = f.Rssi + " dBm"; return; }
-                    var row = new Grid();
-                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                    row.Children.Add(new TextBlock { Text = f.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
-                    var rs = new TextBlock { Text = f.Rssi + " dBm", Foreground = (Brush)FindResource("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
-                    Grid.SetColumn(rs, 1);
-                    row.Children.Add(rs);
-                    _rssi[f.Address] = rs;
-                    var b = new Button { Content = row, Style = (Style)FindResource("Btn"), Height = 36, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0), MaxWidth = 520, HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 360 };
-                    b.Click += async (s, a) => await ConnectTo(f.Address, f.Name, false);
-                    DeviceList.Children.Add(b);
+                    AddDeviceRow(f.Address, f.Name, f.Rssi + " dBm", false);
                 })));
                 _scanning = true;
             }
             catch (Exception) { SetStatus(S.Get("noBle"), true); _scanning = false; }
             RefreshBand();
+        }
+
+        void AddDeviceRow(ulong address, string name, string right, bool saved)
+        {
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+            var rs = new TextBlock { Text = right, Foreground = (Brush)FindResource("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+            Grid.SetColumn(rs, 1);
+            row.Children.Add(rs);
+            _rssi[address] = rs;
+            var b = new Button { Content = row, Style = (Style)FindResource("Btn"), Height = 36, HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(14, 0, 14, 0), MaxWidth = 520, HorizontalAlignment = HorizontalAlignment.Left, MinWidth = 360 };
+            b.Click += async (s, a) => await ConnectTo(address, name, false, saved);
+            DeviceList.Children.Add(b);
         }
 
         void CancelConnect_Click(object sender, RoutedEventArgs e)
@@ -449,7 +461,8 @@ namespace BandFace
         }
 
         /// <summary>auto — автопідключення під час запуску: тихо, з наявним спарюванням.</summary>
-        async Task<bool> ConnectTo(ulong address, string name, bool auto)
+        /// <param name="reuse">спершу пробувати наявне спарювання (автопідключення й збережений пристрій)</param>
+        async Task<bool> ConnectTo(ulong address, string name, bool auto, bool? reuse = null)
         {
             if (_connecting) return false;
             _connecting = true; _cancelConnect = false; _connectingName = name;
@@ -460,7 +473,7 @@ namespace BandFace
             bool ok = false;
             try
             {
-                await _ble.ConnectAsync(address, auto);
+                await _ble.ConnectAsync(address, reuse ?? auto);
                 if (_cancelConnect) { _ble.Disconnect(); return false; }
                 AddLog("connected " + name + (auto ? " (auto)" : ""));
                 Storage.SaveText("band", address.ToString("X") + "|" + name);
