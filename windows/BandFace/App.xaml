@@ -91,6 +91,7 @@
       <Setter Property="Margin" Value="0,0,0,4"/>
       <!-- відступ вмісту; у вузькій смузі редактора менший, щоб значок не обрізався -->
       <Setter Property="Padding" Value="12,0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
@@ -98,7 +99,7 @@
             <Grid>
               <Border x:Name="bg" CornerRadius="6" Background="Transparent"/>
               <Border x:Name="bar" Width="3" Height="18" CornerRadius="2" HorizontalAlignment="Left" Background="{DynamicResource Accent}" Visibility="Collapsed"/>
-              <ContentPresenter VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+              <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}"/>
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsChecked" Value="True">

@@ -24,7 +24,7 @@ namespace BandFace
     /// </summary>
     public partial class MainWindow : Window
     {
-        const double SideWide = 228, SideNarrow = 60;
+        const double SideWide = 228, SideNarrow = 56;
 
         readonly BleTransport _ble = new BleTransport();
         readonly StringBuilder _log = new StringBuilder();
@@ -306,12 +306,20 @@ namespace BandFace
             if (!_compact) _flyout = false;
             bool wide = !_compact || _flyout;
             Sidebar.Width = wide ? SideWide : SideNarrow;
-            ContentHost.Margin = new Thickness(_compact ? SideNarrow : SideWide, 0, 0, 0);
+            // у вузькій смузі вміст редактора за 16 px від неї (у редактора свій відступ 18 px)
+            ContentHost.Margin = new Thickness(_compact ? SideNarrow - 2 : SideWide, 0, 0, 0);
+            SidebarPanel.Margin = new Thickness(wide ? 10 : 8, 8, wide ? 10 : 8, 8);
             var textVis = wide ? Visibility.Visible : Visibility.Collapsed;
             foreach (var t in new FrameworkElement[] { NavFacesText, NavStoreText, StoreChip, NavEditorText, NavSettingsText })
                 t.Visibility = textVis;
             // у вузькій смузі менший відступ пункту меню, щоб значок не обрізався
-            foreach (var n in new Control[] { NavFaces, NavStore, NavEditor, NavSettings }) n.Padding = new Thickness(wide ? 12 : 10, 0, wide ? 12 : 0, 0);
+            // у вузькій смузі значки рівно по центру (одна вертикаль для всіх і для ☰)
+            foreach (var n in new Control[] { NavFaces, NavStore, NavEditor, NavSettings })
+            {
+                n.Padding = new Thickness(wide ? 12 : 0, 0, wide ? 12 : 0, 0);
+                n.HorizontalContentAlignment = wide ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+            }
+            MenuBtn.HorizontalAlignment = wide ? HorizontalAlignment.Left : HorizontalAlignment.Center;
             VersionText.Text = wide ? "v" + _version : _version;
             VersionText.Margin = new Thickness(wide ? 12 : 0, 0, 0, 6);
             VersionText.FontSize = wide ? 12 : 10;
