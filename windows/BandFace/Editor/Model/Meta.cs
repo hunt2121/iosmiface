@@ -118,10 +118,13 @@ namespace BandFace.Creator
         public string SourceKey;
         /// <summary>Елементи з увімкненою галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)</summary>
         public HashSet<string> ColorFollow = new HashSet<string>();
+        /// <summary>Значення для перегляду в редакторі (на браслет не записуються)</summary>
+        public DemoValues Demo = new DemoValues();
 
         public ProjectMeta Copy()
         {
             var m = (ProjectMeta)MemberwiseClone();
+            m.Demo = Demo.Copy();
             m.Generators = Generators.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
             m.ColorFollow = new HashSet<string>(ColorFollow);
             return m;
@@ -145,6 +148,7 @@ namespace BandFace.Creator
             };
             if (SourceKey != null) d["sourceKey"] = SourceKey;
             if (ColorFollow.Count > 0) d["colorFollow"] = ColorFollow.Cast<object>().ToList();
+            if (!Demo.IsEmpty) d["demo"] = Demo.ToJson();
             return Json.Write(d);
         }
 
@@ -164,9 +168,67 @@ namespace BandFace.Creator
                 m.Edited = Json.Bool(d, "edited", false);
                 m.SourceKey = Json.Str(d, "sourceKey", null);
                 if (d.TryGetValue("colorFollow", out var cf) && cf is List<object> cl) m.ColorFollow = new HashSet<string>(cl.Select(o => o?.ToString() ?? ""));
+                m.Demo = DemoValues.FromJson(Json.Obj(d, "demo"));
             }
             catch (Exception) { }
             return m;
+        }
+    }
+
+    /// <summary>Значення для перегляду: свої для кожного джерела; час і дата — свої або справжні (з комп'ютера).
+    /// Формат editor.json спільний з iOS.</summary>
+    public sealed class DemoValues
+    {
+        public Dictionary<string, int> Values = new Dictionary<string, int>();
+        /// <summary>"HH:mm"; null — типовий 10:24</summary>
+        public string Time;
+        /// <summary>"yyyy-MM-dd"; null — типова 30.05.2026</summary>
+        public string Date;
+        public bool RealTime, RealDate;
+
+        public bool IsEmpty => Values.Count == 0 && Time == null && Date == null && !RealTime && !RealDate;
+
+        public DemoValues Copy() => new DemoValues { Values = new Dictionary<string, int>(Values), Time = Time, Date = Date, RealTime = RealTime, RealDate = RealDate };
+
+        /// <summary>Свої години й хвилини, якщо задано</summary>
+        public bool TryTime(out int h, out int m)
+        {
+            h = m = 0;
+            var p = (Time ?? "").Split(':');
+            return p.Length == 2 && int.TryParse(p[0], out h) && int.TryParse(p[1], out m);
+        }
+
+        /// <summary>Своя дата, якщо задано</summary>
+        public bool TryDate(out int day, out int month, out int year)
+        {
+            day = month = year = 0;
+            var p = (Date ?? "").Split('-');
+            return p.Length == 3 && int.TryParse(p[0], out year) && int.TryParse(p[1], out month) && int.TryParse(p[2], out day);
+        }
+
+        public Dictionary<string, object> ToJson()
+        {
+            var d = new Dictionary<string, object>
+            {
+                ["values"] = Values.ToDictionary(kv => kv.Key, kv => (object)kv.Value),
+                ["realTime"] = RealTime, ["realDate"] = RealDate,
+            };
+            if (Time != null) d["time"] = Time;
+            if (Date != null) d["date"] = Date;
+            return d;
+        }
+
+        public static DemoValues FromJson(Dictionary<string, object> d)
+        {
+            var r = new DemoValues();
+            if (d == null) return r;
+            var v = Json.Obj(d, "values");
+            if (v != null) foreach (var kv in v) if (kv.Value is double n) r.Values[kv.Key] = (int)n;
+            r.Time = Json.Str(d, "time", null);
+            r.Date = Json.Str(d, "date", null);
+            r.RealTime = Json.Bool(d, "realTime", false);
+            r.RealDate = Json.Bool(d, "realDate", false);
+            return r;
         }
     }
 }

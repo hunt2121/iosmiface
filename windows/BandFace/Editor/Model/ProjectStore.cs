@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows.Media.Imaging;
 using BandFace.Faces;
 
 namespace BandFace.Creator
@@ -84,7 +85,7 @@ namespace BandFace.Creator
         /// <summary>Новий ID циферблата (9 цифр): копія не замінює оригінал на браслеті.</summary>
         public static string NewFaceId() { lock (Rnd) return Rnd.Next(100000000, 1000000000).ToString(); }
 
-        /// <summary>Порожній циферблат: години, хвилини, дата.</summary>
+        /// <summary>Новий циферблат: великі години й хвилини (з BigWatch).</summary>
         public FaceProject Create(string name, DeviceProfile device)
         {
             var root = new XNode("Watchface");
@@ -94,12 +95,16 @@ namespace BandFace.Creator
             var meta = new ProjectMeta { Device = device };
             var folder = NewFolder(name);
             var p = new FaceProject(Path.GetFileName(folder), folder, root, new Dictionary<string, byte[]>(), meta);
-            int w = device.Width;
-            var digits = new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 66, Weight = 800, Style = "rounded" };
-            ElementFactory.AddDigits(p, "timeHour", digits, 0, w / 2, 120);
-            ElementFactory.AddDigits(p, "timeMinute", digits.Copy(), 0, w / 2, 200);
-            // дата — картинками цифр: текст (DataItemText) на браслеті не перевірено (Б-1)
-            ElementFactory.AddDigits(p, "dateDay", new Generator(GenKind.Digits) { Color = "#4DE1FF", FontSize = 34, Weight = 700, Style = "rounded" }, 0, w / 2, 280);
+            // старт — великі години й хвилини з BigWatch на тих самих місцях
+            var imgs = StarterDigits.Png.Select(b64 =>
+            {
+                var bmp = BitmapFrame.Create(new MemoryStream(Convert.FromBase64String(b64)), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                return Imaging.FromBitmap(bmp);
+            }).ToList();
+            int dw = imgs[0].W, dh = imgs[0].H;
+            // AddDigitImages ставить число за центром: лівий край = cx − ширина цифри
+            ElementFactory.AddDigitImages(p, "timeHour", imgs, 0, StarterDigits.X + dw, StarterDigits.HourY + dh / 2);
+            ElementFactory.AddDigitImages(p, "timeMinute", imgs, 0, StarterDigits.X + dw, StarterDigits.MinuteY + dh / 2);
             p.Save();
             Projects.Insert(0, p);
             return p;

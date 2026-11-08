@@ -110,7 +110,7 @@ namespace BandFace.Creator
         /// <summary>Рамки шарів теми без малювання — для інспектора й вирівнювання</summary>
         public List<LayerBox> Boxes(int theme) => p.Layouts(theme).Select(l => Box(l, null)).ToList();
 
-        int Value(XNode res) => SampleData.Value(res.Str("source") ?? "", Live);
+        int Value(XNode res) => SampleData.Value(res.Str("source") ?? "", Live, p.Meta.Demo);
 
         static void Put(DrawingContext dc, ImageSource img, Rect r) { if (dc != null) dc.DrawImage(img, r); }
 
@@ -385,7 +385,7 @@ namespace BandFace.Creator
                 if (src == null) continue;
                 int i = s.IndexOf("%s", StringComparison.Ordinal);
                 if (i < 0) i = s.IndexOf("%d", StringComparison.Ordinal);
-                if (i >= 0) s = s.Substring(0, i) + SampleData.Value(src, Live) + s.Substring(i + 2);
+                if (i >= 0) s = s.Substring(0, i) + SampleData.Value(src, Live, p.Meta.Demo) + s.Substring(i + 2);
             }
             bool arc = (res.Str("style") ?? "normal") != "normal";
             double h0 = Math.Max(res.Int("h"), 1);

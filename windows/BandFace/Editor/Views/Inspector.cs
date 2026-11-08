@@ -285,6 +285,7 @@ namespace BandFace.Creator
                     if (n != null && n != src) EditRes(() => res.Set("source", n));
                 };
                 Add(btn);
+                DemoSection(src);
             }
 
             Add(Ui.Header(S.Get("look")));
@@ -367,6 +368,55 @@ namespace BandFace.Creator
         // MARK: Цифри
 
         /// <summary>Рядок джерела даних: плитка зі значком групи, назва й технічне імʼя (якщо назва є), стрілка › (для кнопки)</summary>
+        /// <summary>«Значення для перегляду»: однакове для всіх елементів з цим джерелом, на браслет не записується.
+        /// Час і дата — свої або справжні (з комп'ютера).</summary>
+        void DemoSection(string src)
+        {
+            var demo = project.Meta.Demo;
+            if (src.StartsWith("time"))
+            {
+                bool real = demo.RealTime;
+                if (!demo.TryTime(out var h, out var m)) { h = 10; m = 24; }
+                Add(Ui.Chips(S.Get("demoTime"), new[] { Ui.P("own", S.Get("demoOwn")), Ui.P("real", S.Get("demoReal")) }, real ? "real" : "own",
+                    k => project.Edit(p => p.Meta.Demo.RealTime = k == "real"), 2));
+                if (!real)
+                {
+                    Add(Ui.NumberRow(S.Get("demoHours"), h, v => project.Edit(p => p.Meta.Demo.Time = $"{v:00}:{m:00}"), 0, 23));
+                    Add(Ui.NumberRow(S.Get("demoMinutes"), m, v => project.Edit(p => p.Meta.Demo.Time = $"{h:00}:{v:00}"), 0, 59));
+                }
+                Add(Ui.Note(S.Get(real ? "demoRealTimeHint" : "demoTimeHint")));
+                return;
+            }
+            if (src.StartsWith("date"))
+            {
+                bool real = demo.RealDate;
+                if (!demo.TryDate(out var d, out var mo, out var y)) { d = 30; mo = 5; y = 2026; }
+                Add(Ui.Chips(S.Get("demoDate"), new[] { Ui.P("own", S.Get("demoOwn")), Ui.P("real", S.Get("demoReal")) }, real ? "real" : "own",
+                    k => project.Edit(p => p.Meta.Demo.RealDate = k == "real"), 2));
+                if (!real)
+                {
+                    string Fmt(int dd, int mm, int yy) => $"{yy:0000}-{mm:00}-{dd:00}";
+                    Add(Ui.NumberRow(S.Get("demoDay"), d, v => project.Edit(p => p.Meta.Demo.Date = Fmt(Math.Min(v, DateTime.DaysInMonth(y, mo)), mo, y)), 1, 31));
+                    Add(Ui.NumberRow(S.Get("demoMonth"), mo, v => project.Edit(p => p.Meta.Demo.Date = Fmt(Math.Min(d, DateTime.DaysInMonth(y, v)), v, y)), 1, 12));
+                    Add(Ui.NumberRow(S.Get("demoYear"), y, v => project.Edit(p => p.Meta.Demo.Date = Fmt(Math.Min(d, DateTime.DaysInMonth(v, mo)), mo, v)), 2000, 2099));
+                }
+                Add(Ui.Note(S.Get(real ? "demoRealDateHint" : "demoDateHint")));
+                return;
+            }
+            var r = SampleData.DemoRange(src);
+            int cur = SampleData.Value(src, false, demo);
+            Add(Ui.Slider(S.Get("demoValue"), cur, Math.Min(r.Min, cur), Math.Max(r.Max, cur), 1, v => project.Edit(p => p.Meta.Demo.Values[src] = (int)Math.Round(v))));
+            var note = Ui.Note(S.Get("demoHint"));
+            if (demo.Values.ContainsKey(src))
+            {
+                var reset = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run(S.Get("demoDefault")));
+                reset.Click += (s, e) => project.Edit(p => p.Meta.Demo.Values.Remove(src));
+                note.Inlines.Add(new System.Windows.Documents.Run(" "));
+                note.Inlines.Add(reset);
+            }
+            Add(note);
+        }
+
         internal static FrameworkElement SourceRow(string src, bool chevron)
         {
             var g = new Grid();

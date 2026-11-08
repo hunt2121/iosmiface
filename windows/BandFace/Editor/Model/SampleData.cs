@@ -10,17 +10,20 @@ namespace BandFace.Creator
 {
     static class SampleData
     {
-        /// <summary>Значення для перегляду; live — поточний час і дата.</summary>
-        public static int Value(string s, bool live = false)
+        /// <summary>Значення для перегляду; live — поточний час і дата; demo — значення, задані в проєкті.</summary>
+        public static int Value(string s, bool live = false, DemoValues demo = null)
         {
             s = s ?? "";
             var now = DateTime.Now;
+            bool liveTime = live || (demo != null && demo.RealTime), liveDate = live || (demo != null && demo.RealDate);
             int v;
             if (s.StartsWith("time"))
             {
-                if (s.Contains("Hour")) { v = live ? now.Hour : 10; if (s.Contains("12")) v = v % 12 == 0 ? 12 : v % 12; }
-                else if (s.Contains("Minute")) v = live ? now.Minute : 24;
-                else if (s.Contains("Second")) v = live ? now.Second : 36;
+                int oh = 10, om = 24;
+                if (demo != null && demo.TryTime(out var th, out var tm)) { oh = th; om = tm; }
+                if (s.Contains("Hour")) { v = liveTime ? now.Hour : oh; if (s.Contains("12")) v = v % 12 == 0 ? 12 : v % 12; }
+                else if (s.Contains("Minute")) v = liveTime ? now.Minute : om;
+                else if (s.Contains("Second")) v = liveTime ? now.Second : 36;
                 else v = 0;
                 if (s.EndsWith("High")) return v / 10;
                 if (s.EndsWith("Low")) return v % 10;
@@ -28,16 +31,24 @@ namespace BandFace.Creator
             }
             if (s.StartsWith("date"))
             {
-                // день тижня: 0 — понеділок
-                if (s.Contains("Week")) return live ? ((int)now.DayOfWeek + 6) % 7 : 4;
-                if (s.Contains("Year")) return (live ? now.Year : 2026) % (s.Contains("Low") ? 100 : 10000);
-                if (s.Contains("Month")) v = live ? now.Month : 5;
-                else if (s.Contains("Day")) v = live ? now.Day : 30;
+                // своя дата: день тижня рахується з неї (0 — понеділок)
+                int day = 30, month = 5, year = 2026, week = 4;
+                if (liveDate) { day = now.Day; month = now.Month; year = now.Year; week = ((int)now.DayOfWeek + 6) % 7; }
+                else if (demo != null && demo.TryDate(out var dd, out var dm, out var dy))
+                {
+                    day = dd; month = dm; year = dy;
+                    try { week = ((int)new DateTime(dy, dm, dd).DayOfWeek + 6) % 7; } catch (ArgumentException) { }
+                }
+                if (s.Contains("Week")) return week;
+                if (s.Contains("Year")) return year % (s.Contains("Low") ? 100 : 10000);
+                if (s.Contains("Month")) v = month;
+                else if (s.Contains("Day")) v = day;
                 else return 1;
                 if (s.EndsWith("High")) return v / 10;
                 if (s.EndsWith("Low")) return v % 10;
                 return v;
             }
+            if (demo != null && demo.Values.TryGetValue(s, out var own)) return own;
             var l = s.ToLowerInvariant();
             // стани як у звичайному вигляді: «не турбувати» вимкнено, Bluetooth підключено
             if (l.Contains("disturb")) return 0;
@@ -54,6 +65,22 @@ namespace BandFace.Creator
             if (l.Contains("distance")) return 6;
             if (l.Contains("progress")) return 65;
             return 42;
+        }
+
+        /// <summary>Межі повзунка «Значення для перегляду»</summary>
+        public static (int Min, int Max) DemoRange(string source)
+        {
+            var l = (source ?? "").ToLowerInvariant();
+            if (l.Contains("disturb") || l.Contains("bluetooth")) return (0, 1);
+            if (l.Contains("progress") || l.Contains("percent") || l.Contains("battery") || l.Contains("stress")) return (0, 100);
+            if (l.Contains("step")) return (0, 30000);
+            if (l.Contains("heart")) return (30, 220);
+            if (l.Contains("calorie")) return (0, 2000);
+            if (l.Contains("oxygen") || l.Contains("spo")) return (70, 100);
+            if (l.Contains("temperature") || l.Contains("weather")) return (-30, 45);
+            if (l.Contains("distance")) return (0, 50);
+            if (l.Contains("stand") || l.Contains("sleep")) return (0, 12);
+            return (0, 100);
         }
 
         /// <summary>Зрозуміла назва джерела (ключ рядка src_…), інакше — як є</summary>

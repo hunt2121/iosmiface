@@ -76,6 +76,7 @@ namespace BandFace.Creator
             GridText.Text = S.Get("grid");
             FitBtn.Content = S.Get("fit");
             LockBtn.ToolTip = S.Get(locked ? "unlockMove" : "lockMove");
+            ShotBtn.ToolTip = S.Get("faceShot");
             NameText.ToolTip = S.Get("faceProps");
             FaceRowTitle.Text = S.Get("face");
             FaceRowSub.Text = S.Get("faceRowSub");
@@ -407,6 +408,24 @@ namespace BandFace.Creator
         bool locked;
         Point? panFrom;
         double panH, panV;
+
+        /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× — одразу вибір, куди зберегти</summary>
+        void Shot_Click(object sender, RoutedEventArgs e)
+        {
+            if (project == null) return;
+            var name = new string((project.DisplayName ?? "").Select(c => System.IO.Path.GetInvalidFileNameChars().Contains(c) ? '-' : c).ToArray()).Trim();
+            var dlg = new SaveFileDialog { Filter = "PNG|*.png", DefaultExt = ".png", FileName = (name.Length > 0 ? name : "watchface") + ".png" };
+            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+            try
+            {
+                var rd = new FaceRenderer(project) { ColorVariant = variant };
+                var img = rd.Render(theme, 2).Image;
+                var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(img));
+                using (var f = File.Create(dlg.FileName)) enc.Save(f);
+            }
+            catch (Exception ex) { MessageBox.Show(Window.GetWindow(this), ex.Message, "BandFace", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
 
         void Lock_Click(object sender, RoutedEventArgs e)
         {
