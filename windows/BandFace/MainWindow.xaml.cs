@@ -175,7 +175,7 @@ namespace BandFace
                     // вітання на екрані пристрою: заодно видно, що зв'язок і вхід працюють
                     await Task.Delay(200);
                     var icons = new IconResponder(session, AddLogSafe);
-                    await session.SendAsync(Command.Notification(NextNoteId(), NotifyIcons.OwnPackage, "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody", Environment.MachineName), DateTime.Now));
+                    await session.SendAsync(Command.Notification(NextNoteId(), NotifyIcons.OwnPackage, "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody"), DateTime.Now));
                     AddLog("welcome sent");
                     await icons.SettleAsync(1500, 20000);
                     icons.Detach();
