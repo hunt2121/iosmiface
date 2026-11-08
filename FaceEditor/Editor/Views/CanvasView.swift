@@ -23,6 +23,16 @@ struct CanvasView: View {
     /// Під час перетягування: шари під вибраним, сам шар і шари над ним — намальовані один раз;
     /// далі лише зсувається картинка шару (без перемальовування всього циферблата на кожен рух пальця)
     @State private var dragCache: DragCache?
+    /// Ручки дуги й лінії: «a0»/«a1» — початок/кінець дуги, «l0»/«l1» — кінці лінії
+    @State private var handle: String?
+    @State private var hStart: Double = 0
+    @State private var hRange: Double = 0
+    @State private var hA = CGPoint.zero
+    @State private var hB = CGPoint.zero
+    @State private var hSnapped = false
+    @State private var touchDown = Date()
+    /// Палець притримали перед рухом — без прив'язки кутів
+    @State private var freeMode: Bool?
 
     struct DragCache {
         let below: UIImage
@@ -58,7 +68,7 @@ struct CanvasView: View {
                 if let box0 = selectedBox(boxes) {
                     let box = box0.offsetBy(dx: shift.width, dy: shift.height)
                     let rect = CGRect(x: box.minX * scale, y: box.minY * scale, width: box.width * scale, height: box.height * scale)
-                    SelectionFrame(rect: rect)
+                    SelectionFrame(rect: rect, corners: gauge == nil)
                     if let pos = dragPos {
                         Text("X \(Int(pos.x)) · Y \(Int(pos.y))")
                             .font(.system(size: 10, weight: .bold)).monospacedDigit()
@@ -67,6 +77,7 @@ struct CanvasView: View {
                             .position(x: rect.midX, y: max(8, rect.minY - 12))
                     }
                 }
+                if cache == nil || handle != nil { handlesOverlay(scale: scale) }
                 if guideV { Rectangle().fill(Color.pink).frame(width: 1, height: size.height).offset(x: size.width / 2) }
                 if guideH { Rectangle().fill(Color.pink).frame(width: size.width, height: 1).offset(y: size.height / 2) }
             }
@@ -114,10 +125,185 @@ struct CanvasView: View {
         return boxes.last { $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }?.layout
     }
 
+    // MARK: Ручки дуги й лінії
+
+    /// Дуга чи лінія вибраного шару
+    private var gauge: (XNode, ElementKind)? {
+        guard let s = selected, let res = project.element(of: s) else { return nil }
+        let k = ElementKind.of(res, in: project)
+        return k == .arc || k == .line ? (res, k) : nil
+    }
+
+    private func arcCenter(_ res: XNode) -> CGPoint {
+        guard let s = selected else { return .zero }
+        return CGPoint(x: CGFloat(s.int("x") + res.int("pivotX")), y: CGFloat(s.int("y") + res.int("pivotY")))
+    }
+
+    private static func onArc(_ c: CGPoint, _ r: CGFloat, _ deg: Double) -> CGPoint {
+        let t = deg * .pi / 180
+        return CGPoint(x: c.x + r * CGFloat(sin(t)), y: c.y - r * CGFloat(cos(t)))
+    }
+
+    private static func norm(_ a: Double) -> Double { let m = a.truncatingRemainder(dividingBy: 360); return m < 0 ? m + 360 : m }
+
+    /// До найближчого кратного step, якщо ближче за 4°
+    private static func snapTo(_ a: Double, _ step: Double) -> (Double, Bool) {
+        let n = (a / step).rounded() * step
+        return abs(n - a) <= 4 ? (n, true) : (a.rounded(), false)
+    }
+
+    private func ends(_ res: XNode, _ k: ElementKind) -> (CGPoint, CGPoint)? {
+        guard let s = selected else { return nil }
+        if k == .arc {
+            let c = arcCenter(res), r = CGFloat(res.int("barRadius"))
+            guard r > 0 else { return nil }
+            return (Self.onArc(c, r, Double(res.int("angleStart"))), Self.onArc(c, r, Double(res.int("angleStart") + res.int("angleRange"))))
+        }
+        return (CGPoint(x: CGFloat(s.int("x") + res.int("startX")), y: CGFloat(s.int("y") + res.int("startY"))),
+                CGPoint(x: CGFloat(s.int("x") + res.int("endX")), y: CGFloat(s.int("y") + res.int("endY"))))
+    }
+
+    private func startHandle(_ pt: CGPoint, scale: CGFloat) -> Bool {
+        guard case let (res, k)? = gauge, case let (a, b)? = ends(res, k) else { return false }
+        if k == .line, !(project.meta.generators[res.string("name") ?? ""]?.drawn ?? false) { return false }
+        let tol = 18 / scale
+        let d = { (p: CGPoint) in hypot(p.x - pt.x, p.y - pt.y) }
+        if d(b) <= tol { handle = k == .arc ? "a1" : "l1" } else if d(a) <= tol { handle = k == .arc ? "a0" : "l0" } else { return false }
+        hStart = Double(res.int("angleStart")); hRange = Double(res.int("angleRange")); hA = a; hB = b; hSnapped = false
+        touchDown = Date(); freeMode = nil
+        return true
+    }
+
+    private func moveHandle(_ pt: CGPoint) {
+        guard let h = handle, case let (res, _)? = gauge else { return }
+        let snapOn = snap && !(freeMode ?? false)
+        hSnapped = false
+        if h.hasPrefix("a") {
+            let c = arcCenter(res)
+            var th = Self.norm(atan2(Double(pt.x - c.x), Double(-(pt.y - c.y))) * 180 / .pi)
+            var s1 = false
+            if snapOn { (th, s1) = Self.snapTo(th, 45); th = Self.norm(th) } else { th = th.rounded() }
+            let s0 = Double(res.int("angleStart")), r0 = Double(res.int("angleRange"))
+            let ccw = r0 < 0
+            if h == "a1" {
+                var r = ccw ? -Self.norm(s0 - th) : Self.norm(th - s0)
+                if abs(r) < 1 { r = (ccw ? -1 : 1) * (abs(hRange) > 180 ? 360 : 1) }
+                if snapOn {
+                    // довжина — до 90/180/270/360
+                    let m = (abs(r) / 90).rounded() * 90
+                    if m > 0, abs(m - abs(r)) <= 4 { r = (r < 0 ? -1 : 1) * m; s1 = true }
+                }
+                hRange = r
+            } else {
+                let e = s0 + r0
+                var r = ccw ? -Self.norm(th - e) : Self.norm(e - th)
+                if abs(r) < 1 { r = (ccw ? -1 : 1) * 360 }
+                hStart = th; hRange = r
+            }
+            hSnapped = s1
+        } else {
+            let fixed = h == "l1" ? hA : hB
+            let len = max(4, hypot(Double(pt.x - fixed.x), Double(pt.y - fixed.y)))
+            var ang = atan2(Double(pt.y - fixed.y), Double(pt.x - fixed.x)) * 180 / .pi
+            if snapOn { (ang, hSnapped) = Self.snapTo(ang, 45) }
+            let t = ang * .pi / 180
+            let m = CGPoint(x: (Double(fixed.x) + cos(t) * len).rounded(), y: (Double(fixed.y) + sin(t) * len).rounded())
+            if h == "l1" { hB = m } else { hA = m }
+        }
+    }
+
+    private func endHandle() {
+        defer { handle = nil }
+        guard let h = handle, case let (res, k)? = gauge, let layout = selected else { return }
+        let name = res.string("name") ?? ""
+        let gen = project.meta.generators[name].map { ElementFactory.synced(res, $0) }
+        if h.hasPrefix("a") {
+            if Int(hStart) == Int(res.int("angleStart")), Int(hRange) == Int(res.int("angleRange")) { return }
+            let s = hStart, r = hRange
+            if var g = gen, g.drawn {
+                g.start = s; g.range = r
+                let gg = g
+                project.edit { ElementFactory.regenerate($0, element: name, gen: gg) }
+            } else {
+                project.edit { _ in res.set("angleStart", int: Int(s)).set("angleRange", int: Int(r)) }
+            }
+        } else if k == .line, let g = gen {
+            if case let (a, b)? = ends(res, k), a == hA, b == hB { return }
+            let A = hA, B = hB
+            project.edit { p in ElementFactory.placeLine(p, res: res, layout: layout, gen: g, from: A, to: B) }
+        }
+    }
+
+    @ViewBuilder private func handlesOverlay(scale: CGFloat) -> some View {
+        if case let (res, k)? = gauge, case let (a0, b0)? = ends(res, k) {
+            let (a, b) = shownEnds(res, k, a0, b0)
+            let sc = { (p: CGPoint) in CGPoint(x: p.x * scale, y: p.y * scale) }
+            let sel = Color.blue
+            ZStack(alignment: .topLeading) {
+                if handle != nil {
+                    if k == .arc {
+                        let c = arcCenter(res), r = CGFloat(res.int("barRadius"))
+                        Path { p in
+                            if abs(hRange) >= 359.5 { p.addEllipse(in: CGRect(x: (c.x - r) * scale, y: (c.y - r) * scale, width: 2 * r * scale, height: 2 * r * scale)) }
+                            else { p.addArc(center: sc(c), radius: r * scale, startAngle: .degrees(hStart - 90), endAngle: .degrees(hStart + hRange - 90), clockwise: hRange < 0) }
+                        }
+                        .stroke(sel.opacity(0.45), style: StrokeStyle(lineWidth: CGFloat(max(2, res.int("barWidth"))) * scale, lineCap: .round))
+                        let moving = handle == "a1" ? b : a
+                        Path { p in p.move(to: sc(c)); p.addLine(to: sc(moving)) }
+                            .stroke(hSnapped ? Color.pink : sel, style: StrokeStyle(lineWidth: 1.2, dash: [5, 3]))
+                        tag(handle == "a1" ? "\(Int(abs(hRange)))°" : loc("від") + " \(Int(Self.norm(hStart)))°", at: sc(moving), snapped: hSnapped)
+                    } else {
+                        Path { p in p.move(to: sc(a)); p.addLine(to: sc(b)) }
+                            .stroke(sel.opacity(0.45), style: StrokeStyle(lineWidth: CGFloat(max(2, res.int("barWidth"))) * scale, lineCap: .round))
+                        if hSnapped {
+                            let len = max(1, hypot(b.x - a.x, b.y - a.y)), ux = (b.x - a.x) / len, uy = (b.y - a.y) / len
+                            Path { p in p.move(to: sc(CGPoint(x: a.x - ux * 40, y: a.y - uy * 40))); p.addLine(to: sc(CGPoint(x: b.x + ux * 40, y: b.y + uy * 40))) }
+                                .stroke(Color.pink, style: StrokeStyle(lineWidth: 1.2, dash: [5, 3]))
+                        }
+                        let ang = Self.norm(-atan2(Double(b.y - a.y), Double(b.x - a.x)) * 180 / .pi)
+                        tag("\(Int(ang.rounded()))° · \(Int(hypot(b.x - a.x, b.y - a.y).rounded())) px", at: sc(handle == "l1" ? b : a), snapped: hSnapped)
+                    }
+                }
+                dot(sc(a), 14); dot(sc(b), k == .arc ? 16 : 14)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// Кінці, які показуємо: під час перетягування — нові
+    private func shownEnds(_ res: XNode, _ k: ElementKind, _ a: CGPoint, _ b: CGPoint) -> (CGPoint, CGPoint) {
+        guard handle != nil else { return (a, b) }
+        if k == .arc {
+            let c = arcCenter(res), r = CGFloat(res.int("barRadius"))
+            return (Self.onArc(c, r, hStart), Self.onArc(c, r, hStart + hRange))
+        }
+        return (hA, hB)
+    }
+
+    private func dot(_ p: CGPoint, _ size: CGFloat) -> some View {
+        Circle().fill(Color.white).overlay(Circle().stroke(Color.blue, lineWidth: 2))
+            .frame(width: size, height: size).position(p)
+    }
+
+    private func tag(_ text: String, at p: CGPoint, snapped: Bool) -> some View {
+        Text(verbatim: text).font(.system(size: 11, weight: .bold)).monospacedDigit().foregroundStyle(.white)
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: 4).fill(snapped ? Color.pink : Color.blue))
+            .fixedSize()
+            .position(x: p.x + 30, y: p.y - 18)
+    }
+
     private func drag(scale: CGFloat, boxes: [LayerBox], W: CGFloat, H: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { v in
                 let start = CGPoint(x: v.startLocation.x / scale, y: v.startLocation.y / scale)
+                // ручки на кінцях дуги чи лінії
+                if handle != nil || (dragLayout == nil && startHandle(start, scale: scale)) {
+                    let moved = abs(v.translation.width) + abs(v.translation.height) > 2
+                    if moved, freeMode == nil { freeMode = Date().timeIntervalSince(touchDown) > 0.5 }
+                    if moved { moveHandle(CGPoint(x: v.location.x / scale, y: v.location.y / scale)) }
+                    return
+                }
                 if dragLayout == nil {
                     moved = false
                     guard let l = hit(start, boxes) else { return }
@@ -149,6 +335,7 @@ struct CanvasView: View {
                 dragPos = CGPoint(x: x.rounded(), y: y.rounded())
             }
             .onEnded { v in
+                if handle != nil { if freeMode != nil { endHandle() } else { handle = nil }; return }
                 defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false; dragCache = nil }
                 guard let l = dragLayout else {
                     // дотик повз шари — зняти вибір
@@ -165,13 +352,15 @@ struct CanvasView: View {
 /// Пунктирна рамка з чотирма маркерами.
 struct SelectionFrame: View {
     let rect: CGRect
+    /// Кутові маркери (у дуги й лінії — свої ручки на кінцях)
+    var corners = true
     var body: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 4)
                 .stroke(Color.blue, style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
                 .frame(width: max(rect.width, 6), height: max(rect.height, 6))
                 .offset(x: rect.minX, y: rect.minY)
-            ForEach(0..<4, id: \.self) { i in
+            ForEach(0..<(corners ? 4 : 0), id: \.self) { i in
                 Circle().fill(Color.white).overlay(Circle().stroke(Color.blue, lineWidth: 1.5))
                     .frame(width: 9, height: 9)
                     .offset(x: (i % 2 == 0 ? rect.minX : rect.maxX) - 4.5, y: (i < 2 ? rect.minY : rect.maxY) - 4.5)

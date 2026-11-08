@@ -22,6 +22,34 @@ struct Generator: Codable, Equatable {
     var unit: String = ""
     /// Рядок напису (kind == .label): малюється шрифтом у картинку
     var text: String = ""
+    /// Шрифт користувача (назва з бібліотеки шрифтів); порожньо — за стилем
+    var font: String = ""
+    /// Дуга: початок і довжина (0° — угорі, за годинниковою); трек і заповнення лише в цих межах
+    var start: Double = 220
+    var range: Double = 280
+    /// Лінія: напрямок (0° — праворуч, 90° — донизу)
+    var angle: Double = 0
+    /// Кінці дуги й лінії: круглі (типово) або прямі
+    var round: Bool = true
+    /// Набір цифр: обвідка, тінь, градієнт згори донизу, ширина літер
+    var outline: Double = 0
+    var outlineColor: String = "#000000"
+    var shadowX: Double = 0
+    var shadowY: Double = 0
+    var shadowColor: String = "#000000"
+    var color2: String = ""
+    var widthPct: Double = 100
+
+    /// Картинки намальовані редактором з цих параметрів (а не свої картинки користувача)
+    var drawn: Bool { kind != .image && kind != .frames }
+
+    var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 }
+
+    /// Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту
+    mutating func applyStyle(_ s: Generator) {
+        font = s.font; style = s.style; weight = s.weight; color = s.color; color2 = s.color2
+        outline = s.outline; outlineColor = s.outlineColor; shadowX = s.shadowX; shadowY = s.shadowY; shadowColor = s.shadowColor; widthPct = s.widthPct
+    }
 
     init(kind: Kind, color: String = "#FFFFFF", bgColor: String = "#3A3A3C", fontSize: Double = 48, weight: Int = 700,
          style: String = "rounded", radius: Double = 60, width: Double = 10, length: Double = 120, unit: String = "", text: String = "") {
@@ -43,6 +71,19 @@ struct Generator: Codable, Equatable {
         length = (try? c.decodeIfPresent(Double.self, forKey: .length)) ?? 120
         unit = (try? c.decodeIfPresent(String.self, forKey: .unit)) ?? ""
         text = (try? c.decodeIfPresent(String.self, forKey: .text)) ?? ""
+        font = (try? c.decodeIfPresent(String.self, forKey: .font)) ?? ""
+        // старі проєкти: дуга була повним кільцем, лінія — горизонтальною (справжні кути беруться з маніфесту)
+        start = (try? c.decodeIfPresent(Double.self, forKey: .start)) ?? 0
+        range = (try? c.decodeIfPresent(Double.self, forKey: .range)) ?? 360
+        angle = (try? c.decodeIfPresent(Double.self, forKey: .angle)) ?? 0
+        round = (try? c.decodeIfPresent(Bool.self, forKey: .round)) ?? true
+        outline = (try? c.decodeIfPresent(Double.self, forKey: .outline)) ?? 0
+        outlineColor = (try? c.decodeIfPresent(String.self, forKey: .outlineColor)) ?? "#000000"
+        shadowX = (try? c.decodeIfPresent(Double.self, forKey: .shadowX)) ?? 0
+        shadowY = (try? c.decodeIfPresent(Double.self, forKey: .shadowY)) ?? 0
+        shadowColor = (try? c.decodeIfPresent(String.self, forKey: .shadowColor)) ?? "#000000"
+        color2 = (try? c.decodeIfPresent(String.self, forKey: .color2)) ?? ""
+        widthPct = (try? c.decodeIfPresent(Double.self, forKey: .widthPct)) ?? 100
     }
 }
 
@@ -203,7 +244,9 @@ final class FaceProject: ObservableObject, Identifiable {
         var xml: [UInt8] = []
         for c in XML.print(root) { if c == 0x0A { xml.append(0x0D) }; xml.append(c) }
         try? Data(xml).write(to: folder.appendingPathComponent("manifest.xml"))
-        if let m = try? JSONEncoder().encode(meta) { try? m.write(to: folder.appendingPathComponent("editor.json")) }
+        // параметри редактора — у прихованому файлі (як у Windows-версії); старий editor.json прибираємо
+        if let m = try? JSONEncoder().encode(meta) { try? m.write(to: folder.appendingPathComponent(Self.metaFile)) }
+        try? fm.removeItem(at: folder.appendingPathComponent(Self.oldMetaFile))
         let filesDir = folder.appendingPathComponent("files")
         // лише змінені файли; повністю — після відкату й при першому збереженні
         if fullSave { try? fm.removeItem(at: filesDir) }
@@ -216,12 +259,61 @@ final class FaceProject: ObservableObject, Identifiable {
         fullSave = false; dirty.removeAll(); removed.removeAll()
     }
 
+    /// Прихований файл налаштувань редактора в теці проєкту (спільний формат з Windows-версією)
+    static let metaFile = ".bandface.json"
+    static let oldMetaFile = "editor.json"
+
+    static func readMeta(_ folder: URL) -> ProjectMeta {
+        var meta = [metaFile, oldMetaFile].lazy.compactMap { try? Data(contentsOf: folder.appendingPathComponent($0)) }.first
+            .flatMap { try? JSONDecoder().decode(ProjectMeta.self, from: $0) } ?? ProjectMeta()
+        meta.device = .band10
+        return meta
+    }
+
+    /// Новий маніфест цілком (режим XML) — лише всередині edit, щоб можна було скасувати
+    func setRoot(_ r: XNode) { root = r; images.removeAll() }
+
+    /// Файли теки змінили ззовні (застосунок «Файли», інший редактор): перечитати. Як звичайна зміна — її можна скасувати.
+    @discardableResult func reloadFromDisk() -> Bool {
+        guard let xml = try? Data(contentsOf: folder.appendingPathComponent("manifest.xml")) else { return false }
+        let fresh = FaceProject.readFiles(folder)
+        var mine: [UInt8] = []
+        for c in XML.print(root) { if c == 0x0A { mine.append(0x0D) }; mine.append(c) }
+        let sameXml = [UInt8](xml) == mine || [UInt8](xml) == XML.print(root)
+        let sameFiles = fresh == files
+        if sameXml && sameFiles { return false }
+        let parsed: XNode? = sameXml ? root : ((try? XML.parse([UInt8](xml))) ?? nil)
+        guard let r = parsed else { return false }
+        undoStack.append((Data(XML.print(root)), files, meta))
+        if undoStack.count > 40 { undoStack.removeFirst() }
+        redoStack.removeAll()
+        root = r; files = fresh
+        images.removeAll()
+        markSaved()
+        revision += 1
+        return true
+    }
+
+    static func readFiles(_ folder: URL) -> [String: Data] {
+        var files: [String: Data] = [:]
+        let filesDir = folder.appendingPathComponent("files")
+        let fm = FileManager.default
+        if let en = fm.enumerator(atPath: filesDir.path) {
+            for case let rel as String in en {
+                var isDir: ObjCBool = false
+                let full = filesDir.appendingPathComponent(rel)
+                guard fm.fileExists(atPath: full.path, isDirectory: &isDir), !isDir.boolValue,
+                      let d = try? Data(contentsOf: full) else { continue }
+                files[MemoryStorage.normalizedPath(rel)] = d
+            }
+        }
+        return files
+    }
+
     static func load(folder: URL) -> FaceProject? {
         guard let xml = try? Data(contentsOf: folder.appendingPathComponent("manifest.xml")),
               let root = try? XML.parse([UInt8](xml)) else { return nil }
-        var meta = (try? Data(contentsOf: folder.appendingPathComponent("editor.json")))
-            .flatMap { try? JSONDecoder().decode(ProjectMeta.self, from: $0) } ?? ProjectMeta()
-        meta.device = .band10
+        let meta = readMeta(folder)
         var files: [String: Data] = [:]
         let filesDir = folder.appendingPathComponent("files")
         // Відносні шляхи беремо прямо з перелічувача: на iOS /var і /private/var — той самий каталог,

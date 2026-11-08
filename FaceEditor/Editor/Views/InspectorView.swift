@@ -98,11 +98,12 @@ struct InspectorView: View {
             case .values:
                 ValuesLook(project: project, res: r)
             case .image:
-                ImageReplaceRow(project: project, res: r)
+                EmptyView()
             default:
                 Text("Цей елемент можна пересувати, дублювати й видаляти. Його вміст редактор поки не змінює.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            ElementImages(project: project, res: r)
             if r.tag.hasPrefix("DataItem") { renderRuleRow(r) }
             tapRow
         }
@@ -147,12 +148,12 @@ struct InspectorView: View {
     @ViewBuilder private func digitsLook(_ r: XNode) -> some View {
         if let g = gen {
             CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 12...160, step: 1) { v in regen { $0.fontSize = v } }
-            Chips(title: "Шрифт", hint: "перетворюється на картинки цифр",
-                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
-                  selected: g.style) { s in regen { $0.style = s } }
-            Chips(title: "Товщина", hint: nil,
-                  items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
-                  selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 700 } }
+            FontRow(gen: g) { f in regen(f) }
+            if g.font.isEmpty {
+                Chips(title: "Товщина", hint: nil,
+                      items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
+                      selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 700 } }
+            }
         } else {
             Button {
                 let g = Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded")
@@ -170,6 +171,7 @@ struct InspectorView: View {
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
             .font(.subheadline)
+        if let g = gen { DigitSetSection(project: project, name: resName, gen: g) { f in regen(f) } }
     }
 
     /// Напис: рядок, шрифт, розмір, товщина (колір — на вкладці «Колір»)
@@ -177,53 +179,125 @@ struct InspectorView: View {
         if let g = gen {
             LabelField(text: g.text) { t in regen { $0.text = t } }
             CommitSlider(title: "Розмір шрифту", value: g.fontSize, range: 8...160, step: 1) { v in regen { $0.fontSize = v } }
-            Chips(title: "Шрифт", hint: "напис стає картинкою",
-                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
-                  selected: g.style) { s in regen { $0.style = s } }
-            Chips(title: "Товщина", hint: nil,
-                  items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
-                  selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 600 } }
+            FontRow(gen: g) { f in regen(f) }
+            if g.font.isEmpty {
+                Chips(title: "Товщина", hint: nil,
+                      items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
+                      selected: "\(g.weight)") { s in regen { $0.weight = Int(s) ?? 600 } }
+            }
         }
     }
 
     @ViewBuilder private func gaugeLook(_ r: XNode) -> some View {
-        if kind == .arc {
-            CommitSlider(title: "Кут початку", value: Double(r.int("angleStart")), range: -360...360, step: 1) { v in edit { $0.set("angleStart", int: Int(v)) } }
-            CommitSlider(title: "Довжина дуги, °", value: Double(r.int("angleRange")), range: -360...360, step: 1) { v in edit { $0.set("angleRange", int: Int(v)) } }
-        }
-        if kind == .pointer {
-            CommitSlider(title: "Кут початку", value: Double(r.int("angleStart")), range: -360...360, step: 1) { v in edit { $0.set("angleStart", int: Int(v)) } }
-            CommitSlider(title: "Поворот за діапазон, °", value: Double(r.int("angleRange")), range: -1440...1440, step: 5) { v in edit { $0.set("angleRange", int: Int(v)) } }
-            HStack(spacing: 8) {
-                NumberField(title: "Вісь X", value: Int(r.int("pivotX"))) { v in edit { $0.set("pivotX", int: v) } }
-                NumberField(title: "Вісь Y", value: Int(r.int("pivotY"))) { v in edit { $0.set("pivotY", int: v) } }
+        if kind == .arc, let g0 = gen { arcLook(r, ElementFactory.synced(r, g0)) }
+        else if kind == .line, let g0 = gen { lineLook(r, ElementFactory.synced(r, g0)) }
+        else {
+            if kind == .arc || kind == .pointer {
+                CommitSlider(title: "Кут початку", value: Double(r.int("angleStart")), range: -360...360, step: 1) { v in edit { $0.set("angleStart", int: Int(v)) } }
             }
-            Text("Вісь — точка картинки стрілки, навколо якої вона обертається.").font(.caption).foregroundStyle(.secondary)
-            HandImageRow(project: project, res: r)
+            if kind == .arc {
+                CommitSlider(title: "Довжина дуги, °", value: Double(r.int("angleRange")), range: -360...360, step: 1) { v in edit { $0.set("angleRange", int: Int(v)) } }
+            }
+            if kind == .pointer {
+                CommitSlider(title: "Поворот за діапазон, °", value: Double(r.int("angleRange")), range: -1440...1440, step: 5) { v in edit { $0.set("angleRange", int: Int(v)) } }
+                HStack(spacing: 8) {
+                    NumberField(title: "Вісь X", value: Int(r.int("pivotX"))) { v in edit { $0.set("pivotX", int: v) } }
+                    NumberField(title: "Вісь Y", value: Int(r.int("pivotY"))) { v in edit { $0.set("pivotY", int: v) } }
+                }
+                Text("Вісь — точка картинки стрілки, навколо якої вона обертається.").font(.caption).foregroundStyle(.secondary)
+                HandImageRow(project: project, res: r)
+            }
+            if kind == .arc || kind == .line { endsChips(r.string("endingStyle") != "normal") { v in edit { $0.set("endingStyle", v ? "round" : "normal") } } }
+            maxValueRow(r)
+            if let g = gen, kind == .pointer {
+                CommitSlider(title: "Довжина", value: g.length, range: 10...400, step: 1) { v in regen { $0.length = v } }
+                CommitSlider(title: "Товщина", value: g.width, range: 2...60, step: 1) { v in regen { $0.width = v } }
+            }
         }
-        if kind == .arc {
-            Toggle("Заокруглені кінці", isOn: Binding(get: { r.string("endingStyle") != "normal" }, set: { v in edit { $0.set("endingStyle", v ? "round" : "normal") } }))
-                .font(.subheadline)
-            Toggle("Крапка на кінці заповнення", isOn: Binding(get: { r.has("indicatorImage") }, set: { v in
-                let width = gen?.width ?? Double(r.int("barWidth", 10))
-                project.edit { p in ElementFactory.setIndicator(p, element: r, on: v, size: width) }
-            }))
-            .font(.subheadline)
-        }
+    }
+
+    @ViewBuilder private func maxValueRow(_ r: XNode) -> some View {
         if !r.has("valueRangeSource") {
             StepperRow(title: "Найбільше значення", value: Int(r.int("valueRange")), range: 1...100000) { v in edit { $0.set("valueRange", int: v) } }
         }
-        if let g = gen {
-            switch kind {
-            case .arc:
-                CommitSlider(title: "Радіус", value: g.radius, range: 10...300, step: 1) { v in regen { $0.radius = v } }
-                CommitSlider(title: "Товщина", value: g.width, range: 2...60, step: 1) { v in regen { $0.width = v } }
-            case .line, .pointer:
-                CommitSlider(title: "Довжина", value: g.length, range: 10...400, step: 1) { v in regen { $0.length = v } }
-                CommitSlider(title: "Товщина", value: g.width, range: 2...60, step: 1) { v in regen { $0.width = v } }
-            default: EmptyView()
-            }
+    }
+
+    private func endsChips(_ round: Bool, _ set: @escaping (Bool) -> Void) -> some View {
+        Chips(title: "Кінці", hint: nil, items: [("round", "Круглі"), ("normal", "Прямі")], selected: round ? "round" : "normal") { v in set(v == "round") }
+    }
+
+    /// Регенерація з уже синхронізованих параметрів (кути беруться з маніфесту)
+    private func regen(from base: Generator, _ change: (inout Generator) -> Void) {
+        var g = base
+        change(&g)
+        let name = resName, gg = g
+        project.edit { ElementFactory.regenerate($0, element: name, gen: gg) }
+    }
+
+    private static let arcShapes: [(String, String, Double, Double)] = [
+        ("circle", "Коло", 0, 360), ("horseshoe", "Підкова", 220, 280), ("half", "Пів кола", 270, 180), ("quarter", "Чверть", 315, 90)]
+
+    private static func norm(_ a: Double) -> Double { let m = a.truncatingRemainder(dividingBy: 360); return m < 0 ? m + 360 : m }
+
+    @ViewBuilder private func arcLook(_ r: XNode, _ g: Generator) -> some View {
+        let cur = Self.arcShapes.first { abs(Self.norm(g.start) - $0.2) < 0.5 && abs(abs(g.range) - $0.3) < 0.5 }?.0 ?? ""
+        Chips(title: "Форма", hint: nil, items: Self.arcShapes.map { ($0.0, $0.1) }, selected: cur) { v in
+            guard let s = Self.arcShapes.first(where: { $0.0 == v }) else { return }
+            regen(from: g) { $0.start = s.2; $0.range = (g.range < 0 ? -1 : 1) * s.3 }
         }
+        CommitSlider(title: "Початок, °", value: Self.norm(g.start), range: 0...359, step: 1) { v in regen(from: g) { $0.start = v } }
+        CommitSlider(title: "Довжина дуги, °", value: abs(g.range), range: 1...360, step: 1) { v in regen(from: g) { $0.range = (g.range < 0 ? -1 : 1) * v } }
+        Chips(title: "Напрямок", hint: nil, items: [("cw", "За годинниковою"), ("ccw", "Проти")], selected: g.range < 0 ? "ccw" : "cw") { v in
+            regen(from: g) { $0.range = (v == "ccw" ? -1 : 1) * abs(g.range) }
+        }
+        Text("Кінці дуги можна тягнути на полотні. Кут прилипає до 45°, 90°, 180°…, довжина — до 90/180/270/360°. Притримайте палець перед рухом — без прив'язки.")
+            .font(.caption).foregroundStyle(.secondary)
+        CommitSlider(title: "Радіус", value: g.radius, range: 10...300, step: 1) { v in regen(from: g) { $0.radius = v } }
+        CommitSlider(title: "Товщина", value: g.width, range: 2...60, step: 1) { v in regen(from: g) { $0.width = v } }
+        endsChips(g.round) { v in regen(from: g) { $0.round = v } }
+        Toggle("Крапка на кінці заповнення", isOn: Binding(get: { r.has("indicatorImage") }, set: { v in
+            project.edit { p in ElementFactory.setIndicator(p, element: r, on: v, size: g.width) }
+        }))
+        .font(.subheadline)
+        maxValueRow(r)
+    }
+
+    private static let lineDirs: [(String, Double)] = [("→", 0), ("←", 180), ("↑", -90), ("↓", 90)]
+
+    @ViewBuilder private func lineLook(_ r: XNode, _ g: Generator) -> some View {
+        let ang = (g.angle * 10).rounded() / 10
+        let dir = Self.lineDirs.first { abs(Self.norm($0.1) - Self.norm(ang)) < 0.05 }?.0 ?? "custom"
+        Chips(title: "Напрямок", hint: nil, items: Self.lineDirs.map { ($0.0, $0.0) } + [("custom", "Свій кут")], selected: dir) { v in
+            if v == "custom" { regen(from: g) { $0.angle = Self.norm(ang).truncatingRemainder(dividingBy: 90) < 0.05 ? 45 : ang }; return }
+            if let d = Self.lineDirs.first(where: { $0.0 == v }) { regen(from: g) { $0.angle = d.1 } }
+        }
+        if dir == "custom" {
+            CommitSlider(title: "Кут, °", value: ang > 180 ? ang - 360 : ang, range: -180...180, step: 1) { v in regen(from: g) { $0.angle = v } }
+        }
+        CommitSlider(title: "Довжина", value: g.length, range: 4...600, step: 1) { v in regen(from: g) { $0.length = v } }
+        CommitSlider(title: "Товщина", value: g.width, range: 2...60, step: 1) { v in regen(from: g) { $0.width = v } }
+        endsChips(g.round) { v in regen(from: g) { $0.round = v } }
+        if Self.norm(ang).truncatingRemainder(dividingBy: 180) > 0.05 {
+            Label("Похилі й вертикальні лінії ще не перевірені на Smart Band 10: на браслеті заповнення може йти інакше, ніж на полотні.", systemImage: "exclamationmark.triangle")
+                .font(.caption).foregroundStyle(.orange)
+        }
+        let x1 = Int(layout.int("x") + r.int("startX")), y1 = Int(layout.int("y") + r.int("startY"))
+        let x2 = Int(layout.int("x") + r.int("endX")), y2 = Int(layout.int("y") + r.int("endY"))
+        Text("Кінці лінії").font(.subheadline)
+        HStack(spacing: 6) {
+            NumberField(title: "X1", value: x1) { v in place(r, g, v, y1, x2, y2) }
+            NumberField(title: "Y1", value: y1) { v in place(r, g, x1, v, x2, y2) }
+            NumberField(title: "X2", value: x2) { v in place(r, g, x1, y1, v, y2) }
+            NumberField(title: "Y2", value: y2) { v in place(r, g, x1, y1, x2, v) }
+        }
+        Text("Кінці лінії можна тягнути на полотні. Кут прилипає до 0°, 45°, 90°…; притримайте палець перед рухом — без прив'язки.")
+            .font(.caption).foregroundStyle(.secondary)
+        maxValueRow(r)
+    }
+
+    private func place(_ r: XNode, _ g: Generator, _ x1: Int, _ y1: Int, _ x2: Int, _ y2: Int) {
+        let l = layout
+        project.edit { p in ElementFactory.placeLine(p, res: r, layout: l, gen: g, from: CGPoint(x: x1, y: y1), to: CGPoint(x: x2, y: y2)) }
     }
 
     // MARK: Колір
@@ -231,9 +305,9 @@ struct InspectorView: View {
     @ViewBuilder private var colors: some View {
         if let r = res { variantRow(r) }
         if let g = gen, g.kind != .image, g.kind != .frames {
-            DebouncedColor(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+            ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
             if g.kind == .arc || g.kind == .line {
-                DebouncedColor(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
+                ColorRow(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
             }
         } else {
             Text("Колір цього елемента задається його картинками.").font(.footnote).foregroundStyle(.secondary)

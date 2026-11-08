@@ -230,11 +230,17 @@ final class FaceRenderer {
         let cx = o.x + CGFloat(res.int("pivotX")), cy = o.y + CGFloat(res.int("pivotY"))
         let rad = CGFloat(res.int("barRadius")) + CGFloat(res.int("barWidth"))
         let a0 = CGFloat(res.int("angleStart")), span = CGFloat(res.int("angleRange")) * fraction(res)
+        // круглі кінці виходять за кут на пів товщини — сектор ширший на цю величину з обох боків
+        let br = CGFloat(res.int("barRadius"))
+        let cap: CGFloat = res.string("endingStyle") == "normal" || br <= 0 ? 0 : CGFloat(res.int("barWidth")) / 2 / br * 180 / .pi + 1
+        let sg: CGFloat = span >= 0 ? 1 : -1
         // 0° — угорі, за годинниковою стрілкою
         let path = UIBezierPath()
         path.move(to: CGPoint(x: cx, y: cy))
-        path.addArc(withCenter: CGPoint(x: cx, y: cy), radius: rad + 4, startAngle: (a0 - 90) * .pi / 180,
-                    endAngle: (a0 + span - 90) * .pi / 180, clockwise: span >= 0)
+        if abs(span) > 0.01 {
+            path.addArc(withCenter: CGPoint(x: cx, y: cy), radius: rad + 4, startAngle: (a0 - sg * cap - 90) * .pi / 180,
+                        endAngle: (a0 + span + sg * cap - 90) * .pi / 180, clockwise: span >= 0)
+        }
         path.close()
         c.saveGState(); c.addPath(path.cgPath); c.clip(); put(fg, r, c); c.restoreGState()
         // крапка-індикатор на кінці заповнення
@@ -256,15 +262,14 @@ final class FaceRenderer {
         let r = CGRect(x: o.x, y: o.y, width: CGFloat(fg.width), height: CGFloat(fg.height))
         let f = fraction(res)
         let sx = CGFloat(res.int("startX")), ex = CGFloat(res.int("endX")), sy = CGFloat(res.int("startY")), ey = CGFloat(res.int("endY"))
-        var clip = r
-        if abs(ex - sx) >= abs(ey - sy) {
-            let a = min(sx, sx + (ex - sx) * f), b = max(sx, sx + (ex - sx) * f)
-            clip = CGRect(x: o.x + a, y: r.minY, width: b - a, height: r.height)
-        } else {
-            let a = min(sy, sy + (ey - sy) * f), b = max(sy, sy + (ey - sy) * f)
-            clip = CGRect(x: r.minX, y: o.y + a, width: r.width, height: b - a)
-        }
-        c.saveGState(); c.clip(to: clip); put(fg, r, c); c.restoreGState()
+        let len = hypot(ex - sx, ey - sy)
+        guard f > 0, len > 0 else { return u.union(r) }
+        // заповнення до точки start + (end − start)·f; межа — перпендикуляр до лінії (будь-який кут), заокруглений початок цілий
+        let ux = (ex - sx) / len, uy = (ey - sy) / len, nx = -uy, ny = ux, big: CGFloat = 2000, t = len * CGFloat(f)
+        func q(_ a: CGFloat, _ b: CGFloat) -> CGPoint { CGPoint(x: o.x + sx + ux * a + nx * b, y: o.y + sy + uy * a + ny * b) }
+        c.saveGState()
+        c.addLines(between: [q(-big, -big), q(t, -big), q(t, big), q(-big, big)])
+        c.closePath(); c.clip(); put(fg, r, c); c.restoreGState()
         return u.union(r)
     }
 

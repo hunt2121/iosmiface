@@ -145,9 +145,62 @@ enum ElementFactory {
         addLayout(p, ref: name, theme: theme, x: center.0 - img.w / 2, y: center.1 - (img.h - img.w / 2))
     }
 
+    static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
+        AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
+    }
+
+    static func lineImage(_ g: Generator, _ c: String) -> (RGBAImage, CGPoint, CGPoint) {
+        AssetFactory.lineSegment(length: g.length, width: g.width, color: c, angle: g.angle, round: g.round)
+    }
+
+    /// Параметри дуги/лінії з самого маніфесту (кут, кінці) — для старих проєктів і після правки XML
+    static func synced(_ res: XNode, _ gen: Generator) -> Generator {
+        var g = gen
+        g.round = res.string("endingStyle") != "normal"
+        if gen.kind == .arc { g.start = Double(res.int("angleStart")); g.range = Double(res.int("angleRange")) }
+        if gen.kind == .line {
+            let dx = Double(res.int("endX") - res.int("startX")), dy = Double(res.int("endY") - res.int("startY"))
+            if dx != 0 || dy != 0 { g.angle = (atan2(dy, dx) * 1800 / .pi).rounded() / 10; g.length = sqrt(dx * dx + dy * dy).rounded() }
+        }
+        return g
+    }
+
+    static func setEnds(_ res: XNode, _ s: CGPoint, _ e: CGPoint, _ width: Double) {
+        res.set("startX", int: Int(s.x.rounded())).set("startY", int: Int(s.y.rounded()))
+            .set("endX", int: Int(e.x.rounded())).set("endY", int: Int(e.y.rounded())).set("barWidth", int: Int(width.rounded()))
+    }
+
+    /// Усі шари (на всіх екранах), що показують цей ресурс
+    static func layouts(of res: XNode, in p: FaceProject) -> [XNode] {
+        (0..<p.themes.count).flatMap { t in p.layouts(t).filter { p.element(of: $0) === res } }
+    }
+
+    /// Точка прив'язки в координатах циферблата: центр дуги або початок лінії — лишається на місці після перемальовування
+    private static func anchors(_ p: FaceProject, _ res: XNode, arc: Bool) -> [(XNode, Int, Int)] {
+        layouts(of: res, in: p).map { l in
+            (l, Int(l.int("x")) + Int(res.int(arc ? "pivotX" : "startX")), Int(l.int("y")) + Int(res.int(arc ? "pivotY" : "startY")))
+        }
+    }
+
+    private static func restore(_ keep: [(XNode, Int, Int)], _ res: XNode, arc: Bool) {
+        for k in keep {
+            k.0.set("x", int: k.1 - Int(res.int(arc ? "pivotX" : "startX"))).set("y", int: k.2 - Int(res.int(arc ? "pivotY" : "startY")))
+        }
+    }
+
+    /// Лінія за двома кінцями в координатах циферблата (перетягування ручок, поля X1 Y1 X2 Y2)
+    static func placeLine(_ p: FaceProject, res: XNode, layout: XNode, gen: Generator, from a: CGPoint, to b: CGPoint) {
+        var g = gen
+        let dx = Double(b.x - a.x), dy = Double(b.y - a.y)
+        g.length = max(1, sqrt(dx * dx + dy * dy).rounded())
+        g.angle = (atan2(dy, dx) * 1800 / .pi).rounded() / 10
+        regenerate(p, element: res.string("name") ?? "", gen: g)
+        layout.set("x", int: Int(a.x.rounded()) - Int(res.int("startX"))).set("y", int: Int(a.y.rounded()) - Int(res.int("startY")))
+    }
+
     static func addArc(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
-        let fg = AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.color)
-        let bg = AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.bgColor)
+        let fg = arcImage(gen, gen.color)
+        let bg = arcImage(gen, gen.bgColor)
         // фон перед основною — так само, як їх упорядковує компілятор (стабільні id після розпакування)
         let bgName = addImageResource(p, bg, base: "arcBg")
         let fgName = addImageResource(p, fg, base: "arc")
@@ -155,24 +208,24 @@ enum ElementFactory {
         p.meta.generators[name] = gen
         let e = XNode("DataItemArcProgressBar")
         e.set("name", name).set("source", source).set("ref", "@" + fgName).set("bg", "@" + bgName)
-            .set("endingStyle", "round").set("renderRule", "alwaysShow").set("valueStart", int: 0).set("valueRange", int: 100)
-            .set("angleStart", int: 220).set("angleRange", int: 280).set("pivotX", int: fg.w / 2).set("pivotY", int: fg.h / 2)
+            .set("endingStyle", gen.round ? "round" : "normal").set("renderRule", "alwaysShow").set("valueStart", int: 0).set("valueRange", int: 100)
+            .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded())).set("pivotX", int: fg.w / 2).set("pivotY", int: fg.h / 2)
             .set("barRadius", int: Int(gen.radius)).set("barWidth", int: Int(gen.width))
         p.resources.kids.append(e)
         addLayout(p, ref: name, theme: theme, x: center.0 - fg.w / 2, y: center.1 - fg.h / 2)
     }
 
     static func addLine(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
-        let fg = AssetFactory.bar(length: gen.length, width: gen.width, color: gen.color)
-        let bg = AssetFactory.bar(length: gen.length, width: gen.width, color: gen.bgColor)
+        let (fg, s, en) = lineImage(gen, gen.color)
+        let bg = lineImage(gen, gen.bgColor).0
         let bgName = addImageResource(p, bg, base: "barBg")
         let fgName = addImageResource(p, fg, base: "bar")
         let name = p.uniqueName("line")
         p.meta.generators[name] = gen
         let e = XNode("DataItemLineProgressBar")
         e.set("name", name).set("source", source).set("ref", "@" + fgName).set("bg", "@" + bgName)
-            .set("endingStyle", "round").set("renderRule", "alwaysShow").set("valueStart", int: 0).set("valueRange", int: 100)
-            .set("startX", int: 0).set("startY", int: fg.h / 2).set("endX", int: fg.w).set("endY", int: fg.h / 2).set("barWidth", int: fg.h)
+            .set("endingStyle", gen.round ? "round" : "normal").set("renderRule", "alwaysShow").set("valueStart", int: 0).set("valueRange", int: 100)
+        setEnds(e, s, en, gen.width)
         p.resources.kids.append(e)
         addLayout(p, ref: name, theme: theme, x: center.0 - fg.w / 2, y: center.1 - fg.h / 2)
     }
@@ -254,15 +307,25 @@ enum ElementFactory {
             // одиниця — тим самим шрифтом
             if !gen.unit.isEmpty || res.has("unitIcon") { setUnit(p, element: res, gen: gen) }
         case .arc:
-            let fg = AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.color)
+            // центр дуги лишається на місці, хоч би як змінився розмір картинки
+            let keep = anchors(p, res, arc: true)
+            let fg = arcImage(gen, gen.color)
             if let r = p.resource(ref: res.string("ref")) { replaceImage(p, r, fg) }
-            if let b = p.resource(ref: res.string("bg")) { replaceImage(p, b, AssetFactory.ring(radius: gen.radius, width: gen.width, color: gen.bgColor)) }
+            if let b = p.resource(ref: res.string("bg")) { replaceImage(p, b, arcImage(gen, gen.bgColor)) }
             res.set("pivotX", int: fg.w / 2).set("pivotY", int: fg.h / 2).set("barRadius", int: Int(gen.radius)).set("barWidth", int: Int(gen.width))
+                .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded()))
+                .set("endingStyle", gen.round ? "round" : "normal")
+            if res.has("indicatorRadius") { res.set("indicatorRadius", int: Int(gen.radius)) }
+            restore(keep, res, arc: true)
         case .line:
-            let fg = AssetFactory.bar(length: gen.length, width: gen.width, color: gen.color)
+            // початок лінії лишається на місці
+            let keep = anchors(p, res, arc: false)
+            let (fg, s, en) = lineImage(gen, gen.color)
             if let r = p.resource(ref: res.string("ref")) { replaceImage(p, r, fg) }
-            if let b = p.resource(ref: res.string("bg")) { replaceImage(p, b, AssetFactory.bar(length: gen.length, width: gen.width, color: gen.bgColor)) }
-            res.set("startX", int: 0).set("startY", int: fg.h / 2).set("endX", int: fg.w).set("endY", int: fg.h / 2).set("barWidth", int: fg.h)
+            if let b = p.resource(ref: res.string("bg")) { replaceImage(p, b, lineImage(gen, gen.bgColor).0) }
+            setEnds(res, s, en, gen.width)
+            res.set("endingStyle", gen.round ? "round" : "normal")
+            restore(keep, res, arc: false)
         case .pointer:
             let img = AssetFactory.hand(length: gen.length, width: gen.width, color: gen.color)
             if let r = p.resource(ref: res.string("ref")) { replaceImage(p, r, img) }

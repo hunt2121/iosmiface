@@ -28,6 +28,10 @@ struct EditorView: View {
     @AppStorage("editorSnap") private var snap = true
     @AppStorage("editorGrid") private var grid = 1
 
+    @State private var showXml = false
+    @State private var showFonts = false
+    @Environment(\.scenePhase) private var scenePhase
+
     enum EditorSheet: Identifiable { case add, layers, background, source, properties
         var id: Int { hashValue }
     }
@@ -48,7 +52,12 @@ struct EditorView: View {
         .onAppear {
             if initial == nil { initial = (Data(XML.print(project.root)), project.files, project.meta) }
             if project.themes.isEmpty { project.edit { $0.root.add("Theme").set("type", "normal").set("name", "").set("bgColor", "#000000") } }
+            // тека проєкту могла змінитися в «Файлах»
+            if project.reloadFromDisk() { dropMissingSelection() }
         }
+        .onChange(of: scenePhase) { ph in if ph == .active, project.reloadFromDisk() { dropMissingSelection() } }
+        .fullScreenCover(isPresented: $showXml) { XmlEditorView(project: project, theme: theme).onDisappear { dropMissingSelection() } }
+        .sheet(isPresented: $showFonts) { FontLibraryView() }
         .sheet(item: $sheet) { s in
             switch s {
             case .add:
@@ -116,6 +125,11 @@ struct EditorView: View {
                     Button { installOnBand() } label: { Label("Встановити на пристрій", systemImage: "arrow.down.to.line") }
                 }
                 Button { exportBin() } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
+                Section {
+                    Button { showXml = true } label: { Label("Редагувати XML", systemImage: "chevron.left.forwardslash.chevron.right") }
+                    Button { showFonts = true } label: { Label("Шрифти", systemImage: "textformat") }
+                    Button { share = ShareItem(url: project.folder) } label: { Label("Поділитися текою проєкту", systemImage: "folder") }
+                }
                 Button { dismiss() } label: { Label("Готово", systemImage: "checkmark") }
             } label: {
                 Text("Готово").font(.subheadline.weight(.semibold)).foregroundStyle(.white)

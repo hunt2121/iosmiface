@@ -15,6 +15,7 @@ struct AddElementSheet: View {
 
     enum Filter: String, CaseIterable, Identifiable { case all = "Усі", data = "Дані", gauges = "Шкали", decor = "Декор"; var id: String { rawValue } }
     @State private var filter: Filter = .all
+    @State private var query = ""
     @State private var pendingKind: ElementKind?
     @State private var showSource = false
     @State private var photo: PhotosPickerItem?
@@ -64,25 +65,32 @@ struct AddElementSheet: View {
                         }
                     }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                        ForEach(tiles.filter { filter == .all || $0.filter == filter }) { t in
+                        ForEach(tiles.filter { (filter == .all || $0.filter == filter) && (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || loc($0.caption).localizedCaseInsensitiveContains(query)) }) { t in
                             Button { if t.preset == "clock" { addClock() } else { choose(t.kind) } } label: { tile(t) }
                                 .buttonStyle(.plain)
+                                // довге натискання — «Як це виглядає»
+                                .contextMenu {
+                                    Button { if t.preset == "clock" { addClock() } else { choose(t.kind) } } label: { Label("Додати", systemImage: "plus") }
+                                } preview: {
+                                    GalleryPreviewCard(kind: t.kind, clock: t.preset == "clock", title: t.title)
+                                }
                                 .accessibilityLabel(Text(t.title))
                                 .accessibilityHint(Text(loc(t.caption)))
                                 .disabled(!t.enabled)
                                 .opacity(t.enabled ? 1 : 0.45)
                         }
                     }
-                    Text("Далі обираєте, які дані показує елемент: час, дата, кроки, пульс, погода, батарея та інші. Елемент з'являється по центру — його можна перетягнути й налаштувати.")
+                    Text("Утримуйте плитку, щоб побачити, як виглядає елемент. Далі обираєте, які дані він показує: час, дата, кроки, пульс, погода, батарея та інші. Елемент з'являється по центру — його можна перетягнути й налаштувати.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(16)
             }
+            .searchable(text: $query, prompt: "Пошук елемента")
             .navigationTitle("Додати елемент")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Скасувати") { dismiss() } } }
             .navigationDestination(isPresented: $showSource) {
-                DataSourcePicker(current: nil, onPick: { src in if let k = pendingKind { add(k, source: src) } }, keepOpen: true)
+                DataSourcePicker(current: nil, onPick: { src in if let k = pendingKind { add(k, source: src) } }, keepOpen: true, kind: pendingKind)
             }
         }
         .photosPicker(isPresented: $showPhoto, selection: $photo, matching: .images)
@@ -235,28 +243,58 @@ struct DataSourcePicker: View {
     @State private var query = ""
     /// у потоці «Додати елемент» аркуш закриває сам себе
     var keepOpen = false
+    /// для якого елемента — зверху «Найчастіше»
+    var kind: ElementKind? = nil
+
+    private static let recommended: [ElementKind: [String]] = [
+        .digits: ["timeHour", "timeMinute", "dateDay", "dateMonth", "healthStepCount", "healthHeartRate", "systemStatusBattery"],
+        .values: ["systemStatusBattery", "weatherCurrentWeather", "dateWeek", "systemStatusBluetooth"],
+        .pointer: ["timeHour", "timeMinute", "timeSecond", "systemStatusBattery"],
+        .arc: ["healthStepProgress", "healthCalorieProgress", "healthStandProgress", "systemStatusBattery", "healthHeartRate"],
+        .line: ["systemStatusBattery", "healthStepProgress", "healthCalorieProgress", "healthStandProgress"],
+    ]
+
+    /// Приклад значення праворуч від назви
+    static func example(_ s: String) -> String {
+        let v = SampleData.value(s)
+        let l = s.lowercased()
+        if l.contains("progress") || l.contains("battery") || l.contains("humidity") { return "\(v) %" }
+        if l.contains("heartrate") { return "\(v) bpm" }
+        if l.contains("temperature") { return "\(v)°" }
+        if ["timeHour", "timeMinute", "timeSecond"].contains(s) { return String(format: "%02d", v) }
+        return "\(v)"
+    }
+
+    private func row(_ s: String) -> some View {
+        Button { onPick(s); if !keepOpen { dismiss() } } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(SampleData.title(s)).foregroundStyle(.primary)
+                    if SampleData.titles[s] != nil { Text(verbatim: s).font(.caption2).foregroundStyle(.secondary) }
+                }
+                Spacer()
+                Text(verbatim: Self.example(s)).font(.caption.weight(.semibold)).monospacedDigit()
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 5).fill(Color(.tertiarySystemGroupedBackground)))
+                if s == current { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(Color.accentColor) }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(SampleData.title(s)))
+    }
 
     var body: some View {
         List {
+            if let k = kind, let rec = Self.recommended[k] {
+                let items = rec.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || SampleData.title($0).localizedCaseInsensitiveContains(query) }
+                if !items.isEmpty { Section(loc("Найчастіше")) { ForEach(items, id: \.self) { row($0) } } }
+            }
             ForEach(SampleData.groups) { g in
                 let items = g.sources.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || SampleData.title($0).localizedCaseInsensitiveContains(query) }
                 if !items.isEmpty {
                     Section(loc(g.title)) {
-                        ForEach(items, id: \.self) { s in
-                            Button { onPick(s); if !keepOpen { dismiss() } } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(SampleData.title(s)).foregroundStyle(.primary)
-                                        if SampleData.titles[s] != nil { Text(verbatim: s).font(.caption2).foregroundStyle(.secondary) }
-                                    }
-                                    Spacer()
-                                    if s == current { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(Color.accentColor) }
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(Text(SampleData.title(s)))
-                        }
+                        ForEach(items, id: \.self) { row($0) }
                     }
                 }
             }
@@ -314,10 +352,45 @@ struct LayersSheet: View {
     let theme: Int
     @Binding var selected: XNode?
     @Environment(\.dismiss) private var dismiss
+    @State private var tab = 0
 
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+                Picker("", selection: $tab) {
+                    Text("Шари").tag(0)
+                    Text("Зображення").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                if tab == 0 { layers } else { ImagesList(project: project, theme: theme, selected: $selected) }
+            }
+            .navigationTitle(tab == 0 ? loc("Шари") : loc("Зображення"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
+        }
+    }
+
+    private var layers: some View {
             List {
+                // «Циферблат» — завжди зверху: назва, фон, кольори циферблата
+                Section {
+                    Button { selected = nil; dismiss() } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "applewatch").font(.system(size: 18, weight: .semibold)).frame(width: 36).foregroundStyle(Color.accentColor)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Циферблат").foregroundStyle(.primary).fontWeight(.semibold)
+                                Text("Назва, фон, кольори, файл").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if selected == nil { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .moveDisabled(true).deleteDisabled(true)
+                }
+                Section {
                 let ls = Array(project.layouts(theme).reversed())
                 ForEach(Array(ls.enumerated()), id: \.offset) { _, l in
                     let res = project.element(of: l)
@@ -350,12 +423,9 @@ struct LayersSheet: View {
                         project.edit { ElementFactory.delete($0, layout: l, theme: theme) }
                     }
                 }
+                }
             }
             .environment(\.editMode, .constant(.active))
-            .navigationTitle("Шари")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
-        }
     }
 }
 

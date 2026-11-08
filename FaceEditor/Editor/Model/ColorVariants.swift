@@ -230,8 +230,9 @@ enum ColorVariants {
                 var g = gen; g.color = c
                 switch gen.kind {
                 case .digits: images = AssetFactory.digitFrames(g)
-                case .arc: images = [AssetFactory.ring(radius: g.radius, width: g.width, color: c)]
-                case .line: images = [AssetFactory.bar(length: g.length, width: g.width, color: c)]
+                // дуга й лінія — тієї ж форми (кут, кінці), лише іншого кольору
+                case .arc: images = [ElementFactory.arcImage(el.map { ElementFactory.synced($0, g) } ?? g, c)]
+                case .line: images = [ElementFactory.lineImage(el.map { ElementFactory.synced($0, g) } ?? g, c).0]
                 case .pointer: images = [AssetFactory.hand(length: g.length, width: g.width, color: c)]
                 case .label: images = AssetFactory.labelImage(g).map { [$0] } ?? []
                 default: images = []

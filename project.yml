@@ -46,7 +46,9 @@ targets:
             UTTypeConformsTo: [public.data]
             UTTypeTagSpecification:
               public.filename-extension: [bin, face]
-        LSSupportsOpeningDocumentsInPlace: false
+        # проєкти редактора (Documents/FaceProjects) видно й можна змінювати в застосунку «Файли»
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface
