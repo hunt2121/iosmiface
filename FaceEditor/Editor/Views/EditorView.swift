@@ -48,13 +48,9 @@ struct EditorView: View {
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
                 .overlay(alignment: .topTrailing) { canvasButtons }
                 .overlay(alignment: .topLeading) {
-                    // «Циферблат» не налазить на корпус: повна кнопка, лише якщо вміщається збоку від нього
-                    GeometryReader { g in
-                        let dev = project.meta.device, b = FaceFrame.border
-                        let s = min((g.size.width - 32 - 2 * b) / CGFloat(dev.width), (g.size.height - 24 - 2 * b) / CGFloat(dev.height))
-                        let side = (g.size.width - CGFloat(dev.width) * s - 2 * b) / 2 - 12 - 6
-                        faceButton(maxWidth: max(36, side))
-                    }
+                    // знімок циферблата: картинка → «Поділитися» (Файли, Фото, месенджери)
+                    roundButton("camera", "Знімок циферблата") { shareShot() }.padding(12)
+                }
                 }
                 .overlay(alignment: .bottomLeading) { zoomChips }
                 .padding(.horizontal, 16)
@@ -180,28 +176,17 @@ struct EditorView: View {
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
-    private func faceButton(maxWidth: CGFloat) -> some View {
-        let on = selected == nil
-        let icon = Image("TabWatch").renderingMode(.template).resizable().scaledToFit()
-        return Button { selected = nil } label: {
-            // компактна кнопка; якщо збоку від корпусу не вміщається — лише значок у кружку
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 4) {
-                    icon.frame(width: 14, height: 14)
-                    Text("Циферблат").font(.caption2.weight(.semibold)).lineLimit(1).fixedSize()
-                }
-                .padding(.horizontal, 9).frame(height: 30)
-                .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
-                icon.frame(width: 16, height: 16)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
-            }
-            .foregroundStyle(on ? Color.white : Color.primary)
-            .frame(maxWidth: maxWidth, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Циферблат"))
-        .padding(12)
+    /// Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× і вікно «Поділитися»
+    private func shareShot() {
+        let rd = FaceRenderer(project)
+        rd.colorVariant = variant
+        let (img, _) = rd.render(theme: theme, scale: 2)
+        guard let png = img.pngData() else { return }
+        let name = (project.displayName.isEmpty ? "watchface" : project.displayName).replacingOccurrences(of: "/", with: "-")
+        let u = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).png")
+        try? FileManager.default.removeItem(at: u)
+        guard (try? png.write(to: u)) != nil else { return }
+        share = ShareItem(url: u)
     }
 
     private var zoomChips: some View {

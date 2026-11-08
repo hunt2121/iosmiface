@@ -13340,6 +13340,29 @@
           }
         }
       }
+    },
+    "Знімок циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch face screenshot"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Снимок циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знімок циферблата"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
