@@ -18,6 +18,8 @@ namespace BandFace
 
         /// <summary>Нове сповіщення (на потоці інтерфейсу)</summary>
         public static event Action<Note> Arrived;
+        /// <summary>Запис у журнал (з будь-якого потоку)</summary>
+        public static Action<string> Log;
         public static bool Running => timer != null;
 
         static DispatcherTimer timer;
@@ -63,7 +65,15 @@ namespace BandFace
                     if (note == null) continue;
                     // значок програми — для сповіщення на пристрої (запам'ятовуємо раз на пакет)
                     var pkg = PackageFor(Kind(note.App), note.App);
-                    if (!NotifyIcons.Has(pkg)) NotifyIcons.Remember(pkg, await LogoAsync(n));
+                    if (!NotifyIcons.Has(pkg))
+                    {
+                        var png = await LogoAsync(n);
+                        string from = "toast";
+                        // звичайні програми (Telegram Desktop) логотипа в сповіщенні не мають — беремо значок із «Пуску»
+                        if (png == null) { png = ShellIcon.PngForAppId(SafeAumid(n)); from = "start menu"; }
+                        NotifyIcons.Remember(pkg, png);
+                        Log?.Invoke(png != null ? "icon: saved " + pkg + " from " + from + " (" + png.Length + " bytes)" : "icon: no logo for " + pkg + " (" + SafeAumid(n) + ")");
+                    }
                     Arrived?.Invoke(note);
                 }
                 // забуті сповіщення більше не тримаємо
@@ -87,6 +97,8 @@ namespace BandFace
             }
             catch (Exception) { return null; }
         }
+
+        static string SafeAumid(UserNotification n) { try { return n.AppInfo.AppUserModelId; } catch (Exception) { return null; } }
 
         /// <summary>Логотип програми з її сповіщення (PNG); null — Windows не дала</summary>
         static async Task<byte[]> LogoAsync(UserNotification n)

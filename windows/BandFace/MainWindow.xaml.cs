@@ -56,6 +56,7 @@ namespace BandFace
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
             _ble.Restored += () => Dispatcher.BeginInvoke(new Action(() => { AddLog("connected again"); RefreshBand(); }));
             WinNotifications.Arrived += OnWindowsNotification;
+            WinNotifications.Log = AddLogSafe;
             if (Storage.LoadText("notifyForward") == "1") Loaded += async (s, e) => await StartForwardAsync();
             AddLog("BandFace " + _version + " started");
 
@@ -229,6 +230,7 @@ namespace BandFace
             RowForwardText.Text = S.Get("forwardRow");
             AppOther.Content = S.Get("otherApps");
             TgHint.Text = S.Get("tgHint");
+            IconsFolderBtn.Content = S.Get("iconsFolder");
             TestNotifyBtn.Content = S.Get("testNotify");
             RowKeyText.Text = TitleKey.Text = S.Get("key");
             RowLogText.Text = TitleLog.Text = S.Get("log");

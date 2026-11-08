@@ -78,6 +78,13 @@ namespace BandFace
             _ = SendNotesAsync();
         }
 
+        /// <summary>Тека зі значками програм, які надсилаються на пристрій</summary>
+        void IconsFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dir = NotifyIcons.EnsureFolder();
+            try { System.Diagnostics.Process.Start("explorer.exe", "\"" + dir + "\""); } catch (Exception ex) { AddLog("icons folder: " + ex.Message); }
+        }
+
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
             lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") });
