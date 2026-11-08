@@ -242,7 +242,6 @@ namespace BandFace
             InstallLabel.Text = S.Get("installCard").ToUpperInvariant();
             KeyLabel.Text = S.Get("keyTitle").ToUpperInvariant();
             ActivityLabel.Text = S.Get("activity").ToUpperInvariant();
-            DisconnectBtn.Content = S.Get("disconnect");
             PasteBtn.Content = S.Get("paste");
             FromFileBtn.Content = S.Get("fromFile");
             KeyNote.Text = S.Get("keyNote");
