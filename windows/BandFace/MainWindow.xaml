@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:creator="clr-namespace:BandFace.Creator"
         Title="BandFace" Width="1240" Height="800" MinWidth="1000" MinHeight="640"
-        Background="{DynamicResource Bg}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontFamily="Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True"
         AllowDrop="True" Icon="Assets/app.ico">
   <Window.Resources>
     <!-- Плитка налаштувань як у «Параметрах» Windows 11: уся ширина, підсвічування під мишею -->
@@ -55,6 +55,7 @@
     </Style>
     <Style x:Key="GroupHeader" TargetType="TextBlock">
       <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Margin" Value="2,14,0,8"/>
     </Style>
@@ -77,10 +78,11 @@
   <Grid>
     <!-- Вміст вкладок; лівий відступ = ширина бічного меню (228 або 60 у редакторі) -->
     <Grid x:Name="ContentHost" Margin="228,0,0,0">
-      <Grid x:Name="PagesHost" Margin="26,6,36,0">
+      <!-- правий відступ — усередині сторінок (Padding), щоб смуга прокрутки стояла біля краю вікна -->
+      <Grid x:Name="PagesHost" Margin="26,6,0,0">
 
         <!-- Циферблати -->
-        <ScrollViewer x:Name="PageFaces" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="PageFaces" Padding="0,0,36,0" VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="0,0,0,24">
             <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
             <!-- Немає ключа: як в iOS, кнопка веде в Налаштування → Ключ -->
@@ -169,7 +171,7 @@
         </ScrollViewer>
 
         <!-- Налаштування: як «Параметри» Windows 11 -->
-        <ScrollViewer x:Name="PageSettings" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+        <ScrollViewer x:Name="PageSettings" Padding="0,0,36,0" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
           <StackPanel Margin="0,0,0,24" MaxWidth="1000" HorizontalAlignment="Stretch">
             <TextBlock x:Name="TitleSettings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <TextBlock x:Name="DeviceSectionLabel" Style="{StaticResource GroupHeader}"/>
@@ -262,7 +264,7 @@
         </ScrollViewer>
 
         <!-- Налаштування → Ключ -->
-        <ScrollViewer x:Name="PageKey" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+        <ScrollViewer x:Name="PageKey" Padding="0,0,36,0" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
           <StackPanel Margin="0,0,0,24">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
               <Button x:Name="KeyBackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" VerticalAlignment="Center" Click="SettingsBack_Click"/>
@@ -297,7 +299,7 @@
         </ScrollViewer>
 
         <!-- Налаштування → Журнал -->
-        <ScrollViewer x:Name="PageLog" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+        <ScrollViewer x:Name="PageLog" Padding="0,0,36,0" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
           <StackPanel Margin="0,0,0,24">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
               <Button x:Name="LogBackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" VerticalAlignment="Center" Click="SettingsBack_Click"/>
