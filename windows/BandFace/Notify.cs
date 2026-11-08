@@ -58,7 +58,6 @@ namespace BandFace
         {
             bool on = ForwardSwitch.IsChecked == true;
             ForwardApps.IsEnabled = on;
-            ForwardApps.Opacity = on ? 1 : 0.55;
             RowForwardDesc.Text = err != null ? S.Get("forwardFail", err)
                                 : on && WinNotifications.Running ? S.Get("forwardOn")
                                 : S.Get("forwardDesc");
