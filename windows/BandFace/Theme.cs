@@ -57,8 +57,21 @@ namespace BandFace
             r["ScrollThumb"] = B(dark ? "#8C8C8C" : "#8A8A8A");
             // підказка «Незабаром» і бічна панель-шторка
             r["ChipBg"] = B(dark ? "#3A3A3A" : "#EAEAEA");
+            IsDark = dark;
             if (window != null) TitleBar(window, dark);
             foreach (Window w in Application.Current.Windows) if (w != window) TitleBar(w, dark);
+        }
+
+        /// <summary>Темна чи світла тема зараз (для заголовків нових вікон)</summary>
+        public static bool IsDark;
+
+        /// <summary>Будь-яке вікно застосунку (діалоги теж) — з заголовком у кольорах теми, щойно зʼявилося</summary>
+        public static void HookAllWindows()
+        {
+            EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, e) =>
+            {
+                if (s is Window w && e.OriginalSource == w) TitleBar(w, IsDark);
+            }));
         }
 
         static void TitleBar(Window window, bool dark)

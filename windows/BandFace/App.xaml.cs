@@ -34,6 +34,9 @@ namespace BandFace
             }
             Theme.Mode = Storage.LoadText("theme", "system");
             Theme.Apply(null); // ресурси кольорів мають існувати до створення вікна
+            Theme.HookAllWindows();
+            // плавна прокрутка коліщатком — в усіх вікнах, діалоги теж (раніше лише в головному)
+            SmoothScroll.AttachAll();
             // JPEG, BMP, GIF тощо в проєктах редактора — засобами Windows
             ImageDecoder.Fallback = BandFace.Creator.Imaging.Decode;
             base.OnStartup(e);
