@@ -141,6 +141,9 @@
               <TextBox x:Name="ZoomBox" Width="64" Height="28" FontSize="12" Margin="4,0" HorizontalContentAlignment="Center" KeyDown="ZoomBox_KeyDown" LostKeyboardFocus="ZoomBox_LostFocus"/>
               <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Content="&#xE8A3;" Click="ZoomIn_Click"/>
               <Button x:Name="FitBtn" Style="{StaticResource Btn}" Height="28" Padding="10,0" FontSize="12" Margin="6,0,0,0" Click="Fit_Click"/>
+              <!-- замок: елементи не пересуваються, мишею тягнеться полотно -->
+              <ToggleButton x:Name="LockBtn" Style="{StaticResource Chip}" Width="28" Height="28" Margin="6,0,0,0" Padding="0"
+                            FontFamily="Segoe MDL2 Assets" FontSize="13" Content="&#xE785;" Click="Lock_Click"/>
             </StackPanel>
           </WrapPanel>
         </Grid>

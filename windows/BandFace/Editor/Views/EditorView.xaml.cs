@@ -75,6 +75,7 @@ namespace BandFace.Creator
             SnapText.Text = S.Get("snap");
             GridText.Text = S.Get("grid");
             FitBtn.Content = S.Get("fit");
+            LockBtn.ToolTip = S.Get(locked ? "unlockMove" : "lockMove");
             NameText.ToolTip = S.Get("faceProps");
             FaceRowTitle.Text = S.Get("face");
             FaceRowSub.Text = S.Get("faceRowSub");
@@ -402,11 +403,34 @@ namespace BandFace.Creator
 
         Point FacePoint(MouseEventArgs e) { var p = e.GetPosition(Face); return new Point(p.X / zoom, p.Y / zoom); }
 
+        /// <summary>Замок: елементи не пересуваються; клік лише вибирає, перетягування прокручує полотно</summary>
+        bool locked;
+        Point? panFrom;
+        double panH, panV;
+
+        void Lock_Click(object sender, RoutedEventArgs e)
+        {
+            locked = LockBtn.IsChecked == true;
+            LockBtn.Content = locked ? "\uE72E" : "\uE785";
+            LockBtn.ToolTip = S.Get(locked ? "unlockMove" : "lockMove");
+        }
+
         void Stage_Down(object sender, MouseButtonEventArgs e)
         {
             if (project == null) return;
             Focus();
             var pt = FacePoint(e);
+            if (locked)
+            {
+                var hit = Hit(pt);
+                if (hit != selected) Select(hit);
+                panFrom = e.GetPosition(Workspace);
+                panH = Workspace.HorizontalOffset; panV = Workspace.VerticalOffset;
+                StageHost.CaptureMouse();
+                StageHost.Cursor = Cursors.SizeAll;
+                e.Handled = true;
+                return;
+            }
             if (StartHandleDrag(pt)) { StageHost.CaptureMouse(); e.Handled = true; return; }
             var l = Hit(pt);
             if (l == null) { if (selected != null) Select(null); return; }
@@ -421,6 +445,13 @@ namespace BandFace.Creator
 
         void Stage_Move(object sender, MouseEventArgs e)
         {
+            if (panFrom.HasValue)
+            {
+                var p = e.GetPosition(Workspace);
+                Workspace.ScrollToHorizontalOffset(panH - (p.X - panFrom.Value.X));
+                Workspace.ScrollToVerticalOffset(panV - (p.Y - panFrom.Value.Y));
+                return;
+            }
             if (handle != null) { MoveHandle(FacePoint(e)); return; }
             if (dragLayout == null) return;
             var pt = FacePoint(e);
@@ -457,6 +488,7 @@ namespace BandFace.Creator
 
         void Stage_Up(object sender, MouseButtonEventArgs e)
         {
+            if (panFrom.HasValue) { panFrom = null; StageHost.ReleaseMouseCapture(); StageHost.Cursor = null; return; }
             if (handle != null) { StageHost.ReleaseMouseCapture(); EndHandleDrag(); return; }
             if (dragLayout == null) return;
             StageHost.ReleaseMouseCapture();
@@ -483,7 +515,7 @@ namespace BandFace.Creator
 
         void Nudge(int dx, int dy)
         {
-            if (selected == null) return;
+            if (selected == null || locked) return;
             var l = selected;
             int step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 10 : Math.Max(1, grid);
             project.Edit(p => l.Set("x", l.Int("x") + dx * step).Set("y", l.Int("y") + dy * step));

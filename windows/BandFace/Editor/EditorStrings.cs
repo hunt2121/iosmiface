@@ -75,6 +75,8 @@ namespace BandFace.Creator
             ["snap"] = new[] { "Прив'язка", "Snap", "Привязка" },
             ["grid"] = new[] { "Сітка", "Grid", "Сетка" },
             ["fit"] = new[] { "Вмістити", "Fit", "Вместить" },
+            ["lockMove"] = new[] { "Заблокувати переміщення елементів", "Lock element moving", "Заблокировать перемещение элементов" },
+            ["unlockMove"] = new[] { "Розблокувати переміщення елементів", "Unlock element moving", "Разблокировать перемещение элементов" },
             ["faceProps"] = new[] { "Властивості циферблата", "Watch face properties", "Свойства циферблата" },
             ["screenMain"] = new[] { "Основний екран", "Main screen", "Основной экран" },
             ["screenAod"] = new[] { "Завжди на екрані", "Always on display", "Всегда на экране" },
