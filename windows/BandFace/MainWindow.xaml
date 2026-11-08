@@ -223,8 +223,6 @@
                   <CheckBox x:Name="AppWa" Content="WhatsApp" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
                   <CheckBox x:Name="AppTg" Content="Telegram" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
                   <CheckBox x:Name="AppOther" Margin="0,0,20,0" VerticalAlignment="Center" Click="ForwardApps_Click"/>
-                  <Button x:Name="TestNotifyBtn" Style="{StaticResource Btn}" Click="TestNotify_Click"/>
-                  <Button x:Name="IconsFolderBtn" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="IconsFolder_Click"/>
                 </StackPanel>
                 <!-- Telegram Desktop за замовчуванням показує власні вікна, яких Windows (і ми) не бачить -->
                 <TextBlock x:Name="TgHint" Style="{StaticResource SettingDesc}" Margin="44,-4,16,12"/>

@@ -24,26 +24,6 @@ namespace BandFace
         static readonly object gate = new object();
 
         static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BandFace", "icons");
-        /// <summary>Створити теку значків і покласти туди значок BandFace, щоб було видно всі файли</summary>
-        public static string EnsureFolder()
-        {
-            Directory.CreateDirectory(Folder);
-            var own = FileFor(OwnPackage);
-            if (!File.Exists(own))
-                try
-                {
-                    var b = Get(OwnPackage);
-                    if (b != null)
-                    {
-                        var enc = new PngBitmapEncoder();
-                        enc.Frames.Add(BitmapFrame.Create(b));
-                        using (var f = File.Create(own)) enc.Save(f);
-                    }
-                }
-                catch (Exception) { }
-            return Folder;
-        }
-
         static string FileFor(string package) => Path.Combine(Folder, package + ".png");
 
         /// <summary>Запам'ятати значок пакета (PNG-байти логотипа з Windows)</summary>
