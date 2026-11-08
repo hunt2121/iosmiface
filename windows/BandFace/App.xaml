@@ -173,6 +173,64 @@
       </Setter>
     </Style>
 
+    <!-- Повзунок у стилі Windows 11: тонка доріжка, пройдена частина кольором акценту, кругла ручка з крапкою -->
+    <Style x:Key="SliderRepeat" TargetType="RepeatButton">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="IsTabStop" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="Slider">
+      <Setter Property="Height" Value="28"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid Background="Transparent">
+              <Border Height="4" CornerRadius="2" Background="{DynamicResource BtnBorder}" VerticalAlignment="Center" Margin="9,0"/>
+              <Track x:Name="PART_Track" VerticalAlignment="Center">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Style="{StaticResource SliderRepeat}" Command="Slider.DecreaseLarge">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Margin="9,0,0,0" Background="{DynamicResource Accent}" VerticalAlignment="Center"/></Grid>
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Style="{StaticResource SliderRepeat}" Command="Slider.IncreaseLarge"/>
+                </Track.IncreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb Width="20" Height="20">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Grid>
+                          <Ellipse Fill="{DynamicResource Card}" Stroke="{DynamicResource BtnBorder}" StrokeThickness="1"/>
+                          <Ellipse x:Name="dot" Width="10" Height="10" Fill="{DynamicResource Accent}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="dot" Property="Width" Value="12"/><Setter TargetName="dot" Property="Height" Value="12"/></Trigger>
+                          <Trigger Property="IsDragging" Value="True"><Setter TargetName="dot" Property="Width" Value="8"/><Setter TargetName="dot" Property="Height" Value="8"/></Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+              </Track>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <!-- Поле введення -->
     <Style TargetType="TextBox">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>

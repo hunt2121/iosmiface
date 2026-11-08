@@ -279,11 +279,19 @@ namespace BandFace.Creator
             double a0 = res.Int("angleStart"), span = res.Int("angleRange") * Fraction(res);
             if (dc != null && Math.Abs(span) > 0.01)
             {
-                // круглі кінці виходять за кут на пів товщини — сектор ширший на цю величину з обох боків
-                double cap = res.Str("endingStyle") == "normal" || res.Int("barRadius") <= 0 ? 0
-                           : res.Int("barWidth") / 2.0 / res.Int("barRadius") * 180 / Math.PI + 1;
-                double sg = span >= 0 ? 1 : -1;
-                dc.PushClip(Pie(c, rad + 4, a0 - sg * cap, span + sg * 2 * cap));
+                // круглі кінці: як на браслеті (endingStyle=round) — і на початку, і на кінці заповнення півколо
+                // радіусом у пів товщини. Сектор + два кола; працює й для повного кільця, де в картинці кінців немає.
+                Geometry clip = Pie(c, rad + 4, a0, span);
+                bool round = res.Str("endingStyle") != "normal" && res.Int("barWidth") > 0;
+                if (round)
+                {
+                    double br = res.Int("barRadius"), hw = res.Int("barWidth") / 2.0;
+                    Point P(double deg) => new Point(c.X + br * Math.Sin(deg * Math.PI / 180), c.Y - br * Math.Cos(deg * Math.PI / 180));
+                    // справжнє обʼєднання (напрям обходу сектора не «вирізає» перетин з колами)
+                    clip = new CombinedGeometry(GeometryCombineMode.Union, clip,
+                        new CombinedGeometry(GeometryCombineMode.Union, new EllipseGeometry(P(a0), hw, hw), new EllipseGeometry(P(a0 + span), hw, hw)));
+                }
+                dc.PushClip(clip);
                 dc.DrawImage(fg, r);
                 dc.Pop();
             }
