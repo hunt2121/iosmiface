@@ -48,7 +48,6 @@ namespace BandFace.Creator
             FacesHint.Text = S.Get("facesHint");
             EmptyTitle.Text = S.Get("emptyTitle");
             EmptyText.Text = S.Get("emptyText");
-            FontsBackBtn.ToolTip = S.Get("back");
         }
 
         // MARK: Сторінки
