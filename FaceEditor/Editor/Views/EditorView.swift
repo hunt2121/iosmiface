@@ -51,7 +51,6 @@ struct EditorView: View {
                     // знімок циферблата: картинка → «Поділитися» (Файли, Фото, месенджери)
                     roundButton("camera", "Знімок циферблата") { shareShot() }.padding(12)
                 }
-                }
                 .overlay(alignment: .bottomLeading) { zoomChips }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
