@@ -40,7 +40,7 @@ namespace BandFace.Creator
             if (string.IsNullOrEmpty(path)) return;
             var shown = path.Length <= maxChars ? path : "…" + path.Substring(path.Length - (maxChars - 1));
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 6, 10, 4), ToolTip = path, Focusable = false };
-            row.Children.Add(new TextBlock { Text = "\uE707", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = Res("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            row.Children.Add(new TextBlock { Text = "\uE8B7", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = Res("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
             row.Children.Add(new TextBlock { Text = shown, FontSize = 11.5, Foreground = Res("Sub"), VerticalAlignment = VerticalAlignment.Center });
             menu.Items.Add(row);
         }

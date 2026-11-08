@@ -364,6 +364,15 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <!-- у меню WPF бере для розділювача окремий стиль за цим ключем (без нього — товста світла смуга) -->
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Separator"><Border Height="1" Margin="10,4" Background="{DynamicResource CardBorder}"/></ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
 
     <!-- Список шарів -->
     <Style x:Key="LayerItem" TargetType="ListBoxItem">
