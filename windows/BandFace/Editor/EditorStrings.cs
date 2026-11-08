@@ -183,7 +183,7 @@ namespace BandFace.Creator
             ["w900"] = new[] { "Чорний", "Black", "Чёрный" },
             ["color"] = new[] { "Колір", "Colour", "Цвет" },
             ["unit"] = new[] { "Одиниця", "Unit", "Единица" },
-            ["digitsNoGen"] = new[] { "Цифри цього циферблата — готові картинки. Їх можна намалювати заново будь-яким шрифтом.", "This face's digits are ready-made images. You can redraw them with any font.", "Цифры этого циферблата — готовые картинки. Их можно нарисовать заново любым шрифтом." },
+            ["digitsNoGen"] = new[] { "Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.", "Digits are images 0–9. Replace them one by one in the Images block below.", "Цифры — это картинки 0–9. Заменяйте их по одной в блоке «Изображения» ниже." },
             ["drawDigits"] = new[] { "Намалювати цифри шрифтом", "Draw the digits with a font", "Нарисовать цифры шрифтом" },
             ["align"] = new[] { "Вирівнювання", "Alignment", "Выравнивание" },
             ["alignHint"] = new[] { "X числа — точка прив'язки: лівий край, середина або правий край. Число росте від неї.", "The number's X is its anchor: left edge, centre or right edge. The number grows from it.", "X числа — точка привязки: левый край, середина или правый край. Число растёт от неё." },
@@ -429,7 +429,7 @@ namespace BandFace.Creator
             ["kind_image"] = new[] { "Картинка", "Image", "Картинка" },
             ["kind_animation"] = new[] { "Анімація", "Animation", "Анимация" },
             ["kind_background"] = new[] { "Фон", "Background", "Фон" },
-            ["cap_digits"] = new[] { "Час, дата, кроки, пульс — цифрами-картинками", "Time, date, steps, heart rate as digit images", "Время, дата, шаги, пульс — цифрами-картинками" },
+            ["cap_digits"] = new[] { "Час, дата, кроки, пульс — вашими картинками 0–9", "Time, date, steps, heart rate from your 0–9 images", "Время, дата, шаги, пульс — вашими картинками 0–9" },
             ["cap_values"] = new[] { "Своя картинка для кожного значення", "A picture for each value", "Своя картинка для каждого значения" },
             ["cap_clock"] = new[] { "Години, хвилини, секунди й центр", "Hours, minutes, seconds and a centre", "Часы, минуты, секунды и центр" },
             ["cap_pointer"] = new[] { "Обертається за значенням", "Turns with a value", "Вращается по значению" },
@@ -439,7 +439,7 @@ namespace BandFace.Creator
             ["cap_image"] = new[] { "PNG або JPG з диска", "A PNG or JPG from disk", "PNG или JPG с диска" },
             ["cap_animation"] = new[] { "Кадри, що змінюються", "Frames that play in a loop", "Сменяющиеся кадры" },
             ["cap_background"] = new[] { "Картинка на весь екран", "A full-screen picture", "Картинка на весь экран" },
-            ["about_digits"] = new[] { "Кожна цифра — окрема картинка, намальована вибраним шрифтом. Після додавання можна змінити шрифт, розмір і колір.", "Each digit is an image drawn in the chosen font. Change the font, size and colour after adding.", "Каждая цифра — отдельная картинка выбранным шрифтом. После добавления можно изменить шрифт, размер и цвет." },
+            ["about_digits"] = new[] { "Після цього кроку виберіть 10 картинок цифр 0–9 (за порядком назв файлів). Кожну потім можна замінити в блоці «Зображення».", "After this step pick 10 digit images 0–9 (in file-name order). Replace any of them later in the Images block.", "После этого шага выберите 10 картинок цифр 0–9 (по порядку имён файлов). Каждую потом можно заменить в блоке «Изображения»." },
             ["about_values"] = new[] { "Показує одну з ваших картинок залежно від значення: заряду, погоди, дня тижня. Картинки вибираються після цього кроку.", "Shows one of your pictures depending on a value: battery, weather, weekday. You pick the pictures next.", "Показывает одну из ваших картинок в зависимости от значения: заряда, погоды, дня недели. Картинки выбираются после этого шага." },
             ["about_clock"] = new[] { "Три стрілки й крапка в центрі одним кліком. Кожну стрілку потім можна змінити окремо.", "Three hands and a centre dot in one click. Each hand can be changed later.", "Три стрелки и точка в центре одним щелчком. Каждую стрелку потом можно изменить отдельно." },
             ["about_pointer"] = new[] { "Стрілка повертається від кута початку на свій діапазон за значенням.", "The hand turns from its start angle across its range with the value.", "Стрелка поворачивается от угла начала на свой диапазон по значению." },
@@ -504,6 +504,8 @@ namespace BandFace.Creator
             ["openImagesFolder"] = new[] { "Відкрити теку", "Open folder", "Открыть папку" },
             ["fontArtButton"] = new[] { "Намалювати шрифтом…", "Draw with a font…", "Нарисовать шрифтом…" },
             ["valuesHowAsk"] = new[] { "Як створити картинки?\n\nТак — намалювати шрифтом (дні тижня, місяці, AM/PM, числа).\nНі — вибрати свої файли.", "How do you want to make the images?\n\nYes — draw them with a font (weekdays, months, AM/PM, numbers).\nNo — pick your own files.", "Как создать картинки?\n\nДа — нарисовать шрифтом (дни недели, месяцы, AM/PM, числа).\nНет — выбрать свои файлы." },
+            ["digitsCountAsk"] = new[] { "Вибрано {0} картинок, а для числа потрібно 10 (цифри 0–9 за порядком назв файлів). Додати все одно?", "{0} images picked, but a number needs 10 (digits 0–9 in file-name order). Add anyway?", "Выбрано {0} картинок, а для числа нужно 10 (цифры 0–9 по порядку имён файлов). Добавить всё равно?" },
+            ["labelIsImage"] = new[] { "Напис — це картинка. Замініть її в блоці «Зображення» нижче.", "This label is an image. Replace it in the Images block below.", "Надпись — это картинка. Замените её в блоке «Изображения» ниже." },
         };
 
         public static bool Has(string key) => T.ContainsKey(key);

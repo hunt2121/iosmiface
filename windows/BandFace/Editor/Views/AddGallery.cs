@@ -35,7 +35,6 @@ namespace BandFace.Creator
             new Item { Kind = "pointer", Group = "gauges", NeedsSource = true, DefaultSource = "timeSecond" },
             new Item { Kind = "arc", Group = "gauges", NeedsSource = true, DefaultSource = "healthStepProgress" },
             new Item { Kind = "line", Group = "gauges", NeedsSource = true, DefaultSource = "systemStatusBattery" },
-            new Item { Kind = "label", Group = "decor" },
             new Item { Kind = "image", Group = "decor" },
             new Item { Kind = "animation", Group = "decor" },
             new Item { Kind = "background", Group = "decor" },
@@ -252,7 +251,6 @@ namespace BandFace.Creator
             switch (kind)
             {
                 case "digits": { var t = T("12", 26); Canvas.SetTop(t, 1); c.Children.Add(t); break; }
-                case "label": { var t = T("Aa", 24, "Georgia"); Canvas.SetTop(t, 3); c.Children.Add(t); break; }
                 case "values":
                     c.Children.Add(S1(new Rectangle { Width = 26, Height = 14, RadiusX = 3, RadiusY = 3, Margin = new Thickness(2, 13, 0, 0) }));
                     c.Children.Add(S1(new Line { X1 = 33, Y1 = 17, X2 = 33, Y2 = 23 }));
@@ -413,7 +411,6 @@ namespace BandFace.Creator
             switch (kind)
             {
                 case "digits": ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, 0, cx, cy - 30); break;
-                case "label": ElementFactory.AddLabel(p, new Generator(GenKind.Label) { Color = "#FFFFFF", FontSize = 28, Weight = 600, Style = "rounded", Text = S.Get("labelDefault") }, 0, cx, cy); break;
                 case "values":
                 {
                     var imgs = new[] { "#FF453A", "#FFD60A", "#30B455" }.Select(c => SampleArt(56, 56, c, c)).ToList();

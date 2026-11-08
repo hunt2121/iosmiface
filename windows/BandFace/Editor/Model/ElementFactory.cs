@@ -104,6 +104,21 @@ namespace BandFace.Creator
             AddLayout(p, name, theme, cx - w / 2, cy - h / 2);
         }
 
+        /// <summary>Число з ваших картинок 0–9 (усі вирівнюються під розмір першої)</summary>
+        public static void AddDigitImages(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy)
+        {
+            if (images.Count == 0) return;
+            var f0 = images[0];
+            var arr = AddFrames(p, images.Select(i => Imaging.Contain(i, f0.W, f0.H)).ToList(), "digits");
+            var name = p.UniqueName(source);
+            var e = new XNode("DataItemImageNumber");
+            e.Set("name", name).Set("source", source).Set("ref", "@" + arr).Set("totalDigits", 2).Set("decimalDigits", 0)
+             .Set("align", "left").Set("leadingZero", true).Set("trailingZero", false).Set("renderRule", "alwaysShow")
+             .Set("rotation", 0).Set("decimalOffsetX", 0).Set("space", 0);
+            p.Resources.Kids.Add(e);
+            AddLayout(p, name, theme, cx - f0.W, cy - f0.H / 2);
+        }
+
         /// <summary>Напис картинкою (рядок вибраним шрифтом)</summary>
         public static void AddLabel(FaceProject p, Generator gen, int theme, int cx, int cy)
         {

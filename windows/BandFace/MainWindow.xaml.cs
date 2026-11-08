@@ -72,7 +72,6 @@ namespace BandFace
                 else if (a == "--page=key") { NavSettings.IsChecked = true; ShowSettingsPage(PageKey); }
                 else if (a == "--page=log") { NavSettings.IsChecked = true; ShowSettingsPage(PageLog); }
                 else if (a == "--page=editor") NavEditor.IsChecked = true;
-                else if (a == "--page=fonts") { NavEditor.IsChecked = true; EditorTab.ShowFonts(); }
                 else if (a == "--demo") { NavEditor.IsChecked = true; EditorTab.Demo(); }
                 else if (a.StartsWith("--demo=")) { var m = a.Substring(7); NavEditor.IsChecked = true; ContentRendered += (s, e) => _shotWindow = EditorTab.Demo(m); }
                 else if (a.StartsWith("--shot=")) shot = a.Substring(7);

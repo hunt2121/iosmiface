@@ -275,7 +275,7 @@ namespace BandFace.Creator
             switch (kind)
             {
                 case ElementKind.Digits: DigitsLook(layout, res, gen); break;
-                case ElementKind.Label: LabelLook(res, gen); break;
+                case ElementKind.Label: Add(Ui.Note(S.Get("labelIsImage"))); break;
                 case ElementKind.Text: Add(Ui.Note(S.Get("textUnsupported"))); break;
                 case ElementKind.Pointer: case ElementKind.Arc: case ElementKind.Line: GaugeLook(res, kind, gen); break;
                 case ElementKind.Animation:
@@ -305,8 +305,6 @@ namespace BandFace.Creator
                         var pr = prm[i];
                         Add(Ui.NumberRow(S.Get("threshold", i + 1), pr.Int("value"), v => EditRes(() => pr.Set("value", v))));
                     }
-                    if (gen != null && gen.Kind == GenKind.Texts)
-                        Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(res.Str("name") ?? "", gen, g => g.Color = h)));
                     Add(Ui.Button(S.Get("replaceImages") + "…", () =>
                     {
                         var imgs = PickImages(true, 200);
@@ -357,144 +355,14 @@ namespace BandFace.Creator
         void DigitsLook(XNode layout, XNode res, Generator gen)
         {
             var name = res.Str("name") ?? "";
-            if (gen != null && gen.Drawn)
-            {
-                // шрифт, розмір, ефекти — у вікні «Намалювати шрифтом» (блок «Зображення» нижче); тут лише швидкий колір
-                Add(Ui.Note(S.Get("fontSummary", gen.Font.Length > 0 ? gen.Font : S.Get("st" + char.ToUpper(gen.Style[0]) + gen.Style.Substring(1)), (int)gen.FontSize)));
-                Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
-                // одиниця біля числа — тим самим шрифтом
-                var unit = new TextBox { Text = gen.Unit, Width = 70 };
-                void CommitUnit(string u) { if (u != gen.Unit) Regen(name, gen, g => g.Unit = u); }
-                unit.KeyDown += (s, e) => { if (e.Key == Key.Enter) { CommitUnit(unit.Text.Trim()); e.Handled = true; } };
-                unit.LostKeyboardFocus += (s, e) => CommitUnit(unit.Text.Trim());
-                var up = new StackPanel { Orientation = Orientation.Horizontal };
-                up.Children.Add(unit);
-                foreach (var u in new[] { "%", "°", "км", ":", "/", "bpm" })
-                {
-                    var b = new Button { Content = u, Style = (Style)FindResource("Btn"), Width = 36, Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0) };
-                    var uu = u;
-                    b.Click += (s, e) => CommitUnit(uu);
-                    up.Children.Add(b);
-                }
-                Add(Ui.Row(S.Get("unit"), up, 0));
-            }
-            else Add(Ui.Note(S.Get("digitsNoGen")));
+            // цифри — картинки 0–9: замінюються в блоці «Зображення» нижче
+            Add(Ui.Note(S.Get("digitsNoGen")));
             Add(Ui.Chips(S.Get("align"), new[] { P("left", S.Get("left")), P("center", S.Get("center")), P("right", S.Get("right")) },
                          res.Str("align") ?? "left", v => SetNumberAlign(layout, res, v)));
             Add(Ui.Note(S.Get("alignHint")));
             Add(Ui.NumberRow(S.Get("totalDigits"), res.Int("totalDigits"), v => EditRes(() => res.Set("totalDigits", v)), 0, 9));
             Add(Ui.NumberRow(S.Get("digitSpace"), res.Int("space"), v => EditRes(() => res.Set("space", v)), -20, 60));
             Add(Ui.Switch(S.Get("leadingZero"), res.Bool("leadingZero"), v => EditRes(() => res.Set("leadingZero", v))));
-        }
-
-        /// <summary>Набір цифр: готові й свої стилі, ефекти (градієнт, обвідка, тінь, ширина), застосування до всіх чисел</summary>
-        void DigitEffects(string name, Generator gen)
-        {
-            Add(Ui.Header(S.Get("digitSet")));
-            var sets = DigitSets.All();
-            var combo = new ComboBox { MaxDropDownHeight = 420, Margin = new Thickness(0, 0, 0, 8) };
-            combo.Items.Add(new ComboBoxItem { Content = S.Get("dsPick"), IsEnabled = false });
-            foreach (var st in sets)
-            {
-                var row = new StackPanel { Orientation = Orientation.Horizontal };
-                var prev = AssetFactory.DigitFrames(Sized(st.Style, 22));
-                foreach (var d in new[] { 1, 2, 3, 4 }) if (d < prev.Count) row.Children.Add(new Image { Source = prev[d].ToBitmap(), Height = 22, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 1, 0) });
-                row.Children.Add(new TextBlock { Text = "  " + st.Name + (st.BuiltIn ? "" : "  ·  " + S.Get("dsMine")), VerticalAlignment = VerticalAlignment.Center });
-                combo.Items.Add(new ComboBoxItem { Content = row, Tag = st });
-            }
-            combo.SelectedIndex = 0;
-            combo.SelectionChanged += (s, e) =>
-            {
-                if ((combo.SelectedItem as ComboBoxItem)?.Tag is DigitSets.Set st) Regen(name, gen, g => g.ApplyStyle(st.Style));
-            };
-            Add(combo);
-            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 10) };
-            var save = new Button { Content = S.Get("dsSave"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, 4, 0) };
-            save.Click += (s, e) =>
-            {
-                var n = InputBox.Ask(Owner, S.Get("digitSet"), S.Get("dsName"), S.Get("dsMine") + " " + (DigitSets.User().Count + 1));
-                if (n != null) { DigitSets.Add(n, gen); BuildInspector(); }
-            };
-            var all = new Button { Content = S.Get("dsApplyAll"), Style = (Style)FindResource("Btn"), Margin = new Thickness(4, 0, 0, 0) };
-            all.Click += (s, e) => project.Edit(p =>
-            {
-                // інші числа отримують той самий вигляд, розмір кожного лишається своїм
-                foreach (var kv in p.Meta.Generators.Where(x => x.Value.Kind == GenKind.Digits && x.Key != name).ToList())
-                {
-                    var g = kv.Value.Copy();
-                    g.ApplyStyle(gen);
-                    ElementFactory.Regenerate(p, kv.Key, g);
-                }
-            });
-            acts.Children.Add(save); acts.Children.Add(all);
-            Add(acts);
-            var mine = DigitSets.User();
-            if (mine.Count > 0)
-            {
-                var del = new TextBlock { Text = S.Get("dsManage"), FontSize = 12, Foreground = (Brush)FindResource("Accent"), Cursor = Cursors.Hand, Margin = new Thickness(0, -4, 0, 10) };
-                del.MouseLeftButtonUp += (s, e) =>
-                {
-                    var m = new ContextMenu { PlacementTarget = del };
-                    foreach (var st in mine)
-                    {
-                        var it = new MenuItem { Header = S.Get("dsDelete", st.Name) };
-                        var nm = st.Name;
-                        it.Click += (s2, e2) => { DigitSets.Remove(nm); BuildInspector(); };
-                        m.Items.Add(it);
-                    }
-                    m.IsOpen = true;
-                };
-                Add(del);
-            }
-
-            // градієнт згори донизу
-            bool grad = !string.IsNullOrEmpty(gen.Color2);
-            Add(Ui.Switch(S.Get("gradient"), grad, v => Regen(name, gen, g => g.Color2 = v ? (Suggested.FirstOrDefault(c => c != g.Color) ?? "#FF375F") : "")));
-            if (grad) Add(Ui.ColorRow(S.Get("gradientTo"), gen.Color2, h => Regen(name, gen, g => g.Color2 = h)));
-            Add(Ui.Slider(S.Get("outline"), gen.Outline, 0, 8, 0.5, v => Regen(name, gen, g => g.Outline = v)));
-            if (gen.Outline > 0) Add(Ui.ColorRow(S.Get("outlineColor"), gen.OutlineColor, h => Regen(name, gen, g => g.OutlineColor = h)));
-            Add(Ui.Slider(S.Get("shadowX"), gen.ShadowX, -8, 8, 1, v => Regen(name, gen, g => g.ShadowX = v)));
-            Add(Ui.Slider(S.Get("shadowY"), gen.ShadowY, -8, 8, 1, v => Regen(name, gen, g => g.ShadowY = v)));
-            if (gen.ShadowX != 0 || gen.ShadowY != 0) Add(Ui.ColorRow(S.Get("shadowColor"), gen.ShadowColor, h => Regen(name, gen, g => g.ShadowColor = h)));
-            Add(Ui.Slider(S.Get("letterWidth"), gen.WidthPct, 50, 150, 1, v => Regen(name, gen, g => g.WidthPct = v)));
-        }
-
-        static Generator Sized(Generator g, double size) { var c = g.Copy(); c.FontSize = size; c.Outline = Math.Min(c.Outline, 1.5); return c; }
-
-        /// <summary>Шрифт: будь-який встановлений у Windows або доданий файл; без вибору — стиль</summary>
-        void FontPicker(string name, Generator gen)
-        {
-            // шрифт: будь-який встановлений у Windows або доданий файл
-            var fonts = new List<KeyValuePair<string, string>> { P("", S.Get("fontStyleDefault")) };
-            fonts.AddRange(FontLibrary.AllNames().Select(f => P(f, f)));
-            var combo = new ComboBox { MaxDropDownHeight = 460 };
-            foreach (var kv in fonts)
-            {
-                var tb = new TextBlock { Text = kv.Value, FontSize = 13 };
-                if (kv.Key.Length > 0) { tb.FontFamily = FontLibrary.Family(kv.Key); tb.Text = kv.Value + "   0123456789"; }
-                var it = new ComboBoxItem { Content = tb, Tag = kv.Key };
-                combo.Items.Add(it);
-                if (kv.Key == gen.Font) combo.SelectedItem = it;
-            }
-            combo.SelectionChanged += (s, e) =>
-            {
-                var f = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-                if (f != gen.Font) Regen(name, gen, g => g.Font = f);
-            };
-            Add(new TextBlock { Text = S.Get("font"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
-            Add(combo);
-            var cov = gen.Font.Length > 0 ? FontLibrary.Coverage(gen.Font) : "";
-            Add(Ui.Note(cov.Length > 0 ? S.Get("fontHas", cov) : S.Get("fontHint")));
-            var addFont = new TextBlock { Text = S.Get("addFontFile"), FontSize = 12, Foreground = (Brush)FindResource("Accent"), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 10) };
-            addFont.MouseLeftButtonUp += (s, e) =>
-            {
-                var added = Actions.AddFonts(Owner);
-                if (added.Count > 0) Regen(name, gen, g => g.Font = added[0]); else BuildInspector();
-            };
-            Add(addFont);
-            if (gen.Font.Length == 0)
-                Add(Ui.Chips(S.Get("fontStyle"), new[] { P("rounded", S.Get("stRounded")), P("default", S.Get("stDefault")), P("condensed", S.Get("stCondensed")), P("mono", S.Get("stMono")) },
-                             gen.Style, v => Regen(name, gen, g => g.Style = v)));
         }
 
         /// <summary>x числа — точка прив'язки (лівий край / середина / правий край): при зміні вирівнювання число лишається на місці</summary>
@@ -508,28 +376,6 @@ namespace BandFace.Creator
                 double x = v == "center" ? b.Value.X + b.Value.Width / 2 : v == "right" ? b.Value.Right : b.Value.X;
                 layout.Set("x", (int)Math.Round(x));
             });
-        }
-
-        // MARK: Напис
-
-        /// <summary>Напис: рядок, шрифт (будь-який Windows або доданий), розмір, товщина, колір</summary>
-        void LabelLook(XNode res, Generator gen)
-        {
-            if (gen == null) return;
-            var name = res.Str("name") ?? "";
-            var text = new TextBox { Text = gen.Text };
-            void Commit()
-            {
-                var t = text.Text.Trim();
-                if (t.Length == 0) { text.Text = gen.Text; return; }
-                if (t != gen.Text) Regen(name, gen, g => g.Text = t);
-            }
-            text.KeyDown += (s, e) => { if (e.Key == Key.Enter) { Commit(); e.Handled = true; } };
-            text.LostKeyboardFocus += (s, e) => Commit();
-            Add(new TextBlock { Text = S.Get("labelText"), FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
-            Add(text);
-            Add(Ui.Note(S.Get("labelHint")));
-            Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
         }
 
         // MARK: Стрілка, дуга, лінія
