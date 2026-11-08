@@ -77,9 +77,13 @@ namespace BandFace
             _ = SendNotesAsync();
         }
 
+        /// <summary>Тимчасово: перевірка кольорових смайлів пристрою. Спершу звичайні смайли (їх замінить BandText),
+        /// потім коди з «дірок» у відомій таблиці — можливо, там ❤️ та інші.</summary>
+        const string EmojiProbe = "\U0001F600\U0001F60D\U0001F44D\U0001F525\U0001F602 | a\uA010 b\uA015 c\uA016 d\uA023 e\uA02A f\uA04B g\uA04C h\uA050 i\uA051 j\uA05B k\uA05F";
+
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
-            lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") });
+            lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") + "\n" + EmojiProbe });
             _ = SendNotesAsync(true);
         }
 
