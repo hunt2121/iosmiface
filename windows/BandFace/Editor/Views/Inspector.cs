@@ -84,7 +84,18 @@ namespace BandFace.Creator
             var idRow = new Grid { Margin = new Thickness(0, 0, 0, 4) };
             idRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             idRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            idRow.Children.Add(new TextBlock { Text = project.Root.Str("id") ?? "—", FontFamily = new FontFamily("Consolas"), FontSize = 15, VerticalAlignment = VerticalAlignment.Center });
+            // ID можна ввести вручну: лише цифри, до 4294967295
+            var idBox = new TextBox { Text = project.Root.Str("id") ?? "", FontFamily = new FontFamily("Consolas"), FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalContentAlignment = VerticalAlignment.Center };
+            void CommitId()
+            {
+                var t = idBox.Text.Trim();
+                if (t == (project.Root.Str("id") ?? "")) return;
+                if (uint.TryParse(t, out var v) && v > 0) project.Edit(p => p.Root.Set("id", v.ToString()));
+                else { MessageBox.Show(Owner, S.Get("idInvalid"), "BandFace", MessageBoxButton.OK, MessageBoxImage.Warning); idBox.Text = project.Root.Str("id") ?? ""; }
+            }
+            idBox.KeyDown += (s, e) => { if (e.Key == Key.Enter) { CommitId(); e.Handled = true; } };
+            idBox.LostKeyboardFocus += (s, e) => CommitId();
+            idRow.Children.Add(idBox);
             var newId = new Button { Content = S.Get("newId"), Style = (Style)FindResource("Btn") };
             newId.Click += (s, e) => project.Edit(p => p.Root.Set("id", ProjectStore.NewFaceId()));
             Grid.SetColumn(newId, 1);
