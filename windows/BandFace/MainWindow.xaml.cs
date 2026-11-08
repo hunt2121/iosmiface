@@ -474,7 +474,7 @@ namespace BandFace
             bool ok = false;
             try
             {
-                await _ble.ConnectAsync(address, reuse ?? auto);
+                await _ble.ConnectAsync(address, reuse ?? auto, !auto);
                 if (_cancelConnect) { _ble.Disconnect(); return false; }
                 AddLog("connected " + name + (auto ? " (auto)" : ""));
                 Storage.SaveText("band", address.ToString("X") + "|" + name);

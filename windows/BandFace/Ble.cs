@@ -65,7 +65,9 @@ namespace BandFace
 
         /// <param name="reusePairing">Автопідключення: якщо браслет уже спарений, спершу пробуємо наявне спарювання
         /// (без запиту на браслеті); не вийшло — спарюємо наново, як під час ручного підключення.</param>
-        public async Task ConnectAsync(ulong address, bool reusePairing = false)
+        /// <param name="repairIfUnreachable">ручне підключення: якщо зі старим спарюванням пристрій «недосяжний» — спарити наново.
+        /// Після збою пристрій може забути спарювання, і тоді Windows зі старим не з'єднається, хоча браслет поруч.</param>
+        public async Task ConnectAsync(ulong address, bool reusePairing = false, bool repairIfUnreachable = false)
         {
             Disconnect();
             _dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
@@ -74,7 +76,7 @@ namespace BandFace
             if (reusePairing && _dev.DeviceInformation.Pairing.IsPaired)
             {
                 try { await OpenGatt(); ready = true; Info?.Invoke("connect: using existing pairing"); }
-                catch (BandException be) when (be.Kind == ErrorKind.NotConnected) { throw; }
+                catch (BandException be) when (be.Kind == ErrorKind.NotConnected && !repairIfUnreachable) { throw; }
                 catch (Exception ex) { Info?.Invoke("connect existing pairing: " + ex.Message + " — pairing again"); }
             }
             if (!ready)
