@@ -55,9 +55,12 @@ namespace BandFace.Protocol
         /// appName — назва над сповіщенням, час — «yyyyMMddTHHmmss» місцевого часу.</summary>
         public static byte[] Notification(int id, string package, string appName, string title, string body, global::System.DateTime time) =>
             Build(Notify, 0, w => w.WriteMessage(9, n => n.WriteMessage(3, n2 => n2.WriteMessage(1, n3 => n3
-                .WriteString(1, package).WriteString(2, appName).WriteString(3, title ?? "").WriteString(5, body ?? "")
+                .WriteString(1, package).WriteString(2, appName).WriteString(3, title ?? "")
+                .WriteString(4, "") // порожнє поле 4 — пристрій чекає його в кожному сповіщенні
+                .WriteString(5, body ?? "")
                 .WriteString(6, time.ToString("yyyyMMdd'T'HHmmss", global::System.Globalization.CultureInfo.InvariantCulture))
-                .WriteVarint(7, id & 0x7FFFFFFF)))));
+                .WriteVarint(7, id & 0x7FFFFFFF)
+                .WriteString(12, "0|" + package + "|" + (id & 0x7FFFFFFF) + "|null|12345")))));
 
         public static byte[] DeviceInfoRequest() => Build(System, 2);
         public static byte[] BatteryRequest() => Build(System, 1);

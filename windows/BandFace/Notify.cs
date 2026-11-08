@@ -67,6 +67,8 @@ namespace BandFace
 
         void OnWindowsNotification(WinNotifications.Note n)
         {
+            // у журнал — кожне сповіщення Windows, яке побачили, навіть якщо його не пересилаємо
+            AddLog("windows toast: «" + n.App + "» → " + WinNotifications.Kind(n.App) + (ForwardSwitch.IsChecked == true && ForwardKinds().Contains(WinNotifications.Kind(n.App)) ? "" : " (skip)"));
             if (ForwardSwitch.IsChecked != true) return;
             // власні сповіщення BandFace не пересилаємо
             if ((n.App ?? "").IndexOf("BandFace", StringComparison.OrdinalIgnoreCase) >= 0) return;
@@ -112,7 +114,8 @@ namespace BandFace
                     AddLog("notification sent: " + appName);
                     await Task.Delay(250);
                 }
-                await Task.Delay(300);
+                // не рвемо зв'язок одразу: пристрій має встигнути показати сповіщення
+                await Task.Delay(2500);
                 await session.CloseAsync();
             }
             catch (Exception ex) { AddLog("notification: " + ex.Message); if (test) SetStatus(Describe(ex), true); }

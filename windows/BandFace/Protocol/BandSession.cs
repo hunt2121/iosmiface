@@ -235,7 +235,7 @@ namespace BandFace.Protocol
             lock (_gate) keys = _keys;
             if (keys == null) throw new BandException(ErrorKind.NotAuthenticated);
             string name; try { name = new Command(body).Name; } catch (Exception) { name = "?"; }
-            Log("→ cmd " + name);
+            Log("→ cmd " + name + " " + body.Hex());
             await WriteData(new DataPacket(DataChannel.Protobuf, DataOpcode.Encrypted, keys.EncryptCommand(body)), false).ConfigureAwait(false);
         }
 
