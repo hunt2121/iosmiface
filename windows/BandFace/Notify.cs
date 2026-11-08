@@ -88,12 +88,6 @@ namespace BandFace
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
             lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") });
-            // ТИМЧАСОВО: чи має пристрій вбудовані значки для ідентифікаторів програм з iPhone (тоді значок не треба передавати)
-            lock (_notes)
-            {
-                _notes.Enqueue(new WinNotifications.Note { App = "WhatsApp", Package = "net.whatsapp.WhatsApp", Title = "WhatsApp (iOS id)", Body = "net.whatsapp.WhatsApp" });
-                _notes.Enqueue(new WinNotifications.Note { App = "Telegram", Package = "ph.telegra.Telegraph", Title = "Telegram (iOS id)", Body = "ph.telegra.Telegraph" });
-            }
             _ = SendNotesAsync(true);
         }
 

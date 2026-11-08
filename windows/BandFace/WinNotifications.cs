@@ -144,8 +144,9 @@ namespace BandFace
         {
             switch (kind)
             {
-                case "wa": return "com.whatsapp";
-                case "tg": return "org.telegram.messenger";
+                // ідентифікатори програм з iPhone: для них пристрій має вбудовані значки й не просить передавати свій
+                case "wa": return "net.whatsapp.WhatsApp";
+                case "tg": return "ph.telegra.Telegraph";
                 default: return NotifyIcons.OwnPackage;
             }
         }
