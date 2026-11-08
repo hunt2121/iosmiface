@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Елементи інспектора, зібрані в коді: заголовки, рядки, повзунки (зміна записується, коли відпустили),
-// числа (колесо миші змінює), плитки вибору, перемикачі, вибір кольору з палітрою.
+// числа (колесо миші їх НЕ змінює — воно лише прокручує панель), плитки вибору, перемикачі, вибір кольору з палітрою.
 
 using System;
 using System.Collections.Generic;
@@ -99,7 +99,7 @@ namespace BandFace.Creator
 
         static bool TryInt(string s, out int v) => int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
 
-        /// <summary>Ціле число: Enter або вихід з поля — запис; колесо миші — ±1 (Shift — ±10)</summary>
+        /// <summary>Ціле число: Enter або вихід з поля — запис. Колесо миші значення не змінює (випадкові зміни під час прокрутки)</summary>
         public static TextBox Number(int value, Action<int> commit, int min = int.MinValue, int max = int.MaxValue)
         {
             var t = new TextBox { Text = value.ToString(CultureInfo.InvariantCulture), HorizontalContentAlignment = HorizontalAlignment.Right };
@@ -116,15 +116,6 @@ namespace BandFace.Creator
             }
             t.KeyDown += (s, e) => { if (e.Key == Key.Enter) { Commit(); e.Handled = true; } };
             t.LostKeyboardFocus += (s, e) => Commit();
-            t.MouseWheel += (s, e) =>
-            {
-                if (!TryInt(t.Text, out var v)) v = current;
-                int step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 10 : 1;
-                v = Math.Max(min, Math.Min(max, v + (e.Delta > 0 ? step : -step)));
-                t.Text = v.ToString(CultureInfo.InvariantCulture);
-                if (v != current) { current = v; commit(v); }
-                e.Handled = true;
-            };
             return t;
         }
 
