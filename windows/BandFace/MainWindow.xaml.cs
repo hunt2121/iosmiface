@@ -594,7 +594,7 @@ namespace BandFace
         void ShowPreview(byte[] data)
         {
             double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-            var shots = FacePreview.Render(data, 236 * dpi);
+            var shots = FacePreview.Render(data, Math.Max(328, 236 * dpi * 1.5));
             if (shots != null && shots.Frames.Count > 0)
             {
                 PreviewImage.Source = shots.Frames[0];

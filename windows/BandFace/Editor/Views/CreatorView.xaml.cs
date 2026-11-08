@@ -143,7 +143,7 @@ namespace BandFace.Creator
                 try
                 {
                     double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                    var src = new FaceRenderer(p).Render(0, 236.0 / p.Meta.Device.Height * dpi).Image;
+                    var src = new FaceRenderer(p).Render(0, Math.Max(328, 236 * dpi * 1.5) / p.Meta.Device.Height).Image;
                     thumbs[key] = src;
                     img.Source = src;
                 }
