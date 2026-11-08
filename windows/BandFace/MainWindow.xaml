@@ -150,7 +150,7 @@
                     <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
                     <Grid Margin="0,18,0,0">
                       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                      <Button x:Name="PickBtn" Style="{StaticResource PrimaryBtn}" Height="40" Click="Pick_Click"/>
+                      <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
                     </Grid>
                     <Grid Margin="0,20,0,0" MinHeight="34">
