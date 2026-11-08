@@ -175,7 +175,7 @@ namespace BandFace
                     // вітання на екрані пристрою: заодно видно, що зв'язок і вхід працюють
                     await Task.Delay(200);
                     var icons = new IconResponder(session, AddLogSafe);
-                    await session.SendAsync(Command.Notification(NextNoteId(), NotifyIcons.OwnPackage, "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody"), DateTime.Now));
+                    await session.SendAsync(Command.Notification(NextNoteId(), NotifyIcons.OwnPackage, "BandFace", S.Get("welcomeTitle"), WelcomeLine(), DateTime.Now));
                     AddLog("welcome sent");
                     await icons.SettleAsync(1500, 20000);
                     icons.Detach();
@@ -857,6 +857,14 @@ namespace BandFace
         }
 
         // ---------- Журнал ----------
+        static readonly Random _welcomeRnd = new Random();
+        /// <summary>Випадковий рядок вітання (варіанти в рядку «welcomeBody» через «|»)</summary>
+        static string WelcomeLine()
+        {
+            var v = S.Get("welcomeBody").Split('|');
+            return v[_welcomeRnd.Next(v.Length)];
+        }
+
         /// <summary>Запис у журнал з будь-якого потоку</summary>
         void AddLogSafe(string m) => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
 

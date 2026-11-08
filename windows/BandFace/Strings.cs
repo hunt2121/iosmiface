@@ -100,9 +100,10 @@ namespace BandFace
             ["needBand"] = new[] { "Спершу підключіть пристрій", "Connect the device first", "Сначала подключите устройство" },
             ["notifySection"] = new[] { "Сповіщення на пристрій", "Notifications on the device", "Уведомления на устройство" },
             ["welcomeRow"] = new[] { "Вітання при підключенні", "Greeting on connect", "Приветствие при подключении" },
-            ["welcomeDesc"] = new[] { "Пристрій показує коротке «Підключено до Windows», коли комп'ютер під'єднався", "The device shows a short “Connected to Windows” when the PC connects", "Устройство показывает короткое «Подключено к Windows», когда компьютер подключился" },
-            ["welcomeTitle"] = new[] { "BandFace", "BandFace", "BandFace" },
-            ["welcomeBody"] = new[] { "Підключено до Windows", "Connected to Windows", "Подключено к Windows" },
+            ["welcomeDesc"] = new[] { "Пристрій показує «BandFace підключено», коли комп'ютер під'єднався", "The device shows “BandFace connected” when the PC connects", "Устройство показывает «BandFace подключено», когда компьютер подключился" },
+            ["welcomeTitle"] = new[] { "BandFace підключено", "BandFace connected", "BandFace подключено" },
+            // кілька варіантів через «|» — щоразу випадковий
+            ["welcomeBody"] = new[] { "Тримаю руку на пульсі. Буквально|Комп'ютер махає тобі рукою|Ми знову разом. Сумував?|Зв'язок є, можна не хвилюватись|Привіт! Я все бачу. Ну, майже все", "Keeping a finger on your pulse. Literally|Your PC waves hello|Together again. Missed me?|Connected, no need to worry|Hi! I see everything. Well, almost", "Держу руку на пульсе. Буквально|Компьютер машет тебе рукой|Мы снова вместе. Скучал?|Связь есть, можно не волноваться|Привет! Я всё вижу. Ну, почти всё" },
             ["forwardRow"] = new[] { "Сповіщення з Windows", "Notifications from Windows", "Уведомления из Windows" },
             ["forwardDesc"] = new[] { "Пересилати на пристрій сповіщення вибраних програм, поки BandFace відкритий і пристрій підключений", "Forward notifications of the chosen apps while BandFace is open and the device is connected", "Пересылать на устройство уведомления выбранных программ, пока BandFace открыт и устройство подключено" },
             ["forwardOn"] = new[] { "Увімкнено: нові сповіщення вибраних програм ідуть на пристрій", "On: new notifications of the chosen apps go to the device", "Включено: новые уведомления выбранных программ идут на устройство" },
