@@ -33,6 +33,8 @@
       <Setter Property="Padding" Value="16,0"/>
       <Setter Property="MinHeight" Value="66"/>
       <Setter Property="Margin" Value="0,0,0,4"/>
+      <!-- заголовок і значок — тим самим кольором, що й у рядках-кнопках («Ключ», «Журнал») -->
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource Text}"/>
     </Style>
     <!-- Однотонний значок налаштування (Segoe MDL2) -->
     <Style x:Key="SettingGlyph" TargetType="TextBlock">
