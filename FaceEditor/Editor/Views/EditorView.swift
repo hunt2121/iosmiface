@@ -90,7 +90,12 @@ struct EditorView: View {
             }
         }
         .fullScreenCover(isPresented: $showPreview) { PreviewView(project: project, theme: theme) }
-        .sheet(item: $share) { item in ActivityView(items: [item.url]) }
+        // стандартне вікно «Поділитися» (показ UIKit, як в інших застосунках), а не SwiftUI-аркуш
+        .onChange(of: share?.id) { _ in
+            guard let item = share else { return }
+            share = nil
+            ShotShare.present(items: [item.url])
+        }
         .confirmationDialog("Відкинути зміни, зроблені після відкриття?", isPresented: $confirmDiscard, titleVisibility: .visible) {
             Button("Відкинути зміни", role: .destructive) { discard() }
             Button("Зберегти й закрити") { dismiss() }

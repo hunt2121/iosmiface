@@ -28,8 +28,11 @@ final class ShotShare: NSObject, UIActivityItemSource {
         return m
     }
 
-    @MainActor static func present(_ item: ShotShare) {
-        let vc = UIActivityViewController(activityItems: [item], applicationActivities: nil)
+    @MainActor static func present(_ item: ShotShare) { present(items: [item]) }
+
+    /// Будь-що (файл .bin, теку проєкту, картинку) — у стандартному вікні «Поділитися» поверх поточного екрана
+    @MainActor static func present(items: [Any]) {
+        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
         guard let root = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .flatMap(\.windows)

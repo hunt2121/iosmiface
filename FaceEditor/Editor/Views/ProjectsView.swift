@@ -81,7 +81,12 @@ struct ProjectsView: View {
             EditorView(project: p)
                 .environment(\.faceInstall, install)
         }
-        .sheet(item: $share) { item in ActivityView(items: [item.url]) }
+        // стандартне вікно «Поділитися» (показ UIKit, як в інших застосунках), а не SwiftUI-аркуш
+        .onChange(of: share?.id) { _ in
+            guard let item = share else { return }
+            share = nil
+            ShotShare.present(items: [item.url])
+        }
         .alert("Не перевірено на браслеті", isPresented: Binding(get: { askUntested != nil }, set: { if !$0 { askUntested = nil } }), presenting: askUntested) { p in
             Button("Встановити все одно", role: .destructive) { installProject(p, force: true) }
             Button("Скасувати", role: .cancel) {}
