@@ -145,6 +145,8 @@
                     </Grid>
                   </Border>
                   <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
+                    <!-- такий самий відступ зверху, як місце під прогрес знизу (20 + 34): назва й кнопки стоять рівно по центру капсули -->
+                    <Border Height="54"/>
                     <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="FaceInfo" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
