@@ -330,7 +330,7 @@
     <!-- Затемнення під розгорнутим меню в редакторі: клік — згорнути -->
     <Border x:Name="Shade" Background="#40000000" Visibility="Collapsed" MouseLeftButtonDown="Shade_MouseDown"/>
 
-    <!-- Бічне меню: 228 px; у редакторі — смуга іконок 60 px, «☰» розгортає поверх -->
+    <!-- Бічне меню: 228 px; у редакторі — смуга іконок 62 px (значки там само, де в повному меню), «☰» розгортає поверх -->
     <Border x:Name="Sidebar" Width="228" HorizontalAlignment="Left" Background="{DynamicResource Bg}">
       <DockPanel x:Name="SidebarPanel" Margin="10,8">
         <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
