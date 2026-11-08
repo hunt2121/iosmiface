@@ -103,18 +103,20 @@ namespace BandFace
                 await session.OpenAsync();
                 await session.AuthenticateAsync(key, "Windows PC", "UK", Command.PhoneInfoMiFitness(Region()));
                 try { await session.CommandAsync(Command.AfterAuthMiFitness, 3000); } catch (BandException) { }
+                var icons = new IconResponder(session, AddLogSafe);
                 while (true)
                 {
                     WinNotifications.Note n;
                     lock (_notes) { if (_notes.Count == 0) break; n = _notes.Dequeue(); }
                     var kind = WinNotifications.Kind(n.App);
                     var appName = kind == "wa" ? "WhatsApp" : kind == "tg" ? "Telegram" : (string.IsNullOrEmpty(n.App) ? "Windows" : n.App);
-                    await session.SendAsync(Command.Notification(NextNoteId(), WinNotifications.Package(kind), appName, Cut(n.Title, 64), Cut(n.Body, 400), DateTime.Now));
+                    await session.SendAsync(Command.Notification(NextNoteId(), WinNotifications.PackageFor(kind, n.App), appName, Cut(n.Title, 64), Cut(n.Body, 400), DateTime.Now));
                     AddLog("notification sent: " + appName);
                     await Task.Delay(250);
                 }
-                // не рвемо зв'язок одразу: пристрій має встигнути показати сповіщення
-                await Task.Delay(2500);
+                // не рвемо зв'язок одразу: пристрій має встигнути показати сповіщення й попросити значок
+                await icons.SettleAsync(2500, 20000);
+                icons.Detach();
                 await session.CloseAsync();
             }
             catch (Exception ex) { AddLog("notification: " + ex.Message); if (test) SetStatus(Describe(ex), true); }

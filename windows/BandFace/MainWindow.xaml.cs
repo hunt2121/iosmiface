@@ -174,8 +174,11 @@ namespace BandFace
                 {
                     // вітання на екрані пристрою: заодно видно, що зв'язок і вхід працюють
                     await Task.Delay(200);
-                    await session.SendAsync(Command.Notification(NextNoteId(), WinNotifications.Package("other"), "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody", Environment.MachineName), DateTime.Now));
+                    var icons = new IconResponder(session, AddLogSafe);
+                    await session.SendAsync(Command.Notification(NextNoteId(), NotifyIcons.OwnPackage, "BandFace", S.Get("welcomeTitle"), S.Get("welcomeBody", Environment.MachineName), DateTime.Now));
                     AddLog("welcome sent");
+                    await icons.SettleAsync(1500, 20000);
+                    icons.Detach();
                 }
                 await Task.Delay(300);
                 await session.CloseAsync();
@@ -854,6 +857,9 @@ namespace BandFace
         }
 
         // ---------- Журнал ----------
+        /// <summary>Запис у журнал з будь-якого потоку</summary>
+        void AddLogSafe(string m) => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
+
         void AddLog(string m)
         {
             if (!_dev && !m.StartsWith("connected") && !m.StartsWith("install") && !m.StartsWith("connect") && !m.StartsWith("disc") && !m.StartsWith("BandFace")) return;

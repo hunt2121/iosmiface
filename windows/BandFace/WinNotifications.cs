@@ -60,7 +60,11 @@ namespace BandFace
                 {
                     if (!seen.Add(n.Id)) continue;
                     var note = Read(n);
-                    if (note != null) Arrived?.Invoke(note);
+                    if (note == null) continue;
+                    // значок програми — для сповіщення на пристрої (запам'ятовуємо раз на пакет)
+                    var pkg = PackageFor(Kind(note.App), note.App);
+                    if (!NotifyIcons.Has(pkg)) NotifyIcons.Remember(pkg, await LogoAsync(n));
+                    Arrived?.Invoke(note);
                 }
                 // забуті сповіщення більше не тримаємо
                 var alive = new HashSet<uint>(list.Select(x => x.Id));
@@ -84,6 +88,36 @@ namespace BandFace
             catch (Exception) { return null; }
         }
 
+        /// <summary>Логотип програми з її сповіщення (PNG); null — Windows не дала</summary>
+        static async Task<byte[]> LogoAsync(UserNotification n)
+        {
+            try
+            {
+                var r = n.AppInfo.DisplayInfo.GetLogo(new global::Windows.Foundation.Size(128, 128));
+                using (var s = await r.OpenReadAsync())
+                {
+                    if (s.Size == 0 || s.Size > 4 * 1024 * 1024) return null;
+                    var reader = new global::Windows.Storage.Streams.DataReader(s.GetInputStreamAt(0));
+                    uint got = await reader.LoadAsync((uint)s.Size);
+                    var bytes = new byte[got];
+                    reader.ReadBytes(bytes);
+                    return bytes;
+                }
+            }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>Ідентифікатор для пристрою: WhatsApp і Telegram — справжні пакети, решта — «com.bandface.» + назва програми,
+        /// щоб у кожної програми був свій значок</summary>
+        public static string PackageFor(string kind, string app)
+        {
+            if (kind != "other") return Package(kind);
+            var name = new string((app ?? "").ToLowerInvariant().Where(c => (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')).ToArray());
+            if (name.Length == 0 || name == "bandface") return Package(kind);
+            if (name.Length > 24) name = name.Substring(0, 24);
+            return "com.bandface." + name;
+        }
+
         /// <summary>Який із вибраних у налаштуваннях: «wa», «tg» або «other»</summary>
         public static string Kind(string app)
         {
@@ -100,7 +134,7 @@ namespace BandFace
             {
                 case "wa": return "com.whatsapp";
                 case "tg": return "org.telegram.messenger";
-                default: return "com.bandface.windows";
+                default: return NotifyIcons.OwnPackage;
             }
         }
     }

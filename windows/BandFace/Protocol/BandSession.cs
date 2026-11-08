@@ -397,7 +397,11 @@ namespace BandFace.Protocol
                 _events.RemoveAll(e => e.Key == cmd.Name);
             }
             foreach (var e in hit) e.Value.TrySetResult(true);
+            try { Incoming?.Invoke(cmd); } catch (Exception ex) { Log("incoming handler: " + ex.Message); }
         }
+
+        /// <summary>Команда від пристрою, на яку ніхто не чекав (запити значків сповіщень тощо). Викликається з потоку прийому — не блокувати.</summary>
+        public event Action<Command> Incoming;
 
         public async Task<bool> WaitForAsync(long type, long subtype, int timeoutMs)
         {

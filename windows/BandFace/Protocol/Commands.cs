@@ -7,7 +7,7 @@ namespace BandFace.Protocol
     /// <summary>Повідомлення «Команда» (protobuf).</summary>
     public sealed class Command
     {
-        public const long Auth = 1, System = 2, Watchface = 4, Notify = 7, DataUpload = 22, UploadTypeWatchface = 16;
+        public const long Auth = 1, System = 2, Watchface = 4, Notify = 7, DataUpload = 22, UploadTypeWatchface = 16, UploadTypeNotificationIcon = 50;
         public long Type { get; }
         public long Subtype { get; }
         public ProtoMessage Root { get; }
@@ -61,6 +61,10 @@ namespace BandFace.Protocol
                 .WriteString(6, time.ToString("yyyyMMdd'T'HHmmss", global::System.Globalization.CultureInfo.InvariantCulture))
                 .WriteVarint(7, id & 0x7FFFFFFF)
                 .WriteString(12, "0|" + package + "|" + (id & 0x7FFFFFFF) + "|null|12345")))));
+
+        /// <summary>Відповідь на запит значка (7/16 → 7/15): «так, значок для цього застосунку є»; далі пристрій сам просить розмір і формат</summary>
+        public static byte[] NotificationIconReply(string package) =>
+            Build(Notify, 15, w => w.WriteMessage(9, n => n.WriteMessage(14, m => m.WriteString(1, package))));
 
         public static byte[] DeviceInfoRequest() => Build(System, 2);
         public static byte[] BatteryRequest() => Build(System, 1);
