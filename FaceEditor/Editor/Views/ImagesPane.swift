@@ -141,10 +141,23 @@ struct ImagesList: View {
     @Binding var selected: XNode?
     @State private var target: ImageRef?
     @State private var fromFiles = false
+    /// показати всі картинки, навіть коли вибрано шар
+    @State private var showAll = false
 
     var body: some View {
-        let list = ProjectImages.all(project)
+        // вибрано шар — лише його картинки (з перемикачем «Показати всі»); нічого не вибрано — усі картинки циферблата
+        let res = selected.flatMap { project.element(of: $0) }
+        let list = (res != nil && !showAll) ? ProjectImages.of(project, res) : ProjectImages.all(project)
         List {
+            if let res {
+                HStack {
+                    Text(verbatim: showAll ? loc("Усі картинки циферблата")
+                                           : String(format: loc("Картинки шару «%@»"), ElementKind.of(res, in: project).title))
+                        .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                    Spacer()
+                    Button(showAll ? "Лише цього шару" : "Показати всі") { showAll.toggle() }.font(.footnote.weight(.semibold))
+                }
+            }
             if list.isEmpty { Text("У проєкті ще немає картинок.").font(.footnote).foregroundStyle(.secondary) }
             ForEach(list) { im in
                 HStack(spacing: 12) {
