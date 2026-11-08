@@ -201,7 +201,8 @@ namespace BandFace
                         var md5 = BandCrypto.Md5(data);
                         var resp = new UploadResponse(await session.CommandAsync(Command.UploadRequest(md5, data.Length, Command.UploadTypeNotificationIcon)));
                         if (resp.Status != 0 || resp.ChunkSize <= 4) { log("icon: upload refused " + resp.Status); return; }
-                        var parts = FileTransfer.Parts(data, md5, resp.ResumePosition, resp.ChunkSize);
+                        var parts = FileTransfer.Parts(data, md5, resp.ResumePosition, resp.ChunkSize, (byte)Command.UploadTypeNotificationIcon);
+                        // у заголовку потоку той самий тип 50: з типом циферблата (16) пристрій рвав зв'язок посеред передачі
                         await session.SendFilePartsAsync(parts, null);
                         log("icon: sent " + pkg + " (" + data.Length + " bytes)");
                     }

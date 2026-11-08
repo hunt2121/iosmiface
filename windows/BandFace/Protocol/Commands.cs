@@ -115,10 +115,11 @@ namespace BandFace.Protocol
 
     public static class FileTransfer
     {
-        public static byte[] Stream(byte[] file, byte[] md5, int resume = 0)
+        /// <param name="type">тип файла — той самий, що в запиті на завантаження (16 — циферблат, 50 — значок сповіщення)</param>
+        public static byte[] Stream(byte[] file, byte[] md5, int resume = 0, byte type = 0x10)
         {
             int start = System.Math.Min(System.Math.Max(resume, 0), file.Length);
-            var body = new ByteBuilder().U8(0x00).U8(0x10).Add(md5).Le32(file.Length).Add(file, start, file.Length).ToArray();
+            var body = new ByteBuilder().U8(0x00).U8(type).Add(md5).Le32(file.Length).Add(file, start, file.Length).ToArray();
             return new ByteBuilder().Add(body).Le32(Checksum.Crc32(body)).ToArray();
         }
 
@@ -137,7 +138,7 @@ namespace BandFace.Protocol
             return parts;
         }
 
-        public static List<byte[]> Parts(byte[] file, byte[] md5, int resume, int chunkSize) =>
-            Parts(Stream(file, md5, resume), chunkSize);
+        public static List<byte[]> Parts(byte[] file, byte[] md5, int resume, int chunkSize, byte type = 0x10) =>
+            Parts(Stream(file, md5, resume, type), chunkSize);
     }
 }
