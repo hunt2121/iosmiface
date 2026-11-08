@@ -29,8 +29,10 @@ struct EditorView: View {
     @AppStorage("editorGrid") private var grid = 1
 
     @State private var showXml = false
-    /// Масштаб полотна: 1 / 2 / 3 (100 / 200 / 300 %)
+    /// Масштаб полотна: 100 / 150 / 200 %
     @State private var zoom: CGFloat = 1
+    /// Замок: елементи не пересуваються, палець рухає полотно
+    @State private var locked = false
     @Environment(\.scenePhase) private var scenePhase
 
     enum EditorSheet: Identifiable { case add, layers, background, source, properties
@@ -40,12 +42,20 @@ struct EditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
-            CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid, zoom: zoom)
+            CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid, zoom: zoom, locked: locked)
                 .frame(maxWidth: .infinity)
                 .frame(height: 340)
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
                 .overlay(alignment: .topTrailing) { canvasButtons }
-                .overlay(alignment: .topLeading) { faceButton }
+                .overlay(alignment: .topLeading) {
+                    // «Циферблат» не налазить на корпус: повна кнопка, лише якщо вміщається збоку від нього
+                    GeometryReader { g in
+                        let dev = project.meta.device, b = FaceFrame.border
+                        let s = min((g.size.width - 32 - 2 * b) / CGFloat(dev.width), (g.size.height - 24 - 2 * b) / CGFloat(dev.height))
+                        let side = (g.size.width - CGFloat(dev.width) * s - 2 * b) / 2 - 12 - 6
+                        faceButton(maxWidth: max(36, side))
+                    }
+                }
                 .overlay(alignment: .bottomLeading) { zoomChips }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -104,23 +114,16 @@ struct EditorView: View {
     // MARK: Верхня панель
 
     private var topBar: some View {
-        HStack {
+        // назва — рівно по центру екрана, незалежно від ширини кнопок з боків
+        ZStack {
+            titleButton.padding(.horizontal, 110)
+            HStack {
             Button { confirmDiscard = true } label: {
                 Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
                     .frame(width: 40, height: 40)
                     .background(Circle().fill(Color(.secondarySystemGroupedBackground)))
             }
             .accessibilityLabel("Закрити")
-            Spacer()
-            // назва → властивості циферблата (назва, ID, екрани, розмір)
-            Button { sheet = .properties } label: {
-                HStack(spacing: 4) {
-                    Text(project.displayName).font(.headline).foregroundStyle(.primary).lineLimit(1)
-                    Image(systemName: "chevron.down.circle.fill").font(.system(size: 15)).foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Властивості циферблата"))
             Spacer()
             Menu {
                 if install != nil {
@@ -137,9 +140,22 @@ struct EditorView: View {
                     .padding(.horizontal, 16).frame(height: 40)
                     .background(Capsule().fill(Color.accentColor))
             } primaryAction: { dismiss() }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+    }
+
+    /// назва → властивості циферблата (назва, ID, екрани, розмір)
+    private var titleButton: some View {
+        Button { sheet = .properties } label: {
+            HStack(spacing: 4) {
+                Text(project.displayName).font(.headline).foregroundStyle(.primary).lineLimit(1)
+                Image(systemName: "chevron.down.circle.fill").font(.system(size: 15)).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Властивості циферблата"))
     }
 
     private var canvasButtons: some View {
@@ -152,31 +168,52 @@ struct EditorView: View {
             if project.themes.count > 1 {
                 roundButton(theme == 0 ? "sun.max" : "moon", "Тема") { theme = (theme + 1) % project.themes.count; selected = nil }
             }
+            Button { locked.toggle() } label: {
+                Image(systemName: locked ? "lock.fill" : "lock.open").font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(locked ? Color.white : Color.accentColor)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(locked ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+            }
+            .accessibilityLabel(Text(loc(locked ? "Розблокувати переміщення елементів" : "Заблокувати переміщення елементів")))
         }
         .padding(12)
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
-    private var faceButton: some View {
-        Button { selected = nil } label: {
-            Label { Text("Циферблат") } icon: { Image("TabWatch").renderingMode(.template).resizable().scaledToFit().frame(width: 17, height: 17) }
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 12).frame(height: 34)
-                .foregroundStyle(selected == nil ? Color.white : Color.primary)
-                .background(Capsule().fill(selected == nil ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+    private func faceButton(maxWidth: CGFloat) -> some View {
+        let on = selected == nil
+        let icon = Image("TabWatch").renderingMode(.template).resizable().scaledToFit()
+        return Button { selected = nil } label: {
+            // компактна кнопка; якщо збоку від корпусу не вміщається — лише значок у кружку
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 4) {
+                    icon.frame(width: 14, height: 14)
+                    Text("Циферблат").font(.caption2.weight(.semibold)).lineLimit(1).fixedSize()
+                }
+                .padding(.horizontal, 9).frame(height: 30)
+                .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                icon.frame(width: 16, height: 16)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+            }
+            .foregroundStyle(on ? Color.white : Color.primary)
+            .frame(maxWidth: maxWidth, alignment: .leading)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text("Циферблат"))
         .padding(12)
     }
 
     private var zoomChips: some View {
-        HStack(spacing: 4) {
-            ForEach([1, 2, 3], id: \.self) { z in
-                Button { withAnimation(.easeInOut(duration: 0.2)) { zoom = CGFloat(z) } } label: {
-                    Text(verbatim: "\(z * 100)%").font(.caption.weight(.semibold)).monospacedDigit()
-                        .padding(.horizontal, 9).frame(height: 28)
-                        .foregroundStyle(zoom == CGFloat(z) ? Color.white : Color.primary)
-                        .background(Capsule().fill(zoom == CGFloat(z) ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+        // колонкою в лівому нижньому куті — поруч із корпусом, а не поверх нього
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach([100, 150, 200], id: \.self) { z in
+                let on = abs(zoom * 100 - CGFloat(z)) < 1
+                Button { withAnimation(.easeInOut(duration: 0.2)) { zoom = CGFloat(z) / 100 } } label: {
+                    Text(verbatim: "\(z)%").font(.caption.weight(.semibold)).monospacedDigit()
+                        .frame(width: 52, height: 28)
+                        .foregroundStyle(on ? Color.white : Color.primary)
+                        .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
                 }
                 .buttonStyle(.plain)
             }

@@ -14,6 +14,8 @@ struct CanvasView: View {
     let grid: Int
     /// Масштаб полотна: 1 — вписано, 2 — 200 %, 3 — 300 % (порожнім місцем полотно пересувається)
     var zoom: CGFloat = 1
+    /// Замок: елементи не пересуваються — дотик лише вибирає, а палець рухає збільшене полотно
+    var locked = false
 
     @State private var renderer: FaceRenderer?
     @State private var dragLayout: XNode?
@@ -311,6 +313,10 @@ struct CanvasView: View {
             .onChanged { v in
                 // збільшене полотно пересувається пальцем по порожньому місцю
                 if let ps = panStart { pan = CGSize(width: ps.width + v.translation.width, height: ps.height + v.translation.height); return }
+                if locked {
+                    if zoom > 1, abs(v.translation.width) + abs(v.translation.height) > 4 { panStart = CGSize(width: pan.width - v.translation.width, height: pan.height - v.translation.height) }
+                    return
+                }
                 let start = CGPoint(x: (v.startLocation.x - origin.x) / scale, y: (v.startLocation.y - origin.y) / scale)
                 // ручки на кінцях дуги чи лінії
                 if handle != nil || (dragLayout == nil && startHandle(start, scale: scale)) {
@@ -354,6 +360,12 @@ struct CanvasView: View {
             }
             .onEnded { v in
                 if panStart != nil { panStart = nil; return }
+                if locked {
+                    // замок: дотик лише вибирає шар (або знімає вибір)
+                    let start = CGPoint(x: (v.startLocation.x - origin.x) / scale, y: (v.startLocation.y - origin.y) / scale)
+                    selected = hit(start, boxes)
+                    return
+                }
                 if handle != nil { if freeMode != nil { endHandle() } else { handle = nil }; return }
                 defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false; dragCache = nil }
                 guard let l = dragLayout else {
