@@ -23,12 +23,14 @@ namespace BandFace.Creator
         readonly ListBox list = new ListBox { BorderThickness = new Thickness(0), Background = Brushes.Transparent };
         readonly string current;
         string result;
+        /// <summary>Вибрана група ("" — усі)</summary>
+        string group = "";
 
         SourcePicker(string current)
         {
             this.current = current;
             Title = S.Get("pickSource");
-            Width = 460; Height = 620; MinWidth = 380; MinHeight = 400;
+            Width = 480; Height = 660; MinWidth = 380; MinHeight = 400;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
             FontFamily = new FontFamily("Segoe UI");
@@ -38,6 +40,17 @@ namespace BandFace.Creator
             DockPanel.SetDock(top, Dock.Top);
             top.Children.Add(new TextBlock { Text = S.Get("pickSource"), FontSize = 20, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
             top.Children.Add(search);
+            // перемикачі груп: «Усе» і групи за префіксом
+            var chips = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
+            void Chip(string id, string title)
+            {
+                var c = new System.Windows.Controls.Primitives.ToggleButton { Content = title, Style = (Style)FindResource("Chip"), Padding = new Thickness(12, 0, 12, 0), Margin = new Thickness(0, 0, 6, 6), IsChecked = id == group };
+                c.Click += (s, e) => { group = id; foreach (var o in chips.Children.OfType<System.Windows.Controls.Primitives.ToggleButton>()) o.IsChecked = o == c; Fill(); };
+                chips.Children.Add(c);
+            }
+            Chip("", S.Get("grpAll"));
+            foreach (var g in SampleData.Groups()) Chip(g.Id, g.Title);
+            top.Children.Add(chips);
             top.Children.Add(new TextBlock { Text = S.Get("sourcesCount", FaceCatalog.Sources.Select(x => x.Item1).Distinct().Count()), FontSize = 12, Margin = new Thickness(0, 6, 0, 8) });
             root.Children.Add(top);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
@@ -65,6 +78,7 @@ namespace BandFace.Creator
             ListBoxItem sel = null;
             foreach (var g in SampleData.Groups())
             {
+                if (group.Length > 0 && g.Id != group) continue;
                 var items = g.Sources.Where(x => q.Length == 0 || x.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0
                                                  || SampleData.Title(x).IndexOf(q, StringComparison.CurrentCultureIgnoreCase) >= 0).ToList();
                 if (items.Count == 0) continue;
@@ -75,10 +89,7 @@ namespace BandFace.Creator
                 });
                 foreach (var x in items)
                 {
-                    var sp = new StackPanel();
-                    sp.Children.Add(new TextBlock { Text = SampleData.Title(x), FontSize = 13 });
-                    if (SampleData.HasTitle(x)) sp.Children.Add(new TextBlock { Text = x, FontSize = 11, Opacity = 0.6 });
-                    var it = new ListBoxItem { Content = sp, Tag = x };
+                    var it = new ListBoxItem { Content = EditorView.SourceRow(x, false), Tag = x };
                     list.Items.Add(it);
                     if (x == current) sel = it;
                 }

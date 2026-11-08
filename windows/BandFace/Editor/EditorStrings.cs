@@ -277,6 +277,7 @@ namespace BandFace.Creator
             ["nudgeHint"] = new[] { "Стрілки на клавіатурі зсувають на 1 px, із Shift — на 10.", "Arrow keys nudge by 1 px, with Shift — by 10.", "Стрелки на клавиатуре сдвигают на 1 px, с Shift — на 10." },
 
             // ---------- Групи джерел ----------
+            ["grpAll"] = new[] { "Усе", "All", "Всё" },
             ["grp_time"] = new[] { "Час", "Time", "Время" },
             ["grp_date"] = new[] { "Дата", "Date", "Дата" },
             ["grp_health"] = new[] { "Здоров'я", "Health", "Здоровье" },

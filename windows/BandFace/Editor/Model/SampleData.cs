@@ -60,6 +60,32 @@ namespace BandFace.Creator
         public static string Title(string source) => S.Has("src_" + source) ? S.Get("src_" + source) : source;
         public static bool HasTitle(string source) => S.Has("src_" + source);
 
+        static readonly string[] GroupPrefixes = { "time", "date", "health", "weather", "system", "app", "dualtime" };
+
+        /// <summary>Група джерела за префіксом (time, date, health…; інакше other)</summary>
+        public static string GroupOf(string source)
+        {
+            // dualtime починається не з time, тож порядок префіксів не заважає
+            foreach (var p in GroupPrefixes) if (!string.IsNullOrEmpty(source) && source.StartsWith(p)) return p;
+            return "other";
+        }
+
+        /// <summary>Значок групи (Segoe MDL2)</summary>
+        public static string GroupGlyph(string group)
+        {
+            switch (group)
+            {
+                case "time": return "\uE823";     // годинник
+                case "date": return "\uE787";     // календар
+                case "health": return "\uE95E";   // серце
+                case "weather": return "\uE753";  // хмара
+                case "system": return "\uE83F";   // батарея
+                case "app": return "\uE71D";      // застосунки
+                case "dualtime": return "\uE774"; // глобус
+                default: return "\uE712";         // інше
+            }
+        }
+
         public sealed class Group
         {
             public string Id, Title;
@@ -70,7 +96,7 @@ namespace BandFace.Creator
         public static List<Group> Groups()
         {
             var unique = FaceCatalog.Sources.Select(x => x.Item1).Distinct().ToList();
-            var prefixes = new[] { "time", "date", "health", "weather", "system", "app", "dualtime" };
+            var prefixes = GroupPrefixes;
             var o = new List<Group>();
             var rest = new List<string>(unique);
             foreach (var p in prefixes)

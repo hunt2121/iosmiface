@@ -275,11 +275,9 @@ namespace BandFace.Creator
             {
                 Add(Ui.Header(S.Get("data")));
                 var src = res.Str("source");
-                var btn = new Button { Style = (Style)FindResource("Btn"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Height = 44, Margin = new Thickness(0, 0, 0, 8) };
-                var sp = new StackPanel();
-                sp.Children.Add(new TextBlock { Text = S.Get("shows"), FontSize = 11, Foreground = (Brush)FindResource("Sub") });
-                sp.Children.Add(new TextBlock { Text = SampleData.Title(src), FontSize = 13, FontWeight = FontWeights.SemiBold });
-                btn.Content = sp;
+                var btn = new Button { Style = (Style)FindResource("Btn"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Height = double.NaN, Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 0, 0, 8) };
+                // значок групи · назва (або технічне імʼя) і підпис · стрілка
+                btn.Content = SourceRow(src, true);
                 btn.HorizontalAlignment = HorizontalAlignment.Stretch;
                 btn.Click += (s, e) =>
                 {
@@ -367,6 +365,37 @@ namespace BandFace.Creator
         }
 
         // MARK: Цифри
+
+        /// <summary>Рядок джерела даних: плитка зі значком групи, назва й технічне імʼя (якщо назва є), стрілка › (для кнопки)</summary>
+        internal static FrameworkElement SourceRow(string src, bool chevron)
+        {
+            var g = new Grid();
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var tile = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(7), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+            tile.SetResourceReference(Border.BackgroundProperty, "ChipBg");
+            var glyph = new TextBlock { Text = SampleData.GroupGlyph(SampleData.GroupOf(src)), FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            glyph.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
+            tile.Child = glyph;
+            g.Children.Add(tile);
+            var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            texts.Children.Add(new TextBlock { Text = SampleData.Title(src), FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (SampleData.HasTitle(src))
+            {
+                var id = new TextBlock { Text = src, FontSize = 11, FontFamily = new FontFamily("Cascadia Mono, Consolas"), TextTrimming = TextTrimming.CharacterEllipsis };
+                id.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
+                texts.Children.Add(id);
+            }
+            Grid.SetColumn(texts, 1); g.Children.Add(texts);
+            if (chevron)
+            {
+                var ch = new TextBlock { Text = "\uE76C", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+                ch.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
+                Grid.SetColumn(ch, 2); g.Children.Add(ch);
+            }
+            return g;
+        }
 
         static readonly int[] WeightValues = { 100, 200, 300, 400, 500, 600, 700, 800, 900 };
 
