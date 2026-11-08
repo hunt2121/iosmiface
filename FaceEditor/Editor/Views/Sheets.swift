@@ -370,7 +370,7 @@ struct LayersSheet: View {
                 Section {
                     Button { selected = nil; dismiss() } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: "applewatch").font(.system(size: 18, weight: .semibold)).frame(width: 36).foregroundStyle(Color.accentColor)
+                            Image("TabWatch").renderingMode(.template).resizable().scaledToFit().frame(width: 24, height: 24).frame(width: 36).foregroundStyle(Color.accentColor)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text("Циферблат").foregroundStyle(.primary).fontWeight(.semibold)
                                 Text("Назва, фон, кольори, файл").font(.caption).foregroundStyle(.secondary)

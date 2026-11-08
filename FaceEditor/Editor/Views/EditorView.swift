@@ -159,7 +159,7 @@ struct EditorView: View {
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
     private var faceButton: some View {
         Button { selected = nil } label: {
-            Label("Циферблат", systemImage: "applewatch")
+            Label { Text("Циферблат") } icon: { Image("TabWatch").renderingMode(.template).resizable().scaledToFit().frame(width: 17, height: 17) }
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, 12).frame(height: 34)
                 .foregroundStyle(selected == nil ? Color.white : Color.primary)
