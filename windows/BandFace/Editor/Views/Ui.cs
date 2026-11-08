@@ -189,6 +189,50 @@ namespace BandFace.Creator
 
         public static KeyValuePair<string, string> P(string k, string v) => new KeyValuePair<string, string>(k, v);
 
+        /// <summary>Вісім кнопок-стрілок 3×3 (центр порожній): 0° — угору, за годинниковою. Стрілка — одна фігура, повернута на кут.</summary>
+        public static FrameworkElement DirectionPad(string label, double selected, Action<double> pick)
+        {
+            var root = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            root.Children.Add(new TextBlock { Text = label, FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            var g = new UniformGrid { Columns = 3, Rows = 3, Width = 3 * 40 + 2 * 6, HorizontalAlignment = HorizontalAlignment.Left };
+            double[] angles = { 315, 0, 45, 270, double.NaN, 90, 225, 180, 135 };
+            foreach (var a in angles)
+            {
+                if (double.IsNaN(a)) { g.Children.Add(new Border()); continue; }
+                double ang = a;
+                bool on = Math.Abs(((selected - ang) % 360 + 540) % 360 - 180) < 0.5;
+                var t = new ToggleButton { Style = St("Chip"), IsChecked = on, Width = 40, Height = 40, Margin = new Thickness(0, 0, 6, 6), Padding = new Thickness(0) };
+                // стрілка вгору 14×14, повернута на кут напрямку
+                var arrow = new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M7,1 L13,7 M7,1 L1,7 M7,1 L7,13"),
+                    StrokeThickness = 1.8, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                    Width = 14, Height = 14, Stretch = Stretch.None,
+                    RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new RotateTransform(ang),
+                };
+                arrow.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new System.Windows.Data.Binding("Foreground") { Source = t });
+                t.Content = arrow;
+                t.Click += (s, e) => { t.IsChecked = true; pick(ang); };
+                g.Children.Add(t);
+            }
+            root.Children.Add(g);
+            return root;
+        }
+
+        /// <summary>Рядок однакових кнопок (наприклад «−15° / +15°»)</summary>
+        public static FrameworkElement ButtonsRow(string[] titles, Action<int> click)
+        {
+            var g = new UniformGrid { Columns = titles.Length, Rows = 1, Margin = new Thickness(0, 0, 0, 10) };
+            for (int i = 0; i < titles.Length; i++)
+            {
+                int k = i;
+                var b = new Button { Content = titles[i], Style = St("Btn"), Height = 30, Margin = new Thickness(0, 0, i < titles.Length - 1 ? 6 : 0, 0) };
+                b.Click += (s, e) => click(k);
+                g.Children.Add(b);
+            }
+            return g;
+        }
+
         /// <summary>«Число росте»: праворуч / від центру / ліворуч — кнопки зі схемою (червона риска — точка X,
         /// пунктир — цифра, що додається, коли «5» стає «15») і стрілками. enabled=false — сіре з поясненням.</summary>
         public static FrameworkElement GrowChips(string label, string[] titles, string selected, Action<string> pick, bool enabled, string note)

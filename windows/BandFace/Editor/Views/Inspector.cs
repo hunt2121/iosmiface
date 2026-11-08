@@ -485,16 +485,33 @@ namespace BandFace.Creator
         void ArcLook(XNode res, Generator gen)
         {
             var name = res.Str("name") ?? "";
-            var cur = ArcShapes.FirstOrDefault(t => Math.Abs(Norm(gen.Start) - t.Item2) < 0.5 && Math.Abs(Math.Abs(gen.Range) - t.Item3) < 0.5)?.Item1 ?? "";
-            Add(Ui.Chips(S.Get("shape"), ArcShapes.Select(t => P(t.Item1, S.Get(t.Item1) + " " + t.Item3 + "°")), cur, v =>
+            // Довжина — повзунком; розріз дуги лишається на місці (дуга розтягується симетрично).
+            // Середина дуги = Start + Range/2, розріз — навпроти неї.
+            double sign = gen.Range < 0 ? -1 : 1;
+            double mid = Norm(gen.Start + gen.Range / 2);
+            Add(Ui.Slider(S.Get("arcLength"), Math.Abs(gen.Range), 10, 360, 1, v =>
             {
-                var t = ArcShapes.First(x => x.Item1 == v);
-                Regen(name, gen, g => { g.Start = t.Item2; g.Range = Math.Sign(gen.Range == 0 ? 1 : gen.Range) * t.Item3; });
-            }, 2));
-            Add(Ui.Slider(S.Get("arcStart"), Norm(gen.Start), 0, 359, 1, v => Regen(name, gen, g => g.Start = v)));
-            Add(Ui.Slider(S.Get("arcLength"), Math.Abs(gen.Range), 1, 360, 1, v => Regen(name, gen, g => g.Range = (gen.Range < 0 ? -1 : 1) * v)));
-            Add(Ui.Chips(S.Get("direction"), new[] { P("cw", S.Get("dirCw")), P("ccw", S.Get("dirCcw")) }, gen.Range < 0 ? "ccw" : "cw",
-                         v => Regen(name, gen, g => g.Range = (v == "ccw" ? -1 : 1) * Math.Abs(gen.Range))));
+                foreach (var snapTo in new[] { 90.0, 180, 270, 360 }) if (Math.Abs(v - snapTo) <= 6) { v = snapTo; break; }
+                Regen(name, gen, g => { g.Range = sign * v; g.Start = Norm(mid - sign * v / 2); });
+            }));
+            Add(Ui.Note(S.Get("arcLengthHint")));
+            // Розріз: 8 напрямків — дуга стає симетрично, розрізом у вибраний бік (для 360° — звідки починається заповнення)
+            double gap = Math.Abs(Math.Abs(gen.Range) - 360) < 0.5 ? Norm(gen.Start) : Norm(mid + 180);
+            Add(Ui.DirectionPad(S.Get("arcGap"), gap, d =>
+                Regen(name, gen, g =>
+                {
+                    double len = Math.Abs(g.Range);
+                    g.Start = len >= 359.5 ? d : Norm(d + 180 - sign * len / 2);
+                })));
+            Add(Ui.NumberRow(S.Get("arcStart"), (int)Math.Round(Norm(gen.Start)), v => Regen(name, gen, g => g.Start = Norm(v)), 0, 359));
+            Add(Ui.ButtonsRow(new[] { "−15°", "+15°" }, k => Regen(name, gen, g => g.Start = Norm(g.Start + (k == 0 ? -15 : 15)))));
+            Add(Ui.Chips(S.Get("fillDirection"), new[] { P("cw", S.Get("dirCw")), P("ccw", S.Get("dirCcw")) }, gen.Range < 0 ? "ccw" : "cw",
+                         v => Regen(name, gen, g =>
+                         {
+                             // зміна напрямку не зсуває дугу: та сама середина, інший бік заповнення
+                             double len = Math.Abs(g.Range), s2 = v == "ccw" ? -1 : 1;
+                             g.Range = s2 * len; g.Start = Norm(mid - s2 * len / 2);
+                         })));
             Add(Ui.Note(S.Get("arcHandlesHint")));
             Add(Ui.Slider(S.Get("radius"), gen.Radius, 10, 300, 1, v => Regen(name, gen, g => g.Radius = v)));
             Add(Ui.Slider(S.Get("thickness"), gen.Width, 2, 60, 1, v => Regen(name, gen, g => g.Width = v)));

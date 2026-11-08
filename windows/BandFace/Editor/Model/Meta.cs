@@ -30,7 +30,7 @@ namespace BandFace.Creator
         /// <summary>Рядок напису (Label): малюється шрифтом у картинку</summary>
         public string Text = "";
         /// <summary>Дуга: початок і довжина (градуси, 0° — угорі, за годинниковою); трек і заповнення малюються лише в цих межах</summary>
-        public double Start = 220, Range = 280;
+        public double Start = 40, Range = 280; // розріз угорі: 0° + 180° − 280°/2
         /// <summary>Лінія: напрямок у градусах (0° — праворуч, 90° — донизу)</summary>
         public double Angle = 0;
         /// <summary>Кінці дуги й лінії: круглі (типово) або прямі</summary>
