@@ -88,6 +88,12 @@ namespace BandFace
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
             lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") });
+            // ТИМЧАСОВО: чи має пристрій вбудовані значки для ідентифікаторів програм з iPhone (тоді значок не треба передавати)
+            lock (_notes)
+            {
+                _notes.Enqueue(new WinNotifications.Note { App = "WhatsApp", Package = "net.whatsapp.WhatsApp", Title = "WhatsApp (iOS id)", Body = "net.whatsapp.WhatsApp" });
+                _notes.Enqueue(new WinNotifications.Note { App = "Telegram", Package = "ph.telegra.Telegraph", Title = "Telegram (iOS id)", Body = "ph.telegra.Telegraph" });
+            }
             _ = SendNotesAsync(true);
         }
 
@@ -118,7 +124,7 @@ namespace BandFace
                     lock (_notes) { if (_notes.Count == 0) break; n = _notes.Dequeue(); }
                     var kind = WinNotifications.Kind(n.App);
                     var appName = kind == "wa" ? "WhatsApp" : kind == "tg" ? "Telegram" : (string.IsNullOrEmpty(n.App) ? "Windows" : n.App);
-                    await session.SendAsync(Command.Notification(NextNoteId(), WinNotifications.PackageFor(kind, n.App), appName, Cut(BandText.Clean(n.Title), 64), Cut(BandText.Clean(n.Body), 400), DateTime.Now));
+                    await session.SendAsync(Command.Notification(NextNoteId(), n.Package ?? WinNotifications.PackageFor(kind, n.App), appName, Cut(BandText.Clean(n.Title), 64), Cut(BandText.Clean(n.Body), 400), DateTime.Now));
                     AddLog("notification sent: " + appName);
                     await Task.Delay(250);
                 }

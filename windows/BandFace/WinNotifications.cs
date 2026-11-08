@@ -14,7 +14,7 @@ namespace BandFace
 {
     static class WinNotifications
     {
-        public sealed class Note { public string App, Title, Body; public uint Id; }
+        public sealed class Note { public string App, Title, Body, Package; public uint Id; }
 
         /// <summary>Нове сповіщення (на потоці інтерфейсу)</summary>
         public static event Action<Note> Arrived;
