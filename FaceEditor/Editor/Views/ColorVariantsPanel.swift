@@ -35,25 +35,44 @@ struct ColorVariantsPanel: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                swatches
-                let v = min(variant, colors.count - 1)
-                if v == 0 {
-                    DebouncedColor(title: "Основний колір", hex: colors[0]) { h in setColor(0, h) }
-                    Text("Основний — вигляд, як намальовано. Цей колір показується у виборі кольору на браслеті.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                } else {
-                    DebouncedColor(title: "Колір варіанта", hex: colors[v]) { h in setColor(v, h) }
-                    Button(role: .destructive) {
-                        var list = colors
-                        list.remove(at: v)
+                // як у Windows: кожен колір — рядок; квадратик (дотик — палітра) і поле з кодом, дотик по назві — показати на полотні
+                ForEach(Array(colors.enumerated()), id: \.offset) { i, c in
+                    HStack(spacing: 8) {
+                        Button { variant = i } label: {
+                            Image(systemName: i == variant ? "eye.fill" : "eye").font(.system(size: 14))
+                                .foregroundStyle(i == variant ? Color.accentColor : Color.secondary).frame(width: 26)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Показати на полотні"))
+                        ColorRow(title: i == 0 ? "Основний колір" : String(format: loc("Колір %d"), i), hex: c) { h in setColor(i, h) }
+                        if i > 0 {
+                            Button(role: .destructive) {
+                                var list = colors
+                                list.remove(at: i)
+                                project.edit { ColorVariants.setColors($0, list) }
+                                variant = min(variant, list.count - 1)
+                            } label: { Image(systemName: "trash").font(.system(size: 14)) }
+                            .buttonStyle(.plain).foregroundStyle(.red)
+                            .accessibilityLabel(Text("Видалити цей колір"))
+                        } else {
+                            Color.clear.frame(width: 14)
+                        }
+                    }
+                }
+                if colors.count < ColorVariants.maxColors {
+                    Button {
+                        let next = Self.palette.first { !colors.contains($0) } ?? "#FFFFFF"
+                        let list = colors + [next]
                         project.edit { ColorVariants.setColors($0, list) }
-                        variant = max(0, v - 1)
+                        variant = list.count - 1
                     } label: {
-                        Label("Видалити цей колір", systemImage: "trash").font(.subheadline)
+                        Label("Додати колір", systemImage: "plus").font(.subheadline.weight(.semibold))
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.accentColor)
                 }
+                Text("Основний — вигляд, як намальовано; він показується у виборі кольору на браслеті. Око — показати колір на полотні.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 Text("Елементам, які мають змінювати колір, увімкніть «Змінюється з кольором циферблата» на вкладці «Колір».")
                     .font(.footnote).foregroundStyle(.secondary)
                 Button(role: .destructive) {

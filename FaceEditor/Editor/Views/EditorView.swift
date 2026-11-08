@@ -29,6 +29,8 @@ struct EditorView: View {
     @AppStorage("editorGrid") private var grid = 1
 
     @State private var showXml = false
+    /// Масштаб полотна: 1 / 2 / 3 (100 / 200 / 300 %)
+    @State private var zoom: CGFloat = 1
     @Environment(\.scenePhase) private var scenePhase
 
     enum EditorSheet: Identifiable { case add, layers, background, source, properties
@@ -38,11 +40,13 @@ struct EditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
-            CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid)
+            CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid, zoom: zoom)
                 .frame(maxWidth: .infinity)
                 .frame(height: 340)
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
                 .overlay(alignment: .topTrailing) { canvasButtons }
+                .overlay(alignment: .topLeading) { faceButton }
+                .overlay(alignment: .bottomLeading) { zoomChips }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
             panel
@@ -147,6 +151,34 @@ struct EditorView: View {
             roundButton("eye", "Попередній перегляд") { showPreview = true }
             if project.themes.count > 1 {
                 roundButton(theme == 0 ? "sun.max" : "moon", "Тема") { theme = (theme + 1) % project.themes.count; selected = nil }
+            }
+        }
+        .padding(12)
+    }
+
+    /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
+    private var faceButton: some View {
+        Button { selected = nil } label: {
+            Label("Циферблат", systemImage: "applewatch")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 12).frame(height: 34)
+                .foregroundStyle(selected == nil ? Color.white : Color.primary)
+                .background(Capsule().fill(selected == nil ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+        }
+        .buttonStyle(.plain)
+        .padding(12)
+    }
+
+    private var zoomChips: some View {
+        HStack(spacing: 4) {
+            ForEach([1, 2, 3], id: \.self) { z in
+                Button { withAnimation(.easeInOut(duration: 0.2)) { zoom = CGFloat(z) } } label: {
+                    Text(verbatim: "\(z * 100)%").font(.caption.weight(.semibold)).monospacedDigit()
+                        .padding(.horizontal, 9).frame(height: 28)
+                        .foregroundStyle(zoom == CGFloat(z) ? Color.white : Color.primary)
+                        .background(Capsule().fill(zoom == CGFloat(z) ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(12)

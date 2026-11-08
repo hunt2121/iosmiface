@@ -434,7 +434,7 @@ struct BackgroundSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    DebouncedColor(title: "Колір фону", hex: project.theme(theme)?.string("bgColor") ?? "#000000") { h in
+                    ColorRow(title: "Колір фону", hex: project.theme(theme)?.string("bgColor") ?? "#000000") { h in
                         project.edit { $0.theme(theme)?.set("bgColor", h) }
                     }
                 }

@@ -12880,6 +12880,98 @@
           }
         }
       }
+    },
+    "Колір %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвет %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колір %d"
+          }
+        }
+      }
+    },
+    "Показати на полотні": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show on canvas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать на холсте"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати на полотні"
+          }
+        }
+      }
+    },
+    "Основний — вигляд, як намальовано; він показується у виборі кольору на браслеті. Око — показати колір на полотні.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main is the look as drawn; it appears in the device's colour picker. The eye shows a colour on the canvas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основной — вид как нарисовано; он показывается в выборе цвета на браслете. Глаз — показать цвет на холсте."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основний — вигляд, як намальовано; він показується у виборі кольору на браслеті. Око — показати колір на полотні."
+          }
+        }
+      }
+    },
+    "ID — це число від 1 до 4294967295 (лише цифри).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The ID is a number from 1 to 4294967295 (digits only)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID — это число от 1 до 4294967295 (только цифры)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID — це число від 1 до 4294967295 (лише цифри)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

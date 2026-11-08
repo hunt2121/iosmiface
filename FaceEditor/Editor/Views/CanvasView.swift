@@ -12,6 +12,8 @@ struct CanvasView: View {
     @Binding var selected: XNode?
     let snap: Bool
     let grid: Int
+    /// Масштаб полотна: 1 — вписано, 2 — 200 %, 3 — 300 % (порожнім місцем полотно пересувається)
+    var zoom: CGFloat = 1
 
     @State private var renderer: FaceRenderer?
     @State private var dragLayout: XNode?
@@ -33,6 +35,9 @@ struct CanvasView: View {
     @State private var touchDown = Date()
     /// Палець притримали перед рухом — без прив'язки кутів
     @State private var freeMode: Bool?
+    /// Зсув збільшеного полотна і його значення на початку жесту
+    @State private var pan = CGSize.zero
+    @State private var panStart: CGSize?
 
     struct DragCache {
         let below: UIImage
@@ -48,8 +53,12 @@ struct CanvasView: View {
             let dev = project.meta.device
             let W = CGFloat(dev.width), H = CGFloat(dev.height)
             let b = FaceFrame.border
-            let scale = min((geo.size.width - 32 - 2 * b) / W, (geo.size.height - 24 - 2 * b) / H)
+            let scale = min((geo.size.width - 32 - 2 * b) / W, (geo.size.height - 24 - 2 * b) / H) * zoom
             let size = CGSize(width: W * scale, height: H * scale)
+            // зсув збільшеного полотна не дає вийти за межі
+            let maxX = max(0, (size.width - geo.size.width) / 2 + 40), maxY = max(0, (size.height - geo.size.height) / 2 + 40)
+            let pn = CGSize(width: min(maxX, max(-maxX, pan.width)), height: min(maxY, max(-maxY, pan.height)))
+            let origin = CGPoint(x: geo.size.width / 2 - size.width / 2 + pn.width, y: geo.size.height / 2 - size.height / 2 + pn.height)
             // рівно під фізичні пікселі полотна (раніше — у 6 разів більше, що гальмувало перетягування)
             let cache = dragCache
             let r: (UIImage, [LayerBox])? = cache == nil ? currentRender(scale * displayScale) : nil
@@ -82,10 +91,14 @@ struct CanvasView: View {
                 if guideH { Rectangle().fill(Color.pink).frame(width: size.width, height: 1).offset(y: size.height / 2) }
             }
             .frame(width: size.width, height: size.height)
-            .contentShape(Rectangle())
-            .gesture(drag(scale: scale, boxes: boxes, W: W, H: H))
             .faceCapsule()
-            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+            .position(x: geo.size.width / 2 + pn.width, y: geo.size.height / 2 + pn.height)
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
+            // жест — на всю панель полотна: дотик поза циферблатом теж відкриває налаштування циферблата
+            .contentShape(Rectangle())
+            .gesture(drag(scale: scale, origin: origin, boxes: boxes, W: W, H: H))
+            .onChange(of: zoom) { _ in pan = .zero }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Полотно циферблата")
             .accessibilityIdentifier("canvas")
@@ -293,20 +306,25 @@ struct CanvasView: View {
             .position(x: p.x + 30, y: p.y - 18)
     }
 
-    private func drag(scale: CGFloat, boxes: [LayerBox], W: CGFloat, H: CGFloat) -> some Gesture {
+    private func drag(scale: CGFloat, origin: CGPoint, boxes: [LayerBox], W: CGFloat, H: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { v in
-                let start = CGPoint(x: v.startLocation.x / scale, y: v.startLocation.y / scale)
+                // збільшене полотно пересувається пальцем по порожньому місцю
+                if let ps = panStart { pan = CGSize(width: ps.width + v.translation.width, height: ps.height + v.translation.height); return }
+                let start = CGPoint(x: (v.startLocation.x - origin.x) / scale, y: (v.startLocation.y - origin.y) / scale)
                 // ручки на кінцях дуги чи лінії
                 if handle != nil || (dragLayout == nil && startHandle(start, scale: scale)) {
                     let moved = abs(v.translation.width) + abs(v.translation.height) > 2
                     if moved, freeMode == nil { freeMode = Date().timeIntervalSince(touchDown) > 0.5 }
-                    if moved { moveHandle(CGPoint(x: v.location.x / scale, y: v.location.y / scale)) }
+                    if moved { moveHandle(CGPoint(x: (v.location.x - origin.x) / scale, y: (v.location.y - origin.y) / scale)) }
                     return
                 }
                 if dragLayout == nil {
                     moved = false
-                    guard let l = hit(start, boxes) else { return }
+                    guard let l = hit(start, boxes) else {
+                        if zoom > 1, abs(v.translation.width) + abs(v.translation.height) > 4 { panStart = CGSize(width: pan.width - v.translation.width, height: pan.height - v.translation.height) }
+                        return
+                    }
                     selected = l
                     dragLayout = l
                     dragStart = CGPoint(x: CGFloat(l.int("x")), y: CGFloat(l.int("y")))
@@ -335,6 +353,7 @@ struct CanvasView: View {
                 dragPos = CGPoint(x: x.rounded(), y: y.rounded())
             }
             .onEnded { v in
+                if panStart != nil { panStart = nil; return }
                 if handle != nil { if freeMode != nil { endHandle() } else { handle = nil }; return }
                 defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false; dragCache = nil }
                 guard let l = dragLayout else {

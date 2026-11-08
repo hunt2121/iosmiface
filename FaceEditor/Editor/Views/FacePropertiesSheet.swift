@@ -12,10 +12,20 @@ struct FacePropertiesSheet: View {
     @State private var size: Int?
     @State private var askDeleteAOD = false
     @FocusState private var nameFocused: Bool
+    @State private var idText = ""
+    @FocusState private var idFocused: Bool
+    @State private var idInvalid = false
 
     /// Браслет зберігає назву в 64 байтах UTF-8 (кирилиця — 2 байти на літеру)
     private static let maxBytes = 63
     private var bytes: Int { name.utf8.count }
+
+    private func commitId() {
+        let t = idText.trimmingCharacters(in: .whitespaces)
+        guard t != (project.root.string("id") ?? "") else { idInvalid = false; return }
+        if let v = UInt32(t), v > 0 { project.edit { $0.root.set("id", String(v)) }; idInvalid = false }
+        else { idInvalid = true; idText = project.root.string("id") ?? "" }
+    }
 
     var body: some View {
         NavigationStack {
@@ -41,11 +51,23 @@ struct FacePropertiesSheet: View {
 
                 Section {
                     HStack {
-                        Text(project.root.string("id") ?? "—").font(.body.monospacedDigit())
+                        // ID можна ввести вручну: лише цифри, до 4294967295
+                        TextField("ID", text: $idText)
+                            .font(.body.monospacedDigit())
+                            .keyboardType(.numberPad)
+                            .focused($idFocused)
+                            .onChange(of: idFocused) { f in if !f { commitId() } }
+                            .onAppear { idText = project.root.string("id") ?? "" }
+                            .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Готово") { idFocused = false } } }
                         Spacer()
                         Button("Новий ID") {
-                            project.edit { $0.root.set("id", ProjectStore.newFaceID()) }
+                            let n = ProjectStore.newFaceID()
+                            project.edit { $0.root.set("id", n) }
+                            idText = n
                         }
+                    }
+                    if idInvalid {
+                        Text("ID — це число від 1 до 4294967295 (лише цифри).").font(.footnote).foregroundStyle(.red)
                     }
                 } header: {
                     Text("Ідентифікатор")
