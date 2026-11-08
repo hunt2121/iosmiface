@@ -189,6 +189,51 @@ namespace BandFace.Creator
 
         public static KeyValuePair<string, string> P(string k, string v) => new KeyValuePair<string, string>(k, v);
 
+        /// <summary>«Число росте»: праворуч / від центру / ліворуч — кнопки зі схемою (червона риска — точка X,
+        /// пунктир — цифра, що додається, коли «5» стає «15») і стрілками. enabled=false — сіре з поясненням.</summary>
+        public static FrameworkElement GrowChips(string label, string[] titles, string selected, Action<string> pick, bool enabled, string note)
+        {
+            var root = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            root.Children.Add(new TextBlock { Text = label, FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            var g = new UniformGrid { Columns = 3, Rows = 1, IsEnabled = enabled, Opacity = enabled ? 1 : 0.4 };
+            var keys = new[] { "left", "center", "right" };
+            for (int i = 0; i < 3; i++)
+            {
+                var key = keys[i];
+                var t = new ToggleButton { Style = St("Chip"), IsChecked = key == selected, Margin = new Thickness(0, 0, i < 2 ? 4 : 0, 0), Height = double.NaN, Padding = new Thickness(4, 7, 4, 6) };
+                var fg = new System.Windows.Data.Binding("Foreground") { Source = t };
+                // схема: дві цифри по 12×18, між ними 2 px; риска — точка X
+                var c = new Canvas { Width = 64, Height = 22, Margin = new Thickness(0, 0, 0, 5), HorizontalAlignment = HorizontalAlignment.Center };
+                double x0 = 64 / 2.0 - 13;
+                for (int d = 0; d < 2; d++)
+                {
+                    bool added = key == "left" ? d == 1 : d == 0;
+                    var r = new System.Windows.Shapes.Rectangle { Width = 12, Height = 18, RadiusX = 2, RadiusY = 2, StrokeThickness = 1 };
+                    if (added) { r.StrokeDashArray = new DoubleCollection { 2, 2 }; r.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, fg); r.Fill = Brushes.Transparent; }
+                    else r.SetBinding(System.Windows.Shapes.Shape.FillProperty, fg);
+                    Canvas.SetLeft(r, x0 + d * 14); Canvas.SetTop(r, 2);
+                    c.Children.Add(r);
+                }
+                double pinX = key == "left" ? x0 : key == "center" ? x0 + 13 : x0 + 26;
+                var pin = new System.Windows.Shapes.Rectangle { Width = 2, Height = 22, RadiusX = 1, RadiusY = 1, Fill = Res("Err") };
+                Canvas.SetLeft(pin, pinX - 1); c.Children.Add(pin);
+                // підпис зі стрілками з того самого шрифту значків, що й решта застосунку
+                var cap = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+                TextBlock Arrow(string glyph) => new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 1, 3, 0) };
+                if (key != "left") cap.Children.Add(Arrow("\uE72B"));
+                cap.Children.Add(new TextBlock { Text = titles[i], FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+                if (key != "right") cap.Children.Add(Arrow("\uE72A"));
+                var content = new StackPanel();
+                content.Children.Add(c); content.Children.Add(cap);
+                t.Content = content;
+                t.Click += (s, e) => { t.IsChecked = true; if (key != selected) pick(key); };
+                g.Children.Add(t);
+            }
+            root.Children.Add(g);
+            if (!string.IsNullOrEmpty(note)) root.Children.Add(new TextBlock { Text = note, FontSize = 12, Foreground = Res("Sub"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+            return root;
+        }
+
         public static FrameworkElement Switch(string label, bool value, Action<bool> change, bool enabled = true)
         {
             var c = new CheckBox { Style = St("Switch"), IsChecked = value, IsEnabled = enabled, VerticalAlignment = VerticalAlignment.Center };
