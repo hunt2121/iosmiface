@@ -24,7 +24,7 @@ namespace BandFace.Creator
         XNode selected;
         List<LayerBox> boxes = new List<LayerBox>();
         double zoom = 1;
-        bool fit = true, snap = true, syncingList;
+        bool fit = false, snap = true, syncingList;
         int grid = 1;
 
         // перетягування
@@ -90,7 +90,7 @@ namespace BandFace.Creator
             p.Changed += OnChanged;
             Watch();
             renderer = new FaceRenderer(p);
-            theme = 0; variant = 0; selected = null; fit = true;
+            theme = 0; variant = 0; selected = null; fit = false; zoom = 1; // відкривається в 100%; «Вмістити» — кнопкою
             // новий проєкт відкривається у візуальному режимі
             xmlBase = null;
             VisualMode.IsChecked = true; XmlMode.IsChecked = false;
