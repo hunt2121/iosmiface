@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using BandFace.Protocol;
 
 namespace BandFace
@@ -77,13 +78,35 @@ namespace BandFace
             _ = SendNotesAsync();
         }
 
-        /// <summary>Тимчасово: перевірка кольорових смайлів пристрою. Спершу звичайні смайли (їх замінить BandText),
-        /// потім коди поза відомою таблицею (до U+A002 і після U+A064) — шукаємо ❤️.</summary>
-        const string EmojiProbe = "\u2764\uFE0F\u2728\u2B50 | a\uA000 b\uA001 c\uA065 d\uA066 e\uA067 f\uA068 g\uA069 h\uA06A i\uA06B j\uA06C k\uA06D l\uA06E m\uA06F n\uA070 o\uA071 p\uA072 q\uA073 r\uA074";
+        /// <summary>ТИМЧАСОВО: кнопки, кожна шле одне сповіщення з групою кодів U+A0xx (підпис — дві останні цифри коду),
+        /// щоб за один раз знайти всі кольорові смайли пристрою. Відомі: U+A002…U+A064.</summary>
+        static readonly int[][] ProbeRanges =
+        {
+            new[] { 0xA000, 0xA001 }, new[] { 0xA065, 0xA07F }, new[] { 0xA080, 0xA09F }, new[] { 0xA0A0, 0xA0BF },
+            new[] { 0xA0C0, 0xA0DF }, new[] { 0xA0E0, 0xA0FF }, new[] { 0xA100, 0xA11F }, new[] { 0xA120, 0xA13F },
+        };
+
+        void BuildProbeButtons()
+        {
+            ProbePanel.Children.Clear();
+            foreach (var r in ProbeRanges)
+            {
+                var range = r;
+                var b = new Button { Content = range[0].ToString("X4") + "–" + range[1].ToString("X4"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10, 0, 10, 0), Height = 30 };
+                b.Click += (s, e) =>
+                {
+                    var sb = new System.Text.StringBuilder();
+                    for (int c = range[0]; c <= range[1]; c++) sb.Append((c & 0xFF).ToString("X2")).Append((char)c).Append(' ');
+                    lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = range[0].ToString("X4") + "–" + range[1].ToString("X4"), Body = sb.ToString().Trim() });
+                    _ = SendNotesAsync(true);
+                };
+                ProbePanel.Children.Add(b);
+            }
+        }
 
         void TestNotify_Click(object sender, RoutedEventArgs e)
         {
-            lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") + "\n" + EmojiProbe });
+            lock (_notes) _notes.Enqueue(new WinNotifications.Note { App = "BandFace", Title = S.Get("testTitle"), Body = S.Get("testBody") });
             _ = SendNotesAsync(true);
         }
 
