@@ -12950,25 +12950,25 @@
         }
       }
     },
-    "ID — це число від 1 до 4294967295 (лише цифри).": {
+    "ID — рівно 9 цифр, перша не 0.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The ID is a number from 1 to 4294967295 (digits only)."
+            "value": "The ID is exactly 9 digits, not starting with 0."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "ID — это число от 1 до 4294967295 (только цифры)."
+            "value": "ID — ровно 9 цифр, первая не 0."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "ID — це число від 1 до 4294967295 (лише цифри)."
+            "value": "ID — рівно 9 цифр, перша не 0."
           }
         }
       }

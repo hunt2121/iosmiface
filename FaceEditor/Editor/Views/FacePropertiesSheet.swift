@@ -23,7 +23,8 @@ struct FacePropertiesSheet: View {
     private func commitId() {
         let t = idText.trimmingCharacters(in: .whitespaces)
         guard t != (project.root.string("id") ?? "") else { idInvalid = false; return }
-        if let v = UInt32(t), v > 0 { project.edit { $0.root.set("id", String(v)) }; idInvalid = false }
+        // ID завжди рівно 9 цифр (як у нових циферблатів), перша не 0
+        if t.count == 9, t.allSatisfy({ $0.isASCII && $0.isNumber }), t.first != "0" { project.edit { $0.root.set("id", t) }; idInvalid = false }
         else { idInvalid = true; idText = project.root.string("id") ?? "" }
     }
 
@@ -51,12 +52,16 @@ struct FacePropertiesSheet: View {
 
                 Section {
                     HStack {
-                        // ID можна ввести вручну: лише цифри, до 4294967295
+                        // ID можна ввести вручну: рівно 9 цифр
                         TextField("ID", text: $idText)
                             .font(.body.monospacedDigit())
                             .keyboardType(.numberPad)
                             .focused($idFocused)
                             .onChange(of: idFocused) { f in if !f { commitId() } }
+                            .onChange(of: idText) { v in
+                                let d = String(v.filter({ $0.isASCII && $0.isNumber }).prefix(9))
+                                if d != v { idText = d }
+                            }
                             .onAppear { idText = project.root.string("id") ?? "" }
                             .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Готово") { idFocused = false } } }
                         Spacer()
@@ -67,7 +72,7 @@ struct FacePropertiesSheet: View {
                         }
                     }
                     if idInvalid {
-                        Text("ID — це число від 1 до 4294967295 (лише цифри).").font(.footnote).foregroundStyle(.red)
+                        Text("ID — рівно 9 цифр, перша не 0.").font(.footnote).foregroundStyle(.red)
                     }
                 } header: {
                     Text("Ідентифікатор")
