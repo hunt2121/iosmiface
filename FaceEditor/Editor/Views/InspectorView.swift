@@ -209,15 +209,34 @@ struct InspectorView: View {
     private static func norm(_ a: Double) -> Double { let m = a.truncatingRemainder(dividingBy: 360); return m < 0 ? m + 360 : m }
 
     @ViewBuilder private func arcLook(_ r: XNode, _ g: Generator) -> some View {
-        let cur = Self.arcShapes.first { abs(Self.norm(g.start) - $0.2) < 0.5 && abs(abs(g.range) - $0.3) < 0.5 }?.0 ?? ""
-        Chips(title: "Форма", hint: nil, items: Self.arcShapes.map { ($0.0, $0.1) }, selected: cur) { v in
-            guard let s = Self.arcShapes.first(where: { $0.0 == v }) else { return }
-            regen(from: g) { $0.start = s.2; $0.range = (g.range < 0 ? -1 : 1) * s.3 }
+        // Довжина — повзунком; розріз лишається на місці (дуга розтягується симетрично).
+        // Середина дуги = start + range/2, розріз — навпроти неї.
+        let sign: Double = g.range < 0 ? -1 : 1
+        let mid = Self.norm(g.start + g.range / 2)
+        CommitSlider(title: "Довжина дуги, °", value: abs(g.range), range: 10...360, step: 1) { v0 in
+            var v = v0
+            for t in [90.0, 180, 270, 360] where abs(v - t) <= 6 { v = t; break }
+            regen(from: g) { $0.range = sign * v; $0.start = Self.norm(mid - sign * v / 2) }
         }
-        CommitSlider(title: "Початок, °", value: Self.norm(g.start), range: 0...359, step: 1) { v in regen(from: g) { $0.start = v } }
-        CommitSlider(title: "Довжина дуги, °", value: abs(g.range), range: 1...360, step: 1) { v in regen(from: g) { $0.range = (g.range < 0 ? -1 : 1) * v } }
-        Chips(title: "Напрямок", hint: nil, items: [("cw", "За годинниковою"), ("ccw", "Проти")], selected: g.range < 0 ? "ccw" : "cw") { v in
-            regen(from: g) { $0.range = (v == "ccw" ? -1 : 1) * abs(g.range) }
+        Text("Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°.").font(.caption).foregroundStyle(.secondary)
+        let gap = abs(abs(g.range) - 360) < 0.5 ? Self.norm(g.start) : Self.norm(mid + 180)
+        DirectionPad(title: "Розріз дуги", selected: gap) { d in
+            regen(from: g) { x in
+                let len = abs(x.range)
+                x.start = len >= 359.5 ? d : Self.norm(d + 180 - sign * len / 2)
+            }
+        }
+        HStack(spacing: 8) {
+            NumberField(title: "Початок, °", value: Int(Self.norm(g.start).rounded())) { v in regen(from: g) { $0.start = Self.norm(Double(v)) } }
+            Button("−15°") { regen(from: g) { $0.start = Self.norm($0.start - 15) } }.buttonStyle(.bordered)
+            Button("+15°") { regen(from: g) { $0.start = Self.norm($0.start + 15) } }.buttonStyle(.bordered)
+        }
+        Chips(title: "Напрямок заповнення", hint: nil, items: [("cw", "За годинниковою"), ("ccw", "Проти")], selected: g.range < 0 ? "ccw" : "cw") { v in
+            // зміна напрямку не зсуває дугу: та сама середина, інший бік заповнення
+            regen(from: g) { x in
+                let len = abs(x.range), s2: Double = v == "ccw" ? -1 : 1
+                x.range = s2 * len; x.start = Self.norm(mid - s2 * len / 2)
+            }
         }
         Text("Кінці дуги можна тягнути на полотні. Кут прилипає до 45°, 90°, 180°…, довжина — до 90/180/270/360°. Притримайте палець перед рухом — без прив'язки.")
             .font(.caption).foregroundStyle(.secondary)
@@ -517,6 +536,35 @@ struct GrowChips: View {
                 .offset(x: CGFloat(key == "left" ? 0 : key == "center" ? 13 : 26) - 1)
         }
         .frame(width: 26, height: 22)
+    }
+}
+
+/// Вісім кнопок-стрілок 3×3 (центр порожній): 0° — угору, за годинниковою
+struct DirectionPad: View {
+    let title: String
+    let selected: Double
+    var onPick: (Double) -> Void
+    private let angles: [Double?] = [315, 0, 45, 270, nil, 90, 225, 180, 135]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(loc(title)).font(.subheadline)
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(44), spacing: 6), count: 3), spacing: 6) {
+                ForEach(0..<9, id: \.self) { i in
+                    if let a = angles[i] {
+                        let on = abs((((selected - a).truncatingRemainder(dividingBy: 360)) + 540).truncatingRemainder(dividingBy: 360) - 180) < 0.5
+                        Button { onPick(a) } label: {
+                            Image(systemName: "arrow.up").font(.system(size: 15, weight: .semibold)).rotationEffect(.degrees(a))
+                                .frame(width: 44, height: 44)
+                                .foregroundStyle(on ? Color.white : Color.primary)
+                                .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Color.clear.frame(width: 44, height: 44)
+                    }
+                }
+            }
+        }
     }
 }
 

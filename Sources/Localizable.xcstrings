@@ -13133,6 +13133,75 @@
           }
         }
       }
+    },
+    "Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The gap stays in place (at the top by default). Length snaps to 90/180/270/360°."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрез остаётся на месте (сначала — вверху). Длина прилипает к 90/180/270/360°."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°."
+          }
+        }
+      }
+    },
+    "Розріз дуги" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arc gap"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрез дуги"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розріз дуги"
+          }
+        }
+      }
+    },
+    "Напрямок заповнення" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill direction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Направление заполнения"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напрямок заповнення"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
