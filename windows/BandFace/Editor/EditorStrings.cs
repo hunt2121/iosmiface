@@ -506,7 +506,7 @@ namespace BandFace.Creator
             ["valuesHowAsk"] = new[] { "Як створити картинки?\n\nТак — намалювати шрифтом (дні тижня, місяці, AM/PM, числа).\nНі — вибрати свої файли.", "How do you want to make the images?\n\nYes — draw them with a font (weekdays, months, AM/PM, numbers).\nNo — pick your own files.", "Как создать картинки?\n\nДа — нарисовать шрифтом (дни недели, месяцы, AM/PM, числа).\nНет — выбрать свои файлы." },
             ["digitsCountAsk"] = new[] { "Вибрано {0} картинок, а для числа потрібно 10 (цифри 0–9 за порядком назв файлів). Додати все одно?", "{0} images picked, but a number needs 10 (digits 0–9 in file-name order). Add anyway?", "Выбрано {0} картинок, а для числа нужно 10 (цифры 0–9 по порядку имён файлов). Добавить всё равно?" },
             ["labelIsImage"] = new[] { "Напис — це картинка. Замініть її в блоці «Зображення» нижче.", "This label is an image. Replace it in the Images block below.", "Надпись — это картинка. Замените её в блоке «Изображения» ниже." },
-            ["idInvalid"] = new[] { "ID — це число від 1 до 4294967295 (лише цифри).", "The ID is a number from 1 to 4294967295 (digits only).", "ID — это число от 1 до 4294967295 (только цифры)." },
+            ["idInvalid"] = new[] { "ID — рівно 9 цифр, перша не 0.", "The ID is exactly 9 digits, not starting with 0.", "ID — ровно 9 цифр, первая не 0." },
         };
 
         public static bool Has(string key) => T.ContainsKey(key);
