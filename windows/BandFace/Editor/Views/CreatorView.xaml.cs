@@ -103,13 +103,17 @@ namespace BandFace.Creator
 
         FrameworkElement Card(FaceProject p)
         {
+            // капсула така сама, як на вкладці «Циферблати»: 102×242, сіре обведення 3 px, вміст 96×236 обрізано по капсулі,
+            // картинка масштабується якісно (без змазування)
             var img = new Image { Stretch = Stretch.UniformToFill };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            var inner = new Grid { Width = 96, Height = 236, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, 96, 236), 48, 48) };
+            inner.Children.Add(img);
             var capsule = new Border
             {
-                Width = 96, Height = 236, CornerRadius = new CornerRadius(48), Background = new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x22)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x8A, 0x8A, 0x8A)), BorderThickness = new Thickness(3), Child = img,
+                Width = 102, Height = 242, CornerRadius = new CornerRadius(51), Background = new SolidColorBrush(Color.FromRgb(0x7A, 0x7A, 0x7A)),
+                Padding = new Thickness(3), Child = inner,
             };
-            img.Clip = new RectangleGeometry(new Rect(0, 0, 90, 230), 45, 45);
             var sp = new StackPanel { Width = 150 };
             sp.Children.Add(capsule);
             sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 10, 0, 0) });
@@ -139,7 +143,7 @@ namespace BandFace.Creator
                 try
                 {
                     double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                    var src = new FaceRenderer(p).Render(0, 230.0 / p.Meta.Device.Height * dpi).Image;
+                    var src = new FaceRenderer(p).Render(0, 236.0 / p.Meta.Device.Height * dpi).Image;
                     thumbs[key] = src;
                     img.Source = src;
                 }
