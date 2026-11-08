@@ -2,6 +2,7 @@
 // Список проєктів у Documents/FaceProjects: створення, відкриття .bin, копія, видалення.
 
 import Foundation
+import UIKit
 import FaceCompiler
 
 @MainActor
@@ -26,7 +27,7 @@ final class ProjectStore: ObservableObject {
     /// Новий ID циферблата (9 цифр, як у Mi Fitness): копія не замінює оригінал на браслеті.
     static func newFaceID() -> String { String(Int.random(in: 100_000_000...999_999_999)) }
 
-    /// Порожній циферблат: фон, час цифрами, дата.
+    /// Новий циферблат: великі години й хвилини (з BigWatch).
     func create(name: String) -> FaceProject {
         let root = XNode("Watchface")
         root.set("id", Self.newFaceID())
@@ -36,14 +37,15 @@ final class ProjectStore: ObservableObject {
         theme.set("type", "normal").set("name", "").set("bgColor", "#000000")
         let meta = ProjectMeta()
         let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: [:], meta: meta)
-        // стартові елементи — щоб одразу було що редагувати
-        let w = meta.device.width
-        let digits = Generator(kind: .digits, color: "#FFFFFF", fontSize: 66, weight: 800, style: "rounded")
-        ElementFactory.addDigits(p, source: "timeHour", gen: digits, theme: 0, center: (w / 2, 120))
-        ElementFactory.addDigits(p, source: "timeMinute", gen: digits, theme: 0, center: (w / 2, 200))
-        // дата — картинками цифр: текст (DataItemText) на браслеті не перевірено (Б-1)
-        let date = Generator(kind: .digits, color: "#4DE1FF", fontSize: 34, weight: 700, style: "rounded")
-        ElementFactory.addDigits(p, source: "dateDay", gen: date, theme: 0, center: (w / 2, 280))
+        // старт — великі години й хвилини з BigWatch на тих самих місцях
+        let imgs = StarterDigits.png.compactMap { Data(base64Encoded: $0).flatMap(UIImage.init(data:)) }
+            .map { AssetFactory.fromUIImage($0, maxSide: 10_000) }
+        if let f0 = imgs.first {
+            // addDigitImages ставить число за центром: лівий край = x − ширина цифри
+            let (hx, hy) = StarterDigits.hourOrigin, (mx, my) = StarterDigits.minuteOrigin
+            ElementFactory.addDigitImages(p, source: "timeHour", images: imgs, theme: 0, center: (hx + f0.w, hy + f0.h / 2))
+            ElementFactory.addDigitImages(p, source: "timeMinute", images: imgs, theme: 0, center: (mx + f0.w, my + f0.h / 2))
+        }
         p.save()
         projects.insert(p, at: 0)
         return p

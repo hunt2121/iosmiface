@@ -103,7 +103,7 @@ final class FaceRenderer {
     }
 
     private func value(_ res: XNode) -> Int {
-        SampleData.value(res.string("source") ?? "", live: live)
+        SampleData.value(res.string("source") ?? "", live: live, demo: p.meta.demo)
     }
 
     /// Малює ресурс; повертає рамку.
@@ -366,5 +366,5 @@ final class FaceRenderer {
         return UIFont.systemFont(ofSize: size, weight: weights[key] ?? .regular)
     }
 
-    private func value(res src: String) -> Int { SampleData.value(src, live: live) }
+    private func value(res src: String) -> Int { SampleData.value(src, live: live, demo: p.meta.demo) }
 }

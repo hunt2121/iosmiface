@@ -10,6 +10,9 @@ final class FaceEditorTests: XCTestCase {
         let p = store.create(name: "Test")
         defer { store.delete(p) }
         let c = (106, 260)
+        // новий циферблат — дві картинкові цифри (BigWatch); додаємо згенеровані цифри, щоб перевірити перегенерацію
+        XCTAssertEqual(p.layouts(0).count, 2)
+        p.edit { ElementFactory.addDigits($0, source: "dateDay", gen: Generator(kind: .digits, color: "#4DE1FF", fontSize: 34, weight: 700, style: "rounded"), theme: 0, center: c) }
         p.edit { ElementFactory.addPointer($0, source: "timeMinute", gen: Generator(kind: .pointer, color: "#FFFFFF", width: 6, length: 80), theme: 0, center: c) }
         p.edit { ElementFactory.addArc($0, source: "systemStatusBattery", gen: Generator(kind: .arc, color: "#30B455", bgColor: "#3A3A3C", radius: 60, width: 10), theme: 0, center: c) }
         p.edit { ElementFactory.addLine($0, source: "healthStepProgress", gen: Generator(kind: .line, color: "#0A6CF0", bgColor: "#3A3A3C", width: 8, length: 140), theme: 0, center: c) }
@@ -32,7 +35,7 @@ final class FaceEditorTests: XCTestCase {
         defer { store.delete(q2) }
         XCTAssertEqual(try q2.compile().0, bin2)
         // перегенерація, дублювання, видалення, відкат
-        let digits = p.layouts(0)[0]
+        let digits = p.layouts(0)[2]
         let name = p.resource(ref: digits.string("ref"))!.string("name")!
         var g = p.meta.generators[name]!; g.fontSize = 30; g.style = "condensed"
         p.edit { ElementFactory.regenerate($0, element: name, gen: g) }
@@ -130,9 +133,12 @@ final class FaceEditorTests: XCTestCase {
         let store = ProjectStore()
         let p = store.create(name: "Colors")
         defer { store.delete(p) }
+        // як у старому стартовому циферблаті: згенеровані години й дата (після двох картинкових цифр BigWatch)
+        p.edit { ElementFactory.addDigits($0, source: "timeHour", gen: Generator(kind: .digits, color: "#FFFFFF", fontSize: 66, weight: 800, style: "rounded"), theme: 0, center: (106, 120)) }
+        p.edit { ElementFactory.addDigits($0, source: "dateDay", gen: Generator(kind: .digits, color: "#4DE1FF", fontSize: 34, weight: 700, style: "rounded"), theme: 0, center: (106, 280)) }
         p.edit { ColorVariants.enable($0, base: "#FFFFFF", first: "#FF9500") }
         XCTAssertEqual(ColorVariants.colors(p), ["#FFFFFF", "#FF9500"])
-        let hours = try XCTUnwrap(p.resource(ref: p.layouts(0)[0].string("ref")))
+        let hours = try XCTUnwrap(p.resource(ref: p.layouts(0)[2].string("ref")))
         XCTAssertEqual(ColorVariants.availability(p, element: hours), .generator)
         p.edit { ColorVariants.set($0, element: hours, on: true) }
         XCTAssertTrue(ColorVariants.isOn(p, element: hours))
@@ -140,7 +146,7 @@ final class FaceEditorTests: XCTestCase {
         let arr = try XCTUnwrap(p.resource(ref: hours.string("ref")))
         XCTAssertEqual(ColorVariants.variants(p, of: arr).count, 2)
         // текст (дата) — недоступно
-        let date = try XCTUnwrap(p.resource(ref: p.layouts(0)[2].string("ref")))
+        let date = try XCTUnwrap(p.resource(ref: p.layouts(0)[3].string("ref")))
         XCTAssertFalse(ColorVariants.availability(p, element: date).isAvailable)
         // збирання без помилок і розпакування назад з тими самими варіантами
         let bin = try p.compile().0

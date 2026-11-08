@@ -6,31 +6,42 @@ import FaceCompiler
 
 enum SampleData {
     /// Значення для перегляду; `live` — поточний час і дата.
-    static func value(_ source: String, live: Bool = false) -> Int {
+    static func value(_ source: String, live: Bool = false, demo: DemoValues? = nil) -> Int {
         let now = Date()
         let cal = Calendar.current
         let s = source
-        func time(_ c: Calendar.Component, _ fallback: Int) -> Int { live ? cal.component(c, from: now) : fallback }
+        let liveTime = live || demo?.realTime == true, liveDate = live || demo?.realDate == true
         var v: Int
         if s.hasPrefix("time") {
-            if s.contains("Hour") { v = time(.hour, 10); if s.contains("12") { v = v % 12 == 0 ? 12 : v % 12 } }
-            else if s.contains("Minute") { v = time(.minute, 24) }
-            else if s.contains("Second") { v = time(.second, 36) }
+            let own = demo?.hm
+            if s.contains("Hour") { v = liveTime ? cal.component(.hour, from: now) : own?.0 ?? 10; if s.contains("12") { v = v % 12 == 0 ? 12 : v % 12 } }
+            else if s.contains("Minute") { v = liveTime ? cal.component(.minute, from: now) : own?.1 ?? 24 }
+            else if s.contains("Second") { v = liveTime ? cal.component(.second, from: now) : 36 }
             else { v = 0 }
             if s.hasSuffix("High") { return v / 10 }
             if s.hasSuffix("Low") { return v % 10 }
             return v
         }
         if s.hasPrefix("date") {
-            if s.contains("Week") { return (time(.weekday, 6) + 5) % 7 }
-            if s.contains("Year") { return time(.year, 2026) % (s.contains("Low") ? 100 : 10000) }
-            if s.contains("Month") { v = time(.month, 5) }
-            else if s.contains("Day") { v = time(.day, 30) }
+            // своя дата: день тижня рахується з неї
+            var day = 30, month = 5, year = 2026, week = 4
+            if liveDate {
+                day = cal.component(.day, from: now); month = cal.component(.month, from: now); year = cal.component(.year, from: now)
+                week = (cal.component(.weekday, from: now) + 5) % 7
+            } else if let t = demo?.dmy {
+                day = t.0; month = t.1; year = t.2
+                if let dt = cal.date(from: DateComponents(year: t.2, month: t.1, day: t.0)) { week = (cal.component(.weekday, from: dt) + 5) % 7 }
+            }
+            if s.contains("Week") { return week }
+            if s.contains("Year") { return year % (s.contains("Low") ? 100 : 10000) }
+            if s.contains("Month") { v = month }
+            else if s.contains("Day") { v = day }
             else { return 1 }
             if s.hasSuffix("High") { return v / 10 }
             if s.hasSuffix("Low") { return v % 10 }
             return v
         }
+        if let own = demo?.values[s] { return own }
         let l = s.lowercased()
         // стани як у звичайному вигляді: «не турбувати» вимкнено, Bluetooth підключено
         if l.contains("disturb") { return 0 }
@@ -47,6 +58,21 @@ enum SampleData {
         if l.contains("distance") { return 6 }
         if l.contains("progress") { return 65 }
         return 42
+    }
+
+    /// Межі повзунка «Значення для перегляду»
+    static func demoRange(_ source: String) -> ClosedRange<Int> {
+        let l = source.lowercased()
+        if l.contains("disturb") || l.contains("bluetooth") { return 0...1 }
+        if l.contains("progress") || l.contains("percent") || l.contains("battery") || l.contains("stress") { return 0...100 }
+        if l.contains("step") { return 0...30000 }
+        if l.contains("heart") { return 30...220 }
+        if l.contains("calorie") { return 0...2000 }
+        if l.contains("oxygen") || l.contains("spo") { return 70...100 }
+        if l.contains("temperature") || l.contains("weather") { return -30...45 }
+        if l.contains("distance") { return 0...50 }
+        if l.contains("stand") || l.contains("sleep") { return 0...12 }
+        return 0...100
     }
 
     /// Назви джерел українською (решта показуються як є).

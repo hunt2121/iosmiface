@@ -114,6 +114,8 @@ struct ProjectMeta: Codable {
     var sourceKey: String?
     /// Елементи з галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)
     var colorFollow: Set<String> = []
+    /// Значення для перегляду в редакторі (на браслет не записуються)
+    var demo = DemoValues()
 
     init() {}
 
@@ -126,6 +128,42 @@ struct ProjectMeta: Codable {
         edited = (try? c.decodeIfPresent(Bool.self, forKey: .edited)) ?? false
         sourceKey = try? c.decodeIfPresent(String.self, forKey: .sourceKey)
         colorFollow = (try? c.decodeIfPresent(Set<String>.self, forKey: .colorFollow)) ?? []
+        demo = (try? c.decodeIfPresent(DemoValues.self, forKey: .demo)) ?? DemoValues()
+    }
+}
+
+/// Значення для перегляду: свої для кожного джерела; час і дата — свої або справжні (з телефона).
+/// Формат editor.json спільний з Windows.
+struct DemoValues: Codable, Equatable {
+    var values: [String: Int] = [:]
+    /// "HH:mm"; nil — типовий 10:24
+    var time: String?
+    /// "yyyy-MM-dd"; nil — типова 30.05.2026
+    var date: String?
+    var realTime = false
+    var realDate = false
+
+    init() {}
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        values = (try? c.decodeIfPresent([String: Int].self, forKey: .values)) ?? [:]
+        time = try? c.decodeIfPresent(String.self, forKey: .time)
+        date = try? c.decodeIfPresent(String.self, forKey: .date)
+        realTime = (try? c.decodeIfPresent(Bool.self, forKey: .realTime)) ?? false
+        realDate = (try? c.decodeIfPresent(Bool.self, forKey: .realDate)) ?? false
+    }
+
+    /// Години й хвилини, якщо задано свій час
+    var hm: (Int, Int)? {
+        guard let t = time else { return nil }
+        let p = t.split(separator: ":").compactMap { Int($0) }
+        return p.count == 2 ? (p[0], p[1]) : nil
+    }
+    /// День, місяць, рік, якщо задано свою дату
+    var dmy: (Int, Int, Int)? {
+        guard let d = date else { return nil }
+        let p = d.split(separator: "-").compactMap { Int($0) }
+        return p.count == 3 ? (p[2], p[1], p[0]) : nil
     }
 }
 
