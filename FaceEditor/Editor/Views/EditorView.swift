@@ -175,17 +175,14 @@ struct EditorView: View {
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
-    /// Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× і вікно «Поділитися»
+    /// Знімок поточного екрана циферблата (з вибраним кольором) у 2× і стандартне вікно «Поділитися», як в інших застосунках:
+    /// картинка (а не файл), тож є «Зберегти зображення» в Фото; назва й мініатюра — з циферблата.
     private func shareShot() {
         let rd = FaceRenderer(project)
         rd.colorVariant = variant
         let (img, _) = rd.render(theme: theme, scale: 2)
-        guard let png = img.pngData() else { return }
-        let name = (project.displayName.isEmpty ? "watchface" : project.displayName).replacingOccurrences(of: "/", with: "-")
-        let u = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).png")
-        try? FileManager.default.removeItem(at: u)
-        guard (try? png.write(to: u)) != nil else { return }
-        share = ShareItem(url: u)
+        guard let png = img.pngData(), let pic = UIImage(data: png) else { return }
+        ShotShare.present(ShotShare(image: pic, title: project.displayName.isEmpty ? loc("Знімок циферблата") : project.displayName))
     }
 
     private var zoomChips: some View {

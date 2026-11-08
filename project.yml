@@ -30,6 +30,8 @@ targets:
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти пристрій Xiaomi та встановити циферблат."
+        # «Зберегти зображення» для знімка циферблата
+        NSPhotoLibraryAddUsageDescription: "Щоб зберегти знімок циферблата у Фото."
         UILaunchScreen: {}
         # Анімації на 120 Гц на iPhone з ProMotion (без цього — не більше 60 к/с)
         CADisableMinimumFrameDurationOnPhone: true
@@ -102,6 +104,7 @@ targets:
       path: FaceEditor/Info.plist
       properties:
         CFBundleDisplayName: "Редактор"
+        NSPhotoLibraryAddUsageDescription: "Щоб зберегти знімок циферблата у Фото."
         CFBundleDevelopmentRegion: uk
         CFBundleShortVersionString: "0.1"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
