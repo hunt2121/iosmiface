@@ -227,8 +227,6 @@
                 </StackPanel>
                 <!-- Telegram Desktop за замовчуванням показує власні вікна, яких Windows (і ми) не бачить -->
                 <TextBlock x:Name="TgHint" Style="{StaticResource SettingDesc}" Margin="44,-4,16,12"/>
-                <!-- ТИМЧАСОВО: кнопки перевірки кодів смайлів пристрою -->
-                <WrapPanel x:Name="ProbePanel" Margin="44,0,16,12"/>
               </StackPanel>
             </Border>
 

@@ -35,6 +35,8 @@ namespace BandFace
             // «дірки» таблиці, перевірено на Mi Band 10 (тест 0.1.50): ✨ ✔ ♻ ⬅ ✌ ✋ ✅ ☀ ➡ ⚡ ⭐
             0x2728, 0xA010, 0x2714, 0xA015, 0x267B, 0xA016, 0x2B05, 0xA023, 0x270C, 0xA02A, 0x270B, 0xA04B,
             0x2705, 0xA04C, 0x2600, 0xA050, 0x27A1, 0xA051, 0x26A1, 0xA05B, 0x2B50, 0xA05F,
+            // червоне серце ❤️ — U+A001 (перевірено, тест 0.1.52); A000 і A065…A13F — порожньо
+            0x2764, 0xA001,
         };
 
         static readonly Dictionary<int, string> map = new Dictionary<int, string>();
