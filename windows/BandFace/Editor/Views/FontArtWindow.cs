@@ -203,6 +203,11 @@ namespace BandFace.Creator
             Add(Ui.Row(S.Get("weight"), Ui.Combo(new[] { 100, 300, 400, 500, 600, 700, 800, 900 }.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), g.Weight.ToString(),
                                                  v => Change(x => x.Weight = int.Parse(v))), 190));
             Add(Ui.ColorRow(S.Get("color"), g.Color, h => Change(x => x.Color = h)));
+            // вигляд знака: лише контур і фігура-фон (коло, капсула, квадрат)
+            Add(Ui.Switch(S.Get("hollow"), g.Hollow, v => Change(x => x.Hollow = v)));
+            Add(Ui.Chips(S.Get("badge"), new[] { P("", S.Get("badgeNone")), P("circle", S.Get("badgeCircle")), P("capsule", S.Get("badgeCapsule")), P("square", S.Get("badgeSquare")) },
+                         g.Badge ?? "", v => Change(x => x.Badge = v)));
+            if (!string.IsNullOrEmpty(g.Badge)) Add(Ui.ColorRow(S.Get("badgeColor"), g.BadgeColor, h => Change(x => x.BadgeColor = h)));
 
             // набори й ефекти — для будь-якого тексту, не лише цифр
             Add(Ui.Header(S.Get("digitSet")));

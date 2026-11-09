@@ -156,8 +156,36 @@ namespace BandFace.Creator
         static double K(Generator g) => Math.Max(0.3, Math.Min(2, g.WidthPct / 100.0));
 
         /// <summary>Поле навколо знака під обвідку й тінь: по горизонталі — обвідка й тінь убік, по вертикалі — обвідка й тінь донизу</summary>
-        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowX)) + 1;
-        static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY)) + 1;
+        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowX) + HollowWidth(g)) + 1;
+        static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY) + HollowWidth(g)) + 1;
+
+        /// <summary>Товщина контуру для «лише контур»: від розміру шрифту, щонайменше 1.2 px</summary>
+        static double HollowWidth(Generator g) => g.Hollow ? Math.Max(1.2, g.FontSize / 22) : 0;
+
+        /// <summary>Фон під знаком (коло, капсула, квадрат): кадр більшого розміру з фігурою кольору BadgeColor, знак по центру</summary>
+        static List<RgbaImage> WithBadge(Generator g, List<RgbaImage> frames)
+        {
+            if (string.IsNullOrEmpty(g.Badge) || frames.Count == 0) return frames;
+            int w = frames[0].W, h = frames[0].H;
+            int pad = (int)Math.Ceiling(Math.Max(3, g.FontSize * 0.16));
+            int bw, bh; double r;
+            switch (g.Badge)
+            {
+                case "circle": bw = bh = Math.Max(w, h) + pad * 2; r = bw / 2.0; break;
+                case "capsule": bh = h + pad * 2; bw = Math.Max(bh, w + bh * 2 / 3); r = bh / 2.0; break;
+                default: bw = w + pad * 2; bh = h + pad * 2; r = Math.Max(2, pad * 0.9); break;
+            }
+            var brush = Imaging.Brush(g.BadgeColor);
+            return frames.Select(f =>
+            {
+                var bmp = f.ToBitmap();
+                return Imaging.Render(bw, bh, dc =>
+                {
+                    dc.DrawRoundedRectangle(brush, null, new Rect(0, 0, bw, bh), r, r);
+                    dc.DrawImage(bmp, new Rect((bw - f.W) / 2.0, (bh - f.H) / 2.0, f.W, f.H));
+                });
+            }).ToList();
+        }
 
         /// <summary>Текст з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
         /// Ширина літер стискає/розтягує знак відносно його середини.</summary>
@@ -178,6 +206,12 @@ namespace BandFace.Creator
                 dc.Pop();
             }
             if (g.Outline > 0) dc.DrawGeometry(null, new Pen(Imaging.Brush(g.OutlineColor), g.Outline * 2) { LineJoin = PenLineJoin.Round }, geo);
+            if (g.Hollow)
+            {
+                // лише контур літер: обвідка кольором тексту, всередині прозоро (або колір фону-фігури)
+                dc.DrawGeometry(null, new Pen(Imaging.Brush(g.Color), HollowWidth(g)) { LineJoin = PenLineJoin.Round }, geo);
+                return;
+            }
             Brush fill = string.IsNullOrEmpty(g.Color2) ? (Brush)Imaging.Brush(g.Color)
                 : new LinearGradientBrush(Imaging.ParseColor(g.Color), Imaging.ParseColor(g.Color2), new Point(0, 0), new Point(0, 1));
             dc.DrawGeometry(fill, null, geo);
@@ -219,9 +253,9 @@ namespace BandFace.Creator
                 for (int y = 0; y < tall; y++)
                     for (int x = 0; x < w; x++)
                         if (img.Px[(y * w + x) * 4 + 3] != 0) { if (y < minY) minY = y; if (y > maxY) maxY = y; break; }
-            if (maxY < minY) return full;
+            if (maxY < minY) return WithBadge(g, full);
             int y0 = Math.Max(0, minY - 1), y1 = Math.Min(tall - 1, maxY + 1), h = y1 - y0 + 1;
-            return full.Select(img => new RgbaImage(w, h, img.Px.Slice(y0 * w * 4, h * w * 4))).ToList();
+            return WithBadge(g, full.Select(img => new RgbaImage(w, h, img.Px.Slice(y0 * w * 4, h * w * 4))).ToList());
         }
 
         /// <summary>Напис: рядок вибраним шрифтом і кольором, щільно обрізаний за справжніми пікселями (поле 1 px).
@@ -251,7 +285,7 @@ namespace BandFace.Creator
             int cw = x1 - x0 + 1, ch = y1 - y0 + 1;
             var px = new byte[cw * ch * 4];
             for (int y = 0; y < ch; y++) Buffer.BlockCopy(full.Px, ((y0 + y) * w + x0) * 4, px, y * cw * 4, cw * 4);
-            return new RgbaImage(cw, ch, px);
+            return WithBadge(g, new List<RgbaImage> { new RgbaImage(cw, ch, px) })[0];
         }
 
         /// <summary>Значок одиниці («%», «°», «км») тим самим шрифтом і кольором, тієї ж висоти, що й цифри.</summary>

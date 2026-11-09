@@ -46,14 +46,20 @@ namespace BandFace.Creator
         public double WidthPct = 100;
         /// <summary>Kind == Texts: рядок для кожної картинки масиву (дні тижня, місяці, AM/PM…)</summary>
         public List<string> Texts = new List<string>();
+        /// <summary>Фон під кожним знаком/написом: "" — без фону, circle — коло, capsule — капсула, square — заокруглений квадрат</summary>
+        public string Badge = "";
+        public string BadgeColor = "#FF9F0A";
+        /// <summary>Лише контур літер (без заливки) — кольором Color</summary>
+        public bool Hollow = false;
 
-        public bool Styled => Outline > 0 || ShadowX != 0 || ShadowY != 0 || !string.IsNullOrEmpty(Color2) || Math.Abs(WidthPct - 100) > 0.01;
+        public bool Styled => Outline > 0 || ShadowX != 0 || ShadowY != 0 || !string.IsNullOrEmpty(Color2) || Math.Abs(WidthPct - 100) > 0.01 || Hollow;
 
         /// <summary>Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту</summary>
         public void ApplyStyle(Generator s)
         {
             Font = s.Font; Style = s.Style; Weight = s.Weight; Color = s.Color; Color2 = s.Color2;
             Outline = s.Outline; OutlineColor = s.OutlineColor; ShadowX = s.ShadowX; ShadowY = s.ShadowY; ShadowColor = s.ShadowColor; WidthPct = s.WidthPct;
+            Badge = s.Badge; BadgeColor = s.BadgeColor; Hollow = s.Hollow;
         }
 
         public Generator(GenKind kind) { Kind = kind; }
@@ -68,6 +74,7 @@ namespace BandFace.Creator
             ["start"] = Start, ["range"] = Range, ["angle"] = Angle, ["round"] = Round,
             ["outline"] = Outline, ["outlineColor"] = OutlineColor, ["shadowX"] = ShadowX, ["shadowY"] = ShadowY, ["shadowColor"] = ShadowColor,
             ["color2"] = Color2, ["widthPct"] = WidthPct, ["texts"] = Texts.Cast<object>().ToList(),
+            ["badge"] = Badge, ["badgeColor"] = BadgeColor, ["hollow"] = Hollow,
         };
 
         public static Generator FromJson(Dictionary<string, object> d)
@@ -86,6 +93,7 @@ namespace BandFace.Creator
                 ShadowX = Json.Num(d, "shadowX", 0), ShadowY = Json.Num(d, "shadowY", 0), ShadowColor = Json.Str(d, "shadowColor", "#000000"),
                 Color2 = Json.Str(d, "color2", ""), WidthPct = Json.Num(d, "widthPct", 100),
                 Texts = (d.TryGetValue("texts", out var tx) && tx is List<object> tl) ? tl.Select(o => o?.ToString() ?? "").ToList() : new List<string>(),
+                Badge = Json.Str(d, "badge", ""), BadgeColor = Json.Str(d, "badgeColor", "#FF9F0A"), Hollow = Json.Bool(d, "hollow", false),
             };
         }
 
