@@ -121,13 +121,13 @@ namespace BandFace.Creator
             Add(Ui.Header(S.Get("wLayout")));
             var arr = WidgetSlots.Arrange(w);
             Add(Ui.Chips(S.Get("wArrange"), new[] { P("row", S.Get("wRow")), P("column", S.Get("wColumn")), P("free", S.Get("wFree")) }, arr,
-                v => project.Edit(p => WidgetSlots.SetLayout(p, w, v, WidgetSlots.Align(w), Math.Max(WidgetSlots.Gap(w), v == "free" ? 0 : 4)))));
+                v => project.Edit(p => WidgetSlots.SetLayout(p, w, v, WidgetSlots.Align(w), Math.Max(WidgetSlots.Gap(w), v == "free" ? 0 : 4), ownLayout))));
             if (arr != "free")
             {
                 Add(Ui.Chips(S.Get("wAlign"), new[] { P("start", S.Get("wLeft")), P("center", S.Get("wCenter")), P("end", S.Get("wRight")) }, WidgetSlots.Align(w),
-                    v => project.Edit(p => WidgetSlots.SetLayout(p, w, arr, v, WidgetSlots.Gap(w)))));
+                    v => project.Edit(p => WidgetSlots.SetLayout(p, w, arr, v, WidgetSlots.Gap(w), ownLayout))));
                 Add(Ui.Slider(S.Get("wGap") + ", px", WidgetSlots.Gap(w), 0, 40, 1,
-                    v => { int g = (int)Math.Round(v); if (g != WidgetSlots.Gap(w)) project.Edit(p => WidgetSlots.SetLayout(p, w, arr, WidgetSlots.Align(w), g)); }));
+                    v => { int g = (int)Math.Round(v); if (g != WidgetSlots.Gap(w)) project.Edit(p => WidgetSlots.SetLayout(p, w, arr, WidgetSlots.Align(w), g, ownLayout)); }));
             }
 
             var items = w.All("Item");
@@ -140,7 +140,7 @@ namespace BandFace.Creator
                 {
                     if (idx > 0) Ui.MenuAdd(cm, S.Get("moveUp"), "", () => EditRes(() => WidgetSlots.MoveItem(w, idx, -1)));
                     if (idx < items.Count - 1) Ui.MenuAdd(cm, S.Get("moveDown"), "", () => EditRes(() => WidgetSlots.MoveItem(w, idx, 1)));
-                    Ui.MenuAdd(cm, S.Get("wTakeOut"), "", () => project.Edit(p => WidgetSlots.TakeOut(p, w, idx, origin, t0)));
+                    Ui.MenuAdd(cm, S.Get("wTakeOut"), "", () => project.Edit(p => WidgetSlots.TakeOut(p, w, idx, origin, t0, ownLayout)));
                 }));
             }
             if (items.Count == 0) Add(Ui.Note(S.Get("wEmpty")));
@@ -156,7 +156,7 @@ namespace BandFace.Creator
                 {
                     var res = project.ElementOf(l);
                     var lay = l;
-                    Ui.MenuAdd(cm, ItemTitle(res) + " — " + ItemSub(res), "", () => project.Edit(p => WidgetSlots.AddToWidget(p, w, origin, lay, t0)));
+                    Ui.MenuAdd(cm, ItemTitle(res) + " — " + ItemSub(res), "", () => project.Edit(p => WidgetSlots.AddToWidget(p, w, origin, lay, t0, ownLayout)));
                 }
                 Ui.MenuBelow(cm, addBtn);
             };

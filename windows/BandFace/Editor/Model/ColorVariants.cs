@@ -152,7 +152,11 @@ namespace BandFace.Creator
             switch (res.Tag)
             {
                 case "DataItemText": why = S.Get("cvText"); return Availability.Unavailable;
-                case "Widget": case "Slot": why = S.Get("cvWidget"); return Availability.Unavailable;
+                case "Widget": case "Slot":
+                    var ms = Members(p, res);
+                    if (ms.Count == 0) { why = S.Get("cvWidgetEmpty"); return Availability.Unavailable; }
+                    foreach (var m in ms) { var a = Check(p, m, out _); if (a != Availability.Unavailable) return a; }
+                    why = S.Get("cvWidget"); return Availability.Unavailable;
             }
             var ts = Targets(p, res);
             if (ts.Count == 0) { why = S.Get("cvNone"); return Availability.Unavailable; }
@@ -163,12 +167,32 @@ namespace BandFace.Creator
             return Availability.Tint;
         }
 
-        public static bool IsOn(FaceProject p, XNode res) => Targets(p, res).Any(t => Variants(p, t).Count > 0);
+        public static bool IsOn(FaceProject p, XNode res) =>
+            res.Tag == "Widget" || res.Tag == "Slot" ? Members(p, res).Any(m => IsOn(p, m)) : Targets(p, res).Any(t => Variants(p, t).Count > 0);
+
+        /// <summary>Елементи всередині віджета (і вкладених віджетів) або слота (усі його віджети)</summary>
+        public static List<XNode> Members(FaceProject p, XNode res, int depth = 0)
+        {
+            var o = new List<XNode>();
+            if (depth >= 6 || (res.Tag != "Widget" && res.Tag != "Slot")) return o;
+            foreach (var it in res.All("Item"))
+            {
+                var c = p.ResourceRef(it.Str("ref"));
+                if (c == null) continue;
+                if (c.Tag == "Widget" || c.Tag == "Slot") o.AddRange(Members(p, c, depth + 1)); else o.Add(c);
+            }
+            return o;
+        }
 
         public static void Set(FaceProject p, XNode res, bool on)
         {
             var n = res.Str("name") ?? "";
             if (on) p.Meta.ColorFollow.Add(n); else p.Meta.ColorFollow.Remove(n);
+            if (res.Tag == "Widget" || res.Tag == "Slot")
+            {
+                foreach (var m in Members(p, res)) if (!on || Check(p, m, out _) != Availability.Unavailable) Set(p, m, on);
+                return;
+            }
             foreach (var t in Targets(p, res)) { if (on) Rebuild(p, t, res); else RemoveVariants(p, t); }
         }
 

@@ -46,7 +46,7 @@ namespace BandFace.Creator
 
         static string Flex(string a) => a == "center" ? "center" : a == "end" ? "flex-end" : "flex-start";
 
-        public static void SetLayout(FaceProject p, XNode w, string arrange, string align, int gap)
+        public static void SetLayout(FaceProject p, XNode w, string arrange, string align, int gap, XNode layout = null)
         {
             if (arrange == "free")
             {
@@ -65,12 +65,13 @@ namespace BandFace.Creator
                 w.Set("align_content", "center").Set("gap", Math.Max(0, gap));
                 foreach (var it in w.All("Item")) it.Set("x", 0).Set("y", 0);
             }
-            Fit(p, w);
+            Fit(p, w, layout);
         }
 
         /// <summary>Розмір віджета: щонайменше вміст; у слоті — не менший за інші віджети слота</summary>
-        public static void Fit(FaceProject p, XNode w)
+        public static void Fit(FaceProject p, XNode w, XNode layout = null)
         {
+            if (Arrange(w) == "free" && w.All("Item").Count > 0) { WrapFree(p, w, layout); return; }
             var r = new FaceRenderer(p);
             bool hadW = w.Has("w"), hadH = w.Has("h");
             int oldW = w.Int("w"), oldH = w.Int("h");
@@ -79,6 +80,30 @@ namespace BandFace.Creator
             int cw = Math.Max(8, (int)Math.Ceiling(box.Right)), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom));
             int fw = Math.Max(cw, hadW && SlotsOf(p, w).Count > 0 ? oldW : 0), fh = Math.Max(ch, hadH && SlotsOf(p, w).Count > 0 ? oldH : 0);
             w.Set("w", fw).Set("h", fh);
+        }
+
+        /// <summary>Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
+        /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.</summary>
+        public static void WrapFree(FaceProject p, XNode w, XNode layout)
+        {
+            var r = new FaceRenderer(p);
+            Rect box = Rect.Empty;
+            foreach (var it in w.All("Item"))
+            {
+                var c = p.ResourceRef(it.Str("ref"));
+                var m = c == null ? null : r.Draw(c, new Point(0, 0), null, 0);
+                if (m == null) continue;
+                var q = m.Value; q.Offset(it.Int("x"), it.Int("y"));
+                box = box.IsEmpty ? q : Rect.Union(box, q);
+            }
+            if (box.IsEmpty) return;
+            bool inSlot = layout == null && SlotsOf(p, w).Count > 0;
+            int dx = (int)Math.Floor(box.Left), dy = (int)Math.Floor(box.Top);
+            if (layout == null) { dx = Math.Min(0, dx); dy = Math.Min(0, dy); }
+            foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
+            if (layout != null) layout.Set("x", layout.Int("x") + dx).Set("y", layout.Int("y") + dy);
+            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) - dx), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) - dy);
+            w.Set("w", Math.Max(cw, inSlot ? w.Int("w") : 0)).Set("h", Math.Max(ch, inSlot ? w.Int("h") : 0));
         }
 
         /// <summary>Порожній віджет-ресурс</summary>
@@ -99,21 +124,24 @@ namespace BandFace.Creator
         }
 
         /// <summary>Шар екрана переходить у віджет (на тому ж місці, якщо розташування «вільно»)</summary>
-        public static void AddToWidget(FaceProject p, XNode w, Point origin, XNode layout, int theme)
+        public static void AddToWidget(FaceProject p, XNode w, Point origin, XNode layout, int theme, XNode own = null)
         {
             var th = p.Theme(theme);
             if (th == null || layout == null) return;
             var r = layout.Str("ref");
             if (r == null) return;
+            // перший шар порожнього віджета: розташування «вільно» — елемент лишається на місці, область стає навколо нього
+            if (w.All("Item").Count == 0 && own != null)
+                foreach (var k in new[] { "flex_direction", "justify_content", "align_content", "align_items", "gap" }) w.Remove(k);
             var it = w.Add("Item").Set("ref", r);
             if (Arrange(w) == "free") it.Set("x", (int)Math.Round(layout.Int("x") - origin.X)).Set("y", (int)Math.Round(layout.Int("y") - origin.Y));
             else it.Set("x", 0).Set("y", 0);
             th.Kids.Remove(layout);
-            Fit(p, w);
+            Fit(p, w, own);
         }
 
         /// <summary>Елемент віджета знову стає окремим шаром — на тому самому місці</summary>
-        public static void TakeOut(FaceProject p, XNode w, int index, Point origin, int theme)
+        public static void TakeOut(FaceProject p, XNode w, int index, Point origin, int theme, XNode own = null)
         {
             var items = w.All("Item");
             if (index < 0 || index >= items.Count) return;
@@ -121,7 +149,7 @@ namespace BandFace.Creator
             var r = items[index].Str("ref");
             w.Kids.Remove(items[index]);
             if (r != null) ElementFactory.AddLayout(p, r.Substring(1), theme, (int)Math.Round(origin.X + offs[index].X), (int)Math.Round(origin.Y + offs[index].Y));
-            Fit(p, w);
+            Fit(p, w, own);
         }
 
         /// <summary>Розгрупувати: усі елементи — окремими шарами на своїх місцях, віджет прибирається</summary>
