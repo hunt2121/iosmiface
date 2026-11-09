@@ -245,10 +245,10 @@ namespace BandFace.Creator
         string SetUsers(XNode arr, XNode except)
         {
             var names = new List<string>();
-            foreach (var u in ImageSets.Users(project, arr))
-                for (int t = 0; t < project.Themes.Count; t++)
-                    foreach (var l in project.Layouts(t).Where(x => project.ElementOf(x) == u && x != except))
+            foreach (var u in ImageSets.UsersFast(project, arr))
+                foreach (var tl in ImageSets.LayoutsFast(project, u).Where(x => x.Item2 != except))
                     {
+                        int t = tl.Item1;
                         var src = u.Str("source");
                         var n = src != null ? SampleData.Title(src) : Elements.Title(Elements.Of(u, project));
                         names.Add(n + (t == 1 ? " (AOD)" : ""));
@@ -261,7 +261,7 @@ namespace BandFace.Creator
         {
             var arr = ImageSets.SetOf(project, res);
             var layout = selected;
-            if (arr == null && (layout == null || ElementFactory.LayoutsOf(project, res).Count < 2)) return;
+            if (arr == null && (layout == null || ImageSets.LayoutsFast(project, res).Count < 2)) return;
             if (arr != null)
             {
                 var sets = ImageSets.All(project).Where(a => ImageSets.Fits(project, res, a)).ToList();
@@ -286,7 +286,7 @@ namespace BandFace.Creator
                 }
             }
             var others = arr != null ? SetUsers(arr, layout) : "";
-            bool both = layout != null && ElementFactory.LayoutsOf(project, res).Count > 1;
+            bool both = layout != null && ImageSets.LayoutsFast(project, res).Count > 1;
             if (others.Length > 0) Add(Ui.Note(S.Get("setShared", others)));
             else if (both) Add(Ui.Note(S.Get("setSharedScreens")));
             bool shared = ImageSets.IsShared(project, res);

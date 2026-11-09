@@ -2,6 +2,7 @@
 // Набори картинок (ImageArray) усередині циферблата: один набір можуть брати кілька елементів
 // (години й хвилини, основний екран і AOD). Тут — пошук, спільне використання і відокремлення.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BandFace.Faces;
@@ -10,6 +11,55 @@ namespace BandFace.Creator
 {
     static class ImageSets
     {
+        // MARK: Покажчик для інтерфейсу — один прохід по циферблату на кожну зміну
+
+        sealed class Index
+        {
+            public object Root; public int Rev; public int N;
+            public readonly Dictionary<string, List<XNode>> Users = new Dictionary<string, List<XNode>>();
+            public readonly Dictionary<XNode, List<Tuple<int, XNode>>> Layouts = new Dictionary<XNode, List<Tuple<int, XNode>>>();
+        }
+        static Index cache;
+
+        static Index Ix(FaceProject p)
+        {
+            int n = p.Resources.Kids.Count;
+            var c = cache;
+            if (c != null && ReferenceEquals(c.Root, p.Root) && c.Rev == p.Revision && c.N == n) return c;
+            var ix = new Index { Root = p.Root, Rev = p.Revision, N = n };
+            var byName = new Dictionary<string, XNode>();
+            foreach (var e in p.Resources.Elements)
+            {
+                var nm = e.Str("name");
+                if (nm != null && !byName.ContainsKey(nm)) byName[nm] = e;
+                var r = e.Str("ref");
+                if (r != null && r.Length > 1 && r[0] == '@')
+                {
+                    var k = r.Substring(1);
+                    if (!ix.Users.TryGetValue(k, out var l)) ix.Users[k] = l = new List<XNode>();
+                    l.Add(e);
+                }
+            }
+            for (int t = 0; t < p.Themes.Count; t++)
+                foreach (var l in p.Layouts(t))
+                {
+                    var r = l.Str("ref");
+                    if (r == null || r.Length < 2 || !byName.TryGetValue(r.Substring(1), out var res)) continue;
+                    var shown = ElementFactory.TapInner(p, res) ?? res;
+                    if (!ix.Layouts.TryGetValue(shown, out var list)) ix.Layouts[shown] = list = new List<Tuple<int, XNode>>();
+                    list.Add(Tuple.Create(t, l));
+                }
+            return cache = ix;
+        }
+
+        /// <summary>Хто бере набір — з покажчика (для показу; у змінах — Users)</summary>
+        public static List<XNode> UsersFast(FaceProject p, XNode arr)
+            => Ix(p).Users.TryGetValue(arr.Str("name") ?? "", out var l) ? l.Where(x => x != arr).ToList() : new List<XNode>();
+
+        /// <summary>Шари елемента на всіх екранах (екран, шар) — з покажчика</summary>
+        public static List<Tuple<int, XNode>> LayoutsFast(FaceProject p, XNode res)
+            => Ix(p).Layouts.TryGetValue(res, out var l) ? l : new List<Tuple<int, XNode>>();
+
         /// <summary>Набір, який показує елемент (лише масив картинок; одна картинка — не набір)</summary>
         public static XNode SetOf(FaceProject p, XNode res)
         {
@@ -28,7 +78,7 @@ namespace BandFace.Creator
         }
 
         /// <summary>Скільки місць показує набір: кожен шар кожного елемента на кожному екрані</summary>
-        public static int Uses(FaceProject p, XNode arr) => Users(p, arr).Sum(u => System.Math.Max(1, ElementFactory.LayoutsOf(p, u).Count));
+        public static int Uses(FaceProject p, XNode arr) => UsersFast(p, arr).Sum(u => System.Math.Max(1, LayoutsFast(p, u).Count));
 
         /// <summary>Набір підходить елементу: для числа — 10 цифр, для інших — стільки ж картинок, скільки зараз</summary>
         public static bool Fits(FaceProject p, XNode res, XNode arr)
@@ -41,15 +91,15 @@ namespace BandFace.Creator
 
         /// <summary>Усі набори циферблата, якими хтось користується</summary>
         public static List<XNode> All(FaceProject p)
-            => p.Resources.Elements.Where(e => e.Tag == "ImageArray" && Users(p, e).Count > 0).ToList();
+            => p.Resources.Elements.Where(e => e.Tag == "ImageArray" && UsersFast(p, e).Count > 0).ToList();
 
         /// <summary>Набори для нового числа (10 цифр і більше)</summary>
         public static List<XNode> ForDigits(FaceProject p)
-            => All(p).Where(a => Count(a) >= 10 && Users(p, a).Any(u => u.Tag == "DataItemImageNumber")).ToList();
+            => All(p).Where(a => Count(a) >= 10 && UsersFast(p, a).Any(u => u.Tag == "DataItemImageNumber")).ToList();
 
         /// <summary>Набори для нових значків за значенням (дні тижня — 7, місяці — 12…)</summary>
         public static List<XNode> ForValues(FaceProject p, int count)
-            => All(p).Where(a => Count(a) == count && Users(p, a).Any(u => u.Tag == "DataItemImageValues")).ToList();
+            => All(p).Where(a => Count(a) == count && UsersFast(p, a).Any(u => u.Tag == "DataItemImageValues")).ToList();
 
         /// <summary>Елемент бере інший набір; старий прибирається, якщо більше нікому не потрібен.
         /// Параметри малювання беруться від іншого елемента цього набору (щоб «Намалювати шрифтом» малював те саме).</summary>
@@ -94,9 +144,9 @@ namespace BandFace.Creator
         /// <summary>Чи має цей шар окремі картинки: набір і сам елемент більше ніде не показуються</summary>
         public static bool IsShared(FaceProject p, XNode res)
         {
-            if (ElementFactory.LayoutsOf(p, res).Count > 1) return true;
+            if (LayoutsFast(p, res).Count > 1) return true;
             var arr = SetOf(p, res);
-            return arr != null && Users(p, arr).Count > 1;
+            return arr != null && UsersFast(p, arr).Count > 1;
         }
 
         /// <summary>Окремі картинки для цього шару: якщо елемент показано на двох екранах — шар отримує свою копію елемента,
