@@ -43,7 +43,7 @@ enum ElementKind: String, CaseIterable, Identifiable {
         case .pointer: return loc("Стрілка")
         case .arc: return loc("Дуга")
         case .line: return loc("Лінія")
-        case .values: return loc("Значки за значенням")
+        case .values: return loc("Стани")
         case .widget: return loc("Віджет")
         case .slot: return loc("Слот")
         case .other: return loc("Елемент")
