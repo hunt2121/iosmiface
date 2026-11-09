@@ -94,7 +94,7 @@ enum ElementFactory {
 
     static func addDigits(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
         let frames = AssetFactory.digitFrames(gen)
-        let arr = addFrames(p, frames, base: "digits")
+        let arr = sharedArray ?? addFrames(p, frames, base: "digits")
         let name = p.uniqueName(source)
         let e = XNode("DataItemImageNumber")
         e.set("name", name).set("source", source).set("ref", "@" + arr).set("totalDigits", int: 2).set("decimalDigits", int: 0)
@@ -107,8 +107,11 @@ enum ElementFactory {
     }
 
     /// Число з ваших картинок 0–9 (усі вписуються в розмір першої)
-    static func addDigitImages(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int)) {
-        guard let f0 = images.first else { return }
+    /// Число картинками цифр. sharedArray — назва вже доданого набору цифр: тоді нові файли не створюються
+    /// (години й хвилини одного шрифту беруть ті самі 10 картинок). Повертає назву набору.
+    @discardableResult
+    static func addDigitImages(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int), sharedArray: String? = nil) -> String? {
+        guard let f0 = images.first else { return nil }
         let frames = images.map { img -> RGBAImage in
             guard img.w != f0.w || img.h != f0.h, let cg = img.cgImage else { return img }
             return AssetFactory.render(f0.w, f0.h) { _ in
@@ -126,6 +129,7 @@ enum ElementFactory {
             .set("rotation", int: 0).set("decimalOffsetX", int: 0).set("space", int: 0)
         p.resources.kids.append(e)
         addLayout(p, ref: name, theme: theme, x: center.0 - f0.w, y: center.1 - f0.h / 2)
+        return arr
     }
 
     static func addImage(_ p: FaceProject, _ img: RGBAImage, theme: Int, center: (Int, Int)) {

@@ -43,8 +43,9 @@ final class ProjectStore: ObservableObject {
         if let f0 = imgs.first {
             // addDigitImages ставить число за центром: лівий край = x − ширина цифри
             let (hx, hy) = StarterDigits.hourOrigin, (mx, my) = StarterDigits.minuteOrigin
-            ElementFactory.addDigitImages(p, source: "timeHour", images: imgs, theme: 0, center: (hx + f0.w, hy + f0.h / 2))
-            ElementFactory.addDigitImages(p, source: "timeMinute", images: imgs, theme: 0, center: (mx + f0.w, my + f0.h / 2))
+            // хвилини беруть ті самі 10 картинок, що й години (як у BigWatch)
+            let digits = ElementFactory.addDigitImages(p, source: "timeHour", images: imgs, theme: 0, center: (hx + f0.w, hy + f0.h / 2))
+            ElementFactory.addDigitImages(p, source: "timeMinute", images: imgs, theme: 0, center: (mx + f0.w, my + f0.h / 2), sharedArray: digits)
         }
         p.save()
         projects.insert(p, at: 0)
