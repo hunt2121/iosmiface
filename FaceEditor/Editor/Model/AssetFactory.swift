@@ -83,7 +83,32 @@ enum AssetFactory {
 
     static func widthK(_ g: Generator) -> CGFloat { CGFloat(max(0.3, min(2, g.widthPct / 100))) }
     /// Поле навколо знака під обвідку й тінь
-    static func pad(_ g: Generator) -> Int { g.styled ? Int(ceil(max(0, g.outline) + max(abs(g.shadowX), abs(g.shadowY)))) + 1 : 0 }
+    static func pad(_ g: Generator) -> Int { g.styled ? Int(ceil(max(0, g.outline) + max(abs(g.shadowX), abs(g.shadowY)) + hollowWidth(g))) + 1 : 0 }
+    /// Товщина контуру для «лише контур»: від розміру шрифту, щонайменше 1.2 px
+    static func hollowWidth(_ g: Generator) -> CGFloat { g.hollow ? CGFloat(max(1.2, g.fontSize / 22)) : 0 }
+
+    /// Фон під знаком (коло, капсула, квадрат): більший кадр з фігурою кольору badgeColor, знак по центру
+    static func withBadge(_ g: Generator, _ frames: [RGBAImage]) -> [RGBAImage] {
+        guard !g.badge.isEmpty, let f0 = frames.first else { return frames }
+        let w = f0.w, h = f0.h
+        let pad = Int(ceil(max(3, g.fontSize * 0.16)))
+        var bw: Int, bh: Int, r: CGFloat
+        switch g.badge {
+        case "circle": bw = max(w, h) + pad * 2; bh = bw; r = CGFloat(bw) / 2
+        case "capsule": bh = h + pad * 2; bw = max(bh, w + bh * 2 / 3); r = CGFloat(bh) / 2
+        default: bw = w + pad * 2; bh = h + pad * 2; r = max(2, CGFloat(pad) * 0.9)
+        }
+        let fill = color(g.badgeColor)
+        return frames.map { f in
+            render(bw, bh) { ctx in
+                fill.setFill()
+                UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: bw, height: bh), cornerRadius: r).fill()
+                if let cg = f.cgImage {
+                    UIImage(cgImage: cg).draw(in: CGRect(x: CGFloat(bw - f.w) / 2, y: CGFloat(bh - f.h) / 2, width: CGFloat(f.w), height: CGFloat(f.h)))
+                }
+            }
+        }
+    }
 
     /// Рядок з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
     /// Ширина літер стискає/розтягує рядок відносно його середини. Без ефектів — звичайне малювання.
@@ -112,6 +137,11 @@ enum AssetFactory {
             pass(g.outline > 0 ? .fillStroke : .fill, dx: g.shadowX, dy: g.shadowY, fill: sc, stroke: sc, lineWidth: g.outline * 2)
         }
         if g.outline > 0 { pass(.stroke, stroke: color(g.outlineColor), lineWidth: g.outline * 2) }
+        if g.hollow {
+            // лише контур літер: обвідка кольором тексту, всередині прозоро (або колір фону-фігури)
+            pass(.stroke, stroke: color(g.color), lineWidth: hollowWidth(g))
+            return
+        }
         if g.color2.isEmpty {
             pass(.fill, fill: color(g.color))
         } else {
@@ -158,12 +188,12 @@ enum AssetFactory {
                 if any { minY = min(minY, y); maxY = max(maxY, y) }
             }
         }
-        if maxY < minY { return full }
+        if maxY < minY { return withBadge(g, full) }
         let y0 = max(0, minY - 1), y1 = min(tall - 1, maxY + 1)
         let h = y1 - y0 + 1
-        return full.map { img in
+        return withBadge(g, full.map { img in
             RGBAImage(w: w, h: h, px: Array(img.px[(y0 * w * 4)..<((y1 + 1) * w * 4)]))
-        }
+        })
     }
 
     /// Напис: рядок вибраним шрифтом і кольором, щільно обрізаний за справжніми пікселями (з полем 1 px).
@@ -194,7 +224,7 @@ enum AssetFactory {
             let src = ((y0 + y) * w + x0) * 4
             px.replaceSubrange((y * cw * 4)..<((y + 1) * cw * 4), with: full.px[src..<(src + cw * 4)])
         }
-        return RGBAImage(w: cw, h: ch, px: px)
+        return withBadge(g, [RGBAImage(w: cw, h: ch, px: px)]).first
     }
 
     /// Значок одиниці («%», «°», «км»…) тим самим шрифтом і кольором, що й цифри, тієї ж висоти —

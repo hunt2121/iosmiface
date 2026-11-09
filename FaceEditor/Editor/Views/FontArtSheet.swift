@@ -109,6 +109,14 @@ struct FontArtSheet: View {
                     ColorRow(title: "Колір", hex: g.color) { h in g.color = h }
                 } header: { Text("Шрифт") }
                 Section {
+                    // вигляд знака: лише контур і фігура-фон під кожною цифрою / написом
+                    Toggle("Лише контур", isOn: $g.hollow)
+                    Chips(title: "Фон знака", hint: nil,
+                          items: [("", "Без фону"), ("circle", "Коло"), ("capsule", "Капсула"), ("square", "Квадрат")],
+                          selected: g.badge) { v in g.badge = v }
+                    if !g.badge.isEmpty { ColorRow(title: "Колір фону", hex: g.badgeColor) { h in g.badgeColor = h } }
+                } header: { Text("Форма") }
+                Section {
                     DigitSetSection(project: project, name: res.string("name") ?? "", gen: g, standalone: true) { f in f(&g) }
                 }
             }

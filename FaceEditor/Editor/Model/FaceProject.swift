@@ -41,16 +41,22 @@ struct Generator: Codable, Equatable {
     var widthPct: Double = 100
     /// kind == .texts: рядок для кожної картинки масиву (дні тижня, місяці, AM/PM…)
     var texts: [String] = []
+    /// Фон під кожним знаком/написом: "" — без фону, circle — коло, capsule — капсула, square — заокруглений квадрат
+    var badge: String = ""
+    var badgeColor: String = "#FF9F0A"
+    /// Лише контур літер (без заливки) — кольором color
+    var hollow: Bool = false
 
     /// Картинки намальовані редактором з цих параметрів (а не свої картинки користувача)
     var drawn: Bool { kind != .image && kind != .frames }
 
-    var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 }
+    var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 || hollow }
 
     /// Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту
     mutating func applyStyle(_ s: Generator) {
         font = s.font; style = s.style; weight = s.weight; color = s.color; color2 = s.color2
         outline = s.outline; outlineColor = s.outlineColor; shadowX = s.shadowX; shadowY = s.shadowY; shadowColor = s.shadowColor; widthPct = s.widthPct
+        badge = s.badge; badgeColor = s.badgeColor; hollow = s.hollow
     }
 
     init(kind: Kind, color: String = "#FFFFFF", bgColor: String = "#3A3A3C", fontSize: Double = 48, weight: Int = 700,
@@ -87,6 +93,9 @@ struct Generator: Codable, Equatable {
         color2 = (try? c.decodeIfPresent(String.self, forKey: .color2)) ?? ""
         widthPct = (try? c.decodeIfPresent(Double.self, forKey: .widthPct)) ?? 100
         texts = (try? c.decodeIfPresent([String].self, forKey: .texts)) ?? []
+        badge = (try? c.decodeIfPresent(String.self, forKey: .badge)) ?? ""
+        badgeColor = (try? c.decodeIfPresent(String.self, forKey: .badgeColor)) ?? "#FF9F0A"
+        hollow = (try? c.decodeIfPresent(Bool.self, forKey: .hollow)) ?? false
     }
 }
 
