@@ -193,7 +193,9 @@ struct AddElementSheet: View {
             ElementIcon(kind: t.kind).frame(height: 44)
             Text(t.title).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
                 .lineLimit(1).minimumScaleFactor(0.7) // однакова висота всіх плиток
-            Text(loc(t.caption)).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+            Text(loc(t.caption)).font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                // підпис до двох рядків, місце під два рядки — в усіх плитках, тож висота однакова
+                .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.9)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12).padding(.horizontal, 6)
