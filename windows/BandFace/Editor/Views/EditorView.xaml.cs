@@ -661,8 +661,27 @@ namespace BandFace.Creator
             switch (k)
             {
                 case ElementKind.Digits:
-                    AddAndSelect(p => ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, theme, cx, cy));
+                {
+                    // шрифт / свої картинки / набір, що вже є в циферблаті
+                    var sets = ImageSets.ForDigits(project);
+                    int how = AskHow(sets.Count > 0, sets.FirstOrDefault());
+                    if (how < 0) break;
+                    if (how == 0) { AddAndSelect(p => ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, theme, cx, cy)); break; }
+                    if (how == 1)
+                    {
+                        var imgs = PickImages(true, 400);
+                        if (imgs.Count == 0) break;
+                        if (imgs.Count < 10) { MessageBox.Show(Owner, S.Get("setNeed", 10, imgs.Count), "BandFace"); break; }
+                        AddAndSelect(p => ElementFactory.AddDigitImages(p, src, imgs.Take(10).ToList(), theme, cx, cy));
+                        break;
+                    }
+                    var arr = PickSet(sets);
+                    var f0 = arr == null ? null : ElementFactory.FirstOf(project, arr);
+                    if (f0 == null) break;
+                    var an = arr.Str("name");
+                    AddAndSelect(p => { ElementFactory.AddDigitImages(p, src, new List<RgbaImage> { f0 }, theme, cx, cy, an); ElementFactory.CopyGenFromSet(p, an); });
                     break;
+                }
                 case ElementKind.Pointer:
                     AddAndSelect(p => ElementFactory.AddPointer(p, src, new Generator(GenKind.Pointer) { Color = "#FFFFFF", Width = 6, Length = 80 }, theme, cx, cy));
                     break;
@@ -675,16 +694,26 @@ namespace BandFace.Creator
                 case ElementKind.Values:
                 {
                     // картинки — свої файли або намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
-                    var how = MessageBox.Show(Owner, S.Get("valuesHowAsk"), S.Get("kind_values"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-                    if (how == MessageBoxResult.Cancel) break;
-                    if (how == MessageBoxResult.No)
+                    var l = src.ToLowerInvariant();
+                    int n = l.Contains("week") ? 7 : l.Contains("month") ? 12 : l.Contains("ampm") ? 2 : 5;
+                    var sets = ImageSets.ForValues(project, n);
+                    int how = AskHow(sets.Count > 0, sets.FirstOrDefault());
+                    if (how < 0) break;
+                    if (how == 1)
                     {
                         var imgs = PickImages(true, 200);
                         if (imgs.Count > 0) AddAndSelect(p => ElementFactory.AddValues(p, src, imgs, theme, cx, cy));
                         break;
                     }
-                    var l = src.ToLowerInvariant();
-                    int n = l.Contains("week") ? 7 : l.Contains("month") ? 12 : l.Contains("ampm") ? 2 : 5;
+                    if (how == 2)
+                    {
+                        var arr = PickSet(sets);
+                        var f0 = arr == null ? null : ElementFactory.FirstOf(project, arr);
+                        if (f0 == null) break;
+                        var an = arr.Str("name");
+                        AddAndSelect(p => { ElementFactory.AddValues(p, src, new List<RgbaImage> { f0 }, theme, cx, cy, an); ElementFactory.CopyGenFromSet(p, an); });
+                        break;
+                    }
                     var blank = Enumerable.Range(0, n).Select(_ => new RgbaImage(40, 40, new byte[40 * 40 * 4])).ToList();
                     AddAndSelect(p => ElementFactory.AddValues(p, src, blank, theme, cx, cy));
                     var res = selected != null ? project.ElementOf(selected) : null;
@@ -693,6 +722,28 @@ namespace BandFace.Creator
                     break;
                 }
             }
+        }
+
+        /// <summary>Звідки картинки нового елемента: 0 — шрифт, 1 — свої файли, 2 — набір із цього циферблата; -1 — скасовано</summary>
+        int AskHow(bool hasSets, XNode firstSet)
+        {
+            var items = new List<ChoiceBox.Item>
+            {
+                new ChoiceBox.Item { Title = S.Get("addHowFont"), Sub = S.Get("addHowFontSub") },
+                new ChoiceBox.Item { Title = S.Get("addHowFiles"), Sub = S.Get("addHowFilesSub") },
+                new ChoiceBox.Item { Title = S.Get("addHowSet"), Sub = S.Get("addHowSetSub"), Enabled = hasSets, Preview = firstSet != null ? SetPreview(firstSet, 4, 28) : null },
+            };
+            return ChoiceBox.Ask(Owner, S.Get("addHowTitle"), items);
+        }
+
+        /// <summary>Один набір — він і є; кілька — вибір мініатюрами</summary>
+        XNode PickSet(List<XNode> sets)
+        {
+            if (sets.Count == 0) return null;
+            if (sets.Count == 1) return sets[0];
+            var items = sets.Select(a => new ChoiceBox.Item { Title = SetUsers(a, null), Sub = S.Get("setUses", ImageSets.Uses(project, a)), Preview = SetPreview(a, 5, 28) }).ToList();
+            int i = ChoiceBox.Ask(Owner, S.Get("addHowSet"), items);
+            return i < 0 ? null : sets[i];
         }
 
         public const string ImageFilter = "*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff;*.ico";

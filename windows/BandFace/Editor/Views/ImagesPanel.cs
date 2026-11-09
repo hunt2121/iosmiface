@@ -224,6 +224,104 @@ namespace BandFace.Creator
             catch (Exception ex) { MessageBox.Show(Owner, ex.Message, "BandFace"); }
         }
 
+        /// <summary>Мініатюри перших картинок набору (для списку наборів)</summary>
+        FrameworkElement SetPreview(XNode arr, int max = 5, double h = 24)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            foreach (var im in arr.All("Image").Take(max))
+            {
+                var src = im.Str("src");
+                var data = project.File(src);
+                if (data == null) continue;
+                var bmp = project.Images.Get(MemoryStorage.Normalize(src), () => Imaging.Decode(data)?.ToBitmap());
+                var img = new Image { Source = bmp, Height = h, MaxWidth = h * 1.6, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 2, 0) };
+                RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+                row.Children.Add(img);
+            }
+            return row;
+        }
+
+        /// <summary>Хто ще показує набір (крім цього шару): «Години, Хвилини (AOD)»</summary>
+        string SetUsers(XNode arr, XNode except)
+        {
+            var names = new List<string>();
+            foreach (var u in ImageSets.Users(project, arr))
+                for (int t = 0; t < project.Themes.Count; t++)
+                    foreach (var l in project.Layouts(t).Where(x => project.ElementOf(x) == u && x != except))
+                    {
+                        var src = u.Str("source");
+                        var n = src != null ? SampleData.Title(src) : Elements.Title(Elements.Of(u, project));
+                        names.Add(n + (t == 1 ? " (AOD)" : ""));
+                    }
+            return string.Join(", ", names.Distinct());
+        }
+
+        /// <summary>Набір картинок елемента: вибір іншого набору цього циферблата, «Окремі картинки», «Замінити всі…»</summary>
+        void BuildSetRow(XNode res)
+        {
+            var arr = ImageSets.SetOf(project, res);
+            var layout = selected;
+            if (arr == null && (layout == null || ElementFactory.LayoutsOf(project, res).Count < 2)) return;
+            if (arr != null)
+            {
+                var sets = ImageSets.All(project).Where(a => ImageSets.Fits(project, res, a)).ToList();
+                if (!sets.Contains(arr)) sets.Insert(0, arr);
+                if (sets.Count > 1)
+                {
+                    var combo = new ComboBox { MaxDropDownHeight = 420, Margin = new Thickness(0, 0, 0, 8) };
+                    foreach (var a in sets)
+                    {
+                        var row = new StackPanel { Orientation = Orientation.Horizontal };
+                        row.Children.Add(SetPreview(a));
+                        int uses = ImageSets.Uses(project, a);
+                        row.Children.Add(new TextBlock { Text = "  " + S.Get("setUses", uses), VerticalAlignment = VerticalAlignment.Center, Foreground = (Brush)FindResource("Sub"), FontSize = 12 });
+                        combo.Items.Add(new ComboBoxItem { Content = row, Tag = a });
+                    }
+                    combo.SelectedIndex = sets.IndexOf(arr);
+                    combo.SelectionChanged += (s, e) =>
+                    {
+                        if ((combo.SelectedItem as ComboBoxItem)?.Tag is XNode a && a != arr) project.Edit(p => ImageSets.Use(p, res, a));
+                    };
+                    Add(Ui.Row(S.Get("imageSet"), combo, 210));
+                }
+            }
+            var others = arr != null ? SetUsers(arr, layout) : "";
+            bool both = layout != null && ElementFactory.LayoutsOf(project, res).Count > 1;
+            if (others.Length > 0) Add(Ui.Note(S.Get("setShared", others)));
+            else if (both) Add(Ui.Note(S.Get("setSharedScreens")));
+            bool shared = ImageSets.IsShared(project, res);
+            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = shared && arr != null ? 2 : 1, Margin = new Thickness(0, 0, 0, 10) };
+            if (shared && layout != null)
+            {
+                var own = new Button { Content = S.Get("setDetach"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, arr != null ? 4 : 0, 0), ToolTip = S.Get("setDetachTip") };
+                own.Click += (s, e) => project.Edit(p => ImageSets.Detach(p, layout));
+                acts.Children.Add(own);
+            }
+            if (arr != null)
+            {
+                var all = new Button { Content = S.Get("setReplaceAll"), Style = (Style)FindResource("Btn"), Margin = new Thickness(shared ? 4 : 0, 0, 0, 0) };
+                all.Click += (s, e) => ReplaceAllImages(res, arr);
+                acts.Children.Add(all);
+            }
+            if (acts.Children.Count > 0) Add(acts);
+        }
+
+        /// <summary>Нові файли на весь набір: для числа — 10 цифр, для інших — стільки ж, скільки картинок зараз</summary>
+        void ReplaceAllImages(XNode res, XNode arr)
+        {
+            var imgs = PickImages(true, 2000);
+            if (imgs.Count == 0) return;
+            int need = res.Tag == "DataItemImageNumber" ? 10 : ImageSets.Count(arr);
+            if (res.Tag == "DataItemImageValues" && imgs.Count != need)
+            {
+                // інша кількість значків — новий набір лише для цього елемента
+                project.Edit(p => ElementFactory.ReplaceValueImages(p, res, imgs));
+                return;
+            }
+            if (imgs.Count < need) { MessageBox.Show(Owner, S.Get("setNeed", need, imgs.Count), "BandFace"); return; }
+            project.Edit(p => ImageSets.ReplaceAll(p, arr, imgs));
+        }
+
         /// <summary>Блок «Зображення» в інспекторі будь-якого елемента: усі його картинки мініатюрами
         /// (клік — замінити, перетягування PNG — замінити), «Відкрити теку», «Намалювати шрифтом…»</summary>
         void BuildImageActions(XNode res)
@@ -236,6 +334,7 @@ namespace BandFace.Creator
                            (kind == ElementKind.Digits || kind == ElementKind.Label || kind == ElementKind.Values);
             if (list.Count == 0 && !canFont) return;
             Add(Ui.Header(S.Get("imagesTab") + (list.Count > 1 ? " · " + list.Count : "")));
+            BuildSetRow(res);
             if (list.Count > 0)
             {
                 var wrap = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };

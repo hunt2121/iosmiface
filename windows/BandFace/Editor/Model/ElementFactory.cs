@@ -89,6 +89,28 @@ namespace BandFace.Creator
 
         // MARK: Елементи
 
+        /// <summary>Перша картинка набору (розмір для розміщення нового шару)</summary>
+        public static RgbaImage FirstOf(FaceProject p, XNode arr)
+        {
+            var d = p.File(arr?.First("Image")?.Str("src"));
+            return d == null ? null : Imaging.Decode(d);
+        }
+
+        /// <summary>Новий елемент бере вже наявний набір: параметри шрифту — як у сусіда з тим самим набором</summary>
+        public static void CopyGenFromSet(FaceProject p, string arr)
+        {
+            var a = p.Resource(arr);
+            if (a == null) return;
+            var users = ImageSets.Users(p, a);
+            var donor = users.Select(u => u.Str("name") ?? "").FirstOrDefault(n => p.Meta.Generators.ContainsKey(n));
+            if (donor == null) return;
+            foreach (var u in users)
+            {
+                var n = u.Str("name") ?? "";
+                if (!p.Meta.Generators.ContainsKey(n)) { var g = p.Meta.Generators[donor].Copy(); g.Unit = ""; p.Meta.Generators[n] = g; }
+            }
+        }
+
         public static void AddDigits(FaceProject p, string source, Generator gen, int theme, int cx, int cy)
         {
             var frames = AssetFactory.DigitFrames(gen);
@@ -238,11 +260,12 @@ namespace BandFace.Creator
         }
 
         /// <summary>Картинка залежно від значення: пороги рівномірно по діапазону джерела</summary>
-        public static void AddValues(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy)
+        public static void AddValues(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy, string sharedArray = null)
         {
             if (images.Count == 0) return;
             var f0 = images[0];
-            var arr = AddFrames(p, images.Select(i => Imaging.Contain(i, f0.W, f0.H)).ToList(), "icons");
+            var arr = sharedArray ?? AddFrames(p, images.Select(i => Imaging.Contain(i, f0.W, f0.H)).ToList(), "icons");
+            if (sharedArray != null) images = Enumerable.Repeat(f0, ImageSets.Count(p.Resource(sharedArray))).ToList();
             var name = p.UniqueName(source + "Icons");
             var e = new XNode("DataItemImageValues");
             e.Set("name", name).Set("source", source).Set("ref", "@" + arr).Set("renderRule", "alwaysShow").Set("rotation", 0);
