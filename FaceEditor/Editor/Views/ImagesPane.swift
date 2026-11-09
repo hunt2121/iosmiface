@@ -227,8 +227,6 @@ struct ElementImages: View {
     @State private var target: ImageRef?
     @State private var fromFiles = false
     @State private var fontArt = false
-    @State private var replaceAll = false
-    @State private var replaceItems: [PhotosPickerItem] = []
     @State private var needAlert: String?
 
     private var canFont: Bool {
@@ -269,20 +267,6 @@ struct ElementImages: View {
             }
             .modifier(ImageReplacer(project: project, target: $target, fromFiles: $fromFiles))
             .sheet(isPresented: $fontArt) { FontArtSheet(project: project, res: res) }
-            .photosPicker(isPresented: $replaceAll, selection: $replaceItems, maxSelectionCount: 60, matching: .images)
-            .onChange(of: replaceItems) { items in
-                guard !items.isEmpty else { return }
-                replaceItems = []
-                Task { @MainActor in
-                    var imgs: [RGBAImage] = []
-                    for it in items {
-                        if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
-                            imgs.append(AssetFactory.fromUIImage(img, maxSide: 400))
-                        }
-                    }
-                    replaceAllImages(imgs)
-                }
-            }
             .alert(needAlert ?? "", isPresented: Binding(get: { needAlert != nil }, set: { if !$0 { needAlert = nil } })) {
                 Button("OK", role: .cancel) {}
             }
@@ -294,7 +278,7 @@ struct ElementImages: View {
     /// Вибір іншого набору цього циферблата, «Окремі картинки», «Замінити всі…»
     @ViewBuilder private var setRow: some View {
         let arr = ImageSets.setOf(project, res)
-        let both = layout != nil && ElementFactory.layouts(of: res, in: project).count > 1
+        let both = layout != nil && ImageSets.layoutCount(project, res) > 1
         if arr != nil || both {
             VStack(alignment: .leading, spacing: 8) {
                 if let arr {
@@ -339,7 +323,16 @@ struct ElementImages: View {
                         .buttonStyle(.bordered)
                     }
                     if arr != nil {
-                        Button { replaceAll = true } label: {
+                        Button {
+                            // нові картинки — з «Файлів» (за назвою файла: 0.png … 9.png)
+                            FilesPicker.pickImages { urls in
+                                let imgs = urls.compactMap { u -> RGBAImage? in
+                                    guard let d = try? Data(contentsOf: u), let img = UIImage(data: d) else { return nil }
+                                    return AssetFactory.fromUIImage(img, maxSide: 400)
+                                }
+                                replaceAllImages(imgs)
+                            }
+                        } label: {
                             Text("Замінити всі…").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 36)
                         }
                         .buttonStyle(.bordered)

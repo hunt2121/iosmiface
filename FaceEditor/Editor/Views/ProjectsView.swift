@@ -112,13 +112,32 @@ struct ProjectsView: View {
             Text("Тут будуть ваші циферблати").font(.headline)
             Text("Створіть новий або відкрийте готовий файл .bin, щоб змінити його.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            HStack(spacing: 10) {
-                Button("Новий циферблат") { showNew = true }.glassProminentStyle()
-                Button("Відкрити .bin") { showImporter = true }.glassSecondaryStyle()
+            // дві кнопки на всю ширину, як у картці магазину: синя скляна (як «Вибрати») і біла з синім підписом
+            VStack(spacing: 12) {
+                Button { showNew = true } label: {
+                    Label("Новий циферблат", systemImage: "plus")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .foregroundStyle(.white)
+                        .background(Capsule().fill(Color.accentColor))
+                        .capsuleGlass(tint: Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                Button { showImporter = true } label: {
+                    Label("Відкрити .bin", systemImage: "doc")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .foregroundStyle(Color.accentColor)
+                        .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                }
+                .buttonStyle(.plain)
             }
-            .padding(.top, 6)
+            .padding(.top, 10)
         }
-        .padding(32)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 32)
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
     }
