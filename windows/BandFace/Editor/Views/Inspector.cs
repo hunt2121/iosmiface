@@ -282,12 +282,14 @@ namespace BandFace.Creator
             if (kind == ElementKind.Widget && WidgetSlots.IsUserWidget(project, res))
             {
                 WidgetSection(res, new Point(layout.Int("x"), layout.Int("y")), layout);
+                BuildVariantRow(res);
                 BuildPosition(layout);
                 return;
             }
             if (kind == ElementKind.Slot)
             {
                 SlotSection(res, layout);
+                BuildVariantRow(res);
                 BuildPosition(layout);
                 return;
             }
