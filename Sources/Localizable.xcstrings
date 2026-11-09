@@ -14835,6 +14835,52 @@
           }
         }
       }
+    },
+    "У віджеті немає елементів.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The widget has no elements."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В виджете нет элементов."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У віджеті немає елементів."
+          }
+        }
+      }
+    },
+    "Елементи віджета не можна перефарбувати — вони без картинок або багатоколірні.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The widget’s elements can’t be recolored — they have no images or are multicolor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Элементы виджета нельзя перекрасить — у них нет картинок или они многоцветные."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Елементи віджета не можна перефарбувати — вони без картинок або багатоколірні."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
