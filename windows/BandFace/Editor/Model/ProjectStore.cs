@@ -103,8 +103,9 @@ namespace BandFace.Creator
             }).ToList();
             int dw = imgs[0].W, dh = imgs[0].H;
             // AddDigitImages ставить число за центром: лівий край = cx − ширина цифри
-            ElementFactory.AddDigitImages(p, "timeHour", imgs, 0, StarterDigits.X + dw, StarterDigits.HourY + dh / 2);
-            ElementFactory.AddDigitImages(p, "timeMinute", imgs, 0, StarterDigits.X + dw, StarterDigits.MinuteY + dh / 2);
+            // хвилини беруть ті самі 10 картинок, що й години (як у BigWatch)
+            var digits = ElementFactory.AddDigitImages(p, "timeHour", imgs, 0, StarterDigits.X + dw, StarterDigits.HourY + dh / 2);
+            ElementFactory.AddDigitImages(p, "timeMinute", imgs, 0, StarterDigits.X + dw, StarterDigits.MinuteY + dh / 2, digits);
             p.Save();
             Projects.Insert(0, p);
             return p;

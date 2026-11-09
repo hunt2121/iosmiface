@@ -105,11 +105,13 @@ namespace BandFace.Creator
         }
 
         /// <summary>Число з ваших картинок 0–9 (усі вирівнюються під розмір першої)</summary>
-        public static void AddDigitImages(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy)
+        /// <summary>Число картинками цифр. sharedArray — назва вже доданого набору цифр: тоді нові файли не створюються
+        /// (години й хвилини одного шрифту беруть ті самі 10 картинок). Повертає назву набору.</summary>
+        public static string AddDigitImages(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy, string sharedArray = null)
         {
-            if (images.Count == 0) return;
+            if (images.Count == 0) return null;
             var f0 = images[0];
-            var arr = AddFrames(p, images.Select(i => Imaging.Contain(i, f0.W, f0.H)).ToList(), "digits");
+            var arr = sharedArray ?? AddFrames(p, images.Select(i => Imaging.Contain(i, f0.W, f0.H)).ToList(), "digits");
             var name = p.UniqueName(source);
             var e = new XNode("DataItemImageNumber");
             e.Set("name", name).Set("source", source).Set("ref", "@" + arr).Set("totalDigits", 2).Set("decimalDigits", 0)
@@ -117,6 +119,7 @@ namespace BandFace.Creator
              .Set("rotation", 0).Set("decimalOffsetX", 0).Set("space", 0);
             p.Resources.Kids.Add(e);
             AddLayout(p, name, theme, cx - f0.W, cy - f0.H / 2);
+            return arr;
         }
 
         /// <summary>Напис картинкою (рядок вибраним шрифтом)</summary>
