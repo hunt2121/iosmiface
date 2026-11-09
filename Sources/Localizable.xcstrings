@@ -14168,6 +14168,29 @@
           }
         }
       }
+    },
+    "своя картинка для кожного стану": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a picture for each state"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "своя картинка для каждого состояния"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "своя картинка для кожного стану"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -44,7 +44,7 @@ struct AddElementSheet: View {
     private let tiles: [Tile] = [
         Tile(kind: .label, caption: "рядок картинкою", filter: .decor, enabled: true),
         Tile(kind: .digits, caption: "картинки цифр", filter: .data, enabled: true),
-        Tile(kind: .values, caption: "картинка для кожного значення", filter: .data, enabled: true),
+        Tile(kind: .values, caption: "своя картинка для кожного стану", filter: .data, enabled: true),
         Tile(kind: .pointer, caption: "три стрілки", filter: .gauges, enabled: true, preset: "clock"),
         Tile(kind: .image, caption: "PNG, фото", filter: .decor, enabled: true),
         Tile(kind: .animation, caption: "кадри, інтервал", filter: .decor, enabled: true),
