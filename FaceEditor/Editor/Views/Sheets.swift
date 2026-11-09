@@ -28,6 +28,11 @@ struct AddElementSheet: View {
     @State private var valuePhotos: [PhotosPickerItem] = []
     /// Картинки значків: свої фото чи намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
     @State private var askValuesHow = false
+    /// Для якого елемента питаємо, звідки картинки (.digits чи .values)
+    @State private var howKind: ElementKind = .values
+    @State private var showDigitPhotos = false
+    @State private var digitPhotos: [PhotosPickerItem] = []
+    @State private var askSet = false
     @State private var fontArtFor: XNode?
 
     private struct Tile: Identifiable {
@@ -99,10 +104,40 @@ struct AddElementSheet: View {
         .photosPicker(isPresented: $showPhoto, selection: $photo, matching: .images)
         .photosPicker(isPresented: $showFrames, selection: $photos, maxSelectionCount: 60, matching: .images)
         .photosPicker(isPresented: $showValuePhotos, selection: $valuePhotos, maxSelectionCount: 30, matching: .images)
-        .confirmationDialog("Як створити картинки?", isPresented: $askValuesHow, titleVisibility: .visible) {
-            Button("Намалювати шрифтом (дні тижня, місяці, числа)") { addValuesByFont() }
-            Button("Вибрати фото") { showValuePhotos = true }
+        .photosPicker(isPresented: $showDigitPhotos, selection: $digitPhotos, maxSelectionCount: 10, matching: .images)
+        .confirmationDialog("Картинки для елемента", isPresented: $askValuesHow, titleVisibility: .visible) {
+            Button("Шрифт") { howKind == .digits ? addDigitsByFont() : addValuesByFont() }
+            Button("Свої картинки") { if howKind == .digits { showDigitPhotos = true } else { showValuePhotos = true } }
+            if !howSets.isEmpty {
+                Button("Набір з цього циферблата") { if howSets.count == 1 { useSet(howSets[0]) } else { askSet = true } }
+            }
             Button("Скасувати", role: .cancel) {}
+        } message: {
+            Text(howSets.isEmpty ? "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото." : "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото. Набір — ті самі картинки, що вже є, без нових файлів.")
+        }
+        .confirmationDialog("Набір з цього циферблата", isPresented: $askSet, titleVisibility: .visible) {
+            ForEach(howSets.indices, id: \.self) { i in
+                let a = howSets[i]
+                let who = ImageSets.usersTitle(project, a)
+                Button(who.isEmpty ? (a.string("name") ?? "") : who) { useSet(a) }
+            }
+            Button("Скасувати", role: .cancel) {}
+        }
+        .onChange(of: digitPhotos) { items in
+            guard !items.isEmpty, let src = valuesSource else { return }
+            digitPhotos = []
+            Task { @MainActor in
+                var imgs: [RGBAImage] = []
+                for it in items {
+                    if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
+                        imgs.append(AssetFactory.fromUIImage(img, maxSide: 400))
+                    }
+                }
+                guard imgs.count >= 10 else { return }
+                let c = center
+                project.edit { ElementFactory.addDigitImages($0, source: src, images: Array(imgs.prefix(10)), theme: theme, center: c) }
+                finish()
+            }
         }
         .sheet(item: Binding(get: { fontArtFor.map { NodeBox(node: $0) } }, set: { fontArtFor = $0?.node })) { box in
             FontArtSheet(project: project, res: box.node, onCancel: { project.undo() })
@@ -188,9 +223,10 @@ struct AddElementSheet: View {
     }
 
     private func add(_ k: ElementKind, source: String) {
-        if k == .values {
-            // далі — картинки для значень
+        if k == .values || k == .digits {
+            // далі — звідки картинки: шрифт, свої, набір цього циферблата
             valuesSource = source
+            howKind = k
             askValuesHow = true
             return
         }
@@ -211,6 +247,37 @@ struct AddElementSheet: View {
         finish()
     }
 
+    /// Скільки картинок у значків за значенням для джерела
+    private func valueCount(_ src: String) -> Int {
+        let l = src.lowercased()
+        return l.contains("week") ? 7 : l.contains("month") ? 12 : l.contains("ampm") ? 2 : 5
+    }
+
+    /// Набори цього циферблата, що підходять новому елементу
+    private var howSets: [XNode] {
+        guard let src = valuesSource else { return [] }
+        return howKind == .digits ? ImageSets.forDigits(project) : ImageSets.forValues(project, count: valueCount(src))
+    }
+
+    private func addDigitsByFont() {
+        guard let src = valuesSource else { return }
+        let c = center
+        project.edit { ElementFactory.addDigits($0, source: src, gen: Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded"), theme: theme, center: c) }
+        finish()
+    }
+
+    /// Новий елемент бере вже наявний набір — без нових файлів
+    private func useSet(_ arr: XNode) {
+        guard let src = valuesSource, let f0 = ElementFactory.firstOf(project, arr), let an = arr.string("name") else { return }
+        let c = center, k = howKind
+        project.edit { p in
+            if k == .digits { ElementFactory.addDigitImages(p, source: src, images: [f0], theme: theme, center: c, sharedArray: an) }
+            else { ElementFactory.addValues(p, source: src, images: [f0], theme: theme, center: c, sharedArray: an) }
+            ElementFactory.copyGenFromSet(p, an)
+        }
+        finish()
+    }
+
     /// Елемент значків з порожніми картинками → одразу «Намалювати шрифтом»; скасували — прибираємо
     private func addValuesByFont() {
         guard let src = valuesSource else { return }
@@ -219,11 +286,11 @@ struct AddElementSheet: View {
         let blank = (0..<n).map { _ in RGBAImage(w: 40, h: 40, px: [UInt8](repeating: 0, count: 40 * 40 * 4)) }
         let c = center
         project.edit { ElementFactory.addValues($0, source: src, images: blank, theme: theme, center: c) }
-        fontArtFor = project.layouts(theme).last.flatMap { project.element(of: $0) }
+        fontArtFor = project.topLayout(theme).flatMap { project.element(of: $0) }
     }
 
     private func finish() {
-        onAdded(project.layouts(theme).last)
+        onAdded(project.topLayout(theme))
         dismiss()
     }
 }
@@ -475,7 +542,7 @@ struct LayersSheet: View {
                     .moveDisabled(true).deleteDisabled(true)
                 }
                 Section {
-                let ls = Array(project.layouts(theme).reversed())
+                let ls = Array(project.editableLayouts(theme).reversed())
                 ForEach(Array(ls.enumerated()), id: \.offset) { _, l in
                     let res = project.element(of: l)
                     Button { selected = l; dismiss() } label: {

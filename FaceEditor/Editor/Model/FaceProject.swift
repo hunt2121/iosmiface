@@ -250,6 +250,7 @@ final class FaceProject: ObservableObject, Identifiable {
         if undoStack.count > 40 { undoStack.removeFirst() }
         redoStack.removeAll()
         change(self)
+        AodDim.keepOnTop(self)
         meta.modified = Date()
         meta.edited = true
         revision += 1

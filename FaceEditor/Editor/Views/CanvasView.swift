@@ -137,7 +137,8 @@ struct CanvasView: View {
     private func hit(_ pt: CGPoint, _ boxes: [LayerBox]) -> XNode? {
         // спершу вже вибраний (щоб його легко тягнути), далі — верхній шар
         if let s = selected, let b = boxes.first(where: { $0.layout === s }), b.rect.insetBy(dx: -6, dy: -6).contains(pt) { return s }
-        return boxes.last { $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }?.layout
+        // приглушення AOD не вибирається — воно у властивостях циферблата
+        return boxes.last { !AodDim.isDim(project, $0.layout, theme: theme) && $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }?.layout
     }
 
     // MARK: Ручки дуги й лінії

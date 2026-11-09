@@ -106,7 +106,7 @@ struct InspectorView: View {
                 Text("Цей елемент можна пересувати, дублювати й видаляти. Його вміст редактор поки не змінює.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            ElementImages(project: project, res: r)
+            ElementImages(project: project, res: r, layout: layout)
             if r.tag.hasPrefix("DataItem") { renderRuleRow(r) }
             tapRow
         }

@@ -13800,6 +13800,305 @@
           }
         }
       }
+    },
+    "Приглушення AOD, %": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AOD dimming, %"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приглушение AOD, %"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приглушення AOD, %"
+          }
+        }
+      }
+    },
+    "Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A black semi-transparent layer over the whole always-on screen: images stay shared with the main screen but look dimmer in AOD. 0 means off."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чёрный полупрозрачный слой поверх всего экрана «Всегда на экране»: картинки общие с основным экраном, а в AOD выглядят тусклее. 0 — без приглушения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення."
+          }
+        }
+      }
+    },
+    "Набір": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набор"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набір"
+          }
+        }
+      }
+    },
+    "Спільні картинки: також у %@. Зміни картинок діють і там.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared images: also used by %@. Changing the images changes them there too."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Общие картинки: также в %@. Изменения картинок действуют и там."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спільні картинки: також у %@. Зміни картинок діють і там."
+          }
+        }
+      }
+    },
+    "Елемент показано на обох екранах — картинки спільні.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This element is shown on both screens, so its images are shared."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Элемент показан на обоих экранах — картинки общие."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Елемент показано на обох екранах — картинки спільні."
+          }
+        }
+      }
+    },
+    "Окремі картинки": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separate images"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отдельные картинки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Окремі картинки"
+          }
+        }
+      }
+    },
+    "Замінити всі…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace all…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заменить все…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замінити всі…"
+          }
+        }
+      }
+    },
+    "Потрібно %d картинок, вибрано %d.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d images are needed, %d selected."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужно %d картинок, выбрано %d."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібно %d картинок, вибрано %d."
+          }
+        }
+      }
+    },
+    "Картинки для елемента": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images for the element"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки для элемента"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки для елемента"
+          }
+        }
+      }
+    },
+    "Свої картинки": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your images"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свои картинки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свої картинки"
+          }
+        }
+      }
+    },
+    "Набір з цього циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A set from this face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набор из этого циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набір з цього циферблата"
+          }
+        }
+      }
+    },
+    "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font: any font, with color, outline or a circle background. Your images: from Photos."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт — любой, с цветом, обводкой, фоном-кругом. Свои картинки — из Фото."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото."
+          }
+        }
+      }
+    },
+    "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото. Набір — ті самі картинки, що вже є, без нових файлів.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font: any font, with color, outline or a circle background. Your images: from Photos. Set: the same images the face already has, no new files."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт — любой, с цветом, обводкой, фоном-кругом. Свои картинки — из Фото. Набор — те же картинки, что уже есть, без новых файлов."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шрифт — будь-який, з кольором, обвідкою, фоном-колом. Свої картинки — з Фото. Набір — ті самі картинки, що вже є, без нових файлів."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

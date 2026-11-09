@@ -223,9 +223,13 @@ struct Thumb: View {
 struct ElementImages: View {
     @ObservedObject var project: FaceProject
     let res: XNode
+    var layout: XNode? = nil
     @State private var target: ImageRef?
     @State private var fromFiles = false
     @State private var fontArt = false
+    @State private var replaceAll = false
+    @State private var replaceItems: [PhotosPickerItem] = []
+    @State private var needAlert: String?
 
     private var canFont: Bool {
         let k = ElementKind.of(res, in: project)
@@ -237,6 +241,7 @@ struct ElementImages: View {
         if !list.isEmpty || canFont {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: loc("ЗОБРАЖЕННЯ") + (list.count > 1 ? " · \(list.count)" : "")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                setRow
                 if !list.isEmpty {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 50, maximum: 60), spacing: 8)], alignment: .leading, spacing: 8) {
                         ForEach(list) { im in
@@ -264,7 +269,114 @@ struct ElementImages: View {
             }
             .modifier(ImageReplacer(project: project, target: $target, fromFiles: $fromFiles))
             .sheet(isPresented: $fontArt) { FontArtSheet(project: project, res: res) }
+            .photosPicker(isPresented: $replaceAll, selection: $replaceItems, maxSelectionCount: 60, matching: .images)
+            .onChange(of: replaceItems) { items in
+                guard !items.isEmpty else { return }
+                replaceItems = []
+                Task { @MainActor in
+                    var imgs: [RGBAImage] = []
+                    for it in items {
+                        if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
+                            imgs.append(AssetFactory.fromUIImage(img, maxSide: 400))
+                        }
+                    }
+                    replaceAllImages(imgs)
+                }
+            }
+            .alert(needAlert ?? "", isPresented: Binding(get: { needAlert != nil }, set: { if !$0 { needAlert = nil } })) {
+                Button("OK", role: .cancel) {}
+            }
         }
+    }
+
+    // MARK: Набір картинок
+
+    /// Вибір іншого набору цього циферблата, «Окремі картинки», «Замінити всі…»
+    @ViewBuilder private var setRow: some View {
+        let arr = ImageSets.setOf(project, res)
+        let both = layout != nil && ElementFactory.layouts(of: res, in: project).count > 1
+        if arr != nil || both {
+            VStack(alignment: .leading, spacing: 8) {
+                if let arr {
+                    let sets = setsFor(arr)
+                    if sets.count > 1 {
+                        Menu {
+                            ForEach(sets.indices, id: \.self) { i in
+                                let a = sets[i]
+                                Button {
+                                    if a !== arr { project.edit { ImageSets.use($0, res, a) } }
+                                } label: {
+                                    let who = ImageSets.usersTitle(project, a)
+                                    Label(who.isEmpty ? (a.string("name") ?? "") : who, systemImage: a === arr ? "checkmark" : "square.stack")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Набір").font(.subheadline).foregroundStyle(.primary)
+                                Spacer()
+                                setPreview(arr)
+                                Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 12).frame(height: 44)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemGroupedBackground)))
+                        }
+                    }
+                    let others = ImageSets.usersTitle(project, arr, except: layout)
+                    if !others.isEmpty {
+                        Text(String(format: loc("Спільні картинки: також у %@. Зміни картинок діють і там."), others))
+                            .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    } else if both {
+                        Text("Елемент показано на обох екранах — картинки спільні.").font(.caption).foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Елемент показано на обох екранах — картинки спільні.").font(.caption).foregroundStyle(.secondary)
+                }
+                HStack(spacing: 8) {
+                    if let l = layout, ImageSets.isShared(project, res) {
+                        Button { project.edit { ImageSets.detach($0, layout: l) } } label: {
+                            Text("Окремі картинки").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 36)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    if arr != nil {
+                        Button { replaceAll = true } label: {
+                            Text("Замінити всі…").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 36)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+            }
+        }
+    }
+
+    private func setsFor(_ arr: XNode) -> [XNode] {
+        var s = ImageSets.all(project).filter { ImageSets.fits(project, res, $0) }
+        if !s.contains(where: { $0 === arr }) { s.insert(arr, at: 0) }
+        return s
+    }
+
+    private func setPreview(_ arr: XNode) -> some View {
+        HStack(spacing: 2) {
+            ForEach(Array(arr.all("Image").prefix(4).enumerated()), id: \.offset) { _, im in
+                if let s = im.string("src"), let u = ProjectImages.uiImage(project, s) {
+                    Image(uiImage: u).resizable().interpolation(.high).scaledToFit().frame(height: 22)
+                }
+            }
+        }
+        .frame(maxWidth: 90, alignment: .trailing)
+    }
+
+    /// Нові файли на весь набір: для числа — 10 цифр, для інших — стільки ж, скільки картинок зараз
+    private func replaceAllImages(_ imgs: [RGBAImage]) {
+        guard !imgs.isEmpty, let arr = ImageSets.setOf(project, res) else { return }
+        let need = res.tag == "DataItemImageNumber" ? 10 : ImageSets.count(arr)
+        if res.tag == "DataItemImageValues" && imgs.count != need {
+            // інша кількість значків — новий набір лише для цього елемента
+            project.edit { ElementFactory.replaceValueImages($0, element: res, images: imgs) }
+            return
+        }
+        if imgs.count < need { needAlert = String(format: loc("Потрібно %d картинок, вибрано %d."), need, imgs.count); return }
+        project.edit { ImageSets.replaceAll($0, arr, imgs) }
     }
 }
 

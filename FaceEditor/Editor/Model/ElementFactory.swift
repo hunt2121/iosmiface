@@ -92,6 +92,24 @@ enum ElementFactory {
 
     // MARK: Елементи
 
+    /// Перша картинка набору (розмір для розміщення нового шару)
+    static func firstOf(_ p: FaceProject, _ arr: XNode?) -> RGBAImage? {
+        guard let src = arr?.first("Image")?.string("src"), let d = p.file(src), let png = PNG.decode([UInt8](d)) else { return nil }
+        return RGBAImage(w: png.w, h: png.h, px: png.rgba)
+    }
+
+    /// Новий елемент бере вже наявний набір: параметри шрифту — як у сусіда з тим самим набором
+    static func copyGenFromSet(_ p: FaceProject, _ arr: String) {
+        guard let a = p.resource(named: arr) else { return }
+        let users = ImageSets.users(p, a)
+        guard let donor = users.compactMap({ $0.string("name") }).first(where: { p.meta.generators[$0] != nil }),
+              let dg = p.meta.generators[donor] else { return }
+        for u in users {
+            let n = u.string("name") ?? ""
+            if p.meta.generators[n] == nil { var g = dg; g.unit = ""; p.meta.generators[n] = g }
+        }
+    }
+
     static func addDigits(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
         let frames = AssetFactory.digitFrames(gen)
         let arr = addFrames(p, frames, base: "digits")
@@ -415,14 +433,15 @@ enum ElementFactory {
     // MARK: Значки за значенням
 
     /// Картинка залежно від значення: пороги рівномірно по діапазону джерела
-    static func addValues(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int)) {
+    static func addValues(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int), sharedArray: String? = nil) {
         guard let f0 = images.first else { return }
-        let arr = addFrames(p, images.map { fit($0, w: f0.w, h: f0.h) }, base: "icons")
+        let arr = sharedArray ?? addFrames(p, images.map { fit($0, w: f0.w, h: f0.h) }, base: "icons")
+        let n = sharedArray.map { ImageSets.count(p.resource(named: $0)) } ?? images.count
         let name = p.uniqueName(source + "Icons")
         let e = XNode("DataItemImageValues")
         e.set("name", name).set("source", source).set("ref", "@" + arr).set("renderRule", "alwaysShow").set("rotation", int: 0)
         let (lo, hi) = valueRange(source)
-        for i in 0..<images.count { e.add("Param").set("value", int: lo + (hi - lo) * i / max(1, images.count)) }
+        for i in 0..<n { e.add("Param").set("value", int: lo + (hi - lo) * i / max(1, n)) }
         p.resources.kids.append(e)
         addLayout(p, ref: name, theme: theme, x: center.0 - f0.w / 2, y: center.1 - f0.h / 2)
     }
@@ -439,7 +458,7 @@ enum ElementFactory {
     }
 
     /// Кадр під розмір першого (кадри в наборі мають бути однакового розміру)
-    private static func fit(_ img: RGBAImage, w: Int, h: Int) -> RGBAImage {
+    static func fit(_ img: RGBAImage, w: Int, h: Int) -> RGBAImage {
         guard img.w != w || img.h != h, let cg = img.cgImage else { return img }
         let s = min(CGFloat(w) / CGFloat(img.w), CGFloat(h) / CGFloat(img.h))
         let dw = CGFloat(img.w) * s, dh = CGFloat(img.h) * s

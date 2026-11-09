@@ -234,7 +234,7 @@ struct EditorView: View {
                                   onSource: { sheet = .source },
                                   onDuplicate: {
                                       project.edit { ElementFactory.duplicate($0, layout: sel, theme: theme) }
-                                      selected = project.layouts(theme).last
+                                      selected = project.topLayout(theme)
                                   },
                                   onDelete: {
                                       project.edit { ElementFactory.delete($0, layout: sel, theme: theme) }

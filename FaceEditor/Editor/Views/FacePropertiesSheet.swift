@@ -93,6 +93,17 @@ struct FacePropertiesSheet: View {
                         }
                     }
                 }
+                if project.themes.count > 1 {
+                    Section {
+                        // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
+                        CommitSlider(title: "Приглушення AOD, %", value: Double(AodDim.percent(project)), range: 0...90, step: 1) { v in
+                            let pc = Int(v.rounded())
+                            if pc != AodDim.percent(project) { project.edit { AodDim.set($0, percent: pc) } }
+                        }
+                    } footer: {
+                        Text("Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення.")
+                    }
+                }
 
                 Section {
                     HStack {
