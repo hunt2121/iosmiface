@@ -151,6 +151,8 @@ namespace BandFace.Creator
                     if (fr.Count == 0) return null;
                     var prm = res.All("Param").Select(x => x.Int("value")).ToList();
                     int v = Value(res), idx = 0;
+                    // без порогів (Param) браслет бере картинку за номером: значення 3 — картинка 3
+                    if (prm.Count == 0) idx = Math.Max(0, v);
                     for (int i = 0; i < prm.Count; i++) if (v >= prm[i]) idx = i;
                     var img = fr[Math.Min(idx, fr.Count - 1)];
                     var r = new Rect(o.X, o.Y, img.PixelWidth, img.PixelHeight);
