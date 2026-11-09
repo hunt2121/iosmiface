@@ -190,7 +190,14 @@ enum WidgetSlots {
     static func slotAddExisting(_ p: FaceProject, _ slot: XNode, _ w: XNode) {
         let key = "@" + (w.string("name") ?? "")
         slot.add("Item").set("ref", key)
-        for t in 0..<p.themes.count { p.theme(t)?.kids.removeAll { $0.tag == "Layout" && $0.string("ref") == key } }
+        let sk = "@" + (slot.string("name") ?? "")
+        for t in 0..<p.themes.count {
+            // слот стає на місце віджета — елементи лишаються там, де були
+            if let l = p.layouts(t).first(where: { $0.string("ref") == key }), let sl = p.layouts(t).first(where: { $0.string("ref") == sk }) {
+                sl.set("x", int: Int(l.int("x"))).set("y", int: Int(l.int("y")))
+            }
+            p.theme(t)?.kids.removeAll { $0.tag == "Layout" && $0.string("ref") == key }
+        }
     }
 
     static func slotRemove(_ p: FaceProject, _ slot: XNode, _ index: Int) {
