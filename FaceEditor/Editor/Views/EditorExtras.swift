@@ -40,7 +40,7 @@ struct ColorRow: View {
                 .focused($focused)
                 .onSubmit(commit)
                 .frame(width: 96).padding(.horizontal, 8).frame(height: 34)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Color(.tertiarySystemGroupedBackground)))
+                .background(RoundedRectangle(cornerRadius: 9).fill(Color.editorTile))
         }
         .onAppear { text = hex }
         .onChange(of: hex) { v in if !focused { text = v } }
@@ -115,7 +115,7 @@ struct FontRow: View {
                 }
                 .font(.subheadline)
                 .padding(.horizontal, 12).frame(height: 40)
-                .background(RoundedRectangle(cornerRadius: 10).fill(gen.font.isEmpty ? Color(.tertiarySystemGroupedBackground) : Color.accentColor.opacity(0.18)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(gen.font.isEmpty ? Color.editorTile : Color.accentColor.opacity(0.18)))
             }
             .buttonStyle(.plain)
         }
@@ -207,7 +207,7 @@ struct DigitSetSection: View {
                                 Text(verbatim: s.name).font(.caption2).lineLimit(1)
                             }
                             .frame(width: 84, height: 62)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemGroupedBackground)))
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.editorTile))
                         }
                         .buttonStyle(.plain)
                         .contextMenu {

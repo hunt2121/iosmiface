@@ -122,12 +122,18 @@ struct EditorView: View {
             HStack {
             Button { confirmDiscard = true } label: {
                 Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.primary)
                     .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(.secondarySystemGroupedBackground)))
+                    .systemGlass(in: Circle(), fallback: Color(.secondarySystemGroupedBackground))
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Закрити")
             Spacer()
+            // «Готово» відкриває меню звичайним натисканням; першим — «Зберегти і закрити»
             Menu {
+                Section {
+                    Button { dismiss() } label: { Label("Зберегти і закрити", systemImage: "checkmark") }
+                }
                 if install != nil {
                     Button { installOnBand() } label: { Label("Встановити на пристрій", systemImage: "arrow.down.to.line") }
                 }
@@ -137,12 +143,11 @@ struct EditorView: View {
                     Button { showFonts = true } label: { Label("Шрифти", systemImage: "textformat") }
                     Button { share = ShareItem(url: project.folder) } label: { Label("Поділитися текою проєкту", systemImage: "folder") }
                 }
-                Button { dismiss() } label: { Label("Готово", systemImage: "checkmark") }
             } label: {
                 Text("Готово").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
                     .padding(.horizontal, 16).frame(height: 40)
-                    .background(Capsule().fill(Color.accentColor))
-            } primaryAction: { dismiss() }
+                    .systemGlass(in: Capsule(), tint: Color.accentColor, fallback: Color.accentColor)
+            }
             }
         }
         .padding(.horizontal, 16)
@@ -175,7 +180,7 @@ struct EditorView: View {
                 Image(systemName: locked ? "lock.fill" : "lock.open").font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(locked ? Color.white : Color.accentColor)
                     .frame(width: 36, height: 36)
-                    .background(Circle().fill(locked ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                    .background(Circle().fill(locked ? Color.accentColor : Color.editorTile))
             }
             .accessibilityLabel(Text(loc(locked ? "Розблокувати переміщення елементів" : "Заблокувати переміщення елементів")))
         }
@@ -202,7 +207,7 @@ struct EditorView: View {
                     Text(verbatim: "\(z)%").font(.caption.weight(.semibold)).monospacedDigit()
                         .frame(width: 52, height: 28)
                         .foregroundStyle(on ? Color.white : Color.primary)
-                        .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                        .background(Capsule().fill(on ? Color.accentColor : Color.editorTile))
                 }
                 .buttonStyle(.plain)
             }
@@ -218,7 +223,7 @@ struct EditorView: View {
         Button(action: action) {
             Image(systemName: icon).font(.system(size: 16, weight: .semibold))
                 .frame(width: 36, height: 36)
-                .background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
+                .background(Circle().fill(Color.editorTile))
         }
         .accessibilityLabel(Text(loc(label)))
     }
@@ -270,7 +275,7 @@ struct EditorView: View {
             }
             .frame(maxWidth: .infinity).frame(height: 44)
             .foregroundStyle(prominent ? Color.accentColor : .primary)
-            .background(Capsule().fill(prominent ? Color.accentColor.opacity(0.14) : Color(.tertiarySystemGroupedBackground)))
+            .background(Capsule().fill(prominent ? Color.accentColor.opacity(0.14) : Color.editorTile))
         }
         .buttonStyle(.plain)
     }
@@ -292,7 +297,7 @@ struct EditorView: View {
                 } label: {
                     Label("Додати екран «Завжди на екрані»", systemImage: "moon")
                         .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 44)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
                 }
                 .buttonStyle(.plain)
             } else {

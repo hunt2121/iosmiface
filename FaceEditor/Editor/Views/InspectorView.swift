@@ -50,7 +50,7 @@ struct InspectorView: View {
     private func circle(_ icon: String, _ label: String, _ tint: Color, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundStyle(tint)
-                .frame(width: 36, height: 36).background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
+                .frame(width: 36, height: 36).background(Circle().fill(Color.editorTile))
         }
         .accessibilityLabel(Text(loc(label)))
     }
@@ -140,7 +140,7 @@ struct InspectorView: View {
             }
         }
         .padding(.horizontal, 14).frame(height: 44)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
     }
 
     private func setTap(_ app: String?) {
@@ -396,7 +396,7 @@ struct PositionPane: View {
                 }
                 .padding(.horizontal, 14).frame(height: 44)
             }
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color(.tertiarySystemGroupedBackground)))
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.editorTile))
         }
     }
 
@@ -411,7 +411,7 @@ struct PositionPane: View {
             }
         } label: {
             Image(systemName: icon).font(.system(size: 16)).frame(maxWidth: .infinity).frame(height: 36)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemGroupedBackground)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.editorTile))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(loc(label)))
@@ -425,7 +425,7 @@ struct PositionPane: View {
     private func key(_ icon: String, _ label: String, _ dx: Int, _ dy: Int) -> some View {
         Button { nudge(dx, dy) } label: {
             Image(systemName: icon).font(.system(size: 12, weight: .bold)).frame(width: 32, height: 26)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemGroupedBackground)))
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.editorTile))
         }
         .buttonStyle(.plain).accessibilityLabel(Text(loc(label)))
     }
@@ -460,7 +460,7 @@ struct Row: View {
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 14).frame(height: 48)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
         }
         .buttonStyle(.plain)
     }
@@ -529,7 +529,7 @@ struct GrowChips: View {
                         }
                         .foregroundStyle(fg)
                         .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                        .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color.editorTile))
                     }
                     .buttonStyle(.plain)
                 }
@@ -578,7 +578,7 @@ struct DirectionPad: View {
                             Image(systemName: "arrow.up").font(.system(size: 15, weight: .semibold)).rotationEffect(.degrees(a))
                                 .frame(width: 44, height: 44)
                                 .foregroundStyle(on ? Color.white : Color.primary)
-                                .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                                .background(RoundedRectangle(cornerRadius: 9).fill(on ? Color.accentColor : Color.editorTile))
                         }
                         .buttonStyle(.plain)
                     } else {
@@ -609,7 +609,7 @@ struct Chips: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity).frame(height: 30)
                             .foregroundStyle(item.0 == selected ? Color.white : Color.primary)
-                            .background(RoundedRectangle(cornerRadius: 9).fill(item.0 == selected ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                            .background(RoundedRectangle(cornerRadius: 9).fill(item.0 == selected ? Color.accentColor : Color.editorTile))
                     }
                     .buttonStyle(.plain)
                 }
@@ -635,7 +635,7 @@ struct NumberField: View {
                 .onChange(of: focused) { f in if !f, let v = Int(text), v != value { onCommit(v) } }
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
         .onAppear { text = "\(value)" }
         .onChange(of: value) { v in if !focused { text = "\(v)" } }
     }
@@ -651,7 +651,7 @@ struct InfoField: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
     }
 }
 

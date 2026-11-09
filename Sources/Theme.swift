@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Один зелений і один червоний для обох тем: написи, галочки, позначки, обведення й кнопки
 /// (плитки-іконки в налаштуваннях мають власні кольори).
@@ -14,6 +15,15 @@ extension View {
             self.glassEffect(.regular.tint(tint).interactive(), in: Capsule())
         } else {
             self.background(Capsule().fill((tint ?? Color.gray).opacity(0.15)))
+        }
+    }
+
+    /// Системне Liquid Glass (iOS 26) у заданій формі; на старіших — звичайна заливка `fallback`
+    @ViewBuilder func systemGlass<S: Shape>(in shape: S, tint: Color? = nil, fallback: Color) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.tint(tint).interactive(), in: shape)
+        } else {
+            self.background(shape.fill(fallback))
         }
     }
 
@@ -52,4 +62,12 @@ struct InstallProgress: View {
             .foregroundStyle(.secondary)
         }
     }
+}
+
+extension Color {
+    /// Підкладка плиток і кнопок у редакторі: у темній темі — як було (tertiarySystemGroupedBackground),
+    /// у світлій — помітно темніша за білий/скляний фон аркуша (раніше плитки майже зливалися з ним)
+    static let editorTile = Color(UIColor { t in
+        t.userInterfaceStyle == .dark ? .tertiarySystemGroupedBackground : UIColor(red: 0.894, green: 0.894, blue: 0.914, alpha: 1)
+    })
 }

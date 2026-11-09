@@ -31,7 +31,7 @@ struct ColorVariantsPanel: View {
                 } label: {
                     Label("Додати кольорові варіанти", systemImage: "paintpalette")
                         .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 44)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemGroupedBackground)))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -116,7 +116,7 @@ struct ColorVariantsPanel: View {
                         VStack(spacing: 4) {
                             Image(systemName: "plus").font(.system(size: 15, weight: .bold))
                                 .frame(width: 40, height: 40)
-                                .background(Circle().fill(Color(.tertiarySystemGroupedBackground)))
+                                .background(Circle().fill(Color.editorTile))
                             Text("Додати").font(.caption2).foregroundStyle(.secondary)
                         }
                     }

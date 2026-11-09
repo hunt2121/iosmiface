@@ -67,7 +67,7 @@ struct AddElementSheet: View {
                                 Text(loc(f.rawValue)).font(.subheadline.weight(filter == f ? .semibold : .medium))
                                     .padding(.horizontal, 14).frame(height: 32)
                                     .foregroundStyle(filter == f ? Color.white : Color.primary)
-                                    .background(Capsule().fill(filter == f ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                                    .background(Capsule().fill(filter == f ? Color.accentColor : Color.editorTile))
                             }
                             .buttonStyle(.plain)
                         }
@@ -192,11 +192,12 @@ struct AddElementSheet: View {
         VStack(spacing: 6) {
             ElementIcon(kind: t.kind).frame(height: 44)
             Text(t.title).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
+                .lineLimit(1).minimumScaleFactor(0.7) // однакова висота всіх плиток
             Text(loc(t.caption)).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12).padding(.horizontal, 6)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.tertiarySystemGroupedBackground)))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color.editorTile))
     }
 
     private func choose(_ k: ElementKind) {
@@ -368,7 +369,7 @@ struct DataSourcePicker: View {
                 Spacer()
                 Text(verbatim: Self.example(s)).font(.caption.weight(.semibold)).monospacedDigit()
                     .padding(.horizontal, 7).padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(Color(.tertiarySystemGroupedBackground)))
+                    .background(RoundedRectangle(cornerRadius: 5).fill(Color.editorTile))
                 if s == current { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(Color.accentColor) }
             }
             .contentShape(Rectangle())
@@ -383,7 +384,7 @@ struct DataSourcePicker: View {
             Text(verbatim: title).font(.subheadline.weight(on ? .semibold : .regular))
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .foregroundStyle(on ? Color.white : Color.primary)
-                .background(Capsule().fill(on ? Color.accentColor : Color(.tertiarySystemGroupedBackground)))
+                .background(Capsule().fill(on ? Color.accentColor : Color.editorTile))
         }
         .buttonStyle(.plain)
     }
@@ -432,7 +433,7 @@ struct SourceTile: View {
             .font(.system(size: 15, weight: .medium))
             .foregroundStyle(Color.accentColor)
             .frame(width: 30, height: 30)
-            .background(RoundedRectangle(cornerRadius: 7).fill(Color(.tertiarySystemGroupedBackground)))
+            .background(RoundedRectangle(cornerRadius: 7).fill(Color.editorTile))
     }
 }
 
@@ -451,7 +452,7 @@ struct SourceButton: View {
                 Spacer(minLength: 6)
                 Text(verbatim: DataSourcePicker.example(source)).font(.caption.weight(.semibold)).monospacedDigit()
                     .padding(.horizontal, 7).padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(Color(.tertiarySystemGroupedBackground)))
+                    .background(RoundedRectangle(cornerRadius: 5).fill(Color.editorTile))
                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
             }
             .contentShape(Rectangle())

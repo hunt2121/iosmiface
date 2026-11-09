@@ -14099,6 +14099,29 @@
           }
         }
       }
+    },
+    "Зберегти і закрити": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save and close"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить и закрыть"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти і закрити"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

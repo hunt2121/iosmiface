@@ -19,6 +19,8 @@ struct XmlEditorView: View {
     @State private var check: Task<Void, Never>?
     @State private var askLeave = false
     @State private var showPreview = false
+    /// клавіатура відкрита — нижню панель ховаємо, щоб тексту лишалось більше місця
+    @State private var keyboard = false
 
     private var dirty: Bool { text != base }
 
@@ -27,6 +29,14 @@ struct XmlEditorView: View {
             VStack(spacing: 0) {
                 CodeTextView(text: $text, errorLine: errorLine)
                 Divider()
+                if keyboard {
+                    // над клавіатурою — лише один рядок стану, і тільки коли є помилка
+                    if isError {
+                        Text(verbatim: status).font(.caption).foregroundStyle(Color.red)
+                            .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 14).padding(.vertical, 5)
+                    }
+                } else {
                 HStack(spacing: 10) {
                     Button { showPreview = true } label: {
                         Group {
@@ -42,7 +52,10 @@ struct XmlEditorView: View {
                         .lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 8)
+                }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
             .navigationTitle("manifest.xml")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -54,6 +67,9 @@ struct XmlEditorView: View {
                 }
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Скасувати зміни") { load() }.disabled(!dirty)
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button { showPreview = true } label: { Label("Превʼю", systemImage: "eye") }
                 }
             }
             .confirmationDialog("Застосувати зміни в XML?", isPresented: $askLeave, titleVisibility: .visible) {
@@ -134,6 +150,9 @@ struct CodeTextView: UIViewRepresentable {
         v.smartDashesType = .no
         v.spellCheckingType = .no
         v.keyboardType = .asciiCapable
+        v.smartInsertDeleteType = .no
+        if #available(iOS 17, *) { v.inlinePredictionType = .no }
+        v.keyboardDismissMode = .interactive
         v.delegate = context.coordinator
         v.text = text
         v.highlight(errorLine: errorLine)
@@ -151,6 +170,18 @@ struct CodeTextView: UIViewRepresentable {
         var parent: CodeTextView
         init(_ p: CodeTextView) { parent = p }
         func textViewDidChange(_ tv: UITextView) { parent.text = tv.text }
+
+        /// Enter — новий рядок з тим самим відступом, що й поточний (як у редакторі коду)
+        func textView(_ tv: UITextView, shouldChangeTextIn range: NSRange, replacementText t: String) -> Bool {
+            guard t == "\n" else { return true }
+            let ns = tv.text as NSString
+            let line = ns.lineRange(for: NSRange(location: range.location, length: 0))
+            let head = ns.substring(with: NSRange(location: line.location, length: max(0, range.location - line.location)))
+            let indent = String(head.prefix { $0 == " " || $0 == "\t" })
+            guard !indent.isEmpty else { return true }
+            if let r = tv.textRange(from: range) { tv.replace(r, withText: "\n" + indent) } else { return true }
+            return false
+        }
     }
 }
 
@@ -165,10 +196,12 @@ final class GutterTextView: UITextView {
         gutter.backgroundColor = .secondarySystemBackground
         gutter.contentMode = .redraw
         addSubview(gutter)
-        // довгі рядки не переносимо — як у редакторі коду
-        textContainer?.widthTracksTextView = false
-        textContainer?.size = CGSize(width: 4000, height: CGFloat.greatestFiniteMagnitude)
-        alwaysBounceHorizontal = true
+        // довгі рядки переносяться — текст гортається лише вгору-вниз, убік не «їздить»
+        textContainer?.widthTracksTextView = true
+        textContainer?.lineBreakMode = .byCharWrapping
+        alwaysBounceHorizontal = false
+        showsHorizontalScrollIndicator = false
+        isDirectionalLockEnabled = true
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -243,5 +276,14 @@ final class GutterTextView: UITextView {
                 idx = NSMaxRange(pr)
             }
         }
+    }
+}
+
+private extension UITextView {
+    /// NSRange → UITextRange
+    func textRange(from r: NSRange) -> UITextRange? {
+        guard let s = position(from: beginningOfDocument, offset: r.location),
+              let e = position(from: s, offset: r.length) else { return nil }
+        return textRange(from: s, to: e)
     }
 }

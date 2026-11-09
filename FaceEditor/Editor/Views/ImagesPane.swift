@@ -302,7 +302,7 @@ struct ElementImages: View {
                                 Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
                             }
                             .padding(.horizontal, 12).frame(height: 44)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemGroupedBackground)))
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.editorTile))
                         }
                     }
                     let others = ImageSets.usersTitle(project, arr, except: layout)
