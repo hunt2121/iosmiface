@@ -132,6 +132,8 @@ final class FaceRenderer {
             let params = res.all("Param").map { Int($0.int("value")) }
             let v = value(res)
             var idx = 0
+            // без порогів (Param) браслет бере картинку за номером: значення 3 — картинка 3
+            if params.isEmpty { idx = max(0, v) }
             for (i, t) in params.enumerated() where v >= t { idx = i }
             let img = fr[min(idx, fr.count - 1)]
             let r = CGRect(x: o.x, y: o.y, width: CGFloat(img.width), height: CGFloat(img.height))
