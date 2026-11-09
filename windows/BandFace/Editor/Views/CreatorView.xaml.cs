@@ -42,12 +42,20 @@ namespace BandFace.Creator
         void ApplyTexts()
         {
             TitleFaces.Text = S.Get("editor");
+            FontsBtn.Content = S.Get("fonts");
+            TitleFonts.Text = S.Get("fonts");
             NewBtn.Content = S.Get("newFace");
             OpenBinBtn.Content = S.Get("openBin");
             OpenFolderBtn.Content = S.Get("openFolder");
             FacesHint.Text = S.Get("facesHint");
             EmptyTitle.Text = S.Get("emptyTitle");
             EmptyText.Text = S.Get("emptyText");
+            AddFontBtn.Content = S.Get("addFont");
+            FontsBackBtn.ToolTip = S.Get("back");
+            FontsLabel.Text = S.Get("userFonts").ToUpper();
+            FontsNote.Text = S.Get("userFontsNote");
+            SysFontsLabel.Text = S.Get("sysFonts").ToUpper();
+            FontSearch.ToolTip = S.Get("searchFonts");
         }
 
         // MARK: Сторінки
@@ -57,14 +65,17 @@ namespace BandFace.Creator
             bool wasEditor = EditorShown;
             PageFaces.Visibility = page == PageFaces ? Visibility.Visible : Visibility.Collapsed;
             Editor.Visibility = page == Editor ? Visibility.Visible : Visibility.Collapsed;
+            PageFonts.Visibility = page == PageFonts ? Visibility.Visible : Visibility.Collapsed;
             if (page != Editor) Editor.StopWatching();
             // теки проєктів могли змінити ззовні — список читається заново
             if (page == PageFaces) { if (wasEditor) store.Reload(); RefreshProjects(); }
+            if (page == PageFonts) RefreshFonts();
             if (page == Editor) Editor.Focus();
             if (wasEditor != EditorShown) EditorShownChanged?.Invoke(EditorShown);
         }
 
         public void ShowList() => Show(PageFaces);
+        public void ShowFonts() => Show(PageFonts);
 
         void OpenProject(FaceProject p)
         {
@@ -91,6 +102,8 @@ namespace BandFace.Creator
             return Editor.HandleKey(e);
         }
 
+        void Fonts_Click(object sender, RoutedEventArgs e) => ShowFonts();
+        void FontsBack_Click(object sender, RoutedEventArgs e) => ShowList();
 
         // MARK: Проєкти
 
@@ -199,6 +212,61 @@ namespace BandFace.Creator
             {
                 MessageBox.Show(Owner, S.Get("openFail", Path.GetFileName(path), ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        // MARK: Шрифти
+
+        void AddFont_Click(object sender, RoutedEventArgs e)
+        {
+            Actions.AddFonts(Owner);
+            RefreshFonts();
+        }
+
+        void FontSearch_TextChanged(object sender, TextChangedEventArgs e) => FillSystemFonts();
+
+        FrameworkElement FontRow(string name, bool user)
+        {
+            var g = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var sp = new StackPanel();
+            sp.Children.Add(new TextBlock { Text = "12:45  0123456789", FontFamily = FontLibrary.Family(name), FontSize = 24 });
+            var cov = FontLibrary.Coverage(name);
+            sp.Children.Add(new TextBlock { Text = name + (cov.Length > 0 ? "  ·  " + cov : ""), FontSize = 12, Foreground = (Brush)FindResource("Sub") });
+            g.Children.Add(sp);
+            if (user)
+            {
+                var b = new Button { Content = S.Get("removeFont"), Style = (Style)FindResource("DangerBtn"), VerticalAlignment = VerticalAlignment.Center };
+                b.Click += (s, e) =>
+                {
+                    // файл може бути відкритий Windows — тоді прибирається під час наступного запуску
+                    if (!FontLibrary.Remove(name)) MessageBox.Show(Owner, S.Get("removeFontNote"), "BandFace");
+                    RefreshFonts();
+                };
+                Grid.SetColumn(b, 1);
+                g.Children.Add(b);
+            }
+            return g;
+        }
+
+        void RefreshFonts()
+        {
+            UserFonts.Children.Clear();
+            var user = FontLibrary.User.Keys.OrderBy(x => x).ToList();
+            if (user.Count == 0) UserFonts.Children.Add(new TextBlock { Text = S.Get("noUserFonts"), FontSize = 13, Foreground = (Brush)FindResource("Sub") });
+            foreach (var n in user) UserFonts.Children.Add(FontRow(n, true));
+            FillSystemFonts();
+        }
+
+        void FillSystemFonts()
+        {
+            SysFonts.Children.Clear();
+            var q = FontSearch.Text.Trim();
+            var all = Fonts.SystemFontFamilies.Select(FontLibrary.Name).Distinct()
+                .Where(n => q.Length == 0 || n.IndexOf(q, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase).ToList();
+            foreach (var n in all.Take(60)) SysFonts.Children.Add(FontRow(n, false));
+            if (all.Count > 60) SysFonts.Children.Add(new TextBlock { Text = S.Get("moreFonts", all.Count - 60), FontSize = 12, Foreground = (Brush)FindResource("Sub") });
         }
     }
 }

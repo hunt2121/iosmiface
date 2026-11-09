@@ -10,6 +10,7 @@
         <Grid Margin="0,0,0,18">
           <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold"/>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <Button x:Name="FontsBtn" Style="{StaticResource Btn}" Click="Fonts_Click"/>
             <Button x:Name="OpenFolderBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="OpenFolder_Click"/>
             <Button x:Name="OpenBinBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="OpenBin_Click"/>
             <Button x:Name="NewBtn" Style="{StaticResource PrimaryBtn}" Margin="10,0,0,0" Click="New_Click"/>
@@ -29,5 +30,31 @@
     <!-- Редактор: на всю ширину вкладки -->
     <local:EditorView x:Name="Editor" Visibility="Collapsed"/>
 
+    <!-- Шрифти -->
+    <ScrollViewer x:Name="PageFonts" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Margin="26,6,26,0">
+      <StackPanel Margin="0,0,0,24" MaxWidth="900" HorizontalAlignment="Left">
+        <Grid Margin="0,0,0,18">
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="FontsBackBtn" Style="{StaticResource IconBtn}" Content="&#xE72B;" VerticalAlignment="Center" Click="FontsBack_Click"/>
+            <TextBlock x:Name="TitleFonts" FontSize="28" FontWeight="SemiBold" Margin="14,0,0,0"/>
+          </StackPanel>
+          <Button x:Name="AddFontBtn" Style="{StaticResource PrimaryBtn}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="AddFont_Click"/>
+        </Grid>
+        <Border Style="{StaticResource CardBox}">
+          <StackPanel>
+            <TextBlock x:Name="FontsLabel" FontSize="13" Margin="0,0,0,8" Foreground="{DynamicResource Sub}"/>
+            <TextBlock x:Name="FontsNote" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Sub}" Margin="0,0,0,12"/>
+            <StackPanel x:Name="UserFonts"/>
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBox}">
+          <StackPanel>
+            <TextBlock x:Name="SysFontsLabel" FontSize="13" Margin="0,0,0,8" Foreground="{DynamicResource Sub}"/>
+            <TextBox x:Name="FontSearch" Margin="0,0,0,10" TextChanged="FontSearch_TextChanged"/>
+            <StackPanel x:Name="SysFonts"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
   </Grid>
 </UserControl>

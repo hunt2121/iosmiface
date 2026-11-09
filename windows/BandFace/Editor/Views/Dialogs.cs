@@ -215,5 +215,20 @@ namespace BandFace.Creator
             if (shown.Count > 0) msg += "\n\n" + S.Get("warnings") + "\n" + string.Join("\n", shown);
             MessageBox.Show(owner, msg, "BandFace", MessageBoxButton.OK, shown.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
         }
+
+        /// <summary>Додає файли шрифтів у бібліотеку; повертає назви нових сімейств</summary>
+        public static List<string> AddFonts(Window owner)
+        {
+            var dlg = new OpenFileDialog { Multiselect = true, Filter = S.Get("fontFilter") + "|*.ttf;*.otf;*.ttc" };
+            var added = new List<string>();
+            if (dlg.ShowDialog(owner) != true) return added;
+            foreach (var f in dlg.FileNames)
+            {
+                try { added.AddRange(FontLibrary.Add(f)); }
+                catch (Exception ex) { MessageBox.Show(owner, S.Get("fontFail", Path.GetFileName(f), ex.Message), "BandFace"); }
+            }
+            if (added.Count == 0 && dlg.FileNames.Length > 0) MessageBox.Show(owner, S.Get("fontKnown"), "BandFace");
+            return added;
+        }
     }
 }

@@ -225,12 +225,18 @@ namespace BandFace.Creator
         }
 
         /// <summary>Блок «Зображення» в інспекторі будь-якого елемента: усі його картинки мініатюрами
-        /// (клік — замінити, перетягування PNG — замінити), «Відкрити теку»</summary>
+        /// (клік — замінити, перетягування PNG — замінити), «Відкрити теку», «Намалювати шрифтом…»</summary>
         void BuildImageActions(XNode res)
         {
             var list = ImagesOf(res);
-            if (list.Count == 0) return;
+            var kind = Elements.Of(res, project);
+            // шрифтом малюються лише текстові елементи: числа, написи, значки за значенням (дні тижня, місяці, AM/PM);
+            // фон, картинки, стрілки, шкали, анімації — лише свої картинки
+            bool canFont = ElementFactory.SlotCount(project, res) > 0 &&
+                           (kind == ElementKind.Digits || kind == ElementKind.Label || kind == ElementKind.Values);
+            if (list.Count == 0 && !canFont) return;
             Add(Ui.Header(S.Get("imagesTab") + (list.Count > 1 ? " · " + list.Count : "")));
+            if (list.Count > 0)
             {
                 var wrap = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
                 foreach (var im in list)
@@ -254,11 +260,18 @@ namespace BandFace.Creator
                 Add(wrap);
                 Add(Ui.Note(S.Get("elementImagesHint")));
             }
-            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = 1, Margin = new Thickness(0, 0, 0, 10) };
+            var acts = new System.Windows.Controls.Primitives.UniformGrid { Columns = canFont && list.Count > 0 ? 2 : 1, Margin = new Thickness(0, 0, 0, 10) };
+            if (list.Count > 0)
             {
-                var open = new Button { Content = S.Get("openImagesFolder"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0) };
+                var open = new Button { Content = S.Get("openImagesFolder"), Style = (Style)FindResource("Btn"), Margin = new Thickness(0, 0, canFont ? 4 : 0, 0) };
                 open.Click += (s, e) => ShowImageInFolder(list[0].Src);
                 acts.Children.Add(open);
+            }
+            if (canFont)
+            {
+                var font = new Button { Content = S.Get("fontArtButton"), Style = (Style)FindResource(list.Count == 0 ? "PrimaryBtn" : "Btn"), Margin = new Thickness(list.Count > 0 ? 4 : 0, 0, 0, 0) };
+                font.Click += (s, e) => FontArtWindow.Show(Owner, project, res);
+                acts.Children.Add(font);
             }
             Add(acts);
         }

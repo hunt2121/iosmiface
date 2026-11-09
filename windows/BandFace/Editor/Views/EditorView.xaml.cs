@@ -604,6 +604,7 @@ namespace BandFace.Creator
                 case "arc": AddWithSource(ElementKind.Arc, c.Source); break;
                 case "line": AddWithSource(ElementKind.Line, c.Source); break;
                 case "clock": AddAndSelect(p => ElementFactory.AddAnalogClock(p, theme, cx, cy)); break;
+                case "label": AddLabel(); break;
                 case "image": AddImage(); break;
                 case "animation": AddAnimation(); break;
                 case "background": AddBackground(); break;
@@ -625,7 +626,15 @@ namespace BandFace.Creator
             {
                 case "arc": Select(Find(ElementKind.Arc)); break;
                 case "line": Select(Find(ElementKind.Line)); break;
-                case "digits": Select(Find(ElementKind.Digits)); break;
+                case "digits":
+                {
+                    var d = Find(ElementKind.Digits);
+                    var res = d != null ? project.ElementOf(d) : null;
+                    var g = project.Meta.Gen(res?.Str("name"));
+                    if (g != null) { var c = g.Copy(); c.Color = "#FFD60A"; c.Color2 = "#FF375F"; c.Outline = 2; c.OutlineColor = "#000000"; c.ShadowY = 3; project.Edit(p => ElementFactory.Regenerate(p, res.Str("name"), c)); }
+                    Select(d);
+                    break;
+                }
                 case "images": ShowImagesTab(true); break;
                 case "xml": Dispatcher.BeginInvoke(new Action(() => SetXmlMode(true)), System.Windows.Threading.DispatcherPriority.Loaded); break;
                 case "gallery": return AddGallery.Demo(Owner, 1);
@@ -650,14 +659,8 @@ namespace BandFace.Creator
             switch (k)
             {
                 case ElementKind.Digits:
-                {
-                    // 10 картинок 0–9 (за назвою файла)
-                    var imgs = PickImages(true, 400);
-                    if (imgs.Count == 0) break;
-                    if (imgs.Count != 10 && MessageBox.Show(Owner, S.Get("digitsCountAsk", imgs.Count), S.Get("kind_digits"), MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) break;
-                    AddAndSelect(p => ElementFactory.AddDigitImages(p, src, imgs, theme, cx, cy));
+                    AddAndSelect(p => ElementFactory.AddDigits(p, src, new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 48, Weight = 700, Style = "rounded" }, theme, cx, cy));
                     break;
-                }
                 case ElementKind.Pointer:
                     AddAndSelect(p => ElementFactory.AddPointer(p, src, new Generator(GenKind.Pointer) { Color = "#FFFFFF", Width = 6, Length = 80 }, theme, cx, cy));
                     break;
@@ -669,8 +672,22 @@ namespace BandFace.Creator
                     break;
                 case ElementKind.Values:
                 {
-                    var imgs = PickImages(true, 200);
-                    if (imgs.Count > 0) AddAndSelect(p => ElementFactory.AddValues(p, src, imgs, theme, cx, cy));
+                    // картинки — свої файли або намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
+                    var how = MessageBox.Show(Owner, S.Get("valuesHowAsk"), S.Get("kind_values"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    if (how == MessageBoxResult.Cancel) break;
+                    if (how == MessageBoxResult.No)
+                    {
+                        var imgs = PickImages(true, 200);
+                        if (imgs.Count > 0) AddAndSelect(p => ElementFactory.AddValues(p, src, imgs, theme, cx, cy));
+                        break;
+                    }
+                    var l = src.ToLowerInvariant();
+                    int n = l.Contains("week") ? 7 : l.Contains("month") ? 12 : l.Contains("ampm") ? 2 : 5;
+                    var blank = Enumerable.Range(0, n).Select(_ => new RgbaImage(40, 40, new byte[40 * 40 * 4])).ToList();
+                    AddAndSelect(p => ElementFactory.AddValues(p, src, blank, theme, cx, cy));
+                    var res = selected != null ? project.ElementOf(selected) : null;
+                    // одразу — вікно «Намалювати шрифтом»; скасували — порожній елемент прибираємо
+                    if (res != null && !FontArtWindow.Show(Owner, project, res)) { project.Undo(); Select(null); }
                     break;
                 }
             }
@@ -694,6 +711,13 @@ namespace BandFace.Creator
 
         /// <summary>Напис картинкою: одразу по центру, рядок і шрифт — у властивостях
         /// (текст, який малює сам браслет, не підтримується — на Smart Band 10 не перевірений)</summary>
+        void AddLabel()
+        {
+            Center(out var cx, out var cy);
+            var g = new Generator(GenKind.Label) { Color = "#FFFFFF", FontSize = 28, Weight = 600, Style = "rounded", Text = S.Get("labelDefault") };
+            AddAndSelect(p => ElementFactory.AddLabel(p, g, theme, cx, cy));
+        }
+
         void AddImage()
         {
             var dev = project.Meta.Device;

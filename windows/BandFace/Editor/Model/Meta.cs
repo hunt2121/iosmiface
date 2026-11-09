@@ -89,9 +89,7 @@ namespace BandFace.Creator
             };
         }
 
-        /// <summary>Картинки — фігури, намальовані редактором (дуга, лінія, стрілка): їх можна перемалювати з параметрів.
-        /// Цифри й написи шрифтом редактор більше не малює — вони, як і решта, лише картинки.</summary>
-        public bool Drawn => Kind == GenKind.Arc || Kind == GenKind.Line || Kind == GenKind.Pointer;
+        public bool Drawn => Kind != GenKind.Image && Kind != GenKind.Frames;
     }
 
     /// <summary>Пристрій: розмір екрана полотна. Smart Band 10 і 11 — однаковий екран 212×520.</summary>

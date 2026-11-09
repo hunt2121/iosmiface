@@ -104,7 +104,6 @@ namespace BandFace.Creator
             AddLayout(p, name, theme, cx - w / 2, cy - h / 2);
         }
 
-        /// <summary>Число з ваших картинок 0–9 (усі вирівнюються під розмір першої)</summary>
         /// <summary>Число картинками цифр. sharedArray — назва вже доданого набору цифр: тоді нові файли не створюються
         /// (години й хвилини одного шрифту беруть ті самі 10 картинок). Повертає назву набору.</summary>
         public static string AddDigitImages(FaceProject p, string source, List<RgbaImage> images, int theme, int cx, int cy, string sharedArray = null)
