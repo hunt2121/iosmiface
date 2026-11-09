@@ -185,7 +185,7 @@ namespace BandFace.Creator
         public static byte[] Build(Window owner, FaceProject p)
         {
             if (!ConfirmUntested(owner, p)) return null;
-            try { owner.Cursor = Cursors.Wait; return p.Compile().Item1; }
+            try { owner.Cursor = Cursors.Wait; WidgetSlots.RefreshPreviews(p); return p.Compile().Item1; }
             catch (Exception ex)
             {
                 MessageBox.Show(owner, S.Get("buildFail", ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -198,7 +198,7 @@ namespace BandFace.Creator
         {
             if (!ConfirmUntested(owner, p)) return;
             Tuple<byte[], List<string>> r;
-            try { owner.Cursor = Cursors.Wait; r = p.Compile(); }
+            try { owner.Cursor = Cursors.Wait; WidgetSlots.RefreshPreviews(p); r = p.Compile(); }
             catch (Exception ex)
             {
                 MessageBox.Show(owner, S.Get("buildFail", ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error);

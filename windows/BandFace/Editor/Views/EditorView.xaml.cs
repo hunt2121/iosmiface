@@ -222,6 +222,8 @@ namespace BandFace.Creator
                 var src = res?.Str("source");
                 var sub = src != null ? SampleData.Title(src)
                         : kind == ElementKind.Label ? "«" + project.Meta.Gen(res?.Str("name"))?.Text + "»" : res?.Str("name") ?? "";
+                if (kind == ElementKind.Widget && WidgetSlots.IsUserWidget(project, res)) sub = res.Str("widgetName") ?? sub;
+                if (kind == ElementKind.Slot) sub = string.Join(", ", WidgetSlots.Widgets(project, res).Select(x => x.Str("widgetName") ?? "?"));
                 var app = ElementFactory.TapApp(project, l);
                 if (app != null) sub += "  ↗ " + S.App(app);
                 sp.Children.Add(new TextBlock { Text = sub, FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextTrimming = TextTrimming.CharacterEllipsis });
@@ -634,6 +636,8 @@ namespace BandFace.Creator
                 case "image": AddImage(); break;
                 case "animation": AddAnimation(); break;
                 case "background": AddBackground(); break;
+                case "widget": AddAndSelect(p => WidgetSlots.AddWidget(p, theme, cx, cy, S.Get("widgetDefault"))); break;
+                case "slot": AddAndSelect(p => WidgetSlots.AddSlot(p, theme, cx, cy, S.Get("widgetDefault"))); break;
             }
         }
 

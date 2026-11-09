@@ -39,6 +39,8 @@ namespace BandFace.Creator
             new Item { Kind = "image", Group = "decor" },
             new Item { Kind = "animation", Group = "decor" },
             new Item { Kind = "background", Group = "decor" },
+            new Item { Kind = "widget", Group = "decor" },
+            new Item { Kind = "slot", Group = "decor" },
         };
 
         /// <summary>Дані, які найчастіше потрібні цьому елементу — зверху списку</summary>
@@ -296,6 +298,27 @@ namespace BandFace.Creator
                     play.SetResourceReference(Shape.FillProperty, "Accent");
                     c.Children.Add(play);
                     break;
+                case "widget":
+                {
+                    c.Children.Add(S1(new Rectangle { Width = 32, Height = 22, RadiusX = 5, RadiusY = 5, Margin = new Thickness(4, 9, 0, 0) }));
+                    var d1 = new Ellipse { Width = 8, Height = 8, Margin = new Thickness(10, 16, 0, 0) };
+                    d1.SetResourceReference(Shape.FillProperty, "Accent");
+                    c.Children.Add(d1);
+                    var d2 = new Rectangle { Width = 12, Height = 4, RadiusX = 2, RadiusY = 2, Margin = new Thickness(21, 18, 0, 0) };
+                    d2.SetResourceReference(Shape.FillProperty, "Accent");
+                    c.Children.Add(d2);
+                    break;
+                }
+                case "slot":
+                {
+                    var r = S1(new Rectangle { Width = 32, Height = 22, RadiusX = 5, RadiusY = 5, Margin = new Thickness(4, 9, 0, 0) });
+                    ((Shape)r).StrokeDashArray = new DoubleCollection { 2, 2 };
+                    c.Children.Add(r);
+                    var pl = new Path { Data = Geometry.Parse("M 20,15 L 20,25 M 15,20 L 25,20"), StrokeThickness = 2 };
+                    pl.SetResourceReference(Shape.StrokeProperty, "Accent");
+                    c.Children.Add(pl);
+                    break;
+                }
                 case "background":
                     c.Children.Add(S1(new Rectangle { Width = 18, Height = 34, RadiusX = 9, RadiusY = 9, Margin = new Thickness(11, 3, 0, 0) }));
                     var bg = new Rectangle { Width = 12, Height = 28, RadiusX = 6, RadiusY = 6, Margin = new Thickness(14, 6, 0, 0), Opacity = 0.45 };
@@ -427,6 +450,30 @@ namespace BandFace.Creator
                 case "image": ElementFactory.AddImage(p, SampleArt(120, 90, "#5E8BFF", "#B05EFF"), 0, cx, cy); break;
                 case "animation": ElementFactory.AddAnimation(p, new List<RgbaImage> { SampleArt(90, 90, "#FF9500", "#FF375F") }, 100, 0, cx, cy); break;
                 case "background": ElementFactory.AddBackground(p, SampleArt(p.Meta.Device.Width, p.Meta.Device.Height, "#1E3C72", "#2A5298"), 0); break;
+                case "widget":
+                case "slot":
+                {
+                    // приклад: значок і число пульсу одним блоком
+                    var dot = ElementFactory.AddImageResource(p, SampleArt(30, 30, "#FF375F", "#FF375F"), "icon");
+                    ElementFactory.AddDigits(p, "healthHeartRate", new Generator(GenKind.Digits) { Color = "#FFFFFF", FontSize = 34, Weight = 700, Style = "rounded" }, 0, cx, cy);
+                    var num = p.Layouts(0).Last();
+                    if (kind == "widget")
+                    {
+                        WidgetSlots.AddWidget(p, 0, cx, cy, "Пульс");
+                        var w = p.ResourceRef(p.Layouts(0).Last().Str("ref"));
+                        w.Add("Item").Set("ref", "@" + dot).Set("x", 0).Set("y", 0);
+                        WidgetSlots.AddToWidget(p, w, new Point(0, 0), num, 0);
+                    }
+                    else
+                    {
+                        WidgetSlots.AddSlot(p, 0, cx, cy, "Пульс");
+                        var slot = p.ResourceRef(p.Layouts(0).Last().Str("ref"));
+                        var w = WidgetSlots.Widgets(p, slot)[0];
+                        w.Add("Item").Set("ref", "@" + dot).Set("x", 0).Set("y", 0);
+                        WidgetSlots.AddToWidget(p, w, new Point(0, 0), num, 0);
+                    }
+                    break;
+                }
             }
             return p;
         }

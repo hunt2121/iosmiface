@@ -277,6 +277,20 @@ namespace BandFace.Creator
             head.Children.Add(acts);
             Add(head);
             if (res == null) { Add(Ui.Note(S.Get("missingRes"))); BuildPosition(layout); return; }
+            if (kind != ElementKind.Slot) slotWidget = null;
+            // віджет і слот — власні налаштування (макет погоджено 9 листопада)
+            if (kind == ElementKind.Widget && WidgetSlots.IsUserWidget(project, res))
+            {
+                WidgetSection(res, new Point(layout.Int("x"), layout.Int("y")), layout);
+                BuildPosition(layout);
+                return;
+            }
+            if (kind == ElementKind.Slot)
+            {
+                SlotSection(res, layout);
+                BuildPosition(layout);
+                return;
+            }
 
             if (res.Has("source"))
             {

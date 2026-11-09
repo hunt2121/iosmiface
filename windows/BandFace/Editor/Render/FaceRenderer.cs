@@ -165,9 +165,11 @@ namespace BandFace.Creator
                 case "Widget":
                 {
                     Rect? u = null;
-                    foreach (var it in res.All("Item"))
+                    var items = res.All("Item");
+                    var offs = WidgetOffsets(res, depth);
+                    for (int i = 0; i < items.Count; i++)
                     {
-                        var r = Draw(Pick(it.Str("ref")), new Point(o.X + it.Int("x"), o.Y + it.Int("y")), dc, depth + 1);
+                        var r = Draw(Pick(items[i].Str("ref")), new Point(o.X + offs[i].X, o.Y + offs[i].Y), dc, depth + 1);
                         if (r.HasValue) u = Union(u, r.Value);
                     }
                     if (res.Has("w") && res.Has("h")) u = new Rect(o.X, o.Y, Math.Max(0, res.Int("w")), Math.Max(0, res.Int("h")));
@@ -175,11 +177,41 @@ namespace BandFace.Creator
                 }
                 case "Slot":
                 {
-                    var it = res.All("Item").FirstOrDefault();
-                    return it == null ? (Rect?)null : Draw(Pick(it.Str("ref")), o, dc, depth + 1);
+                    // у редакторі показуємо вибраний віджет слота (типово — перший)
+                    var items = res.All("Item");
+                    if (items.Count == 0) return null;
+                    var it = items[Math.Min(Math.Max(0, WidgetSlots.Shown(p, res)), items.Count - 1)];
+                    return Draw(Pick(it.Str("ref")), o, dc, depth + 1);
                 }
                 default: return null;
             }
+        }
+
+        /// <summary>Зсуви елементів віджета від його лівого верхнього кута. Без flex_direction — x/y елементів;
+        /// з flex_direction (row/column) — один за одним з проміжком gap, вирівнювання justify_content / align_items.</summary>
+        public List<Point> WidgetOffsets(XNode w, int depth = 0)
+        {
+            var items = w.All("Item");
+            var dir = w.Str("flex_direction");
+            if (dir != "row" && dir != "column") return items.Select(i => new Point(i.Int("x"), i.Int("y"))).ToList();
+            bool row = dir == "row";
+            int gap = w.Int("gap");
+            var rects = items.Select(i => Draw(Pick(i.Str("ref")), new Point(0, 0), null, depth + 1) ?? new Rect(0, 0, 0, 0)).ToList();
+            double main = rects.Sum(r => row ? r.Width : r.Height) + gap * Math.Max(0, rects.Count - 1);
+            double cross = rects.Count == 0 ? 0 : rects.Max(r => row ? r.Height : r.Width);
+            double W = w.Has("w") ? w.Int("w") : (row ? main : cross), H = w.Has("h") ? w.Int("h") : (row ? cross : main);
+            double box = row ? W : H, boxCross = row ? H : W;
+            string jc = w.Str("justify_content") ?? "flex-start", ai = w.Str("align_items") ?? "flex-start";
+            double pos = jc == "center" ? (box - main) / 2 : jc == "flex-end" ? box - main : 0;
+            var outp = new List<Point>();
+            foreach (var r in rects)
+            {
+                double len = row ? r.Width : r.Height, th = row ? r.Height : r.Width;
+                double c = ai == "center" ? (boxCross - th) / 2 : ai == "flex-end" ? boxCross - th : 0;
+                outp.Add(row ? new Point(pos - r.X, c - r.Y) : new Point(c - r.X, pos - r.Y));
+                pos += len + gap;
+            }
+            return outp;
         }
 
         /// <summary>Кадр анімації: interval мс на кадр; repeatCount 0 — без кінця, інакше після повторів лишається останній</summary>
