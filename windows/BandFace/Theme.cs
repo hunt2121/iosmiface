@@ -40,7 +40,7 @@ namespace BandFace
             r["Text"] = B(dark ? "#F2F2F2" : "#1B1B1B");
             r["Sub"] = B(dark ? "#A8A8A8" : "#5D5D5D");
             r["Accent"] = B(dark ? "#7AA2F0" : "#2D5DA8");
-            r["AccentText"] = B(dark ? "#0B1B3A" : "#FFFFFF");
+            r["AccentText"] = B(dark ? "#F2F2F2" : "#FFFFFF"); // світлий текст на синьому і в темній темі
             r["BtnBg"] = B(dark ? "#383838" : "#FDFDFD");
             r["BtnHover"] = B(dark ? "#444444" : "#F0F0F0");
             r["BtnBorder"] = B(dark ? "#4A4A4A" : "#D1D1D1");
