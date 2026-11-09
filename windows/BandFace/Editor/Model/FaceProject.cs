@@ -102,6 +102,7 @@ namespace BandFace.Creator
             if (undo.Count > 60) undo.RemoveAt(0);
             redo.Clear();
             change(this);
+            AodDim.KeepOnTop(this);
             Meta.Modified = DateTime.UtcNow;
             Meta.Edited = true;
             Revision++;

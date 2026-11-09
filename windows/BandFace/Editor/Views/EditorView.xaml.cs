@@ -182,6 +182,7 @@ namespace BandFace.Creator
             for (int i = ls.Count - 1; i >= 0; i--)
             {
                 var l = ls[i];
+                if (AodDim.Is(project, l, theme)) continue;
                 var res = project.ElementOf(l);
                 var kind = Elements.Of(res, project);
                 var row = new Grid();
@@ -396,6 +397,7 @@ namespace BandFace.Creator
             }
             for (int i = boxes.Count - 1; i >= 0; i--)
             {
+                if (AodDim.Is(project, boxes[i].Layout, theme)) continue; // приглушення AOD — у властивостях циферблата
                 var r = boxes[i].Rect; r.Inflate(4, 4);
                 if (r.Contains(pt)) return boxes[i].Layout;
             }
@@ -648,8 +650,8 @@ namespace BandFace.Creator
         void AddAndSelect(Action<FaceProject> add)
         {
             project.Edit(add);
-            var ls = project.Layouts(theme);
-            if (ls.Count > 0) Select(ls[ls.Count - 1]);
+            var top = project.Layouts(theme).LastOrDefault(l => !AodDim.Is(project, l, theme));
+            if (top != null) Select(top);
         }
 
         void AddWithSource(ElementKind k, string src)

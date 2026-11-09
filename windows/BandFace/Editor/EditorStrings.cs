@@ -139,6 +139,8 @@ namespace BandFace.Creator
             ["background"] = new[] { "Фон", "Background", "Фон" },
             ["bgColor"] = new[] { "Колір фону", "Background colour", "Цвет фона" },
             ["bgImage"] = new[] { "Фонове зображення", "Background image", "Фоновое изображение" },
+            ["aodDim"] = new[] { "Приглушення AOD", "AOD dimming", "Приглушение AOD" },
+            ["aodDimHint"] = new[] { "Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення.", "A black semi-transparent layer over the whole always-on screen: images stay shared with the main screen but look dimmer in AOD. 0 means off.", "Чёрный полупрозрачный слой поверх всего экрана «Всегда на экране»: картинки общие с основным экраном, а в AOD выглядят тусклее. 0 — без приглушения." },
             ["screens"] = new[] { "Екрани", "Screens", "Экраны" },
             ["aodHint"] = new[] { "«Завжди на екрані» — вигляд, коли пристрій спить. Для початку туди копіюються цифри часу.", "Always on display is what the device shows while asleep. To start, the time digits are copied there.", "«Всегда на экране» — вид, когда устройство спит. Для начала туда копируются цифры времени." },
             ["addAod"] = new[] { "Додати «Завжди на екрані»", "Add Always on display", "Добавить «Всегда на экране»" },

@@ -140,6 +140,13 @@ namespace BandFace.Creator
             {
                 Add(Ui.Note(theme == 0 ? S.Get("nowMain") : S.Get("nowAod")));
                 Add(Ui.Button(theme == 0 ? S.Get("goAod") : S.Get("goMain"), () => ShowTheme(theme == 0 ? 1 : 0)));
+                // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
+                Add(Ui.Slider(S.Get("aodDim") + ", %", AodDim.Percent(project), 0, 90, 1, v =>
+                {
+                    int pc = (int)Math.Round(v);
+                    if (pc != AodDim.Percent(project)) project.Edit(p => AodDim.Set(p, pc));
+                }));
+                Add(Ui.Note(S.Get("aodDimHint")));
                 Add(Ui.Button(S.Get("deleteAod"), () =>
                 {
                     if (MessageBox.Show(Owner, S.Get("deleteAodAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
