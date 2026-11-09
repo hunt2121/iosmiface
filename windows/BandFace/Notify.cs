@@ -105,7 +105,7 @@ namespace BandFace
                     lock (_notes) { if (_notes.Count == 0) break; n = _notes.Dequeue(); }
                     var kind = WinNotifications.Kind(n.App);
                     var appName = kind == "wa" ? "WhatsApp" : kind == "tg" ? "Telegram" : (string.IsNullOrEmpty(n.App) ? "Windows" : n.App);
-                    await session.SendAsync(Command.Notification(NextNoteId(), n.Package ?? WinNotifications.PackageFor(kind, n.App), appName, Cut(BandText.Clean(n.Title), 64), Cut(BandText.Clean(n.Body), 400), DateTime.Now));
+                    await session.SendAsync(Command.Notification(NextNoteId(), n.Package ?? WinNotifications.PackageFor(kind, n.App), appName, Cut(BandText.Clean(n.Title), 64), Cut(BandText.Clean(n.Body), 400), n.Time));
                     AddLog("notification sent: " + appName);
                     await Task.Delay(250);
                 }

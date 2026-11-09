@@ -14,7 +14,8 @@ namespace BandFace
 {
     static class WinNotifications
     {
-        public sealed class Note { public string App, Title, Body, Package; public uint Id; }
+        public sealed class Note { public string App, Title, Body, Package; public uint Id; /// <summary>Коли сповіщення з'явилось у Windows (місцевий час)</summary>
+            public DateTime Time = DateTime.Now; }
 
         /// <summary>Нове сповіщення (на потоці інтерфейсу)</summary>
         public static event Action<Note> Arrived;
@@ -93,7 +94,9 @@ namespace BandFace
                 var b = n.Notification?.Visual?.GetBinding(KnownNotificationBindings.ToastGeneric);
                 var texts = b?.GetTextElements()?.Select(t => t.Text).Where(t => !string.IsNullOrWhiteSpace(t)).ToList() ?? new List<string>();
                 if (texts.Count == 0) return null;
-                return new Note { App = app, Title = texts[0], Body = string.Join("\n", texts.Skip(1)), Id = n.Id };
+                DateTime when = DateTime.Now;
+                try { when = n.CreationTime.LocalDateTime; } catch (Exception) { }
+                return new Note { App = app, Title = texts[0], Body = string.Join("\n", texts.Skip(1)), Id = n.Id, Time = when };
             }
             catch (Exception) { return null; }
         }
