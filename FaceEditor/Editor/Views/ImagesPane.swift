@@ -219,15 +219,22 @@ struct Thumb: View {
 }
 
 /// Блок «Зображення» в інспекторі будь-якого елемента: усі його картинки мініатюрами (дотик — замінити або поділитися),
+/// «Намалювати шрифтом…» — лише для текстових елементів (числа, написи, значки за значенням)
 struct ElementImages: View {
     @ObservedObject var project: FaceProject
     let res: XNode
     @State private var target: ImageRef?
     @State private var fromFiles = false
+    @State private var fontArt = false
+
+    private var canFont: Bool {
+        let k = ElementKind.of(res, in: project)
+        return ElementFactory.slotCount(project, res) > 0 && (k == .digits || k == .label || k == .values)
+    }
 
     var body: some View {
         let list = ProjectImages.of(project, res)
-        if !list.isEmpty {
+        if !list.isEmpty || canFont {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: loc("ЗОБРАЖЕННЯ") + (list.count > 1 ? " · \(list.count)" : "")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 if !list.isEmpty {
@@ -247,8 +254,16 @@ struct ElementImages: View {
                     Text("Торкніться картинки, щоб замінити її. Усі картинки — у «Файлах»: На iPhone → BandFace → FaceProjects.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if canFont {
+                    Button { fontArt = true } label: {
+                        Label("Намалювати шрифтом…", systemImage: "textformat").font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
             .modifier(ImageReplacer(project: project, target: $target, fromFiles: $fromFiles))
+            .sheet(isPresented: $fontArt) { FontArtSheet(project: project, res: res) }
         }
     }
 }
@@ -276,6 +291,9 @@ enum GalleryPreview {
         let c = (p.meta.device.width / 2, p.meta.device.height / 2)
         switch kind {
         case .digits: ElementFactory.addDigits(p, source: "timeHour", gen: Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded"), theme: 0, center: c)
+        case .label:
+            var g = Generator(kind: .label, color: "#FFFFFF", fontSize: 28, weight: 600, style: "rounded"); g.text = loc("Напис")
+            ElementFactory.addLabel(p, gen: g, theme: 0, center: c)
         case .values: ElementFactory.addValues(p, source: "systemStatusBattery", images: ["#FF453A", "#FFD60A", "#30D158"].map { art(56, 56, $0, $0) }, theme: 0, center: c)
         case .pointer:
             if clock { ElementFactory.addAnalogClock(p, theme: 0, center: c) }
@@ -291,11 +309,12 @@ enum GalleryPreview {
 
     static func about(_ kind: ElementKind, clock: Bool) -> String {
         switch kind {
-        case .digits: return loc("Після вибору даних виберіть 10 картинок цифр 0–9 у потрібному порядку. Кожну потім можна замінити в блоці «Зображення».")
+        case .digits: return loc("Кожна цифра — окрема картинка, намальована вибраним шрифтом. Після додавання можна змінити шрифт, розмір і колір.")
         case .values: return loc("Показує одну з ваших картинок залежно від значення: заряду, погоди, дня тижня.")
         case .pointer: return clock ? loc("Три стрілки й крапка в центрі одним натисканням.") : loc("Стрілка повертається за значенням.")
         case .arc: return loc("Дуга заповнюється за значенням. Кінці можна тягнути на полотні.")
         case .line: return loc("Смуга заповнюється за значенням. Можна повернути під будь-яким кутом.")
+        case .label: return loc("Рядок малюється в картинку, тож працює будь-який шрифт, і ваш теж.")
         case .image: return loc("PNG або фото. Потім його можна замінити в «Шари → Зображення».")
         case .animation: return loc("Кілька картинок стають кадрами.")
         default: return ""

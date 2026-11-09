@@ -63,6 +63,8 @@ enum AssetFactory {
             }
         }()
         var f: UIFont
+        // шрифт користувача з бібліотеки (.ttf / .otf / .ttc)
+        if !g.font.isEmpty, let uf = FontLibrary.font(g.font, size: size) { return uf }
         switch g.style {
         case "condensed": f = UIFont.systemFont(ofSize: size, weight: weight, width: .condensed)
         case "mono": f = UIFont.monospacedSystemFont(ofSize: size, weight: weight)

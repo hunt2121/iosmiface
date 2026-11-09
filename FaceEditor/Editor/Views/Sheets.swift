@@ -26,8 +26,9 @@ struct AddElementSheet: View {
     @State private var valuesSource: String?
     @State private var showValuePhotos = false
     @State private var valuePhotos: [PhotosPickerItem] = []
-    /// Фото обирають для числа (10 картинок 0–9), а не для значків
-    @State private var photosForDigits = false
+    /// Картинки значків: свої фото чи намальовані шрифтом (дні тижня, місяці, AM/PM, числа)
+    @State private var askValuesHow = false
+    @State private var fontArtFor: XNode?
 
     private struct Tile: Identifiable {
         let kind: ElementKind; let caption: String; let filter: Filter; let enabled: Bool
@@ -36,6 +37,7 @@ struct AddElementSheet: View {
         var id: String { preset ?? kind.rawValue }
     }
     private let tiles: [Tile] = [
+        Tile(kind: .label, caption: "рядок картинкою", filter: .decor, enabled: true),
         Tile(kind: .digits, caption: "картинки цифр", filter: .data, enabled: true),
         Tile(kind: .values, caption: "картинка за значенням", filter: .data, enabled: true),
         Tile(kind: .pointer, caption: "три стрілки", filter: .gauges, enabled: true, preset: "clock"),
@@ -97,7 +99,15 @@ struct AddElementSheet: View {
         .photosPicker(isPresented: $showPhoto, selection: $photo, matching: .images)
         .photosPicker(isPresented: $showFrames, selection: $photos, maxSelectionCount: 60, matching: .images)
         .photosPicker(isPresented: $showValuePhotos, selection: $valuePhotos, maxSelectionCount: 30, matching: .images)
-
+        .confirmationDialog("Як створити картинки?", isPresented: $askValuesHow, titleVisibility: .visible) {
+            Button("Намалювати шрифтом (дні тижня, місяці, числа)") { addValuesByFont() }
+            Button("Вибрати фото") { showValuePhotos = true }
+            Button("Скасувати", role: .cancel) {}
+        }
+        .sheet(item: Binding(get: { fontArtFor.map { NodeBox(node: $0) } }, set: { fontArtFor = $0?.node })) { box in
+            FontArtSheet(project: project, res: box.node, onCancel: { project.undo() })
+                .onDisappear { finish() }
+        }
         .onChange(of: valuePhotos) { items in
             guard !items.isEmpty, let src = valuesSource else { return }
             Task { @MainActor in
@@ -109,8 +119,7 @@ struct AddElementSheet: View {
                 }
                 if !imgs.isEmpty {
                     let c = center
-                    if photosForDigits { project.edit { ElementFactory.addDigitImages($0, source: src, images: imgs, theme: theme, center: c) } }
-                    else { project.edit { ElementFactory.addValues($0, source: src, images: imgs, theme: theme, center: c) } }
+                    project.edit { ElementFactory.addValues($0, source: src, images: imgs, theme: theme, center: c) }
                     finish()
                 }
             }
@@ -159,8 +168,17 @@ struct AddElementSheet: View {
         switch k {
         case .image: showPhoto = true
         case .animation: showFrames = true
+        case .label: addLabel()
         default: pendingKind = k; showSource = true
         }
+    }
+
+    /// Напис одразу по центру; рядок, шрифт і колір — у властивостях
+    private func addLabel() {
+        let c = center
+        let g = Generator(kind: .label, color: "#FFFFFF", fontSize: 28, weight: 600, style: "rounded", text: loc("Напис"))
+        project.edit { ElementFactory.addLabel($0, gen: g, theme: theme, center: c) }
+        finish()
     }
 
     private func addClock() {
@@ -170,16 +188,17 @@ struct AddElementSheet: View {
     }
 
     private func add(_ k: ElementKind, source: String) {
-        if k == .values || k == .digits {
-            // далі — свої картинки: для значень або 10 цифр 0–9
+        if k == .values {
+            // далі — картинки для значень
             valuesSource = source
-            photosForDigits = k == .digits
-            showValuePhotos = true
+            askValuesHow = true
             return
         }
         let c = center
         project.edit { p in
             switch k {
+            case .digits:
+                ElementFactory.addDigits(p, source: source, gen: Generator(kind: .digits, color: "#FFFFFF", fontSize: 48, weight: 700, style: "rounded"), theme: theme, center: c)
             case .pointer:
                 ElementFactory.addPointer(p, source: source, gen: Generator(kind: .pointer, color: "#FFFFFF", width: 6, length: 80), theme: theme, center: c)
             case .arc:
@@ -190,6 +209,17 @@ struct AddElementSheet: View {
             }
         }
         finish()
+    }
+
+    /// Елемент значків з порожніми картинками → одразу «Намалювати шрифтом»; скасували — прибираємо
+    private func addValuesByFont() {
+        guard let src = valuesSource else { return }
+        let l = src.lowercased()
+        let n = l.contains("week") ? 7 : l.contains("month") ? 12 : l.contains("ampm") ? 2 : 5
+        let blank = (0..<n).map { _ in RGBAImage(w: 40, h: 40, px: [UInt8](repeating: 0, count: 40 * 40 * 4)) }
+        let c = center
+        project.edit { ElementFactory.addValues($0, source: src, images: blank, theme: theme, center: c) }
+        fontArtFor = project.layouts(theme).last.flatMap { project.element(of: $0) }
     }
 
     private func finish() {

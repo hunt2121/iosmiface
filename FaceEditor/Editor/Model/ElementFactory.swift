@@ -94,7 +94,7 @@ enum ElementFactory {
 
     static func addDigits(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
         let frames = AssetFactory.digitFrames(gen)
-        let arr = sharedArray ?? addFrames(p, frames, base: "digits")
+        let arr = addFrames(p, frames, base: "digits")
         let name = p.uniqueName(source)
         let e = XNode("DataItemImageNumber")
         e.set("name", name).set("source", source).set("ref", "@" + arr).set("totalDigits", int: 2).set("decimalDigits", int: 0)
@@ -106,13 +106,12 @@ enum ElementFactory {
         addLayout(p, ref: name, theme: theme, x: center.0 - w / 2, y: center.1 - h / 2)
     }
 
-    /// Число з ваших картинок 0–9 (усі вписуються в розмір першої)
     /// Число картинками цифр. sharedArray — назва вже доданого набору цифр: тоді нові файли не створюються
     /// (години й хвилини одного шрифту беруть ті самі 10 картинок). Повертає назву набору.
     @discardableResult
     static func addDigitImages(_ p: FaceProject, source: String, images: [RGBAImage], theme: Int, center: (Int, Int), sharedArray: String? = nil) -> String? {
         guard let f0 = images.first else { return nil }
-        let frames = images.map { img -> RGBAImage in
+        let frames: [RGBAImage] = sharedArray != nil ? [] : images.map { img -> RGBAImage in
             guard img.w != f0.w || img.h != f0.h, let cg = img.cgImage else { return img }
             return AssetFactory.render(f0.w, f0.h) { _ in
                 let u = UIImage(cgImage: cg)
@@ -121,7 +120,7 @@ enum ElementFactory {
                 u.draw(in: CGRect(x: (CGFloat(f0.w) - sz.width) / 2, y: (CGFloat(f0.h) - sz.height) / 2, width: sz.width, height: sz.height))
             }
         }
-        let arr = addFrames(p, frames, base: "digits")
+        let arr = sharedArray ?? addFrames(p, frames, base: "digits")
         let name = p.uniqueName(source)
         let e = XNode("DataItemImageNumber")
         e.set("name", name).set("source", source).set("ref", "@" + arr).set("totalDigits", int: 2).set("decimalDigits", int: 0)

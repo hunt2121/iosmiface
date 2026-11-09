@@ -90,8 +90,7 @@ struct InspectorView: View {
             }
             switch kind {
             case .digits: digitsLook(r)
-            case .label:
-                Text("Напис — це картинка. Замініть її в блоці «Зображення» нижче.").font(.footnote).foregroundStyle(.secondary)
+            case .label: labelLook()
             case .text:
                 Text("Текст, який малює сам браслет, редактор не підтримує: на Smart Band 10 він не перевірений і може зламати прошивку. Видаліть його й додайте «Напис» — рядок картинкою.")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -150,14 +149,34 @@ struct InspectorView: View {
     }
 
     @ViewBuilder private func digitsLook(_ r: XNode) -> some View {
-        Text("Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.").font(.caption).foregroundStyle(.secondary)
+        if let g = gen {
+            // шрифт, розмір і ефекти — в «Намалювати шрифтом» (блок «Зображення»); тут — швидкий колір
+            Text(String(format: loc("Шрифт: %@, %d px. Змінити — «Намалювати шрифтом…» нижче."), g.font.isEmpty ? loc(styleTitle(g.style)) : g.font, Int(g.fontSize)))
+                .font(.caption).foregroundStyle(.secondary)
+            ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+        } else {
+            Text("Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.").font(.caption).foregroundStyle(.secondary)
+        }
         // «Число росте»: діє лише коли кількість цифр змінюється (без нулів попереду)
         let fixedWidth = r.bool("leadingZero") && r.int("totalDigits") > 0
         GrowChips(selected: r.string("align") ?? "left", enabled: !fixedWidth, digits: Int(r.int("totalDigits"))) { v in setNumberAlign(r, v) }
+        if gen != nil { UnitField(unit: gen?.unit ?? "") { u in regen { $0.unit = u } } }
         StepperRow(title: "Кількість цифр", value: Int(r.int("totalDigits")), range: 0...9) { v in edit { $0.set("totalDigits", int: v) } }
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
             .font(.subheadline)
+    }
+
+    private func styleTitle(_ s: String) -> String {
+        switch s { case "default": return "Прямий"; case "condensed": return "Вузький"; case "mono": return "Моно"; default: return "Округлий" }
+    }
+
+    /// Напис: рядок, шрифт, розмір, товщина (колір — на вкладці «Колір»)
+    @ViewBuilder private func labelLook() -> some View {
+        if let g = gen {
+            LabelField(text: g.text) { t in regen { $0.text = t } }
+            ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+        }
     }
 
     @ViewBuilder private func gaugeLook(_ r: XNode) -> some View {
@@ -295,7 +314,7 @@ struct InspectorView: View {
 
     @ViewBuilder private var colors: some View {
         if let r = res { variantRow(r) }
-        if let g = gen, g.drawn {
+        if let g = gen, g.kind != .image, g.kind != .frames {
             ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
             if g.kind == .arc || g.kind == .line {
                 ColorRow(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
