@@ -31,13 +31,14 @@ namespace BandFace.Creator
             }
             if (s.StartsWith("date"))
             {
-                // своя дата: день тижня рахується з неї (0 — понеділок)
-                int day = 30, month = 5, year = 2026, week = 4;
-                if (liveDate) { day = now.Day; month = now.Month; year = now.Year; week = ((int)now.DayOfWeek + 6) % 7; }
+                // своя дата: день тижня рахується з неї. Браслет рахує з неділі: 0 — неділя, 6 — субота
+                // (в офіційних циферблатах картинки днів тижня йдуть SUN, MON … SAT)
+                int day = 30, month = 5, year = 2026, week = 6;
+                if (liveDate) { day = now.Day; month = now.Month; year = now.Year; week = (int)now.DayOfWeek; }
                 else if (demo != null && demo.TryDate(out var dd, out var dm, out var dy))
                 {
                     day = dd; month = dm; year = dy;
-                    try { week = ((int)new DateTime(dy, dm, dd).DayOfWeek + 6) % 7; } catch (ArgumentException) { }
+                    try { week = (int)new DateTime(dy, dm, dd).DayOfWeek; } catch (ArgumentException) { }
                 }
                 if (s.Contains("Week")) return week;
                 if (s.Contains("Year")) return year % (s.Contains("Low") ? 100 : 10000);
