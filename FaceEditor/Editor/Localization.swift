@@ -15,8 +15,32 @@ func loc(_ key: String) -> String {
 /// Дія «Встановити на пристрій»: її дає BandFace (передає зібраний .bin і назву).
 /// В окремому застосунку редактора її немає — пункт меню не показується.
 struct FaceInstallAction {
+    /// стан встановлення з редактора — для прогресу під карткою циферблата, як у магазині
+    let status: EditorInstallStatus
     let run: (Data, String) -> Void
     func callAsFunction(_ data: Data, _ name: String) { run(data, name) }
+}
+
+/// Що зараз встановлюється з редактора і що вже встановлено (поки циферблат не змінювали)
+final class EditorInstallStatus: ObservableObject {
+    /// id проєкту, який встановлюється
+    @Published private(set) var current: String?
+    @Published var progress: Double = 0
+    @Published var text = ""
+    /// id проєкту → дата зміни на момент встановлення
+    @Published private(set) var installed: [String: Date] = [:]
+    private var pending: Date?
+
+    func begin(_ id: String, modified: Date) {
+        current = id; pending = modified; progress = 0
+        text = String(localized: "Старт…")
+    }
+    func succeeded() {
+        if let id = current, let m = pending { installed[id] = m }
+        current = nil; pending = nil
+    }
+    func failed() { current = nil; pending = nil }
+    func isInstalled(_ id: String, modified: Date) -> Bool { installed[id] == modified }
 }
 
 private struct FaceInstallActionKey: EnvironmentKey {

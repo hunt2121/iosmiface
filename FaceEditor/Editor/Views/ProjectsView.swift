@@ -172,17 +172,8 @@ struct ProjectsView: View {
                 }
                 .padding(.horizontal, 2)
 
-                if install != nil {
-                    Button { installProject(p) } label: {
-                        Text("Встановити")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 36)
-                            .foregroundStyle(.white)
-                            .background(Capsule().fill(Color.accentColor))
-                            .capsuleGlass(tint: Color.accentColor)
-                    }
-                    .buttonStyle(.plain)
+                if let install {
+                    ProjectInstallButton(project: p, status: install.status) { installProject(p) }
                 }
             }
             .padding(10)
@@ -215,9 +206,11 @@ struct ProjectsView: View {
     private func installProject(_ p: FaceProject, force: Bool = false) {
         guard let install else { return }
         if !force && !Band10.untested(p.root).isEmpty { askUntested = p; return }
+        guard install.status.current == nil else { return }
         do {
             let (data, _) = try p.compile()
             FacePreviews.alias(data, from: p)
+            install.status.begin(p.id, modified: p.meta.modified)
             install(data, p.displayName)
         } catch {
             alert = String(localized: "Не вдалося зібрати: \(error.localizedDescription)")
@@ -271,6 +264,44 @@ struct NewFaceSheet: View {
                     Button("Створити") { onCreate(name) }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
+        }
+    }
+}
+
+/// Кнопка під карткою, як у магазині: «Встановити» → смужка з етапом і відсотками → «Встановлено»
+/// («Встановлено» — доки циферблат не змінювали)
+struct ProjectInstallButton: View {
+    @ObservedObject var project: FaceProject
+    @ObservedObject var status: EditorInstallStatus
+    let action: () -> Void
+
+    var body: some View {
+        if status.current == project.id {
+            InstallProgress(progress: status.progress, text: status.text, large: false)
+                .padding(.horizontal, 6)
+                .frame(height: 36)
+        } else if status.isInstalled(project.id, modified: project.meta.modified) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark")
+                Text("Встановлено")
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .background(Capsule().fill(Color(.systemGroupedBackground)))
+        } else {
+            Button(action: action) {
+                Text("Встановити")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .foregroundStyle(.white)
+                    .background(Capsule().fill(Color.accentColor))
+                    .capsuleGlass(tint: Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .disabled(status.current != nil)
         }
     }
 }

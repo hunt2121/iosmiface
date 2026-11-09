@@ -372,34 +372,6 @@ struct StoreView: View, Equatable {
     }
 }
 
-/// Смужка прогресу встановлення з етапом і відсотками. `large` — як на головній і на сторінці
-/// циферблата (смужка 12 pt, footnote); інакше компактна для картки магазину (8 pt, caption2)
-struct InstallProgress: View {
-    let progress: Double
-    let text: String
-    var large = true
-
-    var body: some View {
-        VStack(spacing: 4) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.gray.opacity(0.3))
-                    Capsule().fill(Color.accentColor)
-                        .frame(width: max(large ? 12 : 8, geo.size.width * progress))
-                }
-            }
-            .frame(height: large ? 12 : 8)
-            HStack {
-                Text(text).lineLimit(1)
-                Spacer()
-                Text(verbatim: "\(Int(progress * 100))%")
-            }
-            .font(large ? .footnote : .caption2)
-            .foregroundStyle(.secondary)
-        }
-    }
-}
-
 /// Кнопка внизу картки: «Встановити», прогрес, «Встановлено», «Оновити».
 struct FaceActionButton: View {
     let state: StoreAction

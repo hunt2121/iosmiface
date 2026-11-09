@@ -327,6 +327,9 @@ struct EditorView: View {
             let (data, _) = try project.compile()
             FacePreviews.alias(data, from: project)
             let name = project.displayName
+            guard install.status.current == nil else { return }
+            // редактор закривається — прогрес видно під карткою циферблата на вкладці «Редактор»
+            install.status.begin(project.id, modified: project.meta.modified)
             dismiss()
             install(data, name)
         } catch {

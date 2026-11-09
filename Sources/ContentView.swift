@@ -22,6 +22,8 @@ struct ContentView: View {
     // Магазин
     @State private var storeFaces: [StoreFace] = StoreCatalog.cached
     @State private var installingID: String?
+    /// Встановлення з вкладки «Редактор» — прогрес під карткою циферблата
+    @StateObject private var editorInstall = EditorInstallStatus()
     @State private var syncing = false
     @State private var lastSync = Date.distantPast
     /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
@@ -120,7 +122,7 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         // Редактор збирає .bin і передає сюди: встановлення йде звичним шляхом вкладки «Циферблати»
-        .environment(\.faceInstall, FaceInstallAction { data, name in installFromEditor(data, name: name) })
+        .environment(\.faceInstall, FaceInstallAction(status: editorInstall) { data, name in installFromEditor(data, name: name) })
         .preferredColorScheme(appTheme == "light" ? .light : (appTheme == "dark" ? .dark : nil))
         .onChange(of: tab) { newTab in
             if newTab == .store { Task { await syncDeviceFaces() } }
@@ -787,7 +789,7 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func install(_ face: FaceFile, store: StoreFace? = nil) {
+    private func install(_ face: FaceFile, store: StoreFace? = nil, fromEditor: Bool = false) {
         guard let key = Hex.decode(authKey), key.count == 16 else {
             show(BandError.invalidAuthKey.localizedDescription, error: true)
             return
@@ -806,7 +808,9 @@ struct ContentView: View {
                     guard throttle.shouldUpdate(value: value, text: text) else { return }
                     progress = value
                     progressText = text
+                    if fromEditor { editorInstall.progress = value; editorInstall.text = text }
                 }
+                if fromEditor { editorInstall.succeeded() }
                 ble.addLog(String(localized: "Готово: \(text)"))
                 show(text, error: false)
                 if let store {
@@ -817,7 +821,8 @@ struct ContentView: View {
             } catch {
                 ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
                 show(error.localizedDescription, error: true)
-                if store != nil { storeAlert = error.localizedDescription }
+                if store != nil || fromEditor { storeAlert = error.localizedDescription }
+                if fromEditor { editorInstall.failed() }
             }
             busy = false
             installingID = nil
@@ -902,37 +907,36 @@ struct ContentView: View {
 
     /// Циферблат із редактора: стає вибраним файлом на вкладці «Циферблати» і одразу встановлюється,
     /// якщо пристрій готовий; інакше — підказка, що зробити
+    /// Циферблат з вкладки «Редактор»: встановлюється одразу, прогрес — під його карткою (як у магазині), без переходу на іншу вкладку
     private func installFromEditor(_ data: Data, name: String) {
         guard let parsed = try? FaceFile(data: data) else {
             storeAlert = String(localized: "Не вдалося підготувати циферблат до встановлення")
+            editorInstall.failed()
             return
         }
         guard !busy else {
             storeAlert = String(localized: "Зачекайте, поки завершиться встановлення")
+            editorInstall.failed()
             return
         }
-        face = parsed
-        fileName = name + ".bin"
-        filePreview = parsed.previewImage()
-        fileAnimation = nil
-        message = nil
-        renderFilePreview(parsed)
-        tab = .faces
-        Task { @MainActor in
-            // редактор закривається — алерт показуємо вже на вкладці
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            guard keyValid else {
-                storeAlert = String(localized: "Спершу додайте ключ пристрою")
-                storeAlertOpensKey = true
-                return
-            }
-            guard ble.connectedID != nil && ble.servicesReady else {
-                storeAlert = String(localized: "Циферблат готовий. Підключіть пристрій і натисніть «Встановити»")
-                return
-            }
-            while syncing { try? await Task.sleep(nanoseconds: 100_000_000) }
-            install(parsed)
+        if syncing {
+            storeAlert = String(localized: "Йде перевірка циферблатів на пристрої. Спробуйте за кілька секунд")
+            editorInstall.failed()
+            return
         }
+        guard keyValid else {
+            storeAlert = String(localized: "Спершу додайте ключ пристрою")
+            storeAlertOpensKey = true
+            editorInstall.failed()
+            return
+        }
+        guard ble.connectedID != nil && ble.servicesReady else {
+            storeAlert = String(localized: "Спершу підключіть пристрій на вкладці «Циферблати»")
+            storeAlertGoTo = .faces
+            editorInstall.failed()
+            return
+        }
+        install(parsed, fromEditor: true)
     }
 }
 
