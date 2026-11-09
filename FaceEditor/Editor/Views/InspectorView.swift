@@ -637,13 +637,20 @@ struct NumberField: View {
                 .font(.system(size: 17, weight: .semibold)).monospacedDigit()
                 .keyboardType(.numbersAndPunctuation)
                 .focused($focused)
-                .onSubmit { if let v = Int(text) { onCommit(v) } }
-                .onChange(of: focused) { f in if !f, let v = Int(text), v != value { onCommit(v) } }
+                .onSubmit { commit() }
+                .onChange(of: focused) { f in if !f { commit() } }
+                .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button(loc("Готово")) { focused = false } } }
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
         .onAppear { text = "\(value)" }
         .onChange(of: value) { v in if !focused { text = "\(v)" } }
+    }
+
+    /// Запис — після того, як фокус уже перейшов (інакше перемальовування панелі збиває клавіатуру)
+    private func commit() {
+        guard let v = Int(text.trimmingCharacters(in: .whitespaces)), v != value else { text = "\(value)"; return }
+        DispatchQueue.main.async { onCommit(v) }
     }
 }
 

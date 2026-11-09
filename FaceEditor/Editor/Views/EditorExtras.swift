@@ -32,7 +32,7 @@ struct ColorRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel(Text(loc("Палітра")))
             .compactPopover(isPresented: $palette) {
-                PaletteGrid(current: hex) { h in palette = false; if h != hex { onCommit(h) } }
+                PaletteGrid(current: hex) { h, close in if close { palette = false }; if h != hex { onCommit(h) } }
             }
             TextField("#RRGGBB", text: $text)
                 .font(.system(.subheadline, design: .monospaced))
@@ -55,30 +55,46 @@ struct ColorRow: View {
         guard t.count == 6, t.allSatisfy({ $0.isHexDigit }) else { text = hex; return }
         let h = "#" + t
         text = h
-        if h != hex { onCommit(h) }
+        if h != hex { DispatchQueue.main.async { onCommit(h) } }
     }
 }
 
 struct PaletteGrid: View {
     let current: String
-    var pick: (String) -> Void
+    /// close: готовий колір з палітри закриває поповер; системний вибір (повзунки, поле HEX) лишається відкритим
+    var pick: (String, Bool) -> Void
     @State private var custom: Color = .white
+    @State private var started = false
+    @State private var pending: Task<Void, Never>?
 
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.fixed(36), spacing: 10), count: 5), spacing: 10) {
             ForEach(ColorRow.suggested, id: \.self) { h in
-                Button { pick(h) } label: {
+                Button { pick(h, true) } label: {
                     Circle().fill(Color(AssetFactory.color(h))).frame(width: 36, height: 36)
                         .overlay(Circle().stroke(h == current ? Color.accentColor : Color.primary.opacity(0.2), lineWidth: h == current ? 3 : 1))
                 }
                 .buttonStyle(.plain)
             }
-            // системний вибір кольору — останній кружечок
-            ColorPicker("", selection: Binding(get: { Color(AssetFactory.color(current)) }, set: { c in custom = c }), supportsOpacity: false)
+            // системний вибір кольору — останній кружечок. Власний стан не підміняємо значенням з проєкту:
+            // інакше від кожного руху повзунка чи символу в полі HEX вибір кольору скидається, а клавіатура закривається
+            ColorPicker("", selection: $custom, supportsOpacity: false)
                 .labelsHidden().frame(width: 36, height: 36)
-                .onChange(of: custom) { c in pick(DebouncedColor.hex(UIColor(c))) }
+                .onChange(of: custom) { c in
+                    guard started else { return }
+                    let h = DebouncedColor.hex(UIColor(c))
+                    pending?.cancel()
+                    pending = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 300_000_000)
+                        if !Task.isCancelled { pick(h, false) }
+                    }
+                }
         }
         .padding(14)
+        .onAppear {
+            custom = Color(AssetFactory.color(current))
+            DispatchQueue.main.async { started = true }
+        }
     }
 }
 

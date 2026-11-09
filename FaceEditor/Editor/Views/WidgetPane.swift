@@ -129,7 +129,7 @@ struct WidgetPane: View {
 
             Text("Розташування").font(.subheadline)
             Picker("", selection: Binding(get: { arr }, set: { v in
-                project.edit { WidgetSlots.setLayout($0, w, arrange: v, align: WidgetSlots.align(w), gap: v == "free" ? 0 : max(WidgetSlots.gap(w), 4)) }
+                project.edit { WidgetSlots.setLayout($0, w, arrange: v, align: WidgetSlots.align(w), gap: v == "free" ? 0 : max(WidgetSlots.gap(w), 4), layout: ownLayout) }
             })) {
                 Text("В ряд").tag("row"); Text("Стовпчиком").tag("column"); Text("Вільно").tag("free")
             }
@@ -137,14 +137,14 @@ struct WidgetPane: View {
             if arr != "free" {
                 Text("Вирівнювання").font(.subheadline)
                 Picker("", selection: Binding(get: { WidgetSlots.align(w) }, set: { v in
-                    project.edit { WidgetSlots.setLayout($0, w, arrange: arr, align: v, gap: WidgetSlots.gap(w)) }
+                    project.edit { WidgetSlots.setLayout($0, w, arrange: arr, align: v, gap: WidgetSlots.gap(w), layout: ownLayout) }
                 })) {
                     Text("Ліворуч").tag("start"); Text("По центру").tag("center"); Text("Праворуч").tag("end")
                 }
                 .pickerStyle(.segmented)
                 CommitSlider(title: "Проміжок, px", value: Double(WidgetSlots.gap(w)), range: 0...40, step: 1) { v in
                     let g = Int(v.rounded())
-                    if g != WidgetSlots.gap(w) { project.edit { WidgetSlots.setLayout($0, w, arrange: arr, align: WidgetSlots.align(w), gap: g) } }
+                    if g != WidgetSlots.gap(w) { project.edit { WidgetSlots.setLayout($0, w, arrange: arr, align: WidgetSlots.align(w), gap: g, layout: ownLayout) } }
                 }
             }
 
@@ -157,7 +157,7 @@ struct WidgetPane: View {
                 CardRow(project: project, res: child, title: itemTitle(project, child), sub: itemSub(project, child)) {
                     if i > 0 { Button { project.edit { _ in WidgetSlots.moveItem(w, i, -1) } } label: { Label(loc("Вище"), systemImage: "arrow.up") } }
                     if i < items.count - 1 { Button { project.edit { _ in WidgetSlots.moveItem(w, i, 1) } } label: { Label(loc("Нижче"), systemImage: "arrow.down") } }
-                    Button { let o = origin, t = theme; project.edit { WidgetSlots.takeOut($0, w, index: i, origin: o, theme: t) } } label: {
+                    Button { let o = origin, t = theme; project.edit { WidgetSlots.takeOut($0, w, index: i, origin: o, theme: t, own: ownLayout) } } label: {
                         Label(loc("Вийняти з віджета"), systemImage: "arrow.up.right.square")
                     }
                 }
@@ -173,7 +173,7 @@ struct WidgetPane: View {
                         let r = project.element(of: l)
                         Button(itemTitle(project, r) + " — " + itemSub(project, r)) {
                             let o = origin, t = theme
-                            project.edit { WidgetSlots.addToWidget($0, w, origin: o, layout: l, theme: t) }
+                            project.edit { WidgetSlots.addToWidget($0, w, origin: o, layout: l, theme: t, own: ownLayout) }
                         }
                     }
                 } label: {

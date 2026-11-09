@@ -138,6 +138,17 @@ enum ColorVariants {
 
     // MARK: Елемент
 
+    /// Елементи всередині віджета (і всіх його вкладених віджетів) або слота (усі його віджети); для решти — порожньо
+    static func members(_ p: FaceProject, _ res: XNode, depth: Int = 0) -> [XNode] {
+        guard depth < 6, res.tag == "Widget" || res.tag == "Slot" else { return [] }
+        var out: [XNode] = []
+        for it in res.all("Item") {
+            guard let c = p.resource(ref: it.string("ref")) else { continue }
+            if c.tag == "Widget" || c.tag == "Slot" { out += members(p, c, depth: depth + 1) } else { out.append(c) }
+        }
+        return out
+    }
+
     /// Ресурс елемента (на який посилається шар) → картинки, що міняють колір.
     /// Для дуги й лінії — лише заповнення, фон шкали лишається.
     static func targets(_ p: FaceProject, element res: XNode) -> [XNode] {
@@ -155,7 +166,10 @@ enum ColorVariants {
         case "DataItemText":
             return .unavailable(loc("Текст малює сам браслет своїм шрифтом — кольорових варіантів для нього немає."))
         case "Widget", "Slot":
-            return .unavailable(loc("Віджети показують дані застосунків — кольорових варіантів для них немає."))
+            let ms = members(p, res)
+            if ms.isEmpty { return .unavailable(loc("У віджеті немає елементів.")) }
+            if let ok = ms.map({ availability(p, element: $0) }).first(where: { $0.isAvailable }) { return ok }
+            return .unavailable(loc("Елементи віджета не можна перефарбувати — вони без картинок або багатоколірні."))
         default: break
         }
         let ts = targets(p, element: res)
@@ -169,11 +183,17 @@ enum ColorVariants {
 
     /// Чи змінюється елемент разом із кольором циферблата
     static func isOn(_ p: FaceProject, element res: XNode) -> Bool {
-        targets(p, element: res).contains { !variants(p, of: $0).isEmpty }
+        if res.tag == "Widget" || res.tag == "Slot" { return members(p, res).contains { isOn(p, element: $0) } }
+        return targets(p, element: res).contains { !variants(p, of: $0).isEmpty }
     }
 
     /// Увімкнути або вимкнути варіанти для елемента
     static func set(_ p: FaceProject, element res: XNode, on: Bool) {
+        if res.tag == "Widget" || res.tag == "Slot" {
+            if on { p.meta.colorFollow.insert(res.string("name") ?? "") } else { p.meta.colorFollow.remove(res.string("name") ?? "") }
+            for m in members(p, res) where !on || availability(p, element: m).isAvailable { set(p, element: m, on: on) }
+            return
+        }
         let n = res.string("name") ?? ""
         if on { p.meta.colorFollow.insert(n) } else { p.meta.colorFollow.remove(n) }
         for t in targets(p, element: res) {

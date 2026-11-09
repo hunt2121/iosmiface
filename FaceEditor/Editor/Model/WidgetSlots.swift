@@ -36,7 +36,7 @@ enum WidgetSlots {
 
     private static func flex(_ a: String) -> String { a == "center" ? "center" : a == "end" ? "flex-end" : "flex-start" }
 
-    static func setLayout(_ p: FaceProject, _ w: XNode, arrange a: String, align al: String, gap g: Int) {
+    static func setLayout(_ p: FaceProject, _ w: XNode, arrange a: String, align al: String, gap g: Int, layout: XNode? = nil) {
         if a == "free" {
             // вільно: кожен елемент лишається там, де стояв
             let offs = FaceRenderer(p).widgetOffsets(w)
@@ -49,17 +49,37 @@ enum WidgetSlots {
             w.set("align_content", "center").set("gap", int: max(0, g))
             for it in w.all("Item") { it.set("x", int: 0).set("y", int: 0) }
         }
-        fit(p, w)
+        fit(p, w, layout: layout)
     }
 
     /// Розмір віджета: щонайменше вміст; у слоті — не менший за той, що був
-    static func fit(_ p: FaceProject, _ w: XNode) {
+    static func fit(_ p: FaceProject, _ w: XNode, layout: XNode? = nil) {
+        if arrange(w) == "free", !w.all("Item").isEmpty { wrapFree(p, w, layout: layout); return }
         let inSlot = !slotsOf(p, w).isEmpty
         let oldW = Int(w.int("w")), oldH = Int(w.int("h"))
         w.remove("w"); w.remove("h")
         let box = FaceRenderer(p).measure(w) ?? CGRect(x: 0, y: 0, width: 40, height: 30)
         let cw = max(8, Int(box.maxX.rounded(.up))), ch = max(8, Int(box.maxY.rounded(.up)))
         w.set("w", int: max(cw, inSlot ? oldW : 0)).set("h", int: max(ch, inSlot ? oldH : 0))
+    }
+
+    /// Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
+    /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.
+    static func wrapFree(_ p: FaceProject, _ w: XNode, layout: XNode?) {
+        let r = FaceRenderer(p)
+        var box = CGRect.null
+        for it in w.all("Item") {
+            guard let c = p.resource(ref: it.string("ref")), let m = r.measure(c) else { continue }
+            box = box.union(m.offsetBy(dx: CGFloat(it.int("x")), dy: CGFloat(it.int("y"))))
+        }
+        guard !box.isNull else { return }
+        let inSlot = layout == nil && !slotsOf(p, w).isEmpty
+        var dx = Int(box.minX.rounded(.down)), dy = Int(box.minY.rounded(.down))
+        if layout == nil { dx = min(0, dx); dy = min(0, dy) }
+        for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) }
+        if let l = layout { l.set("x", int: Int(l.int("x")) + dx).set("y", int: Int(l.int("y")) + dy) }
+        let cw = max(8, Int(box.maxX.rounded(.up)) - dx), ch = max(8, Int(box.maxY.rounded(.up)) - dy)
+        w.set("w", int: max(cw, inSlot ? Int(w.int("w")) : 0)).set("h", int: max(ch, inSlot ? Int(w.int("h")) : 0))
     }
 
     @discardableResult
@@ -76,25 +96,29 @@ enum WidgetSlots {
         ElementFactory.addLayout(p, ref: w.string("name") ?? "", theme: theme, x: center.0 - 40, y: center.1 - 15)
     }
 
-    /// Шар екрана переходить у віджет (на тому ж місці, якщо розташування «вільно»)
-    static func addToWidget(_ p: FaceProject, _ w: XNode, origin: CGPoint, layout: XNode, theme: Int) {
+    /// Шар екрана переходить у віджет. Перший шар порожнього віджета робить розташування «вільно»:
+    /// елемент лишається на місці, а область віджета стає точно навколо нього.
+    static func addToWidget(_ p: FaceProject, _ w: XNode, origin: CGPoint, layout: XNode, theme: Int, own: XNode? = nil) {
         guard let th = p.theme(theme), let r = layout.string("ref") else { return }
+        if w.all("Item").isEmpty && own != nil {
+            for k in ["flex_direction", "justify_content", "align_content", "align_items", "gap"] { w.remove(k) }
+        }
         let it = w.add("Item").set("ref", r)
         if arrange(w) == "free" { it.set("x", int: Int(CGFloat(layout.int("x")) - origin.x)).set("y", int: Int(CGFloat(layout.int("y")) - origin.y)) }
         else { it.set("x", int: 0).set("y", int: 0) }
         th.kids.removeAll { $0 === layout }
-        fit(p, w)
+        fit(p, w, layout: own)
     }
 
     /// Елемент віджета знову стає окремим шаром — на тому самому місці
-    static func takeOut(_ p: FaceProject, _ w: XNode, index: Int, origin: CGPoint, theme: Int) {
+    static func takeOut(_ p: FaceProject, _ w: XNode, index: Int, origin: CGPoint, theme: Int, own: XNode? = nil) {
         let items = w.all("Item")
         guard index >= 0, index < items.count else { return }
         let offs = FaceRenderer(p).widgetOffsets(w)
         let r = items[index].string("ref")
         w.kids.removeAll { $0 === items[index] }
         if let r { ElementFactory.addLayout(p, ref: String(r.dropFirst()), theme: theme, x: Int((origin.x + offs[index].x).rounded()), y: Int((origin.y + offs[index].y).rounded())) }
-        fit(p, w)
+        fit(p, w, layout: own)
     }
 
     /// Розгрупувати: усі елементи — окремими шарами на своїх місцях, віджет прибирається
