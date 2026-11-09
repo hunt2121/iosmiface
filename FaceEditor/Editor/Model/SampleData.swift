@@ -24,13 +24,13 @@ enum SampleData {
         }
         if s.hasPrefix("date") {
             // своя дата: день тижня рахується з неї
-            var day = 30, month = 5, year = 2026, week = 4
+            var day = 30, month = 5, year = 2026, week = 6 // браслет рахує з неділі: 0 — неділя, 6 — субота
             if liveDate {
                 day = cal.component(.day, from: now); month = cal.component(.month, from: now); year = cal.component(.year, from: now)
-                week = (cal.component(.weekday, from: now) + 5) % 7
+                week = cal.component(.weekday, from: now) - 1
             } else if let t = demo?.dmy {
                 day = t.0; month = t.1; year = t.2
-                if let dt = cal.date(from: DateComponents(year: t.2, month: t.1, day: t.0)) { week = (cal.component(.weekday, from: dt) + 5) % 7 }
+                if let dt = cal.date(from: DateComponents(year: t.2, month: t.1, day: t.0)) { week = cal.component(.weekday, from: dt) - 1 }
             }
             if s.contains("Week") { return week }
             if s.contains("Year") { return year % (s.contains("Low") ? 100 : 10000) }
