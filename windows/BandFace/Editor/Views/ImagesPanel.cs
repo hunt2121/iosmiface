@@ -36,6 +36,9 @@ namespace BandFace.Creator
                 foreach (var c in n.Elements) Walk(owner, c);
             }
             foreach (var r in project.Resources.Elements) Walk(r, r);
+            var dim = AodDim.Find(project);
+            var dimSrc = dim == null ? null : project.ElementOf(dim)?.Str("src");
+            if (dimSrc != null) { var k = MemoryStorage.Normalize(dimSrc); o.RemoveAll(i => MemoryStorage.Normalize(i.Src) == k); }
             return o;
         }
 
