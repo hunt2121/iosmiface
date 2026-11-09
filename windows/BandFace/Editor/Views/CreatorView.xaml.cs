@@ -26,6 +26,9 @@ namespace BandFace.Creator
         public event Action<bool> EditorShownChanged;
         /// <summary>«Встановити на браслет» у редакторі: .bin і назва.</summary>
         public event Action<byte[], string> InstallRequested;
+        public event Action CancelInstallRequested;
+        /// <summary>Прогрес встановлення з редактора — у віконце під кнопкою</summary>
+        public void ShowInstall(InstallUpdate u) => Editor.ShowInstall(u);
 
         public bool EditorShown => Editor.Visibility == Visibility.Visible;
         Window Owner => Window.GetWindow(this);
@@ -36,6 +39,7 @@ namespace BandFace.Creator
             ApplyTexts();
             Editor.BackRequested += ShowList;
             Editor.InstallRequested += (bin, name) => InstallRequested?.Invoke(bin, name);
+            Editor.CancelInstallRequested += () => CancelInstallRequested?.Invoke();
             RefreshProjects();
         }
 

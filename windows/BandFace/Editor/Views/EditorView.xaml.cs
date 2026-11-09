@@ -36,6 +36,30 @@ namespace BandFace.Creator
         public event Action BackRequested;
         /// <summary>«Встановити на браслет»: зібраний .bin і назва; встановлює BandFace звичним шляхом.</summary>
         public event Action<byte[], string> InstallRequested;
+        public event Action CancelInstallRequested;
+        InstallPopup installPopup;
+        bool installing;
+
+        /// <summary>Прогрес встановлення: віконце під кнопкою і відсоток на самій кнопці</summary>
+        public void ShowInstall(InstallUpdate u)
+        {
+            if (installPopup == null) MakeInstallPopup();
+            bool wasOpen = installPopup.IsOpen;
+            installing = u.State == InstallUpdate.Kind.Connecting || u.State == InstallUpdate.Kind.Uploading;
+            InstallBtn.Content = !installing ? S.Get("installBand")
+                : u.State == InstallUpdate.Kind.Uploading ? S.Get("instBtn", (int)Math.Floor(u.Fraction * 100)) : S.Get("instBtnConnect");
+            // проміжні оновлення не відкривають віконце, якщо його закрили — передача йде далі
+            installPopup.Show(u, wasOpen || u.State == InstallUpdate.Kind.Done || u.State == InstallUpdate.Kind.Failed);
+        }
+
+        void MakeInstallPopup()
+        {
+            installPopup = new InstallPopup(InstallBtn)
+            {
+                Cancel = () => CancelInstallRequested?.Invoke(),
+                Retry = () => Install_Click(InstallBtn, null),
+            };
+        }
         public FaceProject Project => project;
 
         public EditorView()
@@ -819,6 +843,8 @@ namespace BandFace.Creator
         void Install_Click(object sender, RoutedEventArgs e)
         {
             if (project == null) return;
+            // під час встановлення кнопка лише знову показує віконце з прогресом
+            if (installing) { installPopup?.Open(); return; }
             var bin = Actions.Build(Owner, project);
             if (bin != null) InstallRequested?.Invoke(bin, project.DisplayName);
         }

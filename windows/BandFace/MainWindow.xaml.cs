@@ -62,6 +62,7 @@ namespace BandFace
 
             EditorTab.EditorShownChanged += shown => UpdateSidebar();
             EditorTab.InstallRequested += (bin, name) => InstallFromEditor(bin, name);
+            EditorTab.CancelInstallRequested += CancelInstall;
             PreviewKeyDown += (s, e) => { if (NavEditor.IsChecked == true && EditorTab.HandleKey(e)) e.Handled = true; };
             DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
             Drop += Window_Drop;
@@ -632,41 +633,71 @@ namespace BandFace
         async void Install_Click(object sender, RoutedEventArgs e) => await InstallAsync();
 
         /// <summary>Циферблат з редактора — звичним шляхом вкладки «Циферблати» (як в iOS).</summary>
+        /// <summary>Циферблат з редактора: встановлюється, не виходячи з редактора; прогрес — у віконці під кнопкою.</summary>
         async void InstallFromEditor(byte[] bin, string name)
         {
             if (_busy) return;
-            NavFaces.IsChecked = true;
+            if (!EditorTab.EditorShown)
+            {
+                // з меню картки у списку — звичним шляхом вкладки «Циферблати»
+                NavFaces.IsChecked = true;
+                if (!LoadFace(bin, name + ".bin")) return;
+                await InstallAsync();
+                return;
+            }
             if (!LoadFace(bin, name + ".bin")) return;
-            await InstallAsync();
+            await InstallAsync(u => EditorTab.ShowInstall(u), name);
         }
 
-        async Task InstallAsync()
+        /// <summary>Скасування встановлення з редактора: закриваємо сесію — передача обривається</summary>
+        bool _cancelInstall;
+        public void CancelInstall()
+        {
+            if (!_busy) return;
+            _cancelInstall = true;
+            try { _session?.Dispose(); } catch (Exception) { }
+        }
+
+        async Task InstallAsync(Action<Creator.InstallUpdate> report = null, string name = null)
         {
             if (_busy || _face == null) return;
             var key = Bytes.ParseHex(KeyBox.Text);
-            if (key == null || key.Length != 16) { SetStatus(S.Get("keyInvalid"), true); return; }
-            if (!_ble.IsConnected) { SetStatus(S.Get("errConnect"), true); return; }
-            _busy = true; RefreshButtons();
+            var started = DateTime.Now;
+            long bytes = _face.Data?.Length ?? 0;
+            double frac = 0;
+            Action<Creator.InstallUpdate.Kind, string, string> send = (k, text, err) => report?.Invoke(new Creator.InstallUpdate
+                { State = k, Text = text, Error = err, Fraction = frac, Bytes = bytes, Seconds = (DateTime.Now - started).TotalSeconds, Name = name });
+            if (key == null || key.Length != 16) { SetStatus(S.Get("keyInvalid"), true); send(Creator.InstallUpdate.Kind.Failed, null, S.Get("keyInvalid")); return; }
+            if (!_ble.IsConnected) { SetStatus(S.Get("errConnect"), true); send(Creator.InstallUpdate.Kind.Failed, null, S.Get("errConnect")); return; }
+            _busy = true; _cancelInstall = false; RefreshButtons();
             SetStatus("", false);
             ProgressPanel.Visibility = Visibility.Visible;
-            Bar.Value = 0; ProgressPercent.Text = ""; ProgressText.Text = S.Get("phConnect");
+            // етапи й тексти — точно як в iOS
+            Action<string> stage = t => { ProgressText.Text = t; send(Creator.InstallUpdate.Kind.Connecting, t, null); };
+            Bar.Value = 0; ProgressPercent.Text = ""; stage(S.Get("phStart"));
             try
             {
                 bool already;
-                try { already = await InstallOnceAsync(key); }
+                try { already = await InstallOnceAsync(key, stage, (f, t) => { frac = f; send(Creator.InstallUpdate.Kind.Uploading, t, null); }); }
                 catch (BandException ex) when (ex.Kind == ErrorKind.SessionOpenFailed)
                 {
                     // як в iOS: пристрій не відповідає — перепідключаємося й пробуємо ще раз
                     AddLog("install: no answer, reconnecting");
-                    ProgressText.Text = S.Get("reconnecting");
-                    ulong address; string name;
-                    if (!SavedBand(out address, out name)) throw;
+                    stage(S.Get("reconnecting"));
+                    ulong address; string bandName;
+                    if (!SavedBand(out address, out bandName)) throw;
                     await _ble.ConnectAsync(address, true);
-                    already = await InstallOnceAsync(key);
+                    already = await InstallOnceAsync(key, stage, (f, t) => { frac = f; send(Creator.InstallUpdate.Kind.Uploading, t, null); });
                 }
                 SetStatus(S.Get(already ? "doneOld" : "doneNew"), false, true);
+                frac = 1;
+                send(Creator.InstallUpdate.Kind.Done, S.Get(already ? "doneOld" : "doneNew"), null);
             }
-            catch (Exception ex) { SetStatus(Describe(ex), true); AddLog("install: " + ex.Message); }
+            catch (Exception ex)
+            {
+                if (_cancelInstall) { SetStatus("", false); AddLog("install: cancelled"); send(Creator.InstallUpdate.Kind.Cancelled, null, null); }
+                else { SetStatus(Describe(ex), true); AddLog("install: " + ex.Message); send(Creator.InstallUpdate.Kind.Failed, null, Describe(ex)); }
+            }
             finally
             {
                 ProgressPanel.Visibility = Visibility.Collapsed;
@@ -674,7 +705,7 @@ namespace BandFace
             }
         }
 
-        async Task<bool> InstallOnceAsync(byte[] key)
+        async Task<bool> InstallOnceAsync(byte[] key, Action<string> stage, Action<double, string> upload)
         {
             await _bandGate.WaitAsync();
             _session = new BandSession(_ble, NewConfig());
@@ -689,16 +720,22 @@ namespace BandFace
                     if (p.AlreadyInstalled) already = true;
                     switch (p.Phase)
                     {
-                        case Phase.Connecting: ProgressText.Text = S.Get("phConnect"); break;
-                        case Phase.Authenticating: ProgressText.Text = S.Get("phAuth"); break;
-                        case Phase.RequestingInstall: ProgressText.Text = S.Get("phInstall"); break;
-                        case Phase.RemovingOldVersion: ProgressText.Text = S.Get("phRemove"); break;
-                        case Phase.Activating: ProgressText.Text = S.Get("phActivate"); break;
+                        // як в iOS: видалення старої версії текст не змінює, активація — смужка повна
+                        case Phase.Connecting: stage(S.Get("phConnect")); break;
+                        case Phase.Authenticating: stage(S.Get("phAuth")); break;
+                        case Phase.RequestingInstall: stage(S.Get("phInstall")); break;
+                        case Phase.Activating:
+                            Bar.Value = 1; ProgressPercent.Text = "100%";
+                            ProgressText.Text = S.Get("phActivate");
+                            upload(1, S.Get("phActivate"));
+                            break;
                         case Phase.Uploading:
-                            double f = p.Total > 0 ? (double)p.Sent / p.Total : 0;
+                            if (p.Total <= 0) break;
+                            double f = (double)p.Sent / p.Total;
                             Bar.Value = f;
                             ProgressText.Text = S.Get("progress", p.Sent, p.Total);
                             ProgressPercent.Text = (int)(f * 100) + "%";
+                            upload(f, ProgressText.Text);
                             break;
                     }
                 })));
