@@ -493,7 +493,7 @@ namespace BandFace.Creator
             ["kind_animation"] = new[] { "Анімація", "Animation", "Анимация" },
             ["kind_background"] = new[] { "Фон", "Background", "Фон" },
             ["cap_digits"] = new[] { "Час, дата, кроки, пульс — цифрами-картинками", "Time, date, steps, heart rate as digit images", "Время, дата, шаги, пульс — цифрами-картинками" },
-            ["cap_values"] = new[] { "Своя картинка для кожного значення", "A picture for each value", "Своя картинка для каждого значения" },
+            ["cap_values"] = new[] { "Своя картинка для кожного стану", "A picture for each state", "Своя картинка для каждого состояния" },
             ["cap_clock"] = new[] { "Години, хвилини, секунди й центр", "Hours, minutes, seconds and a centre", "Часы, минуты, секунды и центр" },
             ["cap_pointer"] = new[] { "Обертається за значенням", "Turns with a value", "Вращается по значению" },
             ["cap_arc"] = new[] { "Кругова шкала прогресу", "Circular progress gauge", "Круговая шкала прогресса" },
