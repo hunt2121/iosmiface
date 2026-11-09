@@ -239,8 +239,15 @@ namespace BandFace.Creator
         {
             var key = "@" + (w.Str("name") ?? "");
             slot.Add("Item").Set("ref", key);
+            var sk = "@" + (slot.Str("name") ?? "");
             for (int t = 0; t < p.Themes.Count; t++)
-                foreach (var l in p.Layouts(t).Where(l => l.Str("ref") == key).ToList()) p.Theme(t).Kids.Remove(l);
+                foreach (var l in p.Layouts(t).Where(l => l.Str("ref") == key).ToList())
+                {
+                    // слот стає на місце віджета — елементи лишаються там, де були
+                    var sl = p.Layouts(t).FirstOrDefault(x => x.Str("ref") == sk);
+                    if (sl != null) sl.Set("x", l.Int("x")).Set("y", l.Int("y"));
+                    p.Theme(t).Kids.Remove(l);
+                }
         }
 
         public static void SlotRemove(FaceProject p, XNode slot, int index)
