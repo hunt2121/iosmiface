@@ -412,6 +412,8 @@ final class FaceProject: ObservableObject, Identifiable {
     /// Після змін у редакторі (або коли превʼю немає) превʼю для браслета малюється заново.
     func compile() throws -> (Data, [String]) {
         let log = FaceCompilerLog()
+        // мініатюри й рамка вибору для віджетів у слотах
+        WidgetSlots.refreshPreviews(self)
         ColorVariants.syncThemes(self)
         let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
         // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується

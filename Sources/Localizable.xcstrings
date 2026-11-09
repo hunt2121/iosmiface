@@ -14191,6 +14191,650 @@
           }
         }
       }
+    },
+    "Дія при натисканні": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap action"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действие при нажатии"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дія при натисканні"
+          }
+        }
+      }
+    },
+    "Розташування": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrangement"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расположение"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розташування"
+          }
+        }
+      }
+    },
+    "В ряд": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In a row"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В ряд"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В ряд"
+          }
+        }
+      }
+    },
+    "Стовпчиком": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In a column"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Столбиком"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стовпчиком"
+          }
+        }
+      }
+    },
+    "Вільно": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободно"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільно"
+          }
+        }
+      }
+    },
+    "Проміжок, px": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gap, px"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Промежуток, px"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проміжок, px"
+          }
+        }
+      }
+    },
+    "СКЛАД ВІДЖЕТА": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WIDGET CONTENT"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "СОСТАВ ВИДЖЕТА"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "СКЛАД ВІДЖЕТА"
+          }
+        }
+      }
+    },
+    "Віджет порожній. Додайте в нього шари циферблата.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The widget is empty. Add layers of the face to it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виджет пустой. Добавьте в него слои циферблата."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віджет порожній. Додайте в нього шари циферблата."
+          }
+        }
+      }
+    },
+    "Вище": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выше"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вище"
+          }
+        }
+      }
+    },
+    "Нижче": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ниже"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нижче"
+          }
+        }
+      }
+    },
+    "Вийняти з віджета": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take out of the widget"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вынуть из виджета"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вийняти з віджета"
+          }
+        }
+      }
+    },
+    "На цьому екрані немає інших шарів": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No other layers on this screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом экране нет других слоёв"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому екрані немає інших шарів"
+          }
+        }
+      }
+    },
+    "+ Додати у віджет": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Add to widget"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Добавить в виджет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Додати у віджет"
+          }
+        }
+      }
+    },
+    "Розгрупувати": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ungroup"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разгруппировать"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розгрупувати"
+          }
+        }
+      }
+    },
+    "Віджет — кілька шарів одним блоком: рухаються разом, спільне натискання. Його можна поставити в слот, щоб вибирати на браслеті.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A widget is several layers as one block: they move together and share one tap action. Put it into a slot to choose it on the band."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виджет — несколько слоёв одним блоком: двигаются вместе, общее нажатие. Его можно поставить в слот, чтобы выбирать на браслете."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віджет — кілька шарів одним блоком: рухаються разом, спільне натискання. Його можна поставити в слот, щоб вибирати на браслеті."
+          }
+        }
+      }
+    },
+    "До слота": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to slot"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К слоту"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До слота"
+          }
+        }
+      }
+    },
+    "ЩО МОЖНА ВИБРАТИ НА БРАСЛЕТІ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WHAT CAN BE CHOSEN ON THE BAND"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЧТО МОЖНО ВЫБРАТЬ НА БРАСЛЕТЕ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЩО МОЖНА ВИБРАТИ НА БРАСЛЕТІ"
+          }
+        }
+      }
+    },
+    "натискання: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tap: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "нажатие: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "натискання: %@"
+          }
+        }
+      }
+    },
+    "на полотні": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on the canvas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "на холсте"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "на полотні"
+          }
+        }
+      }
+    },
+    "типовий": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "default"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "по умолчанию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "типовий"
+          }
+        }
+      }
+    },
+    "Прибрати зі слота": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from slot"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Убрать из слота"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибрати зі слота"
+          }
+        }
+      }
+    },
+    "+ Новий віджет": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ New widget"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Новый виджет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Новий віджет"
+          }
+        }
+      }
+    },
+    "У циферблаті немає інших віджетів": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The face has no other widgets"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В циферблате нет других виджетов"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У циферблаті немає інших віджетів"
+          }
+        }
+      }
+    },
+    "+ Вибрати з готових": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Choose existing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Выбрать из готовых"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Вибрати з готових"
+          }
+        }
+      }
+    },
+    "Торкніться віджета — він з'явиться на полотні, і його можна налаштувати. Перший — типовий; порядок — через меню ⋯.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a widget to show it on the canvas and set it up. The first one is the default; reorder via the ⋯ menu."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коснитесь виджета — он появится на холсте, и его можно настроить. Первый — по умолчанию; порядок — через меню ⋯."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Торкніться віджета — він з'явиться на полотні, і його можна налаштувати. Перший — типовий; порядок — через меню ⋯."
+          }
+        }
+      }
+    },
+    "На браслеті: утримуйте циферблат → «Налаштувати» → торкніться цього місця й виберіть, що показувати. Мініатюри для вибору застосунок робить сам.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the band: long-press the face → Customize → tap this spot and choose what to show. The app makes the thumbnails for the choice itself."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На браслете: удерживайте циферблат → «Настроить» → коснитесь этого места и выберите, что показывать. Мини-картинки для выбора приложение делает само."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На браслеті: утримуйте циферблат → «Налаштувати» → торкніться цього місця й виберіть, що показувати. Мініатюри для вибору застосунок робить сам."
+          }
+        }
+      }
+    },
+    "кілька шарів одним блоком": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "several layers as one block"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "несколько слоёв одним блоком"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "кілька шарів одним блоком"
+          }
+        }
+      }
+    },
+    "віджет на вибір на браслеті": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a widget chosen on the band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "виджет на выбор на браслете"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "віджет на вибір на браслеті"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

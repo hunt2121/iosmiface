@@ -51,8 +51,8 @@ struct AddElementSheet: View {
         Tile(kind: .pointer, caption: "обертання", filter: .gauges, enabled: true),
         Tile(kind: .arc, caption: "шкала", filter: .gauges, enabled: true),
         Tile(kind: .line, caption: "шкала", filter: .gauges, enabled: true),
-        Tile(kind: .widget, caption: "у готових циферблатах", filter: .decor, enabled: false),
-        Tile(kind: .slot, caption: "у готових циферблатах", filter: .decor, enabled: false),
+        Tile(kind: .widget, caption: "кілька шарів одним блоком", filter: .decor, enabled: true),
+        Tile(kind: .slot, caption: "віджет на вибір на браслеті", filter: .decor, enabled: true),
     ]
 
     private var center: (Int, Int) { (project.meta.device.width / 2, project.meta.device.height / 2) }
@@ -207,6 +207,14 @@ struct AddElementSheet: View {
         case .image: showPhoto = true
         case .animation: showFrames = true
         case .label: addLabel()
+        case .widget:
+            let c = center
+            project.edit { WidgetSlots.addWidget($0, theme: theme, center: c, title: loc("Віджет")) }
+            finish()
+        case .slot:
+            let c = center
+            project.edit { WidgetSlots.addSlot($0, theme: theme, center: c, firstTitle: loc("Віджет")) }
+            finish()
         default: pendingKind = k; showSource = true
         }
     }

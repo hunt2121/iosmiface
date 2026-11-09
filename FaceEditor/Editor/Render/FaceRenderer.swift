@@ -144,17 +144,73 @@ final class FaceRenderer {
         case "DataItemText": return drawText(res, o, c)
         case "Widget":
             var u = CGRect.null
-            for it in res.all("Item") {
-                let pt = CGPoint(x: o.x + CGFloat(it.int("x")), y: o.y + CGFloat(it.int("y")))
+            let items = res.all("Item")
+            let offs = widgetOffsets(res, in: c, depth: depth)
+            for (i, it) in items.enumerated() {
+                let pt = CGPoint(x: o.x + offs[i].x, y: o.y + offs[i].y)
                 if let r = draw(pick(it.string("ref")), at: pt, in: c, depth: depth + 1) { u = u.union(r) }
             }
             if res.has("w"), res.has("h") { u = CGRect(x: o.x, y: o.y, width: CGFloat(res.int("w")), height: CGFloat(res.int("h"))) }
             return u.isNull ? nil : u
         case "Slot":
-            if let it = res.all("Item").first { return draw(pick(it.string("ref")), at: o, in: c, depth: depth + 1) }
-            return nil
+            // у редакторі показуємо вибраний віджет слота (типово — перший)
+            let items = res.all("Item")
+            guard !items.isEmpty else { return nil }
+            let it = items[min(max(0, WidgetSlots.shown(p, res)), items.count - 1)]
+            return draw(pick(it.string("ref")), at: o, in: c, depth: depth + 1)
         default: return nil
         }
+    }
+
+    /// Зсуви елементів віджета від його лівого верхнього кута. Без flex_direction — x/y елементів;
+    /// з flex_direction (row/column) — один за одним з проміжком gap, вирівнювання justify_content / align_items.
+    func widgetOffsets(_ w: XNode, in c: CGContext? = nil, depth: Int = 0) -> [CGPoint] {
+        let items = w.all("Item")
+        let dir = w.string("flex_direction")
+        guard dir == "row" || dir == "column" else { return items.map { CGPoint(x: CGFloat($0.int("x")), y: CGFloat($0.int("y"))) } }
+        let row = dir == "row"
+        let gap = CGFloat(w.int("gap"))
+        let was = measureOnly
+        measureOnly = true
+        var ctx = c
+        if ctx == nil {
+            ctx = CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        }
+        var rects: [CGRect] = []
+        if let ctx {
+            if c == nil { UIGraphicsPushContext(ctx) }
+            rects = items.map { draw(pick($0.string("ref")), at: .zero, in: ctx, depth: depth + 1) ?? .zero }
+            if c == nil { UIGraphicsPopContext() }
+        }
+        measureOnly = was
+        let main = rects.reduce(0) { $0 + (row ? $1.width : $1.height) } + gap * CGFloat(max(0, rects.count - 1))
+        let cross = rects.map { row ? $0.height : $0.width }.max() ?? 0
+        let W = w.has("w") ? CGFloat(w.int("w")) : (row ? main : cross)
+        let H = w.has("h") ? CGFloat(w.int("h")) : (row ? cross : main)
+        let box = row ? W : H, boxCross = row ? H : W
+        let jc = w.string("justify_content") ?? "flex-start", ai = w.string("align_items") ?? "flex-start"
+        var pos: CGFloat = jc == "center" ? (box - main) / 2 : jc == "flex-end" ? box - main : 0
+        var out: [CGPoint] = []
+        for r in rects {
+            let len = row ? r.width : r.height, th = row ? r.height : r.width
+            let cc: CGFloat = ai == "center" ? (boxCross - th) / 2 : ai == "flex-end" ? boxCross - th : 0
+            out.append(row ? CGPoint(x: pos - r.minX, y: cc - r.minY) : CGPoint(x: cc - r.minX, y: pos - r.minY))
+            pos += len + gap
+        }
+        return out
+    }
+
+    /// Рамка ресурсу без малювання (від точки 0,0)
+    func measure(_ res: XNode?) -> CGRect? {
+        let was = measureOnly
+        measureOnly = true
+        defer { measureOnly = was }
+        guard let ctx = CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        UIGraphicsPushContext(ctx)
+        defer { UIGraphicsPopContext() }
+        return draw(res, at: .zero, in: ctx, depth: 0)
     }
 
     /// Кадр анімації: interval мс на кадр; repeatCount 0 — без кінця, інакше після повторів лишається останній

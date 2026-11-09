@@ -102,13 +102,19 @@ struct InspectorView: View {
                 ValuesLook(project: project, res: r)
             case .image:
                 EmptyView()
+            case .widget where WidgetSlots.isUserWidget(project, r):
+                WidgetPane(project: project, theme: theme, widget: r, origin: CGPoint(x: CGFloat(layout.int("x")), y: CGFloat(layout.int("y"))), ownLayout: layout)
+            case .slot:
+                SlotPane(project: project, theme: theme, slot: r, layout: layout)
             default:
                 Text("Цей елемент можна пересувати, дублювати й видаляти. Його вміст редактор поки не змінює.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            ElementImages(project: project, res: r, layout: layout)
-            if r.tag.hasPrefix("DataItem") { renderRuleRow(r) }
-            tapRow
+            if kind != .slot && !WidgetSlots.isUserWidget(project, r) {
+                ElementImages(project: project, res: r, layout: layout)
+                if r.tag.hasPrefix("DataItem") { renderRuleRow(r) }
+                tapRow
+            }
         }
     }
 
