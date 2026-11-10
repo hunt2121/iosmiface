@@ -569,18 +569,8 @@ namespace BandFace.Creator
                 Add(del);
             }
 
-            // градієнт згори донизу
-            bool grad = !string.IsNullOrEmpty(gen.Color2);
-            Add(Ui.Switch(S.Get("gradient"), grad, v => Regen(name, gen, g => g.Color2 = v ? (Suggested.FirstOrDefault(c => c != g.Color) ?? "#FF375F") : "")));
-            if (grad) Add(Ui.ColorRow(S.Get("gradientTo"), gen.Color2, h => Regen(name, gen, g => g.Color2 = h)));
-            Add(Ui.Slider(S.Get("outline"), gen.Outline, 0, 8, 0.5, v => Regen(name, gen, g => g.Outline = v)));
-            if (gen.Outline > 0) Add(Ui.ColorRow(S.Get("outlineColor"), gen.OutlineColor, h => Regen(name, gen, g => g.OutlineColor = h)));
-            Add(Ui.Slider(S.Get("shadowX"), gen.ShadowX, -8, 8, 1, v => Regen(name, gen, g => g.ShadowX = v)));
-            Add(Ui.Slider(S.Get("shadowY"), gen.ShadowY, -8, 8, 1, v => Regen(name, gen, g => g.ShadowY = v)));
-            if (gen.ShadowX != 0 || gen.ShadowY != 0) Add(Ui.ColorRow(S.Get("shadowColor"), gen.ShadowColor, h => Regen(name, gen, g => g.ShadowColor = h)));
-            Add(Ui.Slider(S.Get("letterWidth"), gen.WidthPct, 50, 150, 1, v => Regen(name, gen, g => g.WidthPct = v)));
-            // лише контур і фон-фігура під кожною цифрою
-            Add(Ui.Switch(S.Get("hollow"), gen.Hollow, v => Regen(name, gen, g => g.Hollow = v)));
+            FontEffects.Build(e => Add(e), gen, ch => Regen(name, gen, ch));
+            // фон-фігура під кожною цифрою
             Add(Ui.Chips(S.Get("badge"), new[] { P("", S.Get("badgeNone")), P("circle", S.Get("badgeCircle")), P("capsule", S.Get("badgeCapsule")), P("square", S.Get("badgeSquare")) },
                          gen.Badge ?? "", v => Regen(name, gen, g => g.Badge = v)));
             if (!string.IsNullOrEmpty(gen.Badge)) Add(Ui.ColorRow(S.Get("badgeColor"), gen.BadgeColor, h => Regen(name, gen, g => g.BadgeColor = h)));

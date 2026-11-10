@@ -150,17 +150,46 @@ namespace BandFace.Creator
             }
         }
 
+        sealed class TextInfo { public Typeface Tf; public double Size; public Brush B; }
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FormattedText, TextInfo> Info = new System.Runtime.CompilerServices.ConditionalWeakTable<FormattedText, TextInfo>();
+
         static FormattedText Text(string s, Typeface tf, double size, Brush b)
-            => new FormattedText(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, size, b, 1.0);
+        {
+            var t = new FormattedText(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, size, b, 1.0);
+            Info.Add(t, new TextInfo { Tf = tf, Size = size, B = b });
+            return t;
+        }
+
+        /// <summary>Ширина рядка з міжлітерним інтервалом (літери ставляться по одній)</summary>
+        static double W(FormattedText t, Generator g)
+        {
+            if (g.Tracking == 0 || t.Text.Length == 0 || !Info.TryGetValue(t, out var i)) return t.WidthIncludingTrailingWhitespace;
+            double sum = 0;
+            foreach (char c in t.Text) sum += Text(c.ToString(), i.Tf, i.Size, i.B).WidthIncludingTrailingWhitespace;
+            return sum + g.Tracking * (t.Text.Length - 1);
+        }
+
+        /// <summary>Контури літер рядка (з міжлітерним інтервалом)</summary>
+        static Geometry Geo(FormattedText t, Point at, Generator g)
+        {
+            if (g.Tracking == 0 || t.Text.Length == 0 || !Info.TryGetValue(t, out var i)) return t.BuildGeometry(at);
+            var grp = new GeometryGroup { FillRule = FillRule.Nonzero };
+            double x = at.X;
+            foreach (char c in t.Text)
+            {
+                var ct = Text(c.ToString(), i.Tf, i.Size, i.B);
+                var cg = ct.BuildGeometry(new Point(x, at.Y));
+                if (cg != null && !cg.IsEmpty()) grp.Children.Add(cg);
+                x += ct.WidthIncludingTrailingWhitespace + g.Tracking;
+            }
+            return grp;
+        }
 
         static double K(Generator g) => Math.Max(0.3, Math.Min(2, g.WidthPct / 100.0));
 
         /// <summary>Поле навколо знака під обвідку й тінь: по горизонталі — обвідка й тінь убік, по вертикалі — обвідка й тінь донизу</summary>
-        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowX) + HollowWidth(g)) + 1;
-        static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY) + HollowWidth(g)) + 1;
-
-        /// <summary>Товщина контуру для «лише контур»: від розміру шрифту, щонайменше 1.2 px</summary>
-        static double HollowWidth(Generator g) => g.Hollow ? Math.Max(1.2, g.FontSize / 22) : 0;
+        static int Pad(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowX)) + 1;
+        static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY)) + 1;
 
         /// <summary>Фон під знаком (коло, капсула, квадрат): кадр більшого розміру з фігурою кольору BadgeColor, знак по центру</summary>
         static List<RgbaImage> WithBadge(Generator g, List<RgbaImage> frames)
@@ -187,34 +216,58 @@ namespace BandFace.Creator
             }).ToList();
         }
 
-        /// <summary>Текст з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
-        /// Ширина літер стискає/розтягує знак відносно його середини.</summary>
+        /// <summary>Текст з ефектами: тінь → заливка (колір чи градієнт, зі своєю прозорістю) → обведення (колір, прозорість, положення).
+        /// Усе малюється за контуром літер. Ширина літер стискає/розтягує знак відносно його середини.</summary>
         static void Draw(DrawingContext dc, FormattedText t, Point at, Generator g)
         {
             if (!g.Styled) { dc.DrawText(t, at); return; }
-            var geo = t.BuildGeometry(at);
+            double w = W(t, g);
+            var geo = Geo(t, at, g);
             double k = K(g);
             if (Math.Abs(k - 1) > 0.001)
             {
                 geo = geo.Clone();
-                geo.Transform = new ScaleTransform(k, 1, at.X + t.WidthIncludingTrailingWhitespace / 2, 0);
+                geo.Transform = new ScaleTransform(k, 1, at.X + w / 2, 0);
+            }
+            double size = Info.TryGetValue(t, out var ti) ? ti.Size : g.FontSize;
+            Pen Stroke(string hex, double alpha, double width) => new Pen(Imaging.Brush(hex, Math.Max(0, Math.Min(1, alpha / 100))), width) { LineJoin = PenLineJoin.Round };
+            void Outline(string hex, double alpha)
+            {
+                double tw = g.Outline;
+                if (tw <= 0 || alpha <= 0) return;
+                if (g.OutlinePos == 1) { dc.DrawGeometry(null, Stroke(hex, alpha, tw), geo); return; }
+                Geometry clip = g.OutlinePos == 2 ? geo
+                    : new CombinedGeometry(GeometryCombineMode.Exclude, new RectangleGeometry(new Rect(-10000, -10000, 20000, 20000)), geo);
+                dc.PushClip(clip);
+                dc.DrawGeometry(null, Stroke(hex, alpha, tw * 2), geo);
+                dc.Pop();
             }
             if (g.ShadowX != 0 || g.ShadowY != 0)
             {
                 dc.PushTransform(new TranslateTransform(g.ShadowX, g.ShadowY));
-                dc.DrawGeometry(Imaging.Brush(g.ShadowColor, 0.6), g.Outline > 0 ? new Pen(Imaging.Brush(g.ShadowColor, 0.6), g.Outline * 2) { LineJoin = PenLineJoin.Round } : null, geo);
+                if (g.FillAlpha > 0) dc.DrawGeometry(Imaging.Brush(g.ShadowColor, Math.Max(0, Math.Min(1, g.ShadowAlpha / 100))), null, geo);
+                Outline(g.ShadowColor, g.ShadowAlpha);
                 dc.Pop();
             }
-            if (g.Outline > 0) dc.DrawGeometry(null, new Pen(Imaging.Brush(g.OutlineColor), g.Outline * 2) { LineJoin = PenLineJoin.Round }, geo);
-            if (g.Hollow)
+            if (g.FillAlpha > 0)
             {
-                // лише контур літер: обвідка кольором тексту, всередині прозоро (або колір фону-фігури)
-                dc.DrawGeometry(null, new Pen(Imaging.Brush(g.Color), HollowWidth(g)) { LineJoin = PenLineJoin.Round }, geo);
-                return;
+                double fa = Math.Max(0, Math.Min(1, g.FillAlpha / 100));
+                Brush fill;
+                if (string.IsNullOrEmpty(g.Color2)) fill = Imaging.Brush(g.Color, fa);
+                else
+                {
+                    double baseY = at.Y + t.Baseline, top = baseY - size * 0.72, cx = at.X + w / 2;
+                    var lg = new LinearGradientBrush(Imaging.ParseColor(g.Color), Imaging.ParseColor(g.Color2), new Point(0, 0), new Point(0, 1))
+                    {
+                        MappingMode = BrushMappingMode.Absolute, Opacity = fa,
+                        StartPoint = g.GradDir == 1 ? new Point(cx - w * k / 2, top) : new Point(cx, top),
+                        EndPoint = g.GradDir == 1 ? new Point(cx + w * k / 2, baseY) : new Point(cx, baseY),
+                    };
+                    fill = lg;
+                }
+                dc.DrawGeometry(fill, null, geo);
             }
-            Brush fill = string.IsNullOrEmpty(g.Color2) ? (Brush)Imaging.Brush(g.Color)
-                : new LinearGradientBrush(Imaging.ParseColor(g.Color), Imaging.ParseColor(g.Color2), new Point(0, 0), new Point(0, 1));
-            dc.DrawGeometry(fill, null, geo);
+            Outline(g.OutlineColor, g.OutlineAlpha);
         }
 
         /// <summary>Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).</summary>
@@ -234,7 +287,7 @@ namespace BandFace.Creator
             foreach (var s in texts)
             {
                 var t = Text(s.Length == 0 ? " " : s, tf, size, brush);
-                adv = Math.Max(adv, t.WidthIncludingTrailingWhitespace);
+                adv = Math.Max(adv, W(t, g));
                 lh = Math.Max(lh, t.Height);
             }
             int pad = Pad(g), padY = PadY(g);
@@ -246,7 +299,7 @@ namespace BandFace.Creator
             foreach (var s in texts)
             {
                 var t = Text(s.Length == 0 ? " " : s, tf, size, brush);
-                full.Add(Imaging.Render(w, tall, dc => Draw(dc, t, new Point((w - t.WidthIncludingTrailingWhitespace) / 2, top), g)));
+                full.Add(Imaging.Render(w, tall, dc => Draw(dc, t, new Point((w - W(t, g)) / 2, top), g)));
             }
             int minY = tall, maxY = -1;
             foreach (var img in full)
@@ -267,7 +320,7 @@ namespace BandFace.Creator
             var tf = FontOf(g);
             var s = Text(t, tf, Math.Max(4, g.FontSize), Imaging.Brush(g.Color));
             int pad = Pad(g);
-            double tw = s.WidthIncludingTrailingWhitespace;
+            double tw = W(s, g);
             int w = (int)Math.Ceiling(tw * K(g)) + 8 + pad * 2;
             double lh = Math.Ceiling(s.Height);
             int tall = (int)(lh * 2) + pad * 2;
@@ -303,13 +356,13 @@ namespace BandFace.Creator
             var z = Text("0", tf, size, brush);
             double lh = Math.Ceiling(Math.Max(s.Height, z.Height));
             int pad = Pad(g);
-            double sw = s.WidthIncludingTrailingWhitespace;
+            double sw = W(s, g);
             int w = (int)Math.Ceiling(sw * K(g)) + 4 + pad * 2;
             int tall = (int)(lh * 2) + pad * 2;
             double top = lh / 2 + pad;
             var full = Imaging.Render(w, tall, dc => Draw(dc, s, new Point((w - sw) / 2, top), g));
             // та сама вертикальна вирізка, що й у цифр: шукаємо її за кадром «0»
-            var zero = Imaging.Render(digit.W, tall, dc => Draw(dc, z, new Point((digit.W - z.WidthIncludingTrailingWhitespace) / 2, top), g));
+            var zero = Imaging.Render(digit.W, tall, dc => Draw(dc, z, new Point((digit.W - W(z, g)) / 2, top), g));
             int y0 = tall;
             for (int y = 0; y < tall && y0 == tall; y++)
                 for (int x = 0; x < digit.W; x++)

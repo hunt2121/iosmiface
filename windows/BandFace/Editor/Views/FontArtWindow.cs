@@ -204,7 +204,6 @@ namespace BandFace.Creator
                                                  v => Change(x => x.Weight = int.Parse(v))), 190));
             Add(Ui.ColorRow(S.Get("color"), g.Color, h => Change(x => x.Color = h)));
             // вигляд знака: лише контур і фігура-фон (коло, капсула, квадрат)
-            Add(Ui.Switch(S.Get("hollow"), g.Hollow, v => Change(x => x.Hollow = v)));
             Add(Ui.Chips(S.Get("badge"), new[] { P("", S.Get("badgeNone")), P("circle", S.Get("badgeCircle")), P("capsule", S.Get("badgeCapsule")), P("square", S.Get("badgeSquare")) },
                          g.Badge ?? "", v => Change(x => x.Badge = v)));
             if (!string.IsNullOrEmpty(g.Badge)) Add(Ui.ColorRow(S.Get("badgeColor"), g.BadgeColor, h => Change(x => x.BadgeColor = h)));
@@ -234,15 +233,7 @@ namespace BandFace.Creator
                 if (n != null) { DigitSets.Add(n, g); Rebuild(); }
             };
             Add(save);
-            bool grad = !string.IsNullOrEmpty(g.Color2);
-            Add(Ui.Switch(S.Get("gradient"), grad, v => Change(x => x.Color2 = v ? (x.Color.Equals("#FF375F", StringComparison.OrdinalIgnoreCase) ? "#FFD60A" : "#FF375F") : "")));
-            if (grad) Add(Ui.ColorRow(S.Get("gradientTo"), g.Color2, h => Change(x => x.Color2 = h)));
-            Add(Ui.Slider(S.Get("outline"), g.Outline, 0, 8, 0.5, v => Change(x => x.Outline = v)));
-            if (g.Outline > 0) Add(Ui.ColorRow(S.Get("outlineColor"), g.OutlineColor, h => Change(x => x.OutlineColor = h)));
-            Add(Ui.Slider(S.Get("shadowX"), g.ShadowX, -8, 8, 1, v => Change(x => x.ShadowX = v)));
-            Add(Ui.Slider(S.Get("shadowY"), g.ShadowY, -8, 8, 1, v => Change(x => x.ShadowY = v)));
-            if (g.ShadowX != 0 || g.ShadowY != 0) Add(Ui.ColorRow(S.Get("shadowColor"), g.ShadowColor, h => Change(x => x.ShadowColor = h)));
-            Add(Ui.Slider(S.Get("letterWidth"), g.WidthPct, 50, 150, 1, v => Change(x => x.WidthPct = v)));
+            FontEffects.Build(e => Add(e), g, ch => Change(ch));
         }
 
         bool CommitTexts()
