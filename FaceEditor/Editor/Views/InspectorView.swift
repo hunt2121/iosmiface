@@ -242,11 +242,10 @@ struct InspectorView: View {
         let sign: Double = g.range < 0 ? -1 : 1
         let mid = Self.norm(g.start + g.range / 2)
         CommitSlider(title: "Довжина дуги, °", value: abs(g.range), range: 10...360, step: 1) { v0 in
-            var v = v0
-            for t in [90.0, 180, 270, 360] where abs(v - t) <= 6 { v = t; break }
+            let v = v0
             regen(from: g) { $0.range = sign * v; $0.start = Self.norm(mid - sign * v / 2) }
         }
-        Text("Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°.").font(.caption).foregroundStyle(.secondary)
+        Text("Розріз лишається на місці (спочатку — угорі).").font(.caption).foregroundStyle(.secondary)
         let gap = abs(abs(g.range) - 360) < 0.5 ? Self.norm(g.start) : Self.norm(mid + 180)
         DirectionPad(title: "Розріз дуги", selected: gap) { d in
             regen(from: g) { x in

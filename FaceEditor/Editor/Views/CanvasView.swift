@@ -311,7 +311,7 @@ struct CanvasView: View {
                 if snapOn {
                     // довжина — до 90/180/270/360
                     let m = (abs(r) / 90).rounded() * 90
-                    if m > 0, abs(m - abs(r)) <= 4 { r = (r < 0 ? -1 : 1) * m; s1 = true }
+                    if m > 0, abs(m - abs(r)) <= 2 { r = (r < 0 ? -1 : 1) * m; s1 = true }
                 }
                 hRange = r
             } else {

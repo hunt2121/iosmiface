@@ -15134,6 +15134,29 @@
           }
         }
       }
+    },
+    "Розріз лишається на місці (спочатку — угорі).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The gap stays in place (at the top by default)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрез остаётся на месте (сначала — вверху)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розріз лишається на місці (спочатку — угорі)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
