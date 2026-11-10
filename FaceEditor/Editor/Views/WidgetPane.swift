@@ -90,6 +90,8 @@ struct WidgetPane: View {
     let widget: XNode
     let origin: CGPoint
     let ownLayout: XNode?
+    /// Розташування слота, якщо віджет відкрито всередині слота
+    var slotLayout: XNode? = nil
     @State private var name = ""
 
     var body: some View {
@@ -175,7 +177,7 @@ struct WidgetPane: View {
                         let r = project.element(of: l)
                         Button(itemTitle(project, r) + " — " + itemSub(project, r)) {
                             let o = origin, t = theme
-                            project.edit { WidgetSlots.addToWidget($0, w, origin: o, layout: l, theme: t, own: ownLayout) }
+                            project.edit { WidgetSlots.addToWidget($0, w, origin: o, layout: l, theme: t, own: ownLayout, slotLayout: slotLayout) }
                         }
                     }
                 } label: {
@@ -219,7 +221,7 @@ struct SlotPane: View {
         VStack(alignment: .leading, spacing: 10) {
             if let o = open, ws.contains(where: { $0 === o }) {
                 Button { open = nil } label: { Label(loc("До слота"), systemImage: "chevron.left").font(.subheadline.weight(.semibold)) }
-                WidgetPane(project: project, theme: theme, widget: o, origin: origin, ownLayout: nil)
+                WidgetPane(project: project, theme: theme, widget: o, origin: origin, ownLayout: nil, slotLayout: layout)
             } else {
                 let shownIdx = min(WidgetSlots.shown(project, slot), max(0, ws.count - 1))
                 SizeRow(project: project, widgets: ws, layout: layout, isSlot: true)

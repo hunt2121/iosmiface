@@ -200,16 +200,29 @@ enum WidgetSlots {
 
     /// Шар екрана переходить у віджет. Перший шар порожнього віджета робить розташування «вільно»:
     /// елемент лишається на місці, а область віджета стає точно навколо нього.
-    static func addToWidget(_ p: FaceProject, _ w: XNode, origin: CGPoint, layout: XNode, theme: Int, own: XNode? = nil) {
+    static func addToWidget(_ p: FaceProject, _ w: XNode, origin: CGPoint, layout: XNode, theme: Int, own: XNode? = nil, slotLayout: XNode? = nil) {
         guard let th = p.theme(theme), let r = layout.string("ref") else { return }
-        if w.all("Item").isEmpty && own != nil {
+        if w.all("Item").isEmpty {
             for k in ["flex_direction", "justify_content", "align_content", "align_items", "gap"] { w.remove(k) }
         }
         let it = w.add("Item").set("ref", r)
         if arrange(w) == "free" { it.set("x", int: Int(CGFloat(layout.int("x")) - origin.x)).set("y", int: Int(CGFloat(layout.int("y")) - origin.y)) }
         else { it.set("x", int: 0).set("y", int: 0) }
         th.kids.removeAll { $0 === layout }
-        fit(p, w, layout: own)
+        // віджет у слоті: область росте навколо вмісту, а слот зсувається разом із нею; елементи інших віджетів слота лишаються на місці
+        let target = own ?? slotLayout
+        let before = target.map { (Int($0.int("x")), Int($0.int("y"))) }
+        fit(p, w, layout: target)
+        if own == nil, let t = target, let before {
+            let dx = Int(t.int("x")) - before.0, dy = Int(t.int("y")) - before.1
+            if dx != 0 || dy != 0 {
+                for s in slotsOf(p, w) {
+                    for o in widgets(p, s) where o !== w && arrange(o) == "free" {
+                        for i in o.all("Item") { i.set("x", int: Int(i.int("x")) - dx).set("y", int: Int(i.int("y")) - dy) }
+                    }
+                }
+            }
+        }
     }
 
     /// Елемент віджета знову стає окремим шаром — на тому самому місці
