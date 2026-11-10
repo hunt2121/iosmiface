@@ -109,7 +109,7 @@ namespace BandFace.Creator
                     {
                         // довжина — до 90/180/270/360
                         double m = Math.Round(Math.Abs(r) / 90) * 90;
-                        if (m > 0 && Math.Abs(m - Math.Abs(r)) <= SnapDeg) { r = Math.Sign(r) * m; s1 = true; }
+                        if (m > 0 && Math.Abs(m - Math.Abs(r)) <= 2) { r = Math.Sign(r) * m; s1 = true; }
                     }
                     hStart = s0; hRange = r;
                 }

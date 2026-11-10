@@ -723,7 +723,6 @@ namespace BandFace.Creator
             double mid = Norm(gen.Start + gen.Range / 2);
             Add(Ui.Slider(S.Get("arcLength"), Math.Abs(gen.Range), 10, 360, 1, v =>
             {
-                foreach (var snapTo in new[] { 90.0, 180, 270, 360 }) if (Math.Abs(v - snapTo) <= 6) { v = snapTo; break; }
                 Regen(name, gen, g => { g.Range = sign * v; g.Start = Norm(mid - sign * v / 2); });
             }));
             Add(Ui.Note(S.Get("arcLengthHint")));

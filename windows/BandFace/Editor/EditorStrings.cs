@@ -334,7 +334,7 @@ namespace BandFace.Creator
             ["vaBottom"] = new[] { "Всередині", "Inside", "Внутри" },
             ["letterSpace"] = new[] { "Відстань між літерами", "Letter spacing", "Расстояние между буквами" },
             ["textApprox"] = new[] { "Текст малює сам пристрій своїм шрифтом, тож на полотні він виглядає приблизно.", "The device draws text with its own font, so on the canvas it's approximate.", "Текст рисует сам устройство своим шрифтом, поэтому на холсте он выглядит приблизительно." },
-            ["arcLengthHint"] = new[] { "Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°.", "The gap stays in place (at the top by default). Length snaps to 90/180/270/360°.", "Разрез остаётся на месте (сначала — вверху). Длина прилипает к 90/180/270/360°." },
+            ["arcLengthHint"] = new[] { "Розріз лишається на місці (спочатку — угорі).", "The gap stays in place (at the top by default).", "Разрез остаётся на месте (сначала — вверху)." },
             ["arcGap"] = new[] { "Розріз дуги", "Arc gap", "Разрез дуги" },
             ["fillDirection"] = new[] { "Напрямок заповнення", "Fill direction", "Направление заполнения" },
             ["arcLength"] = new[] { "Довжина дуги, °", "Arc length, °", "Длина дуги, °" },
