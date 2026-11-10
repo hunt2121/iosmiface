@@ -257,6 +257,8 @@ enum WidgetSlots {
 
     // MARK: Мініатюри й рамка для вибору на браслеті
 
+    /// Мінімальний відступ рамки вибору від країв екрана, px
+    private static let screenMargin: CGFloat = 3
     private static let previewScale: CGFloat = 0.634 // як в офіційних: 112×74 → 71×47
 
     static func refreshPreviews(_ p: FaceProject) {
@@ -271,14 +273,26 @@ enum WidgetSlots {
                     r.draw(w, at: .zero, in: c, depth: 0)
                 }
                 setImageRef(p, w, attr: "preview", img: img, name: "wpreview_" + (w.string("name") ?? "w"))
+                // рамка вибору повторює скруглення екрана внизу й не ближче 3 px до його країв
+                let lay = p.layouts(0).first { $0.string("ref") == "@" + (slot.string("name") ?? "") }
+                let ox = CGFloat(lay?.int("x") ?? 0), oy = CGFloat(lay?.int("y") ?? 0)
                 let box = AssetFactory.render(pw, ph) { _ in
                     let rad = CGFloat(min(pw, ph)) / 2 - 1.5
-                    let path = UIBezierPath(roundedRect: CGRect(x: 1.5, y: 1.5, width: CGFloat(pw) - 3, height: CGFloat(ph) - 3), cornerRadius: rad)
+                    var shape = UIBezierPath(roundedRect: CGRect(x: 1.5, y: 1.5, width: CGFloat(pw) - 3, height: CGFloat(ph) - 3), cornerRadius: rad).cgPath
+                    if lay != nil {
+                        let dev = p.meta.device
+                        let m = screenMargin + 1.5 / previewScale
+                        let screen = UIBezierPath(roundedRect: CGRect(x: (m - ox) * previewScale, y: (m - oy) * previewScale,
+                                                                      width: (CGFloat(dev.width) - 2 * m) * previewScale, height: (CGFloat(dev.height) - 2 * m) * previewScale),
+                                                  cornerRadius: (CGFloat(dev.corner) - m) * previewScale).cgPath
+                        shape = shape.intersection(screen)
+                    }
+                    let path = UIBezierPath(cgPath: shape)
                     path.lineWidth = 3
                     AssetFactory.color("#FF9900").setStroke()
                     path.stroke()
                 }
-                setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)")
+                setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)" + (lay != nil ? "_\(Int(ox))_\(Int(oy))" : ""))
             }
         }
     }
