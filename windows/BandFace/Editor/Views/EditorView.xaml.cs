@@ -385,8 +385,22 @@ namespace BandFace.Creator
                 var b = b0.Value;
                 if (dragPos.HasValue && moved) b.Offset(dragPos.Value.X - dragStart.X, dragPos.Value.Y - dragStart.Y);
                 var r = new Rect(b.X * zoom, b.Y * zoom, Math.Max(b.Width * zoom, 6), Math.Max(b.Height * zoom, 6));
-                var rect = new Rectangle { Width = r.Width, Height = r.Height, Stroke = sel, StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 4, 2 }, RadiusX = 3, RadiusY = 3 };
-                Canvas.SetLeft(rect, r.X); Canvas.SetTop(rect, r.Y);
+                System.Windows.Shapes.Shape rect;
+                var dash = new DoubleCollection { 4, 2 };
+                if (SizeTarget(out _, out _))
+                {
+                    // віджет і слот: рамка повторює скруглення екрана й тримається не ближче 3 px до його країв
+                    double m = 3 * zoom;
+                    Geometry g = new RectangleGeometry(r, 3, 3);
+                    var screen = new RectangleGeometry(new Rect(m, m, dev.Width * zoom - 2 * m, dev.Height * zoom - 2 * m), Math.Max(dev.Corner * zoom - m, 0), Math.Max(dev.Corner * zoom - m, 0));
+                    g = Geometry.Combine(g, screen, GeometryCombineMode.Intersect, null);
+                    rect = new System.Windows.Shapes.Path { Data = g, Stroke = sel, StrokeThickness = 1.5, StrokeDashArray = dash };
+                }
+                else
+                {
+                    rect = new Rectangle { Width = r.Width, Height = r.Height, Stroke = sel, StrokeThickness = 1.5, StrokeDashArray = dash, RadiusX = 3, RadiusY = 3 };
+                    Canvas.SetLeft(rect, r.X); Canvas.SetTop(rect, r.Y);
+                }
                 Overlay.Children.Add(rect);
                 // у дуги й лінії — свої ручки на кінцях (DrawHandles), кутові не показуємо
                 bool gauge = GaugeRes(out _) != null;

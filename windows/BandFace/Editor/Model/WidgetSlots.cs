@@ -352,7 +352,7 @@ namespace BandFace.Creator
                     double ox = lay?.Int("x") ?? 0, oy = lay?.Int("y") ?? 0;
                     var box = Imaging.Render(pw, ph, dc =>
                     {
-                        var pen = new Pen(Imaging.Brush("#FF9900"), 3);
+                        var pen = new Pen(Imaging.Brush("#FFFFFF", 0.5), 3);
                         double rad = Math.Min(pw, ph) / 2.0 - 1.5;
                         Geometry shape = new RectangleGeometry(new Rect(1.5, 1.5, pw - 3, ph - 3), rad, rad);
                         if (lay != null)
