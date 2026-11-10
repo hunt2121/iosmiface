@@ -289,7 +289,7 @@ enum WidgetSlots {
                     }
                     let path = UIBezierPath(cgPath: shape)
                     path.lineWidth = 3
-                    AssetFactory.color("#FF9900").setStroke()
+                    UIColor.white.withAlphaComponent(0.5).setStroke()
                     path.stroke()
                 }
                 setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)" + (lay != nil ? "_\(Int(ox))_\(Int(oy))" : ""))
