@@ -720,23 +720,39 @@ struct LabelField: View {
 struct UnitField: View {
     let unit: String
     var onCommit: (String) -> Void
-    @State private var text = ""
+    /// Редагування — у вікні посеред екрана: клавіатура його не перекриває, поле видно, «Гаразд» записує
+    @State private var editing = false
+    @State private var draft = ""
     var body: some View {
-        HStack {
+        HStack(spacing: 6) {
             Text("Одиниця").font(.subheadline)
             Spacer()
-            TextField(loc("немає"), text: $text)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 110)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit { if text != unit { onCommit(text) } }
+            Button { draft = unit; editing = true } label: {
+                Text(unit.isEmpty ? loc("немає") : unit)
+                    .font(.subheadline)
+                    .foregroundStyle(unit.isEmpty ? Color.secondary : Color.primary)
+                    .frame(minWidth: 52)
+            }
+            .buttonStyle(.bordered)
             ForEach(["%", "°", "км"], id: \.self) { u in
-                Button(u) { text = u; onCommit(u) }
+                Button(u) { onCommit(u) }
                     .font(.caption.weight(.semibold))
                     .buttonStyle(.bordered)
             }
+            if !unit.isEmpty {
+                Button { onCommit("") } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Прибрати одиницю"))
+            }
         }
-        .onAppear { text = unit }
+        .alert("Одиниця", isPresented: $editing) {
+            TextField(loc("немає"), text: $draft)
+            Button("Гаразд") {
+                let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+                if t != unit { DispatchQueue.main.async { onCommit(t) } }
+            }
+            Button("Скасувати", role: .cancel) {}
+        }
     }
 }
 

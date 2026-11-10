@@ -15157,6 +15157,29 @@
           }
         }
       }
+    },
+    "Прибрати одиницю": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove unit"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Убрать единицу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибрати одиницю"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
