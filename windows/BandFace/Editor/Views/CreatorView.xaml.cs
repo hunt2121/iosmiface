@@ -27,9 +27,6 @@ namespace BandFace.Creator
         /// <summary>«Встановити на браслет» у редакторі: .bin і назва.</summary>
         public event Action<byte[], string> InstallRequested;
         public event Action CancelInstallRequested;
-        /// <summary>Запит на оновлення стану циферблатів на пристрої (кнопка «Оновити»)</summary>
-        public event Action RefreshRequested;
-
         /// <summary>Id циферблата, який зараз на екрані браслета (null — невідомо)</summary>
         string activeFaceId;
         public void SetActiveFace(string id)
@@ -39,7 +36,6 @@ namespace BandFace.Creator
             RefreshProjects();
         }
 
-        void Refresh_Click(object sender, RoutedEventArgs e) => RefreshRequested?.Invoke();
         /// <summary>Прогрес встановлення з редактора — у віконце під кнопкою</summary>
         public void ShowInstall(InstallUpdate u) => Editor.ShowInstall(u);
 
@@ -59,7 +55,6 @@ namespace BandFace.Creator
         void ApplyTexts()
         {
             TitleFaces.Text = S.Get("editor");
-            RefreshBtn.Content = S.Get("refreshBand");
             FontsBtn.Content = S.Get("fonts");
             TitleFonts.Text = S.Get("fonts");
             NewBtn.Content = S.Get("newFace");

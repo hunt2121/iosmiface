@@ -63,7 +63,6 @@ namespace BandFace
             EditorTab.EditorShownChanged += shown => UpdateSidebar();
             EditorTab.InstallRequested += (bin, name) => InstallFromEditor(bin, name);
             EditorTab.CancelInstallRequested += CancelInstall;
-            EditorTab.RefreshRequested += () => _ = RefreshActiveFaceAsync(true);
             PreviewKeyDown += (s, e) => { if (NavEditor.IsChecked == true && EditorTab.HandleKey(e)) e.Handled = true; };
             DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
             Drop += Window_Drop;

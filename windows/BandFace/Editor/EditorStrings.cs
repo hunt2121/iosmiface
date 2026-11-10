@@ -16,7 +16,6 @@ namespace BandFace.Creator
             // ---------- Вікно, проєкти ----------
             ["faces"] = new[] { "Циферблати", "Watch faces", "Циферблаты" },
             ["editor"] = new[] { "Редактор", "Editor", "Редактор" },
-            ["refreshBand"] = new[] { "Оновити", "Refresh", "Обновить" },
             ["fonts"] = new[] { "Шрифти", "Fonts", "Шрифты" },
             ["version"] = new[] { "Версія", "Version", "Версия" },
             ["newFace"] = new[] { "Новий циферблат", "New watch face", "Новый циферблат" },

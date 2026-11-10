@@ -10,7 +10,6 @@
         <Grid Margin="0,0,0,18">
           <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold"/>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-            <Button x:Name="RefreshBtn" Style="{StaticResource Btn}" Margin="0,0,10,0" Click="Refresh_Click"/>
             <Button x:Name="FontsBtn" Style="{StaticResource Btn}" Click="Fonts_Click"/>
             <Button x:Name="OpenFolderBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="OpenFolder_Click"/>
             <Button x:Name="OpenBinBtn" Style="{StaticResource Btn}" Margin="10,0,0,0" Click="OpenBin_Click"/>
