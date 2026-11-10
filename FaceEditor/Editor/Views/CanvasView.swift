@@ -508,7 +508,7 @@ struct SelectionFrame: View {
         let box = Path(roundedRect: r, cornerRadius: 4)
         guard let screen else { return box }
         let inner = CGRect(x: margin, y: margin, width: screen.width - 2 * margin, height: screen.height - 2 * margin)
-        return box.intersection(Path(roundedRect: inner, cornerRadius: max(corner - margin, 0)))
+        return Path(box.cgPath.intersection(Path(roundedRect: inner, cornerRadius: max(corner - margin, 0)).cgPath))
     }
 
     var body: some View {
