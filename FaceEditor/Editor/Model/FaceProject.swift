@@ -410,10 +410,18 @@ final class FaceProject: ObservableObject, Identifiable {
 
     /// Збирає .bin. Повертає дані й попередження компілятора.
     /// Після змін у редакторі (або коли превʼю немає) превʼю для браслета малюється заново.
+    /// Число з 0 цифр не має місця на браслеті й не малюється (кроки зникали) — беремо запас у 5 цифр.
+    func fixDigitCounts() {
+        for r in resources.elements where r.tag == "DataItemImageNumber" && r.int("totalDigits") <= 0 {
+            r.set("totalDigits", int: max(5, Int(r.int("decimalDigits")) + 1))
+        }
+    }
+
     func compile() throws -> (Data, [String]) {
         let log = FaceCompilerLog()
         // мініатюри й рамка вибору для віджетів у слотах
         WidgetSlots.refreshPreviews(self)
+        fixDigitCounts()
         ColorVariants.syncThemes(self)
         let needsPreview = meta.edited || themes.contains { !$0.has("preview") }
         // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується

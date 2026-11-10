@@ -167,7 +167,7 @@ struct InspectorView: View {
         let fixedWidth = r.bool("leadingZero") && r.int("totalDigits") > 0
         GrowChips(selected: r.string("align") ?? "left", enabled: !fixedWidth, digits: Int(r.int("totalDigits"))) { v in setNumberAlign(r, v) }
         if gen != nil { UnitField(unit: gen?.unit ?? "") { u in regen { $0.unit = u } } }
-        StepperRow(title: "Кількість цифр", value: Int(r.int("totalDigits")), range: 0...9) { v in edit { $0.set("totalDigits", int: v) } }
+        StepperRow(title: "Кількість цифр", value: max(1, Int(r.int("totalDigits"))), range: 1...9) { v in edit { $0.set("totalDigits", int: v) } }
         StepperRow(title: "Відступ між цифрами", value: Int(r.int("space")), range: -20...40) { v in edit { $0.set("space", int: v) } }
         Toggle("Нулі попереду", isOn: Binding(get: { r.bool("leadingZero") }, set: { v in edit { $0.set("leadingZero", bool: v) } }))
             .font(.subheadline)
