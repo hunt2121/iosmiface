@@ -125,6 +125,8 @@ struct ProjectMeta: Codable {
     var manualSize: Set<String> = []
     /// Значення для перегляду в редакторі (на браслет не записуються)
     var demo = DemoValues()
+    /// Вигляд рамки вибору на браслеті для кожного слота (за назвою слота)
+    var slotFrames: [String: SlotFrame] = [:]
 
     init() {}
 
@@ -139,7 +141,44 @@ struct ProjectMeta: Codable {
         colorFollow = (try? c.decodeIfPresent(Set<String>.self, forKey: .colorFollow)) ?? []
         manualSize = (try? c.decodeIfPresent(Set<String>.self, forKey: .manualSize)) ?? []
         demo = (try? c.decodeIfPresent(DemoValues.self, forKey: .demo)) ?? DemoValues()
+        slotFrames = (try? c.decodeIfPresent([String: SlotFrame].self, forKey: .slotFrames)) ?? [:]
     }
+}
+
+/// Вигляд рамки вибору слота на браслеті. Формат editor.json спільний з Windows.
+struct SlotFrame: Codable, Equatable {
+    /// Колір лінії, #RRGGBB
+    var color = "#FFFFFF"
+    /// Непрозорість лінії, %
+    var alpha = 50
+    /// Товщина лінії, px
+    var width = 3
+    /// Заливка всередині, %
+    var fill = 0
+    /// 0 — за формою віджета, 1 — без рамки
+    var shape = 0
+    /// Заокруглення кутів біля краю екрана, px
+    var radius = 16
+    /// Запас від елементів у режимі «За вмістом», px
+    var pad = 7
+
+    init() {}
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        color = (try? c.decodeIfPresent(String.self, forKey: .color)) ?? "#FFFFFF"
+        alpha = (try? c.decodeIfPresent(Int.self, forKey: .alpha)) ?? 50
+        width = (try? c.decodeIfPresent(Int.self, forKey: .width)) ?? 3
+        fill = (try? c.decodeIfPresent(Int.self, forKey: .fill)) ?? 0
+        shape = (try? c.decodeIfPresent(Int.self, forKey: .shape)) ?? 0
+        radius = (try? c.decodeIfPresent(Int.self, forKey: .radius)) ?? 16
+        pad = (try? c.decodeIfPresent(Int.self, forKey: .pad)) ?? 7
+    }
+
+    /// Швидкі стилі
+    static let presets: [(String, SlotFrame)] = {
+        func f(_ c: String, _ a: Int, _ w: Int, _ fill: Int, _ r: Int) -> SlotFrame { var s = SlotFrame(); s.color = c; s.alpha = a; s.width = w; s.fill = fill; s.radius = r; return s }
+        return [("Біла 50%", f("#FFFFFF", 50, 3, 0, 10)), ("Тонка", f("#FFFFFF", 35, 2, 0, 10)), ("Акцент", f("#0A84FF", 100, 3, 0, 16)), ("Підсвітка", f("#FFFFFF", 90, 2, 14, 16))]
+    }()
 }
 
 /// Значення для перегляду: свої для кожного джерела; час і дата — свої або справжні (з телефона).

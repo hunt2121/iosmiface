@@ -272,6 +272,65 @@ struct SlotPane: View {
                     .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Text("На браслеті: утримуйте циферблат → «Налаштувати» → торкніться цього місця й виберіть, що показувати. Мініатюри для вибору застосунок робить сам.")
                     .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                SlotFramePanel(project: project, slot: slot)
+            }
+        }
+    }
+}
+
+/// Вигляд рамки вибору слота на браслеті: швидкі стилі, колір, прозорість, товщина, заливка, форма, кути, запас від елементів
+struct SlotFramePanel: View {
+    @ObservedObject var project: FaceProject
+    let slot: XNode
+
+    private var name: String { slot.string("name") ?? "" }
+
+    private func update(_ f: @escaping (inout SlotFrame) -> Void) {
+        let n = name
+        project.edit { p in
+            var s = p.meta.slotFrames[n] ?? SlotFrame()
+            f(&s)
+            p.meta.slotFrames[n] = s == SlotFrame() ? nil : s
+        }
+    }
+
+    var body: some View {
+        let st = project.meta.slotFrames[name] ?? SlotFrame()
+        VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: loc("РАМКА ВИБОРУ НА БРАСЛЕТІ")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            HStack(spacing: 6) {
+                ForEach(Array(SlotFrame.presets.enumerated()), id: \.offset) { _, pr in
+                    let on = pr.1 == st
+                    Button { update { $0 = pr.1 } } label: {
+                        Text(verbatim: loc(pr.0)).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                            .foregroundStyle(on ? Color.white : Color.primary)
+                            .frame(maxWidth: .infinity).padding(.vertical, 8)
+                            .background(Capsule().fill(on ? Color.accentColor : Color.editorTile))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Picker("", selection: Binding(get: { st.shape }, set: { v in update { $0.shape = v } })) {
+                Text(verbatim: loc("За віджетом")).tag(0)
+                Text(verbatim: loc("Без рамки")).tag(1)
+            }
+            .pickerStyle(.segmented)
+            if st.shape == 0 {
+                ColorRow(title: "Колір", hex: st.color) { h in update { $0.color = h } }
+                CommitSlider(title: "Прозорість, %", value: Double(st.alpha), range: 0...100, step: 5) { v in update { $0.alpha = Int(v) } }
+                CommitSlider(title: "Товщина, px", value: Double(st.width), range: 1...8, step: 1) { v in update { $0.width = Int(v) } }
+                CommitSlider(title: "Заливка, %", value: Double(st.fill), range: 0...50, step: 2) { v in update { $0.fill = Int(v) } }
+                CommitSlider(title: "Заокруглення кутів, px", value: Double(st.radius), range: 0...40, step: 1) { v in update { $0.radius = Int(v) } }
+            }
+            CommitSlider(title: "Запас від елементів, px", value: Double(st.pad), range: 0...20, step: 1) { v in update { $0.pad = Int(v) } }
+            Text("Запас діє, коли розмір слота — «За вмістом». Рамку видно на браслеті, коли вибираєш віджет у слоті.")
+                .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if st != SlotFrame() {
+                Button { update { $0 = SlotFrame() } } label: {
+                    Text("Скинути до стандартних").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Capsule().fill(Color.editorTile))
+                }
+                .buttonStyle(.plain)
             }
         }
     }

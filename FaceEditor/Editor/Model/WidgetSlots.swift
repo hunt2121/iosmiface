@@ -54,7 +54,13 @@ enum WidgetSlots {
 
     /// Розмір віджета: щонайменше вміст; у слоті — не менший за той, що був
     /// Запас окантовки навколо видимого вмісту, px
-    static let pad = 7
+    static let defaultPad = 7
+
+    /// Запас навколо вмісту для віджета: налаштування рамки його слота (або типовий)
+    static func pad(_ p: FaceProject, _ w: XNode) -> Int {
+        for s in slotsOf(p, w) { if let f = p.meta.slotFrames[s.string("name") ?? ""] { return f.pad } }
+        return defaultPad
+    }
 
     static func isManual(_ p: FaceProject, _ w: XNode) -> Bool { p.meta.manualSize.contains(w.string("name") ?? "") }
 
@@ -90,8 +96,9 @@ enum WidgetSlots {
             union = union.union(b)
         }
         guard !union.isNull else { return }
-        let dx = Int(union.minX.rounded(.down)) - pad, dy = Int(union.minY.rounded(.down)) - pad
-        let cw = max(8, Int(union.maxX.rounded(.up)) + pad - dx), ch = max(8, Int(union.maxY.rounded(.up)) + pad - dy)
+        let pd = ws.first.map { pad(p, $0) } ?? defaultPad
+        let dx = Int(union.minX.rounded(.down)) - pd, dy = Int(union.minY.rounded(.down)) - pd
+        let cw = max(8, Int(union.maxX.rounded(.up)) + pd - dx), ch = max(8, Int(union.maxY.rounded(.up)) + pd - dy)
         for w in ws {
             if arrange(w) == "free" { for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) } }
             w.set("w", int: cw).set("h", int: ch)
@@ -160,7 +167,8 @@ enum WidgetSlots {
         let oldW = Int(w.int("w")), oldH = Int(w.int("h"))
         w.remove("w"); w.remove("h")
         let box = FaceRenderer(p).visibleBounds(w) ?? CGRect(x: 0, y: 0, width: 40, height: 30)
-        let cw = max(8, Int(box.maxX.rounded(.up)) + 2 * pad), ch = max(8, Int(box.maxY.rounded(.up)) + 2 * pad)
+        let pd = pad(p, w)
+        let cw = max(8, Int(box.maxX.rounded(.up)) + 2 * pd), ch = max(8, Int(box.maxY.rounded(.up)) + 2 * pd)
         w.set("w", int: max(cw, inSlot ? oldW : 0)).set("h", int: max(ch, inSlot ? oldH : 0))
     }
 
@@ -176,11 +184,12 @@ enum WidgetSlots {
         }
         guard !box.isNull else { return }
         let inSlot = !shrink && layout == nil && !slotsOf(p, w).isEmpty
-        var dx = Int(box.minX.rounded(.down)) - pad, dy = Int(box.minY.rounded(.down)) - pad
+        let pd = pad(p, w)
+        var dx = Int(box.minX.rounded(.down)) - pd, dy = Int(box.minY.rounded(.down)) - pd
         if layout == nil { dx = min(0, dx); dy = min(0, dy) }
         for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) }
         if let l = layout { l.set("x", int: Int(l.int("x")) + dx).set("y", int: Int(l.int("y")) + dy) }
-        let cw = max(8, Int(box.maxX.rounded(.up)) + pad - dx), ch = max(8, Int(box.maxY.rounded(.up)) + pad - dy)
+        let cw = max(8, Int(box.maxX.rounded(.up)) + pd - dx), ch = max(8, Int(box.maxY.rounded(.up)) + pd - dy)
         w.set("w", int: max(cw, inSlot ? Int(w.int("w")) : 0)).set("h", int: max(ch, inSlot ? Int(w.int("h")) : 0))
     }
 
@@ -368,25 +377,40 @@ enum WidgetSlots {
                     r.draw(w, at: .zero, in: c, depth: 0)
                 }
                 setImageRef(p, w, attr: "preview", img: img, name: "wpreview_" + (w.string("name") ?? "w"))
-                // рамка вибору повторює скруглення екрана внизу, не виходить за його край, а кути м'які
+                let st = p.meta.slotFrames[slot.string("name") ?? ""] ?? SlotFrame()
                 let lay = p.layouts(0).first { $0.string("ref") == "@" + (slot.string("name") ?? "") }
-                let ox = CGFloat(lay?.int("x") ?? 0), oy = CGFloat(lay?.int("y") ?? 0)
-                let box = AssetFactory.render(pw, ph) { _ in
-                    let boxRect = CGRect(x: 1.5, y: 1.5, width: CGFloat(pw) - 3, height: CGFloat(ph) - 3)
-                    var screen: (CGRect, CGFloat)?
-                    if lay != nil {
-                        let dev = p.meta.device
-                        let m = screenMargin + 1.5 / previewScale
-                        screen = (CGRect(x: (m - ox) * previewScale, y: (m - oy) * previewScale,
-                                         width: (CGFloat(dev.width) - 2 * m) * previewScale, height: (CGFloat(dev.height) - 2 * m) * previewScale),
-                                  (CGFloat(dev.corner) - m) * previewScale)
-                    }
-                    let (core, rr) = softCore(box: boxRect, boxRadius: min(boxRect.width, boxRect.height) / 2, screen: screen, radius: cornerRadius * previewScale)
-                    let ring = dilate(core, rr + 1.5).subtracting(dilate(core, max(rr - 1.5, 0)))
-                    UIColor.white.withAlphaComponent(0.5).setFill()
-                    UIBezierPath(cgPath: ring).fill()
-                }
-                setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)" + (lay != nil ? "_\(Int(ox))_\(Int(oy))" : ""))
+                let ox = Int(lay?.int("x") ?? 0), oy = Int(lay?.int("y") ?? 0)
+                let box = frameImage(p, st, pw: pw, ph: ph, origin: lay == nil ? nil : (ox, oy))
+                let tag = "\(st.color.dropFirst())_\(st.alpha)_\(st.width)_\(st.fill)_\(st.shape)_\(st.radius)"
+                setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)_\(tag)" + (lay != nil ? "_\(ox)_\(oy)" : ""))
+            }
+        }
+    }
+
+    /// Картинка рамки вибору: форма віджета, обрізана екраном (origin — місце слота на екрані), м'які кути, вигляд зі `SlotFrame`
+    static func frameImage(_ p: FaceProject, _ st: SlotFrame, pw: Int, ph: Int, origin: (Int, Int)?) -> RGBAImage {
+        AssetFactory.render(pw, ph) { _ in
+            guard st.shape == 0 else { return }
+            let half = CGFloat(st.width) / 2
+            let boxRect = CGRect(x: half, y: half, width: CGFloat(pw) - 2 * half, height: CGFloat(ph) - 2 * half)
+            var screen: (CGRect, CGFloat)?
+            if let (ox, oy) = origin {
+                let dev = p.meta.device
+                let m = screenMargin + half / previewScale
+                screen = (CGRect(x: (m - CGFloat(ox)) * previewScale, y: (m - CGFloat(oy)) * previewScale,
+                                 width: (CGFloat(dev.width) - 2 * m) * previewScale, height: (CGFloat(dev.height) - 2 * m) * previewScale),
+                          (CGFloat(dev.corner) - m) * previewScale)
+            }
+            let (core, rr) = softCore(box: boxRect, boxRadius: min(boxRect.width, boxRect.height) / 2, screen: screen, radius: CGFloat(st.radius) * previewScale)
+            let c = AssetFactory.color(st.color)
+            if st.fill > 0 {
+                c.withAlphaComponent(CGFloat(st.fill) / 100).setFill()
+                UIBezierPath(cgPath: dilate(core, rr)).fill()
+            }
+            if st.width > 0, st.alpha > 0 {
+                let ring = dilate(core, rr + half).subtracting(dilate(core, max(rr - half, 0)))
+                c.withAlphaComponent(CGFloat(st.alpha) / 100).setFill()
+                UIBezierPath(cgPath: ring).fill()
             }
         }
     }
@@ -414,11 +438,20 @@ enum WidgetSlots {
     }
 
     private static func setImageRef(_ p: FaceProject, _ w: XNode, attr: String, img: RGBAImage, name: String) {
-        if attr == "editbox", p.resources.elements.contains(where: { $0.tag == "Image" && $0.string("name") == name }) {
-            w.set(attr, "@" + name); return
+        if attr == "editbox" {
+            // рамки спільні для віджетів з однаковим виглядом, тож на місці їх не міняємо: беремо наявну за назвою або створюємо нову
+            let old = w.string(attr)
+            if p.resources.elements.contains(where: { $0.tag == "Image" && $0.string("name") == name }) {
+                w.set(attr, "@" + name)
+            } else {
+                let n = ElementFactory.addImageResource(p, img, base: name)
+                w.set(attr, "@" + n)
+            }
+            if let old, old != w.string(attr) { ElementFactory.collect(p, ref: old) }
+            return
         }
         if let cur = p.resource(ref: w.string(attr)), cur.tag == "Image",
-           (cur.string("name") ?? "").hasPrefix(attr == "preview" ? "wpreview_" : "weditbox_") {
+           (cur.string("name") ?? "").hasPrefix("wpreview_") {
             ElementFactory.replaceImage(p, cur, img); return
         }
         let n = ElementFactory.addImageResource(p, img, base: name)
