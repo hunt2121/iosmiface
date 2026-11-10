@@ -188,8 +188,31 @@ enum ElementFactory {
         addLayout(p, ref: name, theme: theme, x: center.0 - img.w / 2, y: center.1 - (img.h - img.w / 2))
     }
 
+    /// Межі видимих пікселів дуги в повній (квадратній) картинці: картинка дуги обрізається по них з усіх чотирьох боків,
+    /// щоб елемент не мав порожніх полів (область віджета й рамка вибору точно по дузі)
+    private static func arcBox(_ g: Generator) -> (box: CGRect, full: Int)? {
+        let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: "#FFFFFF", start: g.start, range: g.range, round: g.round)
+        var minX = full.w, maxX = -1, minY = full.h, maxY = -1
+        for y in 0..<full.h { for x in 0..<full.w where full.px[(y * full.w + x) * 4 + 3] > 12 {
+            if x < minX { minX = x }; if x > maxX { maxX = x }; if y < minY { minY = y }; if y > maxY { maxY = y }
+        } }
+        guard maxX >= 0 else { return nil }
+        return (CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1), full.w)
+    }
+
     static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
-        AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
+        let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
+        guard let (b, _) = arcBox(g) else { return full }
+        let x0 = Int(b.minX), y0 = Int(b.minY), w = Int(b.width), h = Int(b.height)
+        var px = [UInt8](repeating: 0, count: w * h * 4)
+        for y in 0..<h { for i in 0..<(w * 4) { px[y * w * 4 + i] = full.px[((y0 + y) * full.w + x0) * 4 + i] } }
+        return RGBAImage(w: w, h: h, px: px)
+    }
+
+    /// Центр дуги в обрізаній картинці
+    static func arcPivot(_ g: Generator) -> (x: Int, y: Int) {
+        guard let (b, full) = arcBox(g) else { return (0, 0) }
+        return (full / 2 - Int(b.minX), full / 2 - Int(b.minY))
     }
 
     static func lineImage(_ g: Generator, _ c: String) -> (RGBAImage, CGPoint, CGPoint) {
@@ -266,10 +289,10 @@ enum ElementFactory {
         let e = XNode("DataItemArcProgressBar")
         e.set("name", name).set("source", source).set("ref", "@" + fgName).set("bg", "@" + bgName)
             .set("endingStyle", gen.round ? "round" : "normal").set("renderRule", "alwaysShow").set("valueStart", int: 0).set("valueRange", int: 100)
-            .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded())).set("pivotX", int: fg.w / 2).set("pivotY", int: fg.h / 2)
+            .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded())).set("pivotX", int: arcPivot(gen).x).set("pivotY", int: arcPivot(gen).y)
             .set("barRadius", int: Int(gen.radius)).set("barWidth", int: Int(gen.width))
         p.resources.kids.append(e)
-        addLayout(p, ref: name, theme: theme, x: center.0 - fg.w / 2, y: center.1 - fg.h / 2)
+        addLayout(p, ref: name, theme: theme, x: center.0 - arcPivot(gen).x, y: center.1 - arcPivot(gen).y)
     }
 
     static func addLine(_ p: FaceProject, source: String, gen: Generator, theme: Int, center: (Int, Int)) {
@@ -377,7 +400,7 @@ enum ElementFactory {
             let fg = arcImage(gen, gen.color)
             if let r = p.resource(ref: res.string("ref")) { replaceImage(p, r, fg) }
             if let b = p.resource(ref: res.string("bg")) { replaceImage(p, b, arcImage(gen, gen.bgColor)) }
-            res.set("pivotX", int: fg.w / 2).set("pivotY", int: fg.h / 2).set("barRadius", int: Int(gen.radius)).set("barWidth", int: Int(gen.width))
+            res.set("pivotX", int: arcPivot(gen).x).set("pivotY", int: arcPivot(gen).y).set("barRadius", int: Int(gen.radius)).set("barWidth", int: Int(gen.width))
                 .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded()))
                 .set("endingStyle", gen.round ? "round" : "normal")
             if res.has("indicatorRadius") { res.set("indicatorRadius", int: Int(gen.radius)) }
