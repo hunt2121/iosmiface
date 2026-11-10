@@ -204,6 +204,7 @@ namespace BandFace.Creator
             ["slTap"] = new[] { "натискання: {0}", "tap: {0}", "нажатие: {0}" },
             ["slShown"] = new[] { "показаний у редакторі", "shown in the editor", "показан в редакторе" },
             ["slDefault"] = new[] { "типовий", "default", "по умолчанию" },
+            ["slTakeOut"] = new[] { "Вийняти зі слота", "Take out of slot", "Вынуть из слота" },
             ["slRemove"] = new[] { "Прибрати зі слота", "Remove from slot", "Убрать из слота" },
             ["slNew"] = new[] { "Новий віджет", "New widget", "Новый виджет" },
             ["slExisting"] = new[] { "Вибрати з готових", "Choose existing", "Выбрать из готовых" },

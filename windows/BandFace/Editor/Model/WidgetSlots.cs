@@ -373,6 +373,42 @@ namespace BandFace.Creator
             if (r != null) ElementFactory.Collect(p, r);
         }
 
+        /// <summary>Віджет виймається зі слота й стає окремим шаром на місці слота (на кожному екрані); мініатюра й рамка вибору прибираються.
+        /// Якщо це був єдиний віджет слота, слот зникає.</summary>
+        public static void SlotTakeOut(FaceProject p, XNode slot, int index)
+        {
+            var items = slot.All("Item");
+            if (index < 0 || index >= items.Count) return;
+            var r = items[index].Str("ref");
+            var w = p.ResourceRef(r);
+            if (r == null || w == null) return;
+            var sk = "@" + (slot.Str("name") ?? "");
+            slot.Kids.Remove(items[index]);
+            for (int t = 0; t < p.Themes.Count; t++)
+            {
+                var th = p.Theme(t);
+                var sl = p.Layouts(t).FirstOrDefault(l => l.Str("ref") == sk);
+                if (th == null || sl == null) continue;
+                var l2 = new XNode("Layout");
+                l2.Set("ref", r).Set("x", sl.Int("x")).Set("y", sl.Int("y"));
+                int at = th.Kids.IndexOf(sl);
+                th.Kids.Insert(Math.Min(at + 1, th.Kids.Count), l2);
+            }
+            // мініатюра й рамка потрібні лише віджетам у слоті
+            if (SlotsOf(p, w).Count == 0)
+            {
+                var pv = w.Str("preview"); var eb = w.Str("editbox");
+                w.Remove("preview"); w.Remove("editbox");
+                if (pv != null) ElementFactory.Collect(p, pv);
+                if (eb != null) ElementFactory.Collect(p, eb);
+            }
+            if (slot.All("Item").Count == 0)
+            {
+                for (int t = 0; t < p.Themes.Count; t++) p.Theme(t)?.Kids.RemoveAll(k => k.Tag == "Layout" && k.Str("ref") == sk);
+                p.Resources.Kids.Remove(slot);
+            }
+        }
+
         public static void SlotMove(XNode slot, int index, int dir) => MoveItem(slot, index, dir);
 
         // MARK: Мініатюри й рамка для вибору на браслеті

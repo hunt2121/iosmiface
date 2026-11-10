@@ -259,6 +259,7 @@ namespace BandFace.Creator
                 {
                     if (idx > 0) Ui.MenuAdd(cm, S.Get("moveUp"), "", () => EditRes(() => WidgetSlots.SlotMove(slot, idx, -1)));
                     if (idx < ws.Count - 1) Ui.MenuAdd(cm, S.Get("moveDown"), "", () => EditRes(() => WidgetSlots.SlotMove(slot, idx, 1)));
+                    Ui.MenuAdd(cm, S.Get("slTakeOut"), "", () => { slotWidget = null; project.Edit(p => WidgetSlots.SlotTakeOut(p, slot, idx)); });
                     if (ws.Count > 1) Ui.MenuAdd(cm, S.Get("slRemove"), "", () => project.Edit(p => WidgetSlots.SlotRemove(p, slot, idx)), true);
                 }, idx == 0 ? S.Get("slDefault") : null));
             }
