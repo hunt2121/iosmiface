@@ -53,7 +53,22 @@ enum WidgetSlots {
     }
 
     /// Розмір віджета: щонайменше вміст; у слоті — не менший за той, що був
+    static func isManual(_ p: FaceProject, _ w: XNode) -> Bool { p.meta.manualSize.contains(w.string("name") ?? "") }
+
+    /// Розмір віджета задано вручну — картинки з прозорими краями не впливають на область
+    static func setSize(_ p: FaceProject, _ w: XNode, width: Int, height: Int) {
+        p.meta.manualSize.insert(w.string("name") ?? "")
+        w.set("w", int: min(max(width, 8), 2000)).set("h", int: min(max(height, 8), 2000))
+    }
+
+    /// Повернути розмір за вмістом
+    static func setAuto(_ p: FaceProject, _ w: XNode, layout: XNode? = nil) {
+        p.meta.manualSize.remove(w.string("name") ?? "")
+        fit(p, w, layout: layout)
+    }
+
     static func fit(_ p: FaceProject, _ w: XNode, layout: XNode? = nil) {
+        if isManual(p, w) { return }
         if arrange(w) == "free", !w.all("Item").isEmpty { wrapFree(p, w, layout: layout); return }
         let inSlot = !slotsOf(p, w).isEmpty
         let oldW = Int(w.int("w")), oldH = Int(w.int("h"))

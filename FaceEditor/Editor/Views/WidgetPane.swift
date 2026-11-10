@@ -148,6 +148,8 @@ struct WidgetPane: View {
                 }
             }
 
+            SizeRow(project: project, widgets: [w], layout: ownLayout)
+
             Text(verbatim: loc("СКЛАД ВІДЖЕТА") + " · \(items.count)").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 4)
             if items.isEmpty {
                 Text("Віджет порожній. Додайте в нього шари циферблата.").font(.footnote).foregroundStyle(.secondary)
@@ -220,6 +222,7 @@ struct SlotPane: View {
                 WidgetPane(project: project, theme: theme, widget: o, origin: origin, ownLayout: nil)
             } else {
                 let shownIdx = min(WidgetSlots.shown(project, slot), max(0, ws.count - 1))
+                SizeRow(project: project, widgets: ws, layout: layout, isSlot: true)
                 Text(verbatim: loc("ЩО МОЖНА ВИБРАТИ НА БРАСЛЕТІ") + " · \(ws.count)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 ForEach(Array(ws.enumerated()), id: \.offset) { i, w in
                     let sub = String(format: loc("натискання: %@"), appTitle(w.string("jumpApp"))) + (i == shownIdx ? " · " + loc("на полотні") : "")
@@ -267,6 +270,38 @@ struct SlotPane: View {
                 Text("На браслеті: утримуйте циферблат → «Налаштувати» → торкніться цього місця й виберіть, що показувати. Мініатюри для вибору застосунок робить сам.")
                     .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+}
+
+
+/// Розмір області віджета (або всіх віджетів слота): за вмістом або вручну — незалежно від прозорих країв картинок
+struct SizeRow: View {
+    @ObservedObject var project: FaceProject
+    let widgets: [XNode]
+    let layout: XNode?
+    var isSlot = false
+
+    var body: some View {
+        let manual = widgets.contains { WidgetSlots.isManual(project, $0) }
+        let w = Int(widgets.map { $0.int("w") }.max() ?? 0), h = Int(widgets.map { $0.int("h") }.max() ?? 0)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(verbatim: loc(isSlot ? "Розмір слота" : "Розмір віджета")).font(.subheadline)
+                Spacer()
+                Button { project.edit { p in for x in widgets { WidgetSlots.setAuto(p, x, layout: isSlot ? nil : layout) } } } label: {
+                    Text("За вмістом").font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10).frame(height: 28)
+                        .background(Capsule().fill(manual ? Color.accentColor.opacity(0.15) : Color.editorTile))
+                }
+                .buttonStyle(.plain).disabled(!manual)
+            }
+            HStack(spacing: 8) {
+                NumberField(title: "Ширина", value: w) { v in project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: v, height: Int(x.int("h"))) } } }
+                NumberField(title: "Висота", value: h) { v in project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: Int(x.int("w")), height: v) } } }
+            }
+            Text(verbatim: loc(manual ? "Розмір задано вручну: елементи його не змінюють." : "Розмір підлаштовується під елементи. Змініть число — і він стане постійним."))
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }

@@ -121,6 +121,8 @@ struct ProjectMeta: Codable {
     var sourceKey: String?
     /// Елементи з галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)
     var colorFollow: Set<String> = []
+    /// Віджети, розмір яких задано вручну (не підганяється під вміст)
+    var manualSize: Set<String> = []
     /// Значення для перегляду в редакторі (на браслет не записуються)
     var demo = DemoValues()
 
@@ -135,6 +137,7 @@ struct ProjectMeta: Codable {
         edited = (try? c.decodeIfPresent(Bool.self, forKey: .edited)) ?? false
         sourceKey = try? c.decodeIfPresent(String.self, forKey: .sourceKey)
         colorFollow = (try? c.decodeIfPresent(Set<String>.self, forKey: .colorFollow)) ?? []
+        manualSize = (try? c.decodeIfPresent(Set<String>.self, forKey: .manualSize)) ?? []
         demo = (try? c.decodeIfPresent(DemoValues.self, forKey: .demo)) ?? DemoValues()
     }
 }
