@@ -63,6 +63,7 @@ namespace BandFace
             EditorTab.EditorShownChanged += shown => UpdateSidebar();
             EditorTab.InstallRequested += (bin, name) => InstallFromEditor(bin, name);
             EditorTab.CancelInstallRequested += CancelInstall;
+            EditorTab.RefreshRequested += () => _ = RefreshActiveFaceAsync(true);
             PreviewKeyDown += (s, e) => { if (NavEditor.IsChecked == true && EditorTab.HandleKey(e)) e.Handled = true; };
             DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
             Drop += Window_Drop;
@@ -273,6 +274,7 @@ namespace BandFace
             bool editor = NavEditor.IsChecked == true;
             PagesHost.Visibility = editor ? Visibility.Collapsed : Visibility.Visible;
             EditorTab.Visibility = editor ? Visibility.Visible : Visibility.Collapsed;
+            if (editor) _ = RefreshActiveFaceAsync(false);
             if (NavFaces.IsChecked == true) ShowPage(PageFaces);
             if (NavSettings.IsChecked == true) ShowPage(PageSettings);
             CloseFlyout();
@@ -404,6 +406,7 @@ namespace BandFace
             BandConnected.Visibility = c ? Visibility.Visible : Visibility.Collapsed;
             BandConnecting.Visibility = _connecting ? Visibility.Visible : Visibility.Collapsed;
             BandIdle.Visibility = !c && !_connecting ? Visibility.Visible : Visibility.Collapsed;
+            if (!c && !_connecting) EditorTab?.SetActiveFace(null);
             BandName.Text = BandModel(_ble.ConnectedName);
             ConnectingText.Text = S.Get("autoConnecting", BandModel(_connectingName));
             BandNone.Text = S.Get("notConnected");
@@ -715,6 +718,32 @@ namespace BandFace
             }
         }
 
+        DateTime _lastFaceSync = DateTime.MinValue;
+
+        /// <summary>Дізнається, який циферблат зараз на екрані браслета, і позначає його в редакторі (як у магазині iOS).</summary>
+        async Task RefreshActiveFaceAsync(bool force)
+        {
+            var key = Bytes.ParseHex(KeyBox.Text);
+            if (key == null || key.Length != 16 || !_ble.IsConnected || _connecting || _busy) return;
+            if (!force && (DateTime.Now - _lastFaceSync).TotalSeconds < 20) return;
+            if (!await _bandGate.WaitAsync(0)) return;
+            var session = new BandSession(_ble, NewConfig());
+            _session = session;
+            try
+            {
+                await session.OpenAsync();
+                await session.AuthenticateAsync(key, "Windows PC", "UK", Command.PhoneInfoMiFitness(Region()));
+                try { await session.CommandAsync(Command.AfterAuthMiFitness, 3000); } catch (BandException) { }
+                var list = WatchfaceEntry.List(await session.CommandAsync(Command.WatchfaceListRequest()));
+                var active = list.FirstOrDefault(x => x.IsActive)?.Id;
+                try { await session.CloseAsync(); } catch (Exception) { }
+                _lastFaceSync = DateTime.Now;
+                EditorTab.SetActiveFace(active);
+            }
+            catch (Exception ex) { AddLog("faces sync: " + ex.Message); }
+            finally { try { session.Dispose(); } catch (Exception) { } _session = null; _bandGate.Release(); }
+        }
+
         async Task<bool> InstallOnceAsync(byte[] key, Action<string> stage, Action<double, string> upload)
         {
             await _bandGate.WaitAsync();
@@ -749,6 +778,8 @@ namespace BandFace
                             break;
                     }
                 })));
+                // після установки браслет вмикає цей циферблат
+                Dispatcher.BeginInvoke(new Action(() => { _lastFaceSync = DateTime.Now; EditorTab.SetActiveFace(_face?.Id); }));
                 return already;
             }
             finally

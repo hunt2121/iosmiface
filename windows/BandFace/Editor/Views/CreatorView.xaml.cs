@@ -27,6 +27,19 @@ namespace BandFace.Creator
         /// <summary>«Встановити на браслет» у редакторі: .bin і назва.</summary>
         public event Action<byte[], string> InstallRequested;
         public event Action CancelInstallRequested;
+        /// <summary>Запит на оновлення стану циферблатів на пристрої (кнопка «Оновити»)</summary>
+        public event Action RefreshRequested;
+
+        /// <summary>Id циферблата, який зараз на екрані браслета (null — невідомо)</summary>
+        string activeFaceId;
+        public void SetActiveFace(string id)
+        {
+            if (activeFaceId == id) return;
+            activeFaceId = id;
+            RefreshProjects();
+        }
+
+        void Refresh_Click(object sender, RoutedEventArgs e) => RefreshRequested?.Invoke();
         /// <summary>Прогрес встановлення з редактора — у віконце під кнопкою</summary>
         public void ShowInstall(InstallUpdate u) => Editor.ShowInstall(u);
 
@@ -46,6 +59,7 @@ namespace BandFace.Creator
         void ApplyTexts()
         {
             TitleFaces.Text = S.Get("editor");
+            RefreshBtn.Content = S.Get("refreshBand");
             FontsBtn.Content = S.Get("fonts");
             TitleFonts.Text = S.Get("fonts");
             NewBtn.Content = S.Get("newFace");
@@ -128,7 +142,7 @@ namespace BandFace.Creator
             inner.Children.Add(img);
             var capsule = new Border
             {
-                Width = 102, Height = 242, CornerRadius = new CornerRadius(51), Background = new SolidColorBrush(Color.FromRgb(0x7A, 0x7A, 0x7A)),
+                Width = 102, Height = 242, CornerRadius = new CornerRadius(51), Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
                 Padding = new Thickness(3), Child = inner,
             };
             var sp = new StackPanel { Width = 150 };
