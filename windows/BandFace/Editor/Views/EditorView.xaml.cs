@@ -389,11 +389,10 @@ namespace BandFace.Creator
                 var dash = new DoubleCollection { 4, 2 };
                 if (SizeTarget(out _, out _))
                 {
-                    // віджет і слот: рамка повторює скруглення екрана й не виходить за його край
-                    double m = 0;
-                    Geometry g = new RectangleGeometry(r, 3, 3);
-                    var screen = new RectangleGeometry(new Rect(m, m, dev.Width * zoom - 2 * m, dev.Height * zoom - 2 * m), Math.Max(dev.Corner * zoom - m, 0), Math.Max(dev.Corner * zoom - m, 0));
-                    g = Geometry.Combine(g, screen, GeometryCombineMode.Intersect, null);
+                    // віджет і слот: форма екрана внизу, не виходить за край, кути м'які (як рамка вибору на браслеті)
+                    double rr;
+                    var core = WidgetSlots.SoftCore(r, 3, Tuple.Create(new Rect(0, 0, dev.Width * zoom, dev.Height * zoom), dev.Corner * zoom), WidgetSlots.CornerRadius * zoom, out rr);
+                    Geometry g = WidgetSlots.Dilate(core, rr);
                     rect = new System.Windows.Shapes.Path { Data = g, Stroke = sel, StrokeThickness = 1.5, StrokeDashArray = dash };
                 }
                 else

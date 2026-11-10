@@ -70,7 +70,7 @@ namespace BandFace.Creator
 
         /// <summary>Розмір віджета: щонайменше вміст; у слоті — не менший за інші віджети слота</summary>
         /// <summary>Запас окантовки навколо видимого вмісту, px</summary>
-        public const int Pad = 5;
+        public const int Pad = 7;
 
         public static bool IsManual(FaceProject p, XNode w) => p.Meta.ManualSize.Contains(w.Str("name") ?? "");
 
@@ -377,6 +377,34 @@ namespace BandFace.Creator
 
         // MARK: Мініатюри й рамка для вибору на браслеті
 
+        /// <summary>Радіус м'яких кутів рамки вибору (там, де її обрізає екран), px циферблата</summary>
+        public const double CornerRadius = 16;
+
+        /// <summary>Рамка з м'якими кутами = (область ∩ екран) з відкриттям радіусом r: обидві форми стискаються на r
+        /// і перетинаються, потім результат розширюється на r (Dilate). Повертає стиснуту форму й використаний радіус.</summary>
+        public static Geometry SoftCore(Rect box, double boxRadius, Tuple<Rect, double> screen, double radius, out double used)
+        {
+            double r = Math.Max(0, Math.Min(radius, Math.Min(box.Width, box.Height) / 2 - 1));
+            used = r;
+            Func<Rect, double, Geometry> eroded = (rect, rad) =>
+            {
+                var q = new Rect(rect.X + r, rect.Y + r, Math.Max(rect.Width - 2 * r, 0.1), Math.Max(rect.Height - 2 * r, 0.1));
+                double k = Math.Max(0, Math.Min(rad - r, Math.Min(q.Width, q.Height) / 2));
+                return new RectangleGeometry(q, k, k);
+            };
+            Geometry core = eroded(box, boxRadius);
+            if (screen != null) core = Geometry.Combine(core, eroded(screen.Item1, screen.Item2), GeometryCombineMode.Intersect, null);
+            return core;
+        }
+
+        /// <summary>Розширення форми на t (об'єднання з товстою обводкою контуру)</summary>
+        public static Geometry Dilate(Geometry path, double t)
+        {
+            if (t <= 0) return path;
+            var pen = new Pen(Brushes.Black, 2 * t) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+            return Geometry.Combine(path, path.GetWidenedPathGeometry(pen), GeometryCombineMode.Union, null);
+        }
+
         /// <summary>Відступ рамки вибору від країв екрана, px (0 — лише не виходить за край)</summary>
         const double ScreenMargin = 0;
 
@@ -400,23 +428,24 @@ namespace BandFace.Creator
                         dc.Pop();
                     });
                     SetImageRef(p, w, "preview", img, "wpreview_" + (w.Str("name") ?? "w"));
-                    // рамка вибору повторює скруглення екрана внизу й не ближче 3 px до його країв
+                    // рамка вибору повторює скруглення екрана внизу, не виходить за його край, а кути м'які
                     var lay = p.Layouts(0).FirstOrDefault(l => l.Str("ref") == "@" + (slot.Str("name") ?? ""));
                     double ox = lay?.Int("x") ?? 0, oy = lay?.Int("y") ?? 0;
                     var box = Imaging.Render(pw, ph, dc =>
                     {
-                        var pen = new Pen(Imaging.Brush("#FFFFFF", 0.5), 3);
-                        double rad = Math.Min(pw, ph) / 2.0 - 1.5;
-                        Geometry shape = new RectangleGeometry(new Rect(1.5, 1.5, pw - 3, ph - 3), rad, rad);
+                        var boxRect = new Rect(1.5, 1.5, pw - 3, ph - 3);
+                        Tuple<Rect, double> screen = null;
                         if (lay != null)
                         {
                             var dev = p.Meta.Device;
                             double m = ScreenMargin + 1.5 / PreviewScale;
-                            var screen = new RectangleGeometry(new Rect((m - ox) * PreviewScale, (m - oy) * PreviewScale, (dev.Width - 2 * m) * PreviewScale, (dev.Height - 2 * m) * PreviewScale),
-                                                               (dev.Corner - m) * PreviewScale, (dev.Corner - m) * PreviewScale);
-                            shape = Geometry.Combine(shape, screen, GeometryCombineMode.Intersect, null);
+                            screen = Tuple.Create(new Rect((m - ox) * PreviewScale, (m - oy) * PreviewScale, (dev.Width - 2 * m) * PreviewScale, (dev.Height - 2 * m) * PreviewScale),
+                                                  (dev.Corner - m) * PreviewScale);
                         }
-                        dc.DrawGeometry(null, pen, shape);
+                        double rr;
+                        var core = SoftCore(boxRect, Math.Min(boxRect.Width, boxRect.Height) / 2, screen, CornerRadius * PreviewScale, out rr);
+                        var ring = Geometry.Combine(Dilate(core, rr + 1.5), Dilate(core, Math.Max(rr - 1.5, 0)), GeometryCombineMode.Exclude, null);
+                        dc.DrawGeometry(Imaging.Brush("#FFFFFF", 0.5), null, ring);
                     });
                     SetImageRef(p, w, "editbox", box, "weditbox_" + pw + "x" + ph + (lay != null ? "_" + (int)ox + "_" + (int)oy : ""));
                 }
