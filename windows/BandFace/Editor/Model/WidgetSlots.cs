@@ -69,8 +69,25 @@ namespace BandFace.Creator
         }
 
         /// <summary>Розмір віджета: щонайменше вміст; у слоті — не менший за інші віджети слота</summary>
+        public static bool IsManual(FaceProject p, XNode w) => p.Meta.ManualSize.Contains(w.Str("name") ?? "");
+
+        /// <summary>Розмір віджета задано вручну — картинки з прозорими краями не впливають на область</summary>
+        public static void SetSize(FaceProject p, XNode w, int width, int height)
+        {
+            p.Meta.ManualSize.Add(w.Str("name") ?? "");
+            w.Set("w", Math.Min(Math.Max(width, 8), 2000)).Set("h", Math.Min(Math.Max(height, 8), 2000));
+        }
+
+        /// <summary>Повернути розмір за вмістом</summary>
+        public static void SetAuto(FaceProject p, XNode w, XNode layout = null)
+        {
+            p.Meta.ManualSize.Remove(w.Str("name") ?? "");
+            Fit(p, w, layout);
+        }
+
         public static void Fit(FaceProject p, XNode w, XNode layout = null)
         {
+            if (IsManual(p, w)) return;
             if (Arrange(w) == "free" && w.All("Item").Count > 0) { WrapFree(p, w, layout); return; }
             var r = new FaceRenderer(p);
             bool hadW = w.Has("w"), hadH = w.Has("h");

@@ -130,6 +130,8 @@ namespace BandFace.Creator
                     v => { int g = (int)Math.Round(v); if (g != WidgetSlots.Gap(w)) project.Edit(p => WidgetSlots.SetLayout(p, w, arr, WidgetSlots.Align(w), g, ownLayout)); }));
             }
 
+            SizeSection(new List<XNode> { w }, ownLayout, false);
+
             var items = w.All("Item");
             Add(Ui.Header(S.Get("wContent") + " · " + items.Count));
             for (int i = 0; i < items.Count; i++)
@@ -172,6 +174,20 @@ namespace BandFace.Creator
         }
 
         /// <summary>Налаштування слота: список віджетів на вибір (або відкритий віджет слота)</summary>
+        /// <summary>Розмір області віджета (або всіх віджетів слота): за вмістом чи вручну, незалежно від прозорих країв картинок</summary>
+        void SizeSection(List<XNode> widgets, XNode layout, bool isSlot)
+        {
+            bool manual = widgets.Any(x => WidgetSlots.IsManual(project, x));
+            int w0 = widgets.Count == 0 ? 0 : widgets.Max(x => x.Int("w")), h0 = widgets.Count == 0 ? 0 : widgets.Max(x => x.Int("h"));
+            Add(Ui.Header(S.Get(isSlot ? "slSize" : "wSize")));
+            Add(Ui.NumberRow(S.Get("wWidth"), w0, v => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, v, x.Int("h")); }), 8, 2000));
+            Add(Ui.NumberRow(S.Get("wHeight"), h0, v => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, x.Int("w"), v); }), 8, 2000));
+            var auto = new Button { Content = S.Get("wAutoSize"), Style = (Style)FindResource("Btn"), IsEnabled = manual, Margin = new Thickness(0, 0, 0, 6) };
+            auto.Click += (s, e) => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetAuto(p, x, isSlot ? null : layout); });
+            Add(auto);
+            Add(Ui.Note(S.Get(manual ? "wSizeManual" : "wSizeAuto")));
+        }
+
         void SlotSection(XNode slot, XNode layout)
         {
             var ws = WidgetSlots.Widgets(project, slot);
@@ -185,6 +201,7 @@ namespace BandFace.Creator
                 WidgetSection(slotWidget, origin, null);
                 return;
             }
+            SizeSection(ws, null, true);
             Add(Ui.Header(S.Get("slChoices") + " · " + ws.Count));
             int shownIdx = Math.Min(WidgetSlots.Shown(project, slot), Math.Max(0, ws.Count - 1));
             for (int i = 0; i < ws.Count; i++)

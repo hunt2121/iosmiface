@@ -124,6 +124,8 @@ namespace BandFace.Creator
         public string SourceKey;
         /// <summary>Елементи з увімкненою галочкою «Змінюється з кольором циферблата» (діє, щойно в циферблата з'являться кольори)</summary>
         public HashSet<string> ColorFollow = new HashSet<string>();
+        /// <summary>Віджети, розмір яких задано вручну (не підганяється під вміст)</summary>
+        public HashSet<string> ManualSize = new HashSet<string>();
         /// <summary>Значення для перегляду в редакторі (на браслет не записуються)</summary>
         public DemoValues Demo = new DemoValues();
 
@@ -133,6 +135,7 @@ namespace BandFace.Creator
             m.Demo = Demo.Copy();
             m.Generators = Generators.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
             m.ColorFollow = new HashSet<string>(ColorFollow);
+            m.ManualSize = new HashSet<string>(ManualSize);
             return m;
         }
 
@@ -154,6 +157,7 @@ namespace BandFace.Creator
             };
             if (SourceKey != null) d["sourceKey"] = SourceKey;
             if (ColorFollow.Count > 0) d["colorFollow"] = ColorFollow.Cast<object>().ToList();
+            if (ManualSize.Count > 0) d["manualSize"] = ManualSize.Cast<object>().ToList();
             if (!Demo.IsEmpty) d["demo"] = Demo.ToJson();
             return Json.Write(d);
         }
@@ -174,6 +178,7 @@ namespace BandFace.Creator
                 m.Edited = Json.Bool(d, "edited", false);
                 m.SourceKey = Json.Str(d, "sourceKey", null);
                 if (d.TryGetValue("colorFollow", out var cf) && cf is List<object> cl) m.ColorFollow = new HashSet<string>(cl.Select(o => o?.ToString() ?? ""));
+                if (d.TryGetValue("manualSize", out var ms) && ms is List<object> ml) m.ManualSize = new HashSet<string>(ml.Select(o => o?.ToString() ?? ""));
                 m.Demo = DemoValues.FromJson(Json.Obj(d, "demo"));
             }
             catch (Exception) { }
