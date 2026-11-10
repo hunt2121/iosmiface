@@ -14881,6 +14881,29 @@
           }
         }
       }
+    },
+    "0 — будь-яка кількість цифр: число росте за потреби (без нулів попереду).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0 — any number of digits: the number grows as needed (no leading zeros)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0 — любое количество цифр: число растёт по мере надобности (без нулей впереди)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0 — будь-яка кількість цифр: число росте за потреби (без нулів попереду)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
