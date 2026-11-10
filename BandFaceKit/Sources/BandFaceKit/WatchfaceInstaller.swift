@@ -74,6 +74,9 @@ public struct WatchfaceInstaller: Sendable {
     public var activationTimeout: Duration = .seconds(4)
     /// Скільки разів надсилати 4/1, якщо браслет не відповідає.
     public var activationAttempts = 2
+    /// Якщо циферблат із таким ID уже є на браслеті (навіть активний) — видалити його й встановити заново.
+    /// Для активного спершу вмикається інший циферблат; після встановлення новий вмикається сам.
+    public var replaceExisting = false
 
     public init() {}
 
@@ -129,24 +132,39 @@ public struct WatchfaceInstaller: Sendable {
         while true {
             let response = try await session.command(Command.installRequest(id: face.id, size: face.size))
             let status = response.root.varint(at: [6, 5]) ?? 0
-            switch status {
-            case 0:
-                return .needsUpload
-            case 2:
-                return .alreadyInstalled
-            default:
-                // Статус 5: циферблат з цим ID уже є. Активний — встановлювати нічого;
-                // неактивну стару версію видаляємо і пробуємо ще раз.
-                guard !removedOld else { throw BandError.installRejected(status: status) }
-                let list = try await session.watchfaces()
-                guard let old = list.first(where: { $0.id == face.id }) else {
-                    throw BandError.installRejected(status: status)
-                }
-                if old.isActive { return .alreadyActive }
+            if status == 0 { return .needsUpload }
+            if status == 2 && !replaceExisting { return .alreadyInstalled }
+            // Статус 5 (або 2 у режимі заміни): циферблат з цим ID уже є.
+            // Без заміни активний пропускаємо, неактивну стару версію видаляємо.
+            guard !removedOld else { throw BandError.installRejected(status: status) }
+            let list = try await session.watchfaces()
+            guard let old = list.first(where: { $0.id == face.id }) else {
+                if status == 2 { return .alreadyInstalled }
+                throw BandError.installRejected(status: status)
+            }
+            if old.isActive {
+                guard replaceExisting else { return .alreadyActive }
+                // активний видалити не можна: тимчасово вмикаємо інший
+                guard let other = list.first(where: { $0.id != face.id }) else { return .alreadyActive }
+                onPhase?(.removingOldVersion)
+                try await activateOther(other.id, session: session)
+            } else {
                 guard old.canDelete else { throw BandError.installRejected(status: status) }
                 onPhase?(.removingOldVersion)
-                try await session.deleteWatchface(id: face.id)
-                removedOld = true
+            }
+            try await session.deleteWatchface(id: face.id)
+            removedOld = true
+        }
+    }
+
+    private func activateOther(_ id: String, session: BandSession) async throws {
+        for attempt in 1...max(activationAttempts, 1) {
+            do {
+                try await session.activateWatchface(id: id, timeout: activationTimeout)
+                try await Task.sleep(for: .milliseconds(500))
+                return
+            } catch BandError.timeout where attempt < activationAttempts {
+                continue
             }
         }
     }

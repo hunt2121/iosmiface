@@ -804,7 +804,7 @@ struct ContentView: View {
                 // Оновлюємо екран лише при зміні на 1% або зміні етапу:
                 // частин сотні-тисячі, і кожне оновлення перемальовує вкладки
                 let throttle = ProgressThrottle()
-                let text = try await FaceInstaller(ble: ble).install(face, authKey: key) { value, text in
+                let text = try await FaceInstaller(ble: ble).install(face, authKey: key, replace: fromEditor) { value, text in
                     guard throttle.shouldUpdate(value: value, text: text) else { return }
                     progress = value
                     progressText = text
