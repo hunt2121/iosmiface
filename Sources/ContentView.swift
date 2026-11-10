@@ -122,13 +122,16 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         // Редактор збирає .bin і передає сюди: встановлення йде звичним шляхом вкладки «Циферблати»
-        .environment(\.faceInstall, FaceInstallAction(status: editorInstall) { data, name in installFromEditor(data, name: name) })
+        .environment(\.faceInstall, FaceInstallAction(status: editorInstall, run: { data, name in installFromEditor(data, name: name) },
+                                                                refresh: { await syncDeviceFaces(force: true) }))
         .preferredColorScheme(appTheme == "light" ? .light : (appTheme == "dark" ? .dark : nil))
         .onChange(of: tab) { newTab in
-            if newTab == .store { Task { await syncDeviceFaces() } }
+            if newTab == .store || newTab == .editor { Task { await syncDeviceFaces() } }
         }
+        .onChange(of: activeFaceID) { editorInstall.activeID = $0 }
+        .onChange(of: ble.connectedID) { if $0 == nil { editorInstall.activeID = nil } }
         .onChange(of: ble.servicesReady) { ready in
-            if ready && tab == .store { Task { await syncDeviceFaces() } }
+            if ready && (tab == .store || tab == .editor) { Task { await syncDeviceFaces() } }
         }
         .onChange(of: scenePhase) { phase in
             // Відпускаємо браслет, щоб він вільно працював з Mi Fitness
@@ -810,7 +813,7 @@ struct ContentView: View {
                     progressText = text
                     if fromEditor { editorInstall.progress = value; editorInstall.text = text }
                 }
-                if fromEditor { editorInstall.succeeded() }
+                if fromEditor { editorInstall.succeeded(); activeFaceID = face.id }
                 ble.addLog(String(localized: "Готово: \(text)"))
                 show(text, error: false)
                 if let store {

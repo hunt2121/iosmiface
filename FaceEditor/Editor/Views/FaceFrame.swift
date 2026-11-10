@@ -9,6 +9,8 @@ enum FaceFrame {
     /// Товщина рамки корпусу
     static let border: CGFloat = 3
     static let color = Color.gray.opacity(0.45)
+    /// Рамка циферблата, який зараз на екрані браслета (той самий зелений #22A846, що й у магазині)
+    static let activeColor = Color(red: 34 / 255, green: 168 / 255, blue: 70 / 255)
 }
 
 extension View {
@@ -17,7 +19,7 @@ extension View {
         self
             .clipShape(Capsule(style: .continuous))
             .padding(FaceFrame.border)
-            .background(Capsule(style: .continuous).fill(active ? Color.accentColor : FaceFrame.color))
+            .background(Capsule(style: .continuous).fill(active ? FaceFrame.activeColor : FaceFrame.color))
     }
 }
 

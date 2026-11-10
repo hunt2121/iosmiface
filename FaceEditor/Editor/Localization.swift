@@ -18,6 +18,8 @@ struct FaceInstallAction {
     /// стан встановлення з редактора — для прогресу під карткою циферблата, як у магазині
     let status: EditorInstallStatus
     let run: (Data, String) -> Void
+    /// оновити список циферблатів на пристрої (потягнути вниз, як у магазині)
+    var refresh: () async -> Void = {}
     func callAsFunction(_ data: Data, _ name: String) { run(data, name) }
 }
 
@@ -27,6 +29,8 @@ final class EditorInstallStatus: ObservableObject {
     @Published private(set) var current: String?
     @Published var progress: Double = 0
     @Published var text = ""
+    /// id циферблата, який зараз на екрані браслета (nil — невідомо або пристрій не підключено)
+    @Published var activeID: String?
     /// id проєкту → дата зміни на момент встановлення
     @Published private(set) var installed: [String: Date] = [:]
     private var pending: Date?

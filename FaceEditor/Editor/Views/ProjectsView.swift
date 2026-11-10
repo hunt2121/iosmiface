@@ -44,6 +44,7 @@ struct ProjectsView: View {
                 }
             }
             .background(Color(.systemGroupedBackground))
+            .refreshable { await install?.refresh() }
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -156,7 +157,7 @@ struct ProjectsView: View {
                     }
                 }
                 .frame(width: 96, height: 236)
-                .faceCapsule()
+                .faceCapsule(active: (install?.status.activeID).map { $0 == p.root.string("id") } ?? false)
                 .frame(maxWidth: .infinity)
                 .frame(height: 266)
 
