@@ -278,7 +278,6 @@ namespace BandFace.Creator
             ["growRight"] = new[] { "праворуч", "right", "вправо" },
             ["growCenter"] = new[] { "від центру", "from center", "от центра" },
             ["growLeft"] = new[] { "ліворуч", "left", "влево" },
-            ["digitsAuto"] = new[] { "0 — будь-яка кількість цифр: число росте за потреби (без нулів попереду).", "0 — any number of digits: the number grows as needed (no leading zeros).", "0 — любое количество цифр: число растёт по мере надобности (без нулей впереди)." },
             ["growHint"] = new[] { "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15».", "The red mark is the X point. The dashed box is the digit added when “5” becomes “15”.", "Красная черта — точка X. Пунктир — цифра, которая добавляется, когда «5» становится «15»." },
             ["growNoEffect"] = new[] { "Не діє: з нулями попереду цифр завжди {0}, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс.", "No effect: with leading zeros there are always {0} digits, so the number doesn't grow. Turn off “Leading zeros” to use it.", "Не действует: с нулями впереди цифр всегда {0}, число не растёт. Выключите «Нули впереди», чтобы это имело смысл." },
             ["align"] = new[] { "Вирівнювання", "Alignment", "Выравнивание" },

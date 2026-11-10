@@ -504,8 +504,7 @@ namespace BandFace.Creator
             Add(Ui.GrowChips(S.Get("grow"), new[] { S.Get("growRight"), S.Get("growCenter"), S.Get("growLeft") },
                              res.Str("align") ?? "left", v => SetNumberAlign(layout, res, v), !fixedWidth,
                              fixedWidth ? S.Get("growNoEffect", res.Int("totalDigits")) : S.Get("growHint")));
-            Add(Ui.NumberRow(S.Get("totalDigits"), res.Int("totalDigits"), v => EditRes(() => res.Set("totalDigits", v)), 0, 9));
-            Add(Ui.Note(S.Get("digitsAuto")));
+            Add(Ui.NumberRow(S.Get("totalDigits"), Math.Max(1, res.Int("totalDigits")), v => EditRes(() => res.Set("totalDigits", v)), 1, 9));
             Add(Ui.NumberRow(S.Get("digitSpace"), res.Int("space"), v => EditRes(() => res.Set("space", v)), -20, 60));
             Add(Ui.Switch(S.Get("leadingZero"), res.Bool("leadingZero"), v => EditRes(() => res.Set("leadingZero", v))));
         }
