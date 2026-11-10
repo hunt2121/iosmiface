@@ -238,20 +238,31 @@ namespace BandFace.Creator
         }
 
         /// <summary>Шар екрана переходить у віджет (на тому ж місці, якщо розташування «вільно»)</summary>
-        public static void AddToWidget(FaceProject p, XNode w, Point origin, XNode layout, int theme, XNode own = null)
+        public static void AddToWidget(FaceProject p, XNode w, Point origin, XNode layout, int theme, XNode own = null, XNode slotLayout = null)
         {
             var th = p.Theme(theme);
             if (th == null || layout == null) return;
             var r = layout.Str("ref");
             if (r == null) return;
             // перший шар порожнього віджета: розташування «вільно» — елемент лишається на місці, область стає навколо нього
-            if (w.All("Item").Count == 0 && own != null)
+            if (w.All("Item").Count == 0)
                 foreach (var k in new[] { "flex_direction", "justify_content", "align_content", "align_items", "gap" }) w.Remove(k);
             var it = w.Add("Item").Set("ref", r);
             if (Arrange(w) == "free") it.Set("x", (int)Math.Round(layout.Int("x") - origin.X)).Set("y", (int)Math.Round(layout.Int("y") - origin.Y));
             else it.Set("x", 0).Set("y", 0);
             th.Kids.Remove(layout);
-            Fit(p, w, own);
+            // віджет у слоті: область росте навколо вмісту, а слот зсувається разом із нею; елементи інших віджетів слота лишаються на місці
+            var target = own ?? slotLayout;
+            int bx = target?.Int("x") ?? 0, by = target?.Int("y") ?? 0;
+            Fit(p, w, target);
+            if (own == null && target != null)
+            {
+                int dx = target.Int("x") - bx, dy = target.Int("y") - by;
+                if (dx != 0 || dy != 0)
+                    foreach (var s in SlotsOf(p, w))
+                        foreach (var o in Widgets(p, s).Where(o => o != w && Arrange(o) == "free"))
+                            foreach (var i in o.All("Item")) i.Set("x", i.Int("x") - dx).Set("y", i.Int("y") - dy);
+            }
         }
 
         /// <summary>Елемент віджета знову стає окремим шаром — на тому самому місці</summary>

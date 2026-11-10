@@ -105,7 +105,7 @@ namespace BandFace.Creator
         }
 
         /// <summary>Налаштування віджета. origin — де стоїть віджет (для «Додати у віджет» і «Вийняти»)</summary>
-        void WidgetSection(XNode w, Point origin, XNode ownLayout)
+        void WidgetSection(XNode w, Point origin, XNode ownLayout, XNode slotLayout = null)
         {
             int t0 = theme;
             Add(Ui.Header(S.Get("elWidget")));
@@ -158,7 +158,7 @@ namespace BandFace.Creator
                 {
                     var res = project.ElementOf(l);
                     var lay = l;
-                    Ui.MenuAdd(cm, ItemTitle(res) + " — " + ItemSub(res), "", () => project.Edit(p => WidgetSlots.AddToWidget(p, w, origin, lay, t0, ownLayout)));
+                    Ui.MenuAdd(cm, ItemTitle(res) + " — " + ItemSub(res), "", () => project.Edit(p => WidgetSlots.AddToWidget(p, w, origin, lay, t0, ownLayout, slotLayout)));
                 }
                 Ui.MenuBelow(cm, addBtn);
             };
@@ -239,7 +239,7 @@ namespace BandFace.Creator
                 back.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
                 back.MouseLeftButtonUp += (s, e) => { slotWidget = null; BuildInspector(); };
                 Add(back);
-                WidgetSection(slotWidget, origin, null);
+                WidgetSection(slotWidget, origin, null, layout);
                 return;
             }
             SizeSection(ws, layout, true);
