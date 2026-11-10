@@ -377,8 +377,8 @@ namespace BandFace.Creator
 
         // MARK: Мініатюри й рамка для вибору на браслеті
 
-        /// <summary>Мінімальний відступ рамки вибору від країв екрана, px</summary>
-        const double ScreenMargin = 3;
+        /// <summary>Відступ рамки вибору від країв екрана, px (0 — лише не виходить за край)</summary>
+        const double ScreenMargin = 0;
 
         const double PreviewScale = 0.634; // як в офіційних: віджет 112×74 → мініатюра 71×47
 
