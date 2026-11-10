@@ -15111,6 +15111,29 @@
           }
         }
       }
+    },
+    "Вийняти зі слота": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take out of slot"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вынуть из слота"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вийняти зі слота"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

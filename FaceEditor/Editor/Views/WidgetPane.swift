@@ -230,6 +230,7 @@ struct SlotPane: View {
                             badge: i == 0 ? loc("типовий") : nil, selected: i == shownIdx) {
                         if i > 0 { Button { project.edit { _ in WidgetSlots.moveItem(slot, i, -1) } } label: { Label(loc("Вище"), systemImage: "arrow.up") } }
                         if i < ws.count - 1 { Button { project.edit { _ in WidgetSlots.moveItem(slot, i, 1) } } label: { Label(loc("Нижче"), systemImage: "arrow.down") } }
+                        Button { open = nil; project.edit { WidgetSlots.slotTakeOut($0, slot, i) } } label: { Label(loc("Вийняти зі слота"), systemImage: "rectangle.portrait.and.arrow.right") }
                         if ws.count > 1 {
                             Button(role: .destructive) { project.edit { WidgetSlots.slotRemove($0, slot, i) } } label: { Label(loc("Прибрати зі слота"), systemImage: "trash") }
                         }

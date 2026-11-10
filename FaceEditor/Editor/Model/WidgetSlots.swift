@@ -302,6 +302,33 @@ enum WidgetSlots {
         }
     }
 
+    /// Віджет виймається зі слота й стає окремим шаром на місці слота (на кожному екрані); мініатюра й рамка вибору прибираються.
+    /// Якщо це був єдиний віджет слота, слот зникає.
+    static func slotTakeOut(_ p: FaceProject, _ slot: XNode, _ index: Int) {
+        let items = slot.all("Item")
+        guard index >= 0, index < items.count, let r = items[index].string("ref"), let w = p.resource(ref: r) else { return }
+        let sk = "@" + (slot.string("name") ?? "")
+        slot.kids.removeAll { $0 === items[index] }
+        for t in 0..<p.themes.count {
+            guard let th = p.theme(t), let sl = p.layouts(t).first(where: { $0.string("ref") == sk }) else { continue }
+            let l = XNode("Layout")
+            l.set("ref", r).set("x", int: Int(sl.int("x"))).set("y", int: Int(sl.int("y")))
+            let at = th.kids.firstIndex { $0 === sl } ?? th.kids.count - 1
+            th.kids.insert(l, at: min(at + 1, th.kids.count))
+        }
+        // мініатюра й рамка потрібні лише віджетам у слоті
+        if slotsOf(p, w).isEmpty {
+            let pv = w.string("preview"), eb = w.string("editbox")
+            w.remove("preview"); w.remove("editbox")
+            if let pv { ElementFactory.collect(p, ref: pv) }
+            if let eb { ElementFactory.collect(p, ref: eb) }
+        }
+        if slot.all("Item").isEmpty {
+            for t in 0..<p.themes.count { p.theme(t)?.kids.removeAll { $0.tag == "Layout" && $0.string("ref") == sk } }
+            p.resources.kids.removeAll { $0 === slot }
+        }
+    }
+
     static func slotRemove(_ p: FaceProject, _ slot: XNode, _ index: Int) {
         let items = slot.all("Item")
         guard items.count > 1, index >= 0, index < items.count else { return }
