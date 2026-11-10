@@ -324,6 +324,9 @@ namespace BandFace.Creator
 
         // MARK: Мініатюри й рамка для вибору на браслеті
 
+        /// <summary>Мінімальний відступ рамки вибору від країв екрана, px</summary>
+        const double ScreenMargin = 3;
+
         const double PreviewScale = 0.634; // як в офіційних: віджет 112×74 → мініатюра 71×47
 
         /// <summary>Для кожного віджета слота — preview (віджет зменшений на чорному) і editbox (помаранчева рамка)</summary>
@@ -344,13 +347,25 @@ namespace BandFace.Creator
                         dc.Pop();
                     });
                     SetImageRef(p, w, "preview", img, "wpreview_" + (w.Str("name") ?? "w"));
+                    // рамка вибору повторює скруглення екрана внизу й не ближче 3 px до його країв
+                    var lay = p.Layouts(0).FirstOrDefault(l => l.Str("ref") == "@" + (slot.Str("name") ?? ""));
+                    double ox = lay?.Int("x") ?? 0, oy = lay?.Int("y") ?? 0;
                     var box = Imaging.Render(pw, ph, dc =>
                     {
                         var pen = new Pen(Imaging.Brush("#FF9900"), 3);
                         double rad = Math.Min(pw, ph) / 2.0 - 1.5;
-                        dc.DrawRoundedRectangle(null, pen, new Rect(1.5, 1.5, pw - 3, ph - 3), rad, rad);
+                        Geometry shape = new RectangleGeometry(new Rect(1.5, 1.5, pw - 3, ph - 3), rad, rad);
+                        if (lay != null)
+                        {
+                            var dev = p.Meta.Device;
+                            double m = ScreenMargin + 1.5 / PreviewScale;
+                            var screen = new RectangleGeometry(new Rect((m - ox) * PreviewScale, (m - oy) * PreviewScale, (dev.Width - 2 * m) * PreviewScale, (dev.Height - 2 * m) * PreviewScale),
+                                                               (dev.Corner - m) * PreviewScale, (dev.Corner - m) * PreviewScale);
+                            shape = Geometry.Combine(shape, screen, GeometryCombineMode.Intersect, null);
+                        }
+                        dc.DrawGeometry(null, pen, shape);
                     });
-                    SetImageRef(p, w, "editbox", box, "weditbox_" + pw + "x" + ph);
+                    SetImageRef(p, w, "editbox", box, "weditbox_" + pw + "x" + ph + (lay != null ? "_" + (int)ox + "_" + (int)oy : ""));
                 }
         }
 
