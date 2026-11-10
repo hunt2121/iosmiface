@@ -92,7 +92,7 @@ namespace BandFace.Creator
         public static void SetAutoSlot(FaceProject p, List<XNode> ws, XNode layout)
         {
             var r = new FaceRenderer(p);
-            foreach (var w in ws) p.Meta.ManualSize.Remove(w.Str("name") ?? "");
+            foreach (var w in ws) { p.Meta.ManualSize.Remove(w.Str("name") ?? ""); if (Arrange(w) == "free") TrimGauges(p, w); }
             Rect union = Rect.Empty;
             foreach (var w in ws)
             {
@@ -145,8 +145,61 @@ namespace BandFace.Creator
 
         /// <summary>Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
         /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.</summary>
+        /// <summary>Дуга у віджеті: картинки (передній план, фон, усі кольорові варіанти) фізично обрізаються по видимих пікселях,
+        /// а позиція елемента й центр дуги (pivot) перераховуються — на екрані дуга лишається на тому самому місці.
+        /// Так елемент не виступає за область віджета, і зверху не лишається порожнього відступу.</summary>
+        public static void TrimGauges(FaceProject p, XNode w)
+        {
+            foreach (var it in w.All("Item"))
+            {
+                var res = p.ResourceRef(it.Str("ref"));
+                if (res == null || res.Tag != "DataItemArcProgressBar") continue;
+                var fgRef = res.Str("ref"); var bgRef = res.Str("bg");
+                if (fgRef == null || !fgRef.StartsWith("@")) continue;
+                Func<string, List<XNode>> images = r => string.IsNullOrEmpty(r) || !r.StartsWith("@")
+                    ? new List<XNode>()
+                    : p.Resources.Elements.Where(e => e.Tag == "Image" && "@" + e.Str("name") == r).ToList();
+                var fg = images(fgRef); var bg = images(bgRef);
+                // картинки, якими користується ще хтось інший, не чіпаємо
+                bool shared = p.Resources.Elements.Any(e => e != res && (e.Str("ref") == fgRef || e.Str("bg") == fgRef || (bgRef != null && (e.Str("ref") == bgRef || e.Str("bg") == bgRef))));
+                if (fg.Count == 0 || shared) continue;
+                Func<XNode, RgbaImage> decode = n =>
+                {
+                    var src = n?.Str("src"); var d = src == null ? null : p.File(src);
+                    return d == null ? null : Png.Decode(d);
+                };
+                int x0 = int.MaxValue, y0 = int.MaxValue, x1 = -1, y1 = -1;
+                foreach (var n in new[] { fg[0], bg.Count > 0 ? bg[0] : null })
+                {
+                    var img = decode(n);
+                    if (img == null) continue;
+                    for (int y = 0; y < img.H; y++)
+                        for (int x = 0; x < img.W; x++)
+                            if (img.Px[(y * img.W + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+                }
+                var baseImg = decode(fg[0]);
+                if (x1 < 0 || baseImg == null) continue;
+                int bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+                if (x0 == 0 && y0 == 0 && bw == baseImg.W && bh == baseImg.H) continue;
+                foreach (var n in fg.Concat(bg))
+                {
+                    var img = decode(n);
+                    if (img == null) continue;
+                    int cx0 = Math.Max(x0, 0), cy0 = Math.Max(y0, 0), cx1 = Math.Min(x1, img.W - 1), cy1 = Math.Min(y1, img.H - 1);
+                    int cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1;
+                    if (cw <= 0 || ch <= 0) continue;
+                    var px = new byte[cw * ch * 4];
+                    for (int y = 0; y < ch; y++) Buffer.BlockCopy(img.Px, ((cy0 + y) * img.W + cx0) * 4, px, y * cw * 4, cw * 4);
+                    p.SetFile(n.Str("src"), new RgbaImage(cw, ch, px).Png());
+                }
+                res.Set("pivotX", res.Int("pivotX") - x0); res.Set("pivotY", res.Int("pivotY") - y0);
+                it.Set("x", it.Int("x") + x0); it.Set("y", it.Int("y") + y0);
+            }
+        }
+
         public static void WrapFree(FaceProject p, XNode w, XNode layout, bool shrink = false)
         {
+            TrimGauges(p, w);
             var r = new FaceRenderer(p);
             Rect box = Rect.Empty;
             foreach (var it in w.All("Item"))
