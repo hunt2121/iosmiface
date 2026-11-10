@@ -195,7 +195,31 @@ namespace BandFace.Creator
             return new[] { 100, 360 };
         }
 
-        public static RgbaImage ArcImage(Generator g, string color) => AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
+        /// <summary>Межі видимих пікселів дуги в повній (квадратній) картинці: картинка дуги обрізається по них з усіх чотирьох боків,
+        /// щоб елемент не мав порожніх полів (область віджета й рамка вибору точно по дузі).</summary>
+        static bool ArcBox(Generator g, out int x0, out int y0, out int w, out int h, out int full)
+        {
+            var f = AssetFactory.ArcSegment(g.Radius, g.Width, "#FFFFFF", g.Start, g.Range, g.Round);
+            int minX = f.W, maxX = -1, minY = f.H, maxY = -1;
+            for (int y = 0; y < f.H; y++)
+                for (int x = 0; x < f.W; x++)
+                    if (f.Px[(y * f.W + x) * 4 + 3] > 12) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+            full = f.W; x0 = minX; y0 = minY; w = maxX - minX + 1; h = maxY - minY + 1;
+            return maxX >= 0;
+        }
+
+        public static RgbaImage ArcImage(Generator g, string color)
+        {
+            var f = AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
+            if (!ArcBox(g, out int x0, out int y0, out int w, out int h, out _)) return f;
+            var px = new byte[w * h * 4];
+            for (int y = 0; y < h; y++) Buffer.BlockCopy(f.Px, ((y0 + y) * f.W + x0) * 4, px, y * w * 4, w * 4);
+            return new RgbaImage(w, h, px);
+        }
+
+        /// <summary>Центр дуги в обрізаній картинці</summary>
+        public static Tuple<int, int> ArcPivot(Generator g)
+            => ArcBox(g, out int x0, out int y0, out _, out _, out int full) ? Tuple.Create(full / 2 - x0, full / 2 - y0) : Tuple.Create(0, 0);
 
         public static RgbaImage LineImage(Generator g, string color, out System.Windows.Point s, out System.Windows.Point e)
             => AssetFactory.LineSegment(g.Length, g.Width, color, g.Angle, g.Round, out s, out e);
@@ -227,10 +251,10 @@ namespace BandFace.Creator
             var e = new XNode("DataItemArcProgressBar");
             e.Set("name", name).Set("source", source).Set("ref", "@" + fgName).Set("bg", "@" + bgName)
              .Set("endingStyle", gen.Round ? "round" : "normal").Set("renderRule", "alwaysShow").Set("valueStart", 0).Set("valueRange", 100)
-             .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range)).Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2)
+             .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range)).Set("pivotX", ArcPivot(gen).Item1).Set("pivotY", ArcPivot(gen).Item2)
              .Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width);
             p.Resources.Kids.Add(e);
-            AddLayout(p, name, theme, cx - fg.W / 2, cy - fg.H / 2);
+            AddLayout(p, name, theme, cx - ArcPivot(gen).Item1, cy - ArcPivot(gen).Item2);
         }
 
         public static void AddLine(FaceProject p, string source, Generator gen, int theme, int cx, int cy)
@@ -437,7 +461,7 @@ namespace BandFace.Creator
                     if (r != null) ReplaceImage(p, r, fg);
                     var bg = p.ResourceRef(res.Str("bg"));
                     if (bg != null) ReplaceImage(p, bg, ArcImage(gen, gen.BgColor));
-                    res.Set("pivotX", fg.W / 2).Set("pivotY", fg.H / 2).Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width)
+                    res.Set("pivotX", ArcPivot(gen).Item1).Set("pivotY", ArcPivot(gen).Item2).Set("barRadius", (int)gen.Radius).Set("barWidth", (int)gen.Width)
                        .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range))
                        .Set("endingStyle", gen.Round ? "round" : "normal");
                     if (res.Has("indicatorRadius")) res.Set("indicatorRadius", (int)gen.Radius);
