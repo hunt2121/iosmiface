@@ -73,7 +73,7 @@ enum WidgetSlots {
 
     static func setAutoSlot(_ p: FaceProject, _ ws: [XNode], layout: XNode) {
         let r = FaceRenderer(p)
-        for w in ws { p.meta.manualSize.remove(w.string("name") ?? "") }
+        for w in ws { p.meta.manualSize.remove(w.string("name") ?? ""); if arrange(w) == "free" { trimGauges(p, w) } }
         var union = CGRect.null
         for w in ws {
             var b = CGRect.null
@@ -99,6 +99,60 @@ enum WidgetSlots {
         layout.set("x", int: Int(layout.int("x")) + dx).set("y", int: Int(layout.int("y")) + dy)
     }
 
+    /// Дуга у віджеті: картинки (передній план, фон, усі кольорові варіанти) фізично обрізаються по видимих пікселях,
+    /// а позиція елемента й центр дуги (pivot) перераховуються — на екрані дуга лишається на тому самому місці.
+    /// Так елемент не виступає за область віджета, і зверху не лишається порожнього відступу.
+    static func trimGauges(_ p: FaceProject, _ w: XNode) {
+        for it in w.all("Item") {
+            guard let res = p.resource(ref: it.string("ref")), res.tag == "DataItemArcProgressBar",
+                  let fgRef = res.string("ref"), fgRef.hasPrefix("@") else { continue }
+            let bgRef = res.string("bg")
+            func images(_ ref: String?) -> [XNode] {
+                guard let ref, ref.hasPrefix("@") else { return [] }
+                return p.resources.elements.filter { $0.tag == "Image" && "@" + ($0.string("name") ?? "") == ref }
+            }
+            let fg = images(fgRef), bg = images(bgRef)
+            // картинки, якими користується ще хтось інший, не чіпаємо
+            let others = p.resources.elements.filter { $0 !== res && ($0.string("ref") == fgRef || $0.string("bg") == fgRef || (bgRef != nil && ($0.string("ref") == bgRef || $0.string("bg") == bgRef))) }
+            guard !fg.isEmpty, others.isEmpty else { continue }
+            func decode(_ n: XNode?) -> CGImage? {
+                guard let src = n?.string("src"), let d = p.file(src), let u = UIImage(data: d) else { return nil }
+                return u.cgImage
+            }
+            var box = CGRect.null
+            for n in [fg.first, bg.first] {
+                guard let cg = decode(n), let b = opaqueBounds(cg) else { continue }
+                box = box.union(b)
+            }
+            guard !box.isNull, let base = decode(fg.first) else { continue }
+            let cx = Int(box.minX), cy = Int(box.minY)
+            if cx == 0, cy == 0, Int(box.width) == base.width, Int(box.height) == base.height { continue }
+            for n in fg + bg {
+                guard let src = n.string("src"), let cg = decode(n) else { continue }
+                let r = CGRect(x: 0, y: 0, width: cg.width, height: cg.height).intersection(box)
+                guard !r.isNull, let c = cg.cropping(to: r), let png = UIImage(cgImage: c).pngData() else { continue }
+                p.setFile(src, png)
+            }
+            res.set("pivotX", int: Int(res.int("pivotX")) - cx).set("pivotY", int: Int(res.int("pivotY")) - cy)
+            it.set("x", int: Int(it.int("x")) + cx).set("y", int: Int(it.int("y")) + cy)
+        }
+    }
+
+    private static func opaqueBounds(_ cg: CGImage) -> CGRect? {
+        let w = cg.width, h = cg.height
+        guard w > 0, h > 0, let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let data = ctx.data else { return nil }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let px = data.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        var minX = w, maxX = -1, minY = h, maxY = -1
+        for y in 0..<h { for x in 0..<w where px[(y * w + x) * 4 + 3] > 12 {
+            if x < minX { minX = x }; if x > maxX { maxX = x }; if y < minY { minY = y }; if y > maxY { maxY = y }
+        } }
+        guard maxX >= 0 else { return nil }
+        return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    }
+
     static func fit(_ p: FaceProject, _ w: XNode, layout: XNode? = nil, shrink: Bool = false) {
         if isManual(p, w) { return }
         if arrange(w) == "free", !w.all("Item").isEmpty { wrapFree(p, w, layout: layout, shrink: shrink); return }
@@ -113,6 +167,7 @@ enum WidgetSlots {
     /// Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
     /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.
     static func wrapFree(_ p: FaceProject, _ w: XNode, layout: XNode?, shrink: Bool = false) {
+        trimGauges(p, w)
         let r = FaceRenderer(p)
         var box = CGRect.null
         for it in w.all("Item") {
