@@ -312,8 +312,8 @@ enum WidgetSlots {
 
     // MARK: Мініатюри й рамка для вибору на браслеті
 
-    /// Мінімальний відступ рамки вибору від країв екрана, px
-    private static let screenMargin: CGFloat = 3
+    /// Відступ рамки вибору від країв екрана, px (0 — лише не виходить за край)
+    private static let screenMargin: CGFloat = 0
     private static let previewScale: CGFloat = 0.634 // як в офіційних: 112×74 → 71×47
 
     static func refreshPreviews(_ p: FaceProject) {

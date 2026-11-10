@@ -87,7 +87,7 @@ struct CanvasView: View {
                     let rect = CGRect(x: box.minX * scale, y: box.minY * scale, width: box.width * scale, height: box.height * scale)
                     SelectionFrame(rect: rect, corners: gauge == nil,
                                    screen: sizeTarget == nil ? nil : CGSize(width: CGFloat(project.meta.device.width) * scale, height: CGFloat(project.meta.device.height) * scale),
-                                   corner: CGFloat(project.meta.device.corner) * scale, margin: 3 * scale)
+                                   corner: CGFloat(project.meta.device.corner) * scale, margin: 0)
                     if let pos = dragPos {
                         Text("X \(Int(pos.x)) · Y \(Int(pos.y))")
                             .font(.system(size: 10, weight: .bold)).monospacedDigit()
