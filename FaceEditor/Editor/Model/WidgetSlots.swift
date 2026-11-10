@@ -61,34 +61,63 @@ enum WidgetSlots {
         w.set("w", int: min(max(width, 8), 2000)).set("h", int: min(max(height, 8), 2000))
     }
 
-    /// Повернути розмір за вмістом
+    /// Повернути розмір за вмістом (за видимими пікселями). У слоті — один розмір для всіх його віджетів,
+    /// слот зсувається в лівий верхній кут вмісту
     static func setAuto(_ p: FaceProject, _ w: XNode, layout: XNode? = nil) {
         p.meta.manualSize.remove(w.string("name") ?? "")
-        fit(p, w, layout: layout)
+        fit(p, w, layout: layout, shrink: true)
     }
 
-    static func fit(_ p: FaceProject, _ w: XNode, layout: XNode? = nil) {
+    static func setAutoSlot(_ p: FaceProject, _ ws: [XNode], layout: XNode) {
+        let r = FaceRenderer(p)
+        for w in ws { p.meta.manualSize.remove(w.string("name") ?? "") }
+        var union = CGRect.null
+        for w in ws {
+            var b = CGRect.null
+            if arrange(w) == "free" {
+                for it in w.all("Item") {
+                    guard let c = p.resource(ref: it.string("ref")), let m = r.visibleBounds(c) else { continue }
+                    b = b.union(m.offsetBy(dx: CGFloat(it.int("x")), dy: CGFloat(it.int("y"))))
+                }
+            } else {
+                let (ow, oh) = (w.int("w"), w.int("h")); w.remove("w"); w.remove("h")
+                b = r.visibleBounds(w) ?? .null
+                w.set("w", int: Int(ow)).set("h", int: Int(oh))
+            }
+            union = union.union(b)
+        }
+        guard !union.isNull else { return }
+        let dx = Int(union.minX.rounded(.down)), dy = Int(union.minY.rounded(.down))
+        let cw = max(8, Int(union.maxX.rounded(.up)) - dx), ch = max(8, Int(union.maxY.rounded(.up)) - dy)
+        for w in ws {
+            if arrange(w) == "free" { for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) } }
+            w.set("w", int: cw).set("h", int: ch)
+        }
+        layout.set("x", int: Int(layout.int("x")) + dx).set("y", int: Int(layout.int("y")) + dy)
+    }
+
+    static func fit(_ p: FaceProject, _ w: XNode, layout: XNode? = nil, shrink: Bool = false) {
         if isManual(p, w) { return }
-        if arrange(w) == "free", !w.all("Item").isEmpty { wrapFree(p, w, layout: layout); return }
-        let inSlot = !slotsOf(p, w).isEmpty
+        if arrange(w) == "free", !w.all("Item").isEmpty { wrapFree(p, w, layout: layout, shrink: shrink); return }
+        let inSlot = !shrink && !slotsOf(p, w).isEmpty
         let oldW = Int(w.int("w")), oldH = Int(w.int("h"))
         w.remove("w"); w.remove("h")
-        let box = FaceRenderer(p).measure(w) ?? CGRect(x: 0, y: 0, width: 40, height: 30)
+        let box = FaceRenderer(p).visibleBounds(w) ?? CGRect(x: 0, y: 0, width: 40, height: 30)
         let cw = max(8, Int(box.maxX.rounded(.up))), ch = max(8, Int(box.maxY.rounded(.up)))
         w.set("w", int: max(cw, inSlot ? oldW : 0)).set("h", int: max(ch, inSlot ? oldH : 0))
     }
 
     /// Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
     /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.
-    static func wrapFree(_ p: FaceProject, _ w: XNode, layout: XNode?) {
+    static func wrapFree(_ p: FaceProject, _ w: XNode, layout: XNode?, shrink: Bool = false) {
         let r = FaceRenderer(p)
         var box = CGRect.null
         for it in w.all("Item") {
-            guard let c = p.resource(ref: it.string("ref")), let m = r.measure(c) else { continue }
+            guard let c = p.resource(ref: it.string("ref")), let m = r.visibleBounds(c) else { continue }
             box = box.union(m.offsetBy(dx: CGFloat(it.int("x")), dy: CGFloat(it.int("y"))))
         }
         guard !box.isNull else { return }
-        let inSlot = layout == nil && !slotsOf(p, w).isEmpty
+        let inSlot = !shrink && layout == nil && !slotsOf(p, w).isEmpty
         var dx = Int(box.minX.rounded(.down)), dy = Int(box.minY.rounded(.down))
         if layout == nil { dx = min(0, dx); dy = min(0, dy) }
         for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) }

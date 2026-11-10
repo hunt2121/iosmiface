@@ -308,7 +308,7 @@ struct SizeRow: View {
                         .background(Capsule().fill(lock ? Color.accentColor.opacity(0.18) : Color.editorTile))
                 }
                 .buttonStyle(.plain)
-                Button { project.edit { p in for x in widgets { WidgetSlots.setAuto(p, x, layout: isSlot ? nil : layout) } } } label: {
+                Button { project.edit { p in if isSlot, let l = layout { WidgetSlots.setAutoSlot(p, widgets, layout: l) } else { for x in widgets { WidgetSlots.setAuto(p, x, layout: layout) } } } } label: {
                     Text("За вмістом").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40)
                         .background(Capsule().fill(manual ? Color.accentColor.opacity(0.18) : Color.editorTile))
                 }

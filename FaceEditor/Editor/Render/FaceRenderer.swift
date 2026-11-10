@@ -201,6 +201,28 @@ final class FaceRenderer {
         return out
     }
 
+    /// Рамка видимих пікселів ресурсу (від точки 0,0): прозорі краї картинок не враховуються
+    func visibleBounds(_ res: XNode?) -> CGRect? {
+        guard let res, let b = measure(res), b.width >= 1, b.height >= 1, b.width < 4000, b.height < 4000 else { return nil }
+        let w = Int(b.width.rounded(.up)), h = Int(b.height.rounded(.up))
+        let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.opaque = false
+        let img = UIGraphicsImageRenderer(size: CGSize(width: w, height: h), format: f).image { ctx in
+            draw(res, at: CGPoint(x: -b.minX, y: -b.minY), in: ctx.cgContext, depth: 0)
+        }
+        guard let cg = img.cgImage,
+              let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let data = ctx.data else { return b }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let px = data.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        var minX = w, maxX = -1, minY = h, maxY = -1
+        for y in 0..<h { for x in 0..<w where px[(y * w + x) * 4 + 3] > 12 {
+            if x < minX { minX = x }; if x > maxX { maxX = x }; if y < minY { minY = y }; if y > maxY { maxY = y }
+        } }
+        guard maxX >= 0 else { return b }
+        return CGRect(x: b.minX + CGFloat(minX), y: b.minY + CGFloat(minY), width: CGFloat(maxX - minX + 1), height: CGFloat(maxY - minY + 1))
+    }
+
     /// Рамка ресурсу без малювання (від точки 0,0)
     func measure(_ res: XNode?) -> CGRect? {
         let was = measureOnly
