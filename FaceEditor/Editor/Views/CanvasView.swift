@@ -87,7 +87,7 @@ struct CanvasView: View {
                     let rect = CGRect(x: box.minX * scale, y: box.minY * scale, width: box.width * scale, height: box.height * scale)
                     SelectionFrame(rect: rect, corners: gauge == nil,
                                    screen: sizeTarget == nil ? nil : CGSize(width: CGFloat(project.meta.device.width) * scale, height: CGFloat(project.meta.device.height) * scale),
-                                   corner: CGFloat(project.meta.device.corner) * scale, margin: 0)
+                                   corner: CGFloat(project.meta.device.corner) * scale, softRadius: WidgetSlots.cornerRadius * scale)
                     if let pos = dragPos {
                         Text("X \(Int(pos.x)) · Y \(Int(pos.y))")
                             .font(.system(size: 10, weight: .bold)).monospacedDigit()
@@ -498,17 +498,18 @@ struct SelectionFrame: View {
     let rect: CGRect
     /// Кутові маркери (у дуги й лінії — свої ручки на кінцях)
     var corners = true
-    /// Для віджета й слота: рамка повторює скруглення екрана й тримається не ближче `margin` до його країв
+    /// Для віджета й слота: рамка повторює скруглення екрана, не виходить за його край, кути м'які
     var screen: CGSize? = nil
     var corner: CGFloat = 0
-    var margin: CGFloat = 0
+    var softRadius: CGFloat = 0
 
     private var shape: Path {
         let r = CGRect(x: rect.minX, y: rect.minY, width: max(rect.width, 6), height: max(rect.height, 6))
-        let box = Path(roundedRect: r, cornerRadius: 4)
-        guard let screen else { return box }
-        let inner = CGRect(x: margin, y: margin, width: screen.width - 2 * margin, height: screen.height - 2 * margin)
-        return Path(box.cgPath.intersection(Path(roundedRect: inner, cornerRadius: max(corner - margin, 0)).cgPath))
+        guard let screen else { return Path(roundedRect: r, cornerRadius: 4) }
+        // віджет і слот: форма екрана внизу, не виходить за край, кути м'які (як рамка вибору на браслеті)
+        let (core, rr) = WidgetSlots.softCore(box: r, boxRadius: 4, screen: (CGRect(x: 0, y: 0, width: screen.width, height: screen.height), corner),
+                                               radius: softRadius)
+        return Path(WidgetSlots.dilate(core, rr))
     }
 
     var body: some View {

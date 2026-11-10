@@ -54,7 +54,7 @@ enum WidgetSlots {
 
     /// Розмір віджета: щонайменше вміст; у слоті — не менший за той, що був
     /// Запас окантовки навколо видимого вмісту, px
-    static let pad = 5
+    static let pad = 7
 
     static func isManual(_ p: FaceProject, _ w: XNode) -> Bool { p.meta.manualSize.contains(w.string("name") ?? "") }
 
@@ -328,28 +328,49 @@ enum WidgetSlots {
                     r.draw(w, at: .zero, in: c, depth: 0)
                 }
                 setImageRef(p, w, attr: "preview", img: img, name: "wpreview_" + (w.string("name") ?? "w"))
-                // рамка вибору повторює скруглення екрана внизу й не ближче 3 px до його країв
+                // рамка вибору повторює скруглення екрана внизу, не виходить за його край, а кути м'які
                 let lay = p.layouts(0).first { $0.string("ref") == "@" + (slot.string("name") ?? "") }
                 let ox = CGFloat(lay?.int("x") ?? 0), oy = CGFloat(lay?.int("y") ?? 0)
                 let box = AssetFactory.render(pw, ph) { _ in
-                    let rad = CGFloat(min(pw, ph)) / 2 - 1.5
-                    var shape = UIBezierPath(roundedRect: CGRect(x: 1.5, y: 1.5, width: CGFloat(pw) - 3, height: CGFloat(ph) - 3), cornerRadius: rad).cgPath
+                    let boxRect = CGRect(x: 1.5, y: 1.5, width: CGFloat(pw) - 3, height: CGFloat(ph) - 3)
+                    var screen: (CGRect, CGFloat)?
                     if lay != nil {
                         let dev = p.meta.device
                         let m = screenMargin + 1.5 / previewScale
-                        let screen = UIBezierPath(roundedRect: CGRect(x: (m - ox) * previewScale, y: (m - oy) * previewScale,
-                                                                      width: (CGFloat(dev.width) - 2 * m) * previewScale, height: (CGFloat(dev.height) - 2 * m) * previewScale),
-                                                  cornerRadius: (CGFloat(dev.corner) - m) * previewScale).cgPath
-                        shape = shape.intersection(screen)
+                        screen = (CGRect(x: (m - ox) * previewScale, y: (m - oy) * previewScale,
+                                         width: (CGFloat(dev.width) - 2 * m) * previewScale, height: (CGFloat(dev.height) - 2 * m) * previewScale),
+                                  (CGFloat(dev.corner) - m) * previewScale)
                     }
-                    let path = UIBezierPath(cgPath: shape)
-                    path.lineWidth = 3
-                    UIColor.white.withAlphaComponent(0.5).setStroke()
-                    path.stroke()
+                    let (core, rr) = softCore(box: boxRect, boxRadius: min(boxRect.width, boxRect.height) / 2, screen: screen, radius: cornerRadius * previewScale)
+                    let ring = dilate(core, rr + 1.5).subtracting(dilate(core, max(rr - 1.5, 0)))
+                    UIColor.white.withAlphaComponent(0.5).setFill()
+                    UIBezierPath(cgPath: ring).fill()
                 }
                 setImageRef(p, w, attr: "editbox", img: box, name: "weditbox_\(pw)x\(ph)" + (lay != nil ? "_\(Int(ox))_\(Int(oy))" : ""))
             }
         }
+    }
+
+    /// Радіус м'яких кутів рамки вибору (там, де її обрізає екран), px циферблата
+    static let cornerRadius: CGFloat = 16
+
+    /// Рамка з м'якими кутами = (область ∩ екран) з відкриттям радіусом r: спершу обидві форми стискаються на r
+    /// і перетинаються, потім результат розширюється на r. Повертає стиснуту форму й використаний радіус.
+    static func softCore(box: CGRect, boxRadius: CGFloat, screen: (CGRect, CGFloat)?, radius: CGFloat) -> (CGPath, CGFloat) {
+        let r = max(0, min(radius, min(box.width, box.height) / 2 - 1))
+        func eroded(_ rect: CGRect, _ rad: CGFloat) -> CGPath {
+            let q = rect.insetBy(dx: r, dy: r)
+            return UIBezierPath(roundedRect: q, cornerRadius: max(0, min(rad - r, min(q.width, q.height) / 2))).cgPath
+        }
+        var core = eroded(box, boxRadius)
+        if let (rect, rad) = screen { core = core.intersection(eroded(rect, rad)) }
+        return (core, r)
+    }
+
+    /// Розширення форми на t (об'єднання з товстою обводкою контуру)
+    static func dilate(_ path: CGPath, _ t: CGFloat) -> CGPath {
+        guard t > 0 else { return path }
+        return path.union(path.copy(strokingWithWidth: 2 * t, lineCap: .round, lineJoin: .round, miterLimit: 10))
     }
 
     private static func setImageRef(_ p: FaceProject, _ w: XNode, attr: String, img: RGBAImage, name: String) {
