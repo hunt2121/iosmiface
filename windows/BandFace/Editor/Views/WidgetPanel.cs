@@ -194,7 +194,7 @@ namespace BandFace.Creator
             Add(StepRow(S.Get("wHeight"), h0, v => apply(v, false)));
             Add(Ui.Switch(S.Get("wKeepRatio"), SizeRatioLock, v => SizeRatioLock = v));
             var auto = new Button { Content = S.Get("wAutoSize"), Style = (Style)FindResource("Btn"), IsEnabled = manual, Margin = new Thickness(0, 0, 0, 6) };
-            auto.Click += (s, e) => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetAuto(p, x, isSlot ? null : layout); });
+            auto.Click += (s, e) => project.Edit(p => { if (isSlot && layout != null) WidgetSlots.SetAutoSlot(p, widgets, layout); else foreach (var x in widgets) WidgetSlots.SetAuto(p, x, layout); });
             Add(auto);
             Add(Ui.Note(S.Get(manual ? "wSizeManual" : "wSizeAuto")));
             Add(Ui.Note(S.Get("wSizeDrag")));
@@ -231,7 +231,7 @@ namespace BandFace.Creator
                 WidgetSection(slotWidget, origin, null);
                 return;
             }
-            SizeSection(ws, null, true);
+            SizeSection(ws, layout, true);
             Add(Ui.Header(S.Get("slChoices") + " · " + ws.Count));
             int shownIdx = Math.Min(WidgetSlots.Shown(project, slot), Math.Max(0, ws.Count - 1));
             for (int i = 0; i < ws.Count; i++)

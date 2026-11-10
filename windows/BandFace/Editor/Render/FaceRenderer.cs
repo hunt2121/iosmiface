@@ -99,6 +99,26 @@ namespace BandFace.Creator
             return new RenderResult { Image = rtb, Boxes = boxes };
         }
 
+        /// <summary>Рамка видимих пікселів ресурсу (від точки 0,0): прозорі краї картинок не враховуються</summary>
+        public Rect? VisibleBounds(XNode res)
+        {
+            var b0 = Draw(res, new Point(0, 0), null, 0);
+            if (!b0.HasValue || b0.Value.Width < 1 || b0.Value.Height < 1 || b0.Value.Width > 4000 || b0.Value.Height > 4000) return b0;
+            var b = b0.Value;
+            int w = (int)Math.Ceiling(b.Width), h = (int)Math.Ceiling(b.Height);
+            var img = Imaging.Render(w, h, dc => Draw(res, new Point(-b.X, -b.Y), dc, 0));
+            int minX = w, maxX = -1, minY = h, maxY = -1;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (img.Px[(y * w + x) * 4 + 3] > 12)
+                    {
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    }
+            if (maxX < 0) return b;
+            return new Rect(b.X + minX, b.Y + minY, maxX - minX + 1, maxY - minY + 1);
+        }
+
         LayerBox Box(XNode l, DrawingContext dc)
         {
             Point o;

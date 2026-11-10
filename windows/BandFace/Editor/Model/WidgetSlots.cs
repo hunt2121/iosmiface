@@ -82,39 +82,80 @@ namespace BandFace.Creator
         public static void SetAuto(FaceProject p, XNode w, XNode layout = null)
         {
             p.Meta.ManualSize.Remove(w.Str("name") ?? "");
-            Fit(p, w, layout);
+            Fit(p, w, layout, true);
         }
 
-        public static void Fit(FaceProject p, XNode w, XNode layout = null)
+        /// <summary>За вмістом для слота: один розмір усім його віджетам (за видимими пікселями), слот зсувається в лівий верхній кут вмісту</summary>
+        public static void SetAutoSlot(FaceProject p, List<XNode> ws, XNode layout)
+        {
+            var r = new FaceRenderer(p);
+            foreach (var w in ws) p.Meta.ManualSize.Remove(w.Str("name") ?? "");
+            Rect union = Rect.Empty;
+            foreach (var w in ws)
+            {
+                Rect b = Rect.Empty;
+                if (Arrange(w) == "free")
+                {
+                    foreach (var it in w.All("Item"))
+                    {
+                        var c = p.ResourceRef(it.Str("ref"));
+                        var m = c == null ? null : r.VisibleBounds(c);
+                        if (m == null) continue;
+                        var q = m.Value; q.Offset(it.Int("x"), it.Int("y"));
+                        b = b.IsEmpty ? q : Rect.Union(b, q);
+                    }
+                }
+                else
+                {
+                    int ow = w.Int("w"), oh = w.Int("h"); w.Remove("w"); w.Remove("h");
+                    var m = r.VisibleBounds(w);
+                    w.Set("w", ow).Set("h", oh);
+                    if (m.HasValue) b = m.Value;
+                }
+                if (!b.IsEmpty) union = union.IsEmpty ? b : Rect.Union(union, b);
+            }
+            if (union.IsEmpty) return;
+            int dx = (int)Math.Floor(union.Left), dy = (int)Math.Floor(union.Top);
+            int cw = Math.Max(8, (int)Math.Ceiling(union.Right) - dx), ch = Math.Max(8, (int)Math.Ceiling(union.Bottom) - dy);
+            foreach (var w in ws)
+            {
+                if (Arrange(w) == "free") foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
+                w.Set("w", cw).Set("h", ch);
+            }
+            layout.Set("x", layout.Int("x") + dx).Set("y", layout.Int("y") + dy);
+        }
+
+        public static void Fit(FaceProject p, XNode w, XNode layout = null, bool shrink = false)
         {
             if (IsManual(p, w)) return;
-            if (Arrange(w) == "free" && w.All("Item").Count > 0) { WrapFree(p, w, layout); return; }
+            if (Arrange(w) == "free" && w.All("Item").Count > 0) { WrapFree(p, w, layout, shrink); return; }
             var r = new FaceRenderer(p);
             bool hadW = w.Has("w"), hadH = w.Has("h");
             int oldW = w.Int("w"), oldH = w.Int("h");
             w.Remove("w"); w.Remove("h");
-            var box = r.Draw(w, new Point(0, 0), null, 0) ?? new Rect(0, 0, 40, 30);
+            var box = r.VisibleBounds(w) ?? new Rect(0, 0, 40, 30);
             int cw = Math.Max(8, (int)Math.Ceiling(box.Right)), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom));
-            int fw = Math.Max(cw, hadW && SlotsOf(p, w).Count > 0 ? oldW : 0), fh = Math.Max(ch, hadH && SlotsOf(p, w).Count > 0 ? oldH : 0);
+            bool keep = !shrink && SlotsOf(p, w).Count > 0;
+            int fw = Math.Max(cw, hadW && keep ? oldW : 0), fh = Math.Max(ch, hadH && keep ? oldH : 0);
             w.Set("w", fw).Set("h", fh);
         }
 
         /// <summary>Вільне розташування: область віджета щільно обгортає його елементи. Якщо віджет стоїть окремим шаром,
         /// шар зсувається в лівий верхній кут елементів; у слоті місце слота лишається, елементи зсуваються всередині.</summary>
-        public static void WrapFree(FaceProject p, XNode w, XNode layout)
+        public static void WrapFree(FaceProject p, XNode w, XNode layout, bool shrink = false)
         {
             var r = new FaceRenderer(p);
             Rect box = Rect.Empty;
             foreach (var it in w.All("Item"))
             {
                 var c = p.ResourceRef(it.Str("ref"));
-                var m = c == null ? null : r.Draw(c, new Point(0, 0), null, 0);
+                var m = c == null ? null : r.VisibleBounds(c);
                 if (m == null) continue;
                 var q = m.Value; q.Offset(it.Int("x"), it.Int("y"));
                 box = box.IsEmpty ? q : Rect.Union(box, q);
             }
             if (box.IsEmpty) return;
-            bool inSlot = layout == null && SlotsOf(p, w).Count > 0;
+            bool inSlot = !shrink && layout == null && SlotsOf(p, w).Count > 0;
             int dx = (int)Math.Floor(box.Left), dy = (int)Math.Floor(box.Top);
             if (layout == null) { dx = Math.Min(0, dx); dy = Math.Min(0, dy); }
             foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
