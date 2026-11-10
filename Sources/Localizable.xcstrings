@@ -15065,6 +15065,52 @@
           }
         }
       }
+    },
+    "Зберігати пропорції": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep proportions"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранять пропорции"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберігати пропорції"
+          }
+        }
+      }
+    },
+    "Тягніть за точки рамки на полотні — розмір міняється по 1 px, з прилипанням до країв екрана й інших елементів.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the frame handles on the canvas — the size changes by 1 px, snapping to screen edges and other elements."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тяните за точки рамки на холсте — размер меняется по 1 px, с прилипанием к краям экрана и других элементов."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тягніть за точки рамки на полотні — розмір міняється по 1 px, з прилипанням до країв екрана й інших елементів."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

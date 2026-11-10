@@ -35,6 +35,12 @@ struct CanvasView: View {
     @State private var hB = CGPoint.zero
     @State private var hSnapped = false
     @State private var touchDown = Date()
+    /// Рамка розміру віджета/слота: ручка, що тягнеться, її рамка (у пікселях браслета) і напрямні прилипання
+    @State private var sizeHandle: String?
+    @State private var sizeRect: CGRect?
+    @State private var sizeStart = CGRect.zero
+    @State private var sizeGuideX: [CGFloat] = []
+    @State private var sizeGuideY: [CGFloat] = []
     /// Палець притримали перед рухом — без прив'язки кутів
     @State private var freeMode: Bool?
     /// Зсув збільшеного полотна і його значення на початку жесту
@@ -89,6 +95,7 @@ struct CanvasView: View {
                     }
                 }
                 if cache == nil || handle != nil { handlesOverlay(scale: scale) }
+                if cache == nil { sizeOverlay(scale: scale, W: W, H: H) }
                 if guideV { Rectangle().fill(Color.pink).frame(width: 1, height: size.height).offset(x: size.width / 2) }
                 if guideH { Rectangle().fill(Color.pink).frame(width: size.width, height: 1).offset(y: size.height / 2) }
             }
@@ -139,6 +146,101 @@ struct CanvasView: View {
         if let s = selected, let b = boxes.first(where: { $0.layout === s }), b.rect.insetBy(dx: -6, dy: -6).contains(pt) { return s }
         // приглушення AOD не вибирається — воно у властивостях циферблата
         return boxes.last { !AodDim.isDim(project, $0.layout, theme: theme) && $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }?.layout
+    }
+
+    // MARK: Розмір віджета й слота
+
+    /// Віджет чи слот вибраного шару: його віджети й шар
+    private var sizeTarget: ([XNode], XNode)? {
+        guard let s = selected, let res = project.element(of: s) else { return nil }
+        if res.tag == "Widget" { return ([res], s) }
+        if res.tag == "Slot" { let ws = WidgetSlots.widgets(project, res); return ws.isEmpty ? nil : (ws, s) }
+        return nil
+    }
+
+    private func currentSizeRect() -> CGRect? {
+        guard let (ws, l) = sizeTarget else { return nil }
+        let w = ws.map { Int($0.int("w")) }.max() ?? 0, h = ws.map { Int($0.int("h")) }.max() ?? 0
+        return CGRect(x: CGFloat(l.int("x")), y: CGFloat(l.int("y")), width: CGFloat(max(w, 8)), height: CGFloat(max(h, 8)))
+    }
+
+    private static func sizePoints(_ r: CGRect) -> [(String, CGPoint)] {
+        [("tl", CGPoint(x: r.minX, y: r.minY)), ("t", CGPoint(x: r.midX, y: r.minY)), ("tr", CGPoint(x: r.maxX, y: r.minY)),
+         ("r", CGPoint(x: r.maxX, y: r.midY)), ("br", CGPoint(x: r.maxX, y: r.maxY)), ("b", CGPoint(x: r.midX, y: r.maxY)),
+         ("bl", CGPoint(x: r.minX, y: r.maxY)), ("l", CGPoint(x: r.minX, y: r.midY))]
+    }
+
+    private func startSizeHandle(_ pt: CGPoint, scale: CGFloat) -> Bool {
+        guard let r = currentSizeRect() else { return false }
+        let tol = 22 / scale
+        guard let h = Self.sizePoints(r).map({ ($0.0, hypot($0.1.x - pt.x, $0.1.y - pt.y)) }).filter({ $0.1 <= tol }).min(by: { $0.1 < $1.1 }) else { return false }
+        sizeHandle = h.0; sizeStart = r; sizeRect = r
+        return true
+    }
+
+    private func moveSize(_ pt: CGPoint, boxes: [LayerBox], W: CGFloat, H: CGFloat) {
+        guard let h = sizeHandle else { return }
+        let others = boxes.filter { $0.layout !== selected && !AodDim.isDim(project, $0.layout, theme: theme) }.map(\.rect)
+        let xs = [0, W / 2, W] + others.flatMap { [$0.minX, $0.midX, $0.maxX] }
+        let ys = [0, H / 2, H] + others.flatMap { [$0.minY, $0.midY, $0.maxY] }
+        var gx: [CGFloat] = [], gy: [CGFloat] = []
+        func sn(_ v: CGFloat, _ c: [CGFloat], _ g: inout [CGFloat]) -> CGFloat {
+            if snap, let m = c.min(by: { abs($0 - v) < abs($1 - v) }), abs(m - v) <= 4 { g.append(m); return m }
+            return v.rounded()
+        }
+        let L = h.contains("l"), R = h.contains("r"), T = h.hasPrefix("t"), B = h.hasPrefix("b")
+        var minX = sizeStart.minX, maxX = sizeStart.maxX, minY = sizeStart.minY, maxY = sizeStart.maxY
+        if L { minX = min(sn(pt.x, xs, &gx), maxX - 8) }
+        if R { maxX = max(sn(pt.x, xs, &gx), minX + 8) }
+        if T { minY = min(sn(pt.y, ys, &gy), maxY - 8) }
+        if B { maxY = max(sn(pt.y, ys, &gy), minY + 8) }
+        if project.sizeRatioLock, (L || R), (T || B), sizeStart.height > 0 {
+            let ratio = sizeStart.width / sizeStart.height
+            let nh = max(8, ((maxX - minX) / ratio).rounded())
+            if T { minY = maxY - nh } else { maxY = minY + nh }
+            gy = []
+        }
+        sizeGuideX = gx; sizeGuideY = gy
+        sizeRect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
+
+    private func endSize() {
+        defer { sizeHandle = nil; sizeRect = nil; sizeGuideX = []; sizeGuideY = [] }
+        guard let r = sizeRect, r != sizeStart, let (ws, l) = sizeTarget else { return }
+        let dx = Int(r.minX - sizeStart.minX), dy = Int(r.minY - sizeStart.minY)
+        project.edit { p in
+            for w in ws {
+                WidgetSlots.setSize(p, w, width: Int(r.width), height: Int(r.height))
+                // зсув лівого чи верхнього краю не має зрушувати вміст з місця (вільне розташування)
+                if (dx != 0 || dy != 0), WidgetSlots.arrange(w) == "free" {
+                    for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) }
+                }
+            }
+            l.set("x", int: Int(r.minX)).set("y", int: Int(r.minY))
+        }
+    }
+
+    @ViewBuilder private func sizeOverlay(scale: CGFloat, W: CGFloat, H: CGFloat) -> some View {
+        if sizeTarget != nil, let r0 = sizeRect ?? currentSizeRect() {
+            let r = CGRect(x: r0.minX * scale, y: r0.minY * scale, width: r0.width * scale, height: r0.height * scale)
+            ZStack(alignment: .topLeading) {
+                if sizeHandle != nil {
+                    Rectangle().fill(Color.blue.opacity(0.07)).frame(width: r.width, height: r.height).offset(x: r.minX, y: r.minY)
+                    ForEach(Array(sizeGuideX.enumerated()), id: \.offset) { _, x in Rectangle().fill(Color.pink).frame(width: 1, height: H * scale).offset(x: x * scale) }
+                    ForEach(Array(sizeGuideY.enumerated()), id: \.offset) { _, y in Rectangle().fill(Color.pink).frame(width: W * scale, height: 1).offset(y: y * scale) }
+                    tag("\(Int(r0.width)) × \(Int(r0.height))", at: CGPoint(x: r.midX - 30, y: max(20, r.minY)), snapped: !sizeGuideX.isEmpty || !sizeGuideY.isEmpty)
+                }
+                ForEach(Array(Self.sizePoints(r0).enumerated()), id: \.offset) { _, np in
+                    let name = np.0, pt = np.1
+                    let edge = name.count == 1
+                    let horizontal = name == "t" || name == "b"
+                    RoundedRectangle(cornerRadius: 6).fill(Color.white).overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.blue, lineWidth: 2))
+                        .frame(width: edge ? (horizontal ? 22 : 11) : 12, height: edge ? (horizontal ? 11 : 22) : 12)
+                        .position(x: pt.x * scale, y: pt.y * scale)
+                }
+            }
+            .allowsHitTesting(false)
+        }
     }
 
     // MARK: Ручки дуги й лінії
@@ -319,6 +421,13 @@ struct CanvasView: View {
                     return
                 }
                 let start = CGPoint(x: (v.startLocation.x - origin.x) / scale, y: (v.startLocation.y - origin.y) / scale)
+                // ручки розміру віджета чи слота
+                if sizeHandle != nil || (dragLayout == nil && startSizeHandle(start, scale: scale)) {
+                    if abs(v.translation.width) + abs(v.translation.height) > 1 {
+                        moveSize(CGPoint(x: (v.location.x - origin.x) / scale, y: (v.location.y - origin.y) / scale), boxes: boxes, W: W, H: H)
+                    }
+                    return
+                }
                 // ручки на кінцях дуги чи лінії
                 if handle != nil || (dragLayout == nil && startHandle(start, scale: scale)) {
                     let moved = abs(v.translation.width) + abs(v.translation.height) > 2
@@ -367,6 +476,7 @@ struct CanvasView: View {
                     selected = hit(start, boxes)
                     return
                 }
+                if sizeHandle != nil { endSize(); return }
                 if handle != nil { if freeMode != nil { endHandle() } else { handle = nil }; return }
                 defer { dragLayout = nil; dragPos = nil; guideV = false; guideH = false; dragCache = nil }
                 guard let l = dragLayout else {

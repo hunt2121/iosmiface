@@ -275,33 +275,101 @@ struct SlotPane: View {
 }
 
 
-/// Розмір області віджета (або всіх віджетів слота): за вмістом або вручну — незалежно від прозорих країв картинок
+/// Розмір області віджета (або всіх віджетів слота): за вмістом або вручну — незалежно від прозорих країв картинок.
+/// Точно: поле, «−»/«+» по 1 px (довге натискання повторює), пропорції; на полотні — рамка з ручками.
 struct SizeRow: View {
     @ObservedObject var project: FaceProject
     let widgets: [XNode]
     let layout: XNode?
     var isSlot = false
+    @State private var lock = false
+
+    private func apply(_ v: Int, horizontal: Bool) {
+        let w0 = Int(widgets.map { $0.int("w") }.max() ?? 8), h0 = Int(widgets.map { $0.int("h") }.max() ?? 8)
+        var nw = horizontal ? v : w0, nh = horizontal ? h0 : v
+        if lock, w0 > 0, h0 > 0 {
+            if horizontal { nh = max(8, Int((Double(v) * Double(h0) / Double(w0)).rounded())) }
+            else { nw = max(8, Int((Double(v) * Double(w0) / Double(h0)).rounded())) }
+        }
+        project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: nw, height: nh) } }
+    }
 
     var body: some View {
         let manual = widgets.contains { WidgetSlots.isManual(project, $0) }
         let w = Int(widgets.map { $0.int("w") }.max() ?? 0), h = Int(widgets.map { $0.int("h") }.max() ?? 0)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(verbatim: loc(isSlot ? "Розмір слота" : "Розмір віджета")).font(.subheadline)
-                Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: loc(isSlot ? "Розмір слота" : "Розмір віджета")).font(.subheadline)
+            SizeStepField(title: "Ширина", value: w) { apply($0, horizontal: true) }
+            SizeStepField(title: "Висота", value: h) { apply($0, horizontal: false) }
+            HStack(spacing: 8) {
+                Button { lock.toggle(); project.sizeRatioLock = lock } label: {
+                    Label(loc("Зберігати пропорції"), systemImage: lock ? "link" : "link.badge.plus")
+                        .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Capsule().fill(lock ? Color.accentColor.opacity(0.18) : Color.editorTile))
+                }
+                .buttonStyle(.plain)
                 Button { project.edit { p in for x in widgets { WidgetSlots.setAuto(p, x, layout: isSlot ? nil : layout) } } } label: {
-                    Text("За вмістом").font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10).frame(height: 28)
-                        .background(Capsule().fill(manual ? Color.accentColor.opacity(0.15) : Color.editorTile))
+                    Text("За вмістом").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Capsule().fill(manual ? Color.accentColor.opacity(0.18) : Color.editorTile))
                 }
                 .buttonStyle(.plain).disabled(!manual)
             }
-            HStack(spacing: 8) {
-                NumberField(title: "Ширина", value: w) { v in project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: v, height: Int(x.int("h"))) } } }
-                NumberField(title: "Висота", value: h) { v in project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: Int(x.int("w")), height: v) } } }
-            }
             Text(verbatim: loc(manual ? "Розмір задано вручну: елементи його не змінюють." : "Розмір підлаштовується під елементи. Змініть число — і він стане постійним."))
                 .font(.caption).foregroundStyle(.secondary)
+            Text("Тягніть за точки рамки на полотні — розмір міняється по 1 px, з прилипанням до країв екрана й інших елементів.")
+                .font(.caption).foregroundStyle(.secondary)
         }
+        .onAppear { lock = project.sizeRatioLock }
+    }
+}
+
+/// Поле числа з кнопками «−»/«+»: крок 1 px, довге натискання повторює; записується одним кроком історії
+struct SizeStepField: View {
+    let title: String
+    let value: Int
+    var onCommit: (Int) -> Void
+    @State private var live: Int?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            NumberField(title: title, value: live ?? value) { v in live = nil; onCommit(v) }
+            StepButton(symbol: "minus", step: { live = max(8, (live ?? value) - 1) }, done: finish)
+            StepButton(symbol: "plus", step: { live = min(2000, (live ?? value) + 1) }, done: finish)
+        }
+    }
+
+    private func finish() {
+        if let l = live, l != value { onCommit(l) }
+        live = nil
+    }
+}
+
+struct StepButton: View {
+    let symbol: String
+    let step: () -> Void
+    let done: () -> Void
+    @State private var pressing = false
+    @State private var repeated = false
+    @State private var timer: Timer?
+
+    var body: some View {
+        Image(systemName: symbol).font(.system(size: 17, weight: .bold)).foregroundStyle(Color.accentColor)
+            .frame(width: 48, height: 48).background(Circle().fill(Color.editorTile))
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    guard !pressing else { return }
+                    pressing = true; repeated = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        guard pressing else { return }
+                        repeated = true
+                        timer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in step() }
+                    }
+                }
+                .onEnded { _ in
+                    pressing = false
+                    timer?.invalidate(); timer = nil
+                    if !repeated { step() }
+                    done()
+                })
     }
 }

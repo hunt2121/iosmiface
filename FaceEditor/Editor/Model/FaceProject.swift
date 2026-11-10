@@ -187,6 +187,8 @@ final class FaceProject: ObservableObject, Identifiable {
     @Published var meta: ProjectMeta
     /// Лічильник змін — перерисовує полотно
     @Published private(set) var revision = 0
+    /// Тягнення кута рамки віджета зберігає пропорції (лише в сесії редактора)
+    var sizeRatioLock = false
 
     private var undoStack: [(Data, [String: Data], ProjectMeta)] = []
     private var redoStack: [(Data, [String: Data], ProjectMeta)] = []
