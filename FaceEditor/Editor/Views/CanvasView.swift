@@ -181,8 +181,8 @@ struct CanvasView: View {
     private func moveSize(_ pt: CGPoint, boxes: [LayerBox], W: CGFloat, H: CGFloat) {
         guard let h = sizeHandle else { return }
         let others = boxes.filter { $0.layout !== selected && !AodDim.isDim(project, $0.layout, theme: theme) }.map(\.rect)
-        let xs = [0, W / 2, W] + others.flatMap { [$0.minX, $0.midX, $0.maxX] }
-        let ys = [0, H / 2, H] + others.flatMap { [$0.minY, $0.midY, $0.maxY] }
+        let xs: [CGFloat] = [0, W / 2, W] + others.flatMap { (r: CGRect) -> [CGFloat] in [r.minX, r.midX, r.maxX] }
+        let ys: [CGFloat] = [0, H / 2, H] + others.flatMap { (r: CGRect) -> [CGFloat] in [r.minY, r.midY, r.maxY] }
         var gx: [CGFloat] = [], gy: [CGFloat] = []
         func sn(_ v: CGFloat, _ c: [CGFloat], _ g: inout [CGFloat]) -> CGFloat {
             if snap, let m = c.min(by: { abs($0 - v) < abs($1 - v) }), abs(m - v) <= 4 { g.append(m); return m }
