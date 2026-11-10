@@ -15847,6 +15847,29 @@
           }
         }
       }
+    },
+    "Колір обведення": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outline colour"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвет обводки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колір обведення"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
