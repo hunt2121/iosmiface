@@ -145,14 +145,30 @@ enum AssetFactory {
         if g.color2.isEmpty {
             pass(.fill, fill: color(g.color))
         } else {
-            // заливка градієнтом: обрис літер — як маска
-            pass(.clip) {
-                let cs = CGColorSpaceCreateDeviceRGB()
-                if let gr = CGGradient(colorsSpace: cs, colors: [color(g.color).cgColor, color(g.color2).cgColor] as CFArray, locations: [0, 1]) {
-                    ctx.drawLinearGradient(gr, start: CGPoint(x: 0, y: p.y + f.ascender - f.capHeight), end: CGPoint(x: 0, y: p.y + f.ascender),
-                                           options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            // заливка градієнтом: контур літер (як шлях) — маска для градієнта; .clip-режим тексту ненадійний
+            let glyphs = CGMutablePath()
+            for case let run as CTRun in (CTLineGetGlyphRuns(line) as [AnyObject]) {
+                let attrs = CTRunGetAttributes(run) as NSDictionary
+                let font = attrs[kCTFontAttributeName as String] as! CTFont
+                let n = CTRunGetGlyphCount(run)
+                var gl = [CGGlyph](repeating: 0, count: n), pos = [CGPoint](repeating: .zero, count: n)
+                CTRunGetGlyphs(run, CFRangeMake(0, 0), &gl)
+                CTRunGetPositions(run, CFRangeMake(0, 0), &pos)
+                for i in 0..<n {
+                    if let gp = CTFontCreatePathForGlyph(font, gl[i], nil) {
+                        glyphs.addPath(gp, transform: CGAffineTransform(translationX: base.x + pos[i].x, y: base.y + pos[i].y).scaledBy(x: 1, y: -1))
+                    }
                 }
             }
+            ctx.saveGState()
+            ctx.translateBy(x: p.x + w / 2, y: 0); ctx.scaleBy(x: k, y: 1); ctx.translateBy(x: -(p.x + w / 2), y: 0)
+            ctx.addPath(glyphs)
+            ctx.clip()
+            if let gr = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [color(g.color).cgColor, color(g.color2).cgColor] as CFArray, locations: [0, 1]) {
+                ctx.drawLinearGradient(gr, start: CGPoint(x: 0, y: p.y + f.ascender - f.capHeight), end: CGPoint(x: 0, y: p.y + f.ascender),
+                                       options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            }
+            ctx.restoreGState()
         }
     }
 
