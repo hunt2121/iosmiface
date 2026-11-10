@@ -25,6 +25,9 @@ namespace BandFace.Protocol
         public System.Collections.Generic.List<byte[]> CommandsAfterAuth = new System.Collections.Generic.List<byte[]>();
         public int PauseAfterAuthMs = 500, PauseBeforeInstallMs = 300, WaitForInstallStatusMs = 1500;
         public int ActivationTimeoutMs = 4000, ActivationAttempts = 2;
+        /// <summary>Якщо циферблат з таким ID уже є (навіть активний) — видалити його й встановити заново.
+        /// Для активного спершу вмикається інший; після встановлення новий вмикається сам.</summary>
+        public bool ReplaceExisting;
 
         enum Check { NeedsUpload, AlreadyInstalled, AlreadyActive }
 
@@ -79,14 +82,30 @@ namespace BandFace.Protocol
                 var r = await s.CommandAsync(Command.InstallRequest(face.Id, face.Size)).ConfigureAwait(false);
                 long status = r.Root.VarintAt(6, 5) ?? 0;
                 if (status == 0) return Check.NeedsUpload;
-                if (status == 2) return Check.AlreadyInstalled;
+                if (status == 2 && !ReplaceExisting) return Check.AlreadyInstalled;
                 if (removed) throw new BandException(ErrorKind.InstallRejected, "", status);
                 var list = WatchfaceEntry.List(await s.CommandAsync(Command.WatchfaceListRequest()).ConfigureAwait(false));
                 var old = list.FirstOrDefault(x => x.Id == face.Id);
-                if (old == null) throw new BandException(ErrorKind.InstallRejected, "", status);
-                if (old.IsActive) return Check.AlreadyActive;
-                if (!old.CanDelete) throw new BandException(ErrorKind.InstallRejected, "", status);
-                ph(Phase.RemovingOldVersion);
+                if (old == null)
+                {
+                    if (status == 2) return Check.AlreadyInstalled;
+                    throw new BandException(ErrorKind.InstallRejected, "", status);
+                }
+                if (old.IsActive)
+                {
+                    if (!ReplaceExisting) return Check.AlreadyActive;
+                    var other = list.FirstOrDefault(x => x.Id != face.Id);
+                    if (other == null) return Check.AlreadyActive;
+                    ph(Phase.RemovingOldVersion);
+                    // активний видалити не можна: тимчасово вмикаємо інший
+                    await s.CommandAsync(Command.ActivateWatchface(other.Id), ActivationTimeoutMs).ConfigureAwait(false);
+                    await Task.Delay(500).ConfigureAwait(false);
+                }
+                else
+                {
+                    if (!old.CanDelete) throw new BandException(ErrorKind.InstallRejected, "", status);
+                    ph(Phase.RemovingOldVersion);
+                }
                 await s.CommandAsync(Command.DeleteWatchface(face.Id)).ConfigureAwait(false);
                 removed = true;
             }

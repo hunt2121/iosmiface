@@ -634,9 +634,19 @@ namespace BandFace
 
         /// <summary>Циферблат з редактора — звичним шляхом вкладки «Циферблати» (як в iOS).</summary>
         /// <summary>Циферблат з редактора: встановлюється, не виходячи з редактора; прогрес — у віконці під кнопкою.</summary>
+        /// <summary>Установка з редактора замінює вже наявний на браслеті циферблат з тим самим ID</summary>
+        bool _replaceExisting;
+
         async void InstallFromEditor(byte[] bin, string name)
         {
             if (_busy) return;
+            _replaceExisting = true;
+            try { await InstallFromEditorCore(bin, name); }
+            finally { _replaceExisting = false; }
+        }
+
+        async Task InstallFromEditorCore(byte[] bin, string name)
+        {
             if (!EditorTab.EditorShown)
             {
                 // з меню картки у списку — звичним шляхом вкладки «Циферблати»
@@ -712,7 +722,7 @@ namespace BandFace
             try
             {
                 // параметри входу точно як у Mi Fitness / iOS-версії (з іншими Band 10 розриває з'єднання після входу)
-                var inst = new WatchfaceInstaller { PhoneInfo = Command.PhoneInfoMiFitness(Region()) };
+                var inst = new WatchfaceInstaller { PhoneInfo = Command.PhoneInfoMiFitness(Region()), ReplaceExisting = _replaceExisting };
                 inst.CommandsAfterAuth.Add(Command.AfterAuthMiFitness);
                 bool already = false;
                 await inst.InstallAsync(_face, key, _session, p => Dispatcher.BeginInvoke(new Action(() =>
