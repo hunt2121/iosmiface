@@ -250,16 +250,37 @@ struct DigitSetSection: View {
                 }
                 .buttonStyle(.bordered) }
             }
-            Toggle("Градієнт згори донизу", isOn: Binding(get: { !gen.color2.isEmpty }, set: { on in
-                regen { $0.color2 = on ? (ColorRow.suggested.first { $0 != gen.color && $0 != "#FFFFFF" } ?? "#FF375F") : "" }
-            })).font(.subheadline)
-            if !gen.color2.isEmpty { ColorRow(title: "Колір унизу", hex: gen.color2) { h in regen { $0.color2 = h } } }
-            CommitSlider(title: "Обвідка, px", value: gen.outline, range: 0...8, step: 0.5) { v in regen { $0.outline = v } }
-            if gen.outline > 0 { ColorRow(title: "Колір обвідки", hex: gen.outlineColor) { h in regen { $0.outlineColor = h } } }
-            CommitSlider(title: "Тінь праворуч, px", value: gen.shadowX, range: -8...8, step: 1) { v in regen { $0.shadowX = v } }
-            CommitSlider(title: "Тінь донизу, px", value: gen.shadowY, range: -8...8, step: 1) { v in regen { $0.shadowY = v } }
-            if gen.shadowX != 0 || gen.shadowY != 0 { ColorRow(title: "Колір тіні", hex: gen.shadowColor) { h in regen { $0.shadowColor = h } } }
-            CommitSlider(title: "Ширина літер, %", value: gen.widthPct, range: 50...150, step: 1) { v in regen { $0.widthPct = v } }
+            Group {
+                Text("Заливка тексту").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+                CommitSlider(title: "Прозорість заливки, %", value: gen.fillAlpha, range: 0...100, step: 5) { v in regen { $0.fillAlpha = v } }
+                Chips(title: "Градієнт", hint: nil, items: [("0", "Без"), ("1", "Вертикальний"), ("2", "Діагональний")],
+                      selected: gen.color2.isEmpty ? "0" : (gen.gradDir == 1 ? "2" : "1")) { v in
+                    regen {
+                        if v == "0" { $0.color2 = "" } else {
+                            if $0.color2.isEmpty { $0.color2 = ColorRow.suggested.first { $0 != gen.color && $0 != "#FFFFFF" } ?? "#FF375F" }
+                            $0.gradDir = v == "2" ? 1 : 0
+                        }
+                    }
+                }
+                if !gen.color2.isEmpty { ColorRow(title: "Колір унизу", hex: gen.color2) { h in regen { $0.color2 = h } } }
+                Text("Обведення").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+                CommitSlider(title: "Товщина обведення, px", value: gen.outline, range: 0...12, step: 0.5) { v in regen { $0.outline = v } }
+                if gen.outline > 0 {
+                    ColorRow(title: "Колір обведення", hex: gen.outlineColor) { h in regen { $0.outlineColor = h } }
+                    CommitSlider(title: "Прозорість обведення, %", value: gen.outlineAlpha, range: 0...100, step: 5) { v in regen { $0.outlineAlpha = v } }
+                    Chips(title: "Положення", hint: nil, items: [("0", "Зовні"), ("1", "Посередині"), ("2", "Всередині")], selected: "\(gen.outlinePos)") { v in regen { $0.outlinePos = Int(v) ?? 0 } }
+                }
+                Text("Розкладка").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+                CommitSlider(title: "Інтервал між літерами, px", value: gen.tracking, range: -5...20, step: 0.5) { v in regen { $0.tracking = v } }
+                CommitSlider(title: "Ширина літер, %", value: gen.widthPct, range: 50...150, step: 1) { v in regen { $0.widthPct = v } }
+                Text("Тінь").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+                CommitSlider(title: "Тінь праворуч, px", value: gen.shadowX, range: -8...8, step: 1) { v in regen { $0.shadowX = v } }
+                CommitSlider(title: "Тінь донизу, px", value: gen.shadowY, range: -8...8, step: 1) { v in regen { $0.shadowY = v } }
+                if gen.shadowX != 0 || gen.shadowY != 0 {
+                    ColorRow(title: "Колір тіні", hex: gen.shadowColor) { h in regen { $0.shadowColor = h } }
+                    CommitSlider(title: "Прозорість тіні, %", value: gen.shadowAlpha, range: 0...100, step: 5) { v in regen { $0.shadowAlpha = v } }
+                }
+            }
         }
         .onAppear { sets = DigitSets.all() }
         .alert(loc("Набір цифр"), isPresented: $saving) {

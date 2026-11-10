@@ -44,19 +44,31 @@ struct Generator: Codable, Equatable {
     /// Фон під кожним знаком/написом: "" — без фону, circle — коло, capsule — капсула, square — заокруглений квадрат
     var badge: String = ""
     var badgeColor: String = "#FF9F0A"
-    /// Лише контур літер (без заливки) — кольором color
+    /// Лише для старих проєктів («лише контур»): при читанні перетворюється на заливку 0% + обведення
     var hollow: Bool = false
+    /// Прозорість заливки тексту, %
+    var fillAlpha: Double = 100
+    /// Обведення: положення (0 — зовні, 1 — посередині, 2 — всередині) і прозорість, %
+    var outlinePos: Int = 0
+    var outlineAlpha: Double = 100
+    /// Прозорість тіні, %
+    var shadowAlpha: Double = 60
+    /// Напрямок градієнта: 0 — згори донизу, 1 — по діагоналі
+    var gradDir: Int = 0
+    /// Інтервал між літерами, px
+    var tracking: Double = 0
 
     /// Картинки намальовані редактором з цих параметрів (а не свої картинки користувача)
     var drawn: Bool { kind != .image && kind != .frames }
 
-    var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 || hollow }
+    var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 || fillAlpha < 100 || tracking != 0 }
 
     /// Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту
     mutating func applyStyle(_ s: Generator) {
         font = s.font; style = s.style; weight = s.weight; color = s.color; color2 = s.color2
         outline = s.outline; outlineColor = s.outlineColor; shadowX = s.shadowX; shadowY = s.shadowY; shadowColor = s.shadowColor; widthPct = s.widthPct
-        badge = s.badge; badgeColor = s.badgeColor; hollow = s.hollow
+        badge = s.badge; badgeColor = s.badgeColor
+        fillAlpha = s.fillAlpha; outlinePos = s.outlinePos; outlineAlpha = s.outlineAlpha; shadowAlpha = s.shadowAlpha; gradDir = s.gradDir; tracking = s.tracking
     }
 
     init(kind: Kind, color: String = "#FFFFFF", bgColor: String = "#3A3A3C", fontSize: Double = 48, weight: Int = 700,
@@ -96,6 +108,16 @@ struct Generator: Codable, Equatable {
         badge = (try? c.decodeIfPresent(String.self, forKey: .badge)) ?? ""
         badgeColor = (try? c.decodeIfPresent(String.self, forKey: .badgeColor)) ?? "#FF9F0A"
         hollow = (try? c.decodeIfPresent(Bool.self, forKey: .hollow)) ?? false
+        fillAlpha = (try? c.decodeIfPresent(Double.self, forKey: .fillAlpha)) ?? 100
+        outlinePos = (try? c.decodeIfPresent(Int.self, forKey: .outlinePos)) ?? 0
+        outlineAlpha = (try? c.decodeIfPresent(Double.self, forKey: .outlineAlpha)) ?? 100
+        shadowAlpha = (try? c.decodeIfPresent(Double.self, forKey: .shadowAlpha)) ?? 60
+        gradDir = (try? c.decodeIfPresent(Int.self, forKey: .gradDir)) ?? 0
+        tracking = (try? c.decodeIfPresent(Double.self, forKey: .tracking)) ?? 0
+        if hollow {
+            // «лише контур» → заливка 0% і обведення по центру кольором тексту
+            hollow = false; fillAlpha = 0; outlinePos = 1; outline = max(1.2, fontSize / 22); outlineColor = color; color2 = ""
+        }
     }
 }
 

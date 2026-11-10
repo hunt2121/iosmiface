@@ -83,9 +83,7 @@ enum AssetFactory {
 
     static func widthK(_ g: Generator) -> CGFloat { CGFloat(max(0.3, min(2, g.widthPct / 100))) }
     /// Поле навколо знака під обвідку й тінь
-    static func pad(_ g: Generator) -> Int { g.styled ? Int(ceil(max(0, g.outline) + max(abs(g.shadowX), abs(g.shadowY)) + hollowWidth(g))) + 1 : 0 }
-    /// Товщина контуру для «лише контур»: від розміру шрифту, щонайменше 1.2 px
-    static func hollowWidth(_ g: Generator) -> CGFloat { g.hollow ? CGFloat(max(1.2, g.fontSize / 22)) : 0 }
+    static func pad(_ g: Generator) -> Int { g.styled ? Int(ceil(max(0, g.outline) + max(abs(g.shadowX), abs(g.shadowY)))) + 1 : 0 }
 
     /// Фон під знаком (коло, капсула, квадрат): більший кадр з фігурою кольору badgeColor, знак по центру
     static func withBadge(_ g: Generator, _ frames: [RGBAImage]) -> [RGBAImage] {
@@ -110,66 +108,94 @@ enum AssetFactory {
         }
     }
 
-    /// Рядок з ефектами набору цифр: тінь → обвідка (зовнішня) → заливка (колір або градієнт згори донизу).
-    /// Ширина літер стискає/розтягує рядок відносно його середини. Без ефектів — звичайне малювання.
+    /// Атрибути рядка: шрифт, колір і міжлітерний інтервал
+    static func textAttrs(_ g: Generator, _ f: UIFont) -> [NSAttributedString.Key: Any] {
+        var a: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
+        if g.tracking != 0 { a[.kern] = CGFloat(g.tracking) }
+        return a
+    }
+
+    /// Ширина рядка з інтервалом (без зайвого інтервалу після останньої літери)
+    static func textWidth(_ t: String, _ f: UIFont, _ g: Generator) -> CGFloat {
+        let w = NSAttributedString(string: t, attributes: textAttrs(g, f)).size().width
+        return t.isEmpty ? w : w - CGFloat(g.tracking)
+    }
+
+    /// Контури літер рядка одним шляхом (координати «вниз», база рядка в base)
+    static func glyphPath(_ line: CTLine, base: CGPoint) -> CGPath {
+        let path = CGMutablePath()
+        for case let run as CTRun in (CTLineGetGlyphRuns(line) as [AnyObject]) {
+            let attrs = CTRunGetAttributes(run) as NSDictionary
+            let font = attrs[kCTFontAttributeName as String] as! CTFont
+            let n = CTRunGetGlyphCount(run)
+            var gl = [CGGlyph](repeating: 0, count: n), pos = [CGPoint](repeating: .zero, count: n)
+            CTRunGetGlyphs(run, CFRangeMake(0, 0), &gl)
+            CTRunGetPositions(run, CFRangeMake(0, 0), &pos)
+            for i in 0..<n {
+                if let gp = CTFontCreatePathForGlyph(font, gl[i], nil) {
+                    path.addPath(gp, transform: CGAffineTransform(translationX: base.x + pos[i].x, y: base.y + pos[i].y).scaledBy(x: 1, y: -1))
+                }
+            }
+        }
+        return path
+    }
+
+    /// Рядок з ефектами: тінь → заливка (колір чи градієнт, зі своєю прозорістю) → обведення (колір, прозорість, положення).
+    /// Усе малюється за контуром літер. Ширина літер стискає/розтягує рядок відносно його середини.
     static func drawStyled(_ text: String, font f: UIFont, at p: CGPoint, g: Generator, in ctx: CGContext) {
-        let plain = NSAttributedString(string: text, attributes: [.font: f, .foregroundColor: color(g.color)])
-        guard g.styled else { plain.draw(at: p); return }
-        let a = NSAttributedString(string: text, attributes: [.font: f, NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String): true])
-        let line = CTLineCreateWithAttributedString(a)
-        let w = plain.size().width
+        guard g.styled else { NSAttributedString(string: text, attributes: textAttrs(g, f)).draw(at: p); return }
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [.font: f, .kern: CGFloat(g.tracking)]))
+        let w = textWidth(text, f, g)
         let k = widthK(g)
         let base = CGPoint(x: p.x, y: p.y + f.ascender)
-        func pass(_ mode: CGTextDrawingMode, dx: CGFloat = 0, dy: CGFloat = 0, fill: UIColor? = nil, stroke: UIColor? = nil, lineWidth: CGFloat = 0, after: (() -> Void)? = nil) {
+        let path = glyphPath(line, base: base)
+        let big = CGRect(x: -10000, y: -10000, width: 20000, height: 20000)
+        func layer(dx: CGFloat = 0, dy: CGFloat = 0, alpha: Double, _ body: () -> Void) {
+            guard alpha > 0 else { return }
             ctx.saveGState()
             ctx.translateBy(x: p.x + w / 2 + dx, y: dy); ctx.scaleBy(x: k, y: 1); ctx.translateBy(x: -(p.x + w / 2), y: 0)
-            ctx.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
-            ctx.textPosition = base
-            ctx.setTextDrawingMode(mode)
-            if let fill { ctx.setFillColor(fill.cgColor) }
-            if let stroke { ctx.setStrokeColor(stroke.cgColor); ctx.setLineWidth(lineWidth); ctx.setLineJoin(.round) }
-            CTLineDraw(line, ctx)
-            after?()
+            ctx.setAlpha(CGFloat(min(1, alpha / 100)))
+            ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+            body()
+            ctx.endTransparencyLayer()
+            ctx.restoreGState()
+        }
+        func strokeOutline(_ c: UIColor) {
+            let t = CGFloat(g.outline)
+            ctx.saveGState()
+            switch g.outlinePos {
+            case 1: ctx.setLineWidth(t)
+            case 2: ctx.addPath(path); ctx.clip(); ctx.setLineWidth(t * 2)
+            default:
+                let m = CGMutablePath(); m.addRect(big); m.addPath(path)
+                ctx.addPath(m); ctx.clip(using: .evenOdd); ctx.setLineWidth(t * 2)
+            }
+            ctx.setStrokeColor(c.cgColor); ctx.setLineJoin(.round)
+            ctx.addPath(path); ctx.strokePath()
             ctx.restoreGState()
         }
         if g.shadowX != 0 || g.shadowY != 0 {
-            let sc = color(g.shadowColor).withAlphaComponent(0.6)
-            pass(g.outline > 0 ? .fillStroke : .fill, dx: g.shadowX, dy: g.shadowY, fill: sc, stroke: sc, lineWidth: g.outline * 2)
+            let sc = color(g.shadowColor)
+            layer(dx: g.shadowX, dy: g.shadowY, alpha: g.shadowAlpha) {
+                if g.fillAlpha > 0 { ctx.setFillColor(sc.cgColor); ctx.addPath(path); ctx.fillPath() }
+                if g.outline > 0 { strokeOutline(sc) }
+            }
         }
-        if g.outline > 0 { pass(.stroke, stroke: color(g.outlineColor), lineWidth: g.outline * 2) }
-        if g.hollow {
-            // лише контур літер: обвідка кольором тексту, всередині прозоро (або колір фону-фігури)
-            pass(.stroke, stroke: color(g.color), lineWidth: hollowWidth(g))
-            return
-        }
-        if g.color2.isEmpty {
-            pass(.fill, fill: color(g.color))
-        } else {
-            // заливка градієнтом: контур літер (як шлях) — маска для градієнта; .clip-режим тексту ненадійний
-            let glyphs = CGMutablePath()
-            for case let run as CTRun in (CTLineGetGlyphRuns(line) as [AnyObject]) {
-                let attrs = CTRunGetAttributes(run) as NSDictionary
-                let font = attrs[kCTFontAttributeName as String] as! CTFont
-                let n = CTRunGetGlyphCount(run)
-                var gl = [CGGlyph](repeating: 0, count: n), pos = [CGPoint](repeating: .zero, count: n)
-                CTRunGetGlyphs(run, CFRangeMake(0, 0), &gl)
-                CTRunGetPositions(run, CFRangeMake(0, 0), &pos)
-                for i in 0..<n {
-                    if let gp = CTFontCreatePathForGlyph(font, gl[i], nil) {
-                        glyphs.addPath(gp, transform: CGAffineTransform(translationX: base.x + pos[i].x, y: base.y + pos[i].y).scaledBy(x: 1, y: -1))
-                    }
+        layer(alpha: g.fillAlpha) {
+            if g.color2.isEmpty {
+                ctx.setFillColor(color(g.color).cgColor); ctx.addPath(path); ctx.fillPath()
+            } else {
+                ctx.saveGState()
+                ctx.addPath(path); ctx.clip()
+                if let gr = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [color(g.color).cgColor, color(g.color2).cgColor] as CFArray, locations: [0, 1]) {
+                    let top = p.y + f.ascender - f.capHeight, bottom = p.y + f.ascender
+                    let (s0, s1) = g.gradDir == 1 ? (CGPoint(x: p.x, y: top), CGPoint(x: p.x + w, y: bottom)) : (CGPoint(x: 0, y: top), CGPoint(x: 0, y: bottom))
+                    ctx.drawLinearGradient(gr, start: s0, end: s1, options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
                 }
+                ctx.restoreGState()
             }
-            ctx.saveGState()
-            ctx.translateBy(x: p.x + w / 2, y: 0); ctx.scaleBy(x: k, y: 1); ctx.translateBy(x: -(p.x + w / 2), y: 0)
-            ctx.addPath(glyphs)
-            ctx.clip()
-            if let gr = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [color(g.color).cgColor, color(g.color2).cgColor] as CFArray, locations: [0, 1]) {
-                ctx.drawLinearGradient(gr, start: CGPoint(x: 0, y: p.y + f.ascender - f.capHeight), end: CGPoint(x: 0, y: p.y + f.ascender),
-                                       options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
-            }
-            ctx.restoreGState()
         }
+        if g.outline > 0 { layer(alpha: g.outlineAlpha) { strokeOutline(color(g.outlineColor)) } }
     }
 
     /// Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).
@@ -181,9 +207,8 @@ enum AssetFactory {
         guard !texts.isEmpty else { return [] }
         let texts = texts.map { $0.isEmpty ? " " : $0 }
         let f = font(g)
-        let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
         var advance: CGFloat = 0
-        for t in texts { advance = max(advance, NSAttributedString(string: t, attributes: attrs).size().width) }
+        for t in texts { advance = max(advance, textWidth(t, f, g)) }
         let pd = pad(g)
         let w = Int(ceil(advance * widthK(g))) + 2 + pd * 2
         let lh = ceil(f.lineHeight)
@@ -191,7 +216,7 @@ enum AssetFactory {
         let top = lh / 2 + CGFloat(pd)
         let full = texts.map { t in
             render(w, tall) { ctx in
-                let sw = NSAttributedString(string: t, attributes: attrs).size().width
+                let sw = textWidth(t, f, g)
                 drawStyled(t, font: f, at: CGPoint(x: (CGFloat(w) - sw) / 2, y: top), g: g, in: ctx)
             }
         }
@@ -218,9 +243,7 @@ enum AssetFactory {
         let t = g.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return nil }
         let f = font(g)
-        let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
-        let s = NSAttributedString(string: t, attributes: attrs)
-        let size = s.size()
+        let size = CGSize(width: textWidth(t, f, g), height: 0)
         let pd = pad(g)
         let w = Int(ceil(size.width * widthK(g))) + 8 + pd * 2
         let lh = ceil(f.lineHeight)
@@ -249,9 +272,7 @@ enum AssetFactory {
         let t = text.trimmingCharacters(in: .whitespaces)
         guard !t.isEmpty, let digit = digitFrames(g).first else { return nil }
         let f = font(g)
-        let attrs: [NSAttributedString.Key: Any] = [.font: f, .foregroundColor: color(g.color)]
-        let s = NSAttributedString(string: t, attributes: attrs)
-        let sw = s.size().width
+        let sw = textWidth(t, f, g)
         let pd = pad(g)
         let w = Int(ceil(sw * widthK(g))) + 4 + pd * 2
         let lh = ceil(f.lineHeight)
@@ -260,8 +281,7 @@ enum AssetFactory {
         let full = render(w, tall) { ctx in drawStyled(t, font: f, at: CGPoint(x: (CGFloat(w) - sw) / 2, y: top), g: g, in: ctx) }
         // та сама вертикальна вирізка, що й у цифр: шукаємо її за кадром «0»
         let zero = render(digit.w, tall) { ctx in
-            let z = NSAttributedString(string: "0", attributes: attrs)
-            drawStyled("0", font: f, at: CGPoint(x: (CGFloat(digit.w) - z.size().width) / 2, y: top), g: g, in: ctx)
+            drawStyled("0", font: f, at: CGPoint(x: (CGFloat(digit.w) - textWidth("0", f, g)) / 2, y: top), g: g, in: ctx)
         }
         var y0 = tall
         for y in 0..<tall where y0 == tall {

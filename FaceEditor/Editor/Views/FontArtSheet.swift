@@ -110,7 +110,6 @@ struct FontArtSheet: View {
                 } header: { Text("Шрифт") }
                 Section {
                     // вигляд знака: лише контур і фігура-фон під кожною цифрою / написом
-                    Toggle("Лише контур", isOn: $g.hollow)
                     Chips(title: "Фон знака", hint: nil,
                           items: [("", "Без фону"), ("circle", "Коло"), ("capsule", "Капсула"), ("square", "Квадрат")],
                           selected: g.badge) { v in g.badge = v }
