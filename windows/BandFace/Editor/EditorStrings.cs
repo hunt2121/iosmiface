@@ -180,6 +180,8 @@ namespace BandFace.Creator
             ["wAutoSize"] = new[] { "За вмістом", "Fit to content", "По содержимому" },
             ["wSizeManual"] = new[] { "Розмір задано вручну: елементи його не змінюють.", "The size is set manually: elements don’t change it.", "Размер задан вручную: элементы его не меняют." },
             ["wSizeAuto"] = new[] { "Розмір підлаштовується під елементи. Змініть число — і він стане постійним.", "The size follows the elements. Change a number to make it fixed.", "Размер подстраивается под элементы. Измените число — и он станет постоянным." },
+            ["wKeepRatio"] = new[] { "Зберігати пропорції (Shift на куті — теж)", "Keep proportions (Shift on a corner too)", "Сохранять пропорции (Shift на углу — тоже)" },
+            ["wSizeDrag"] = new[] { "Тягніть за точки рамки на полотні — розмір міняється по 1 px, з прилипанням до країв екрана й інших елементів (Alt вимикає прилипання).", "Drag the frame handles on the canvas — the size changes by 1 px, snapping to screen edges and other elements (Alt turns snapping off).", "Тяните за точки рамки на холсте — размер меняется по 1 px, с прилипанием к краям экрана и других элементов (Alt отключает прилипание)." },
             ["wLayout"] = new[] { "Розкладка", "Layout", "Раскладка" },
             ["wArrange"] = new[] { "Розташування", "Arrangement", "Расположение" },
             ["wRow"] = new[] { "В ряд", "In a row", "В ряд" },

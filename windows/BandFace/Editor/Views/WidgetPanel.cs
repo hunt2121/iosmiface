@@ -174,18 +174,48 @@ namespace BandFace.Creator
         }
 
         /// <summary>Налаштування слота: список віджетів на вибір (або відкритий віджет слота)</summary>
-        /// <summary>Розмір області віджета (або всіх віджетів слота): за вмістом чи вручну, незалежно від прозорих країв картинок</summary>
+        /// <summary>Розмір області віджета (або всіх віджетів слота): за вмістом чи вручну, незалежно від прозорих країв картинок.
+        /// Точно: поле, «−»/«+» по 1 px (утримання повторює), пропорції; на полотні — рамка з ручками.</summary>
         void SizeSection(List<XNode> widgets, XNode layout, bool isSlot)
         {
             bool manual = widgets.Any(x => WidgetSlots.IsManual(project, x));
-            int w0 = widgets.Count == 0 ? 0 : widgets.Max(x => x.Int("w")), h0 = widgets.Count == 0 ? 0 : widgets.Max(x => x.Int("h"));
+            int w0 = widgets.Count == 0 ? 8 : widgets.Max(x => x.Int("w")), h0 = widgets.Count == 0 ? 8 : widgets.Max(x => x.Int("h"));
             Add(Ui.Header(S.Get(isSlot ? "slSize" : "wSize")));
-            Add(Ui.NumberRow(S.Get("wWidth"), w0, v => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, v, x.Int("h")); }), 8, 2000));
-            Add(Ui.NumberRow(S.Get("wHeight"), h0, v => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, x.Int("w"), v); }), 8, 2000));
+            Action<int, bool> apply = (v, horizontal) =>
+            {
+                int nw = horizontal ? v : w0, nh = horizontal ? h0 : v;
+                if (SizeRatioLock && w0 > 0 && h0 > 0)
+                {
+                    if (horizontal) nh = Math.Max(8, (int)Math.Round(v * (double)h0 / w0)); else nw = Math.Max(8, (int)Math.Round(v * (double)w0 / h0));
+                }
+                project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, nw, nh); });
+            };
+            Add(StepRow(S.Get("wWidth"), w0, v => apply(v, true)));
+            Add(StepRow(S.Get("wHeight"), h0, v => apply(v, false)));
+            Add(Ui.Switch(S.Get("wKeepRatio"), SizeRatioLock, v => SizeRatioLock = v));
             var auto = new Button { Content = S.Get("wAutoSize"), Style = (Style)FindResource("Btn"), IsEnabled = manual, Margin = new Thickness(0, 0, 0, 6) };
             auto.Click += (s, e) => project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetAuto(p, x, isSlot ? null : layout); });
             Add(auto);
             Add(Ui.Note(S.Get(manual ? "wSizeManual" : "wSizeAuto")));
+            Add(Ui.Note(S.Get("wSizeDrag")));
+        }
+
+        /// <summary>Число з «−»/«+»: крок 1 px, утримання повторює; запис — одним кроком історії</summary>
+        FrameworkElement StepRow(string label, int value, Action<int> commit)
+        {
+            int live = value;
+            var box = Ui.Number(value, v => { live = v; commit(v); }, 8, 2000);
+            var minus = new System.Windows.Controls.Primitives.RepeatButton { Content = "−", Width = 28, Height = 26, Margin = new Thickness(6, 0, 0, 0), Delay = 400, Interval = 70 };
+            var plus = new System.Windows.Controls.Primitives.RepeatButton { Content = "+", Width = 28, Height = 26, Margin = new Thickness(4, 0, 0, 0), Delay = 400, Interval = 70 };
+            minus.SetResourceReference(FrameworkElement.StyleProperty, "Btn"); plus.SetResourceReference(FrameworkElement.StyleProperty, "Btn");
+            Action<int> bump = d => { live = Math.Max(8, Math.Min(2000, live + d)); box.Text = live.ToString(); };
+            Action done = () => { if (live != value) { int v = live; commit(v); } };
+            minus.Click += (s, e) => bump(-1); plus.Click += (s, e) => bump(1);
+            foreach (var b in new[] { minus, plus }) { b.PreviewMouseLeftButtonUp += (s, e) => done(); b.LostMouseCapture += (s, e) => { }; }
+            var line = new StackPanel { Orientation = Orientation.Horizontal };
+            box.Width = 70; box.Height = 26;
+            line.Children.Add(box); line.Children.Add(minus); line.Children.Add(plus);
+            return Ui.Row(label, line, 160);
         }
 
         void SlotSection(XNode slot, XNode layout)

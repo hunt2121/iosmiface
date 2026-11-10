@@ -408,6 +408,7 @@ namespace BandFace.Creator
                 }
             }
             DrawHandles(sel);
+            DrawSizeHandles(sel);
             var guide = (Brush)FindResource("Guide");
             if (guideV) { var ln = new Rectangle { Width = 1, Height = dev.Height * zoom, Fill = guide }; Canvas.SetLeft(ln, dev.Width * zoom / 2); Overlay.Children.Add(ln); }
             if (guideH) { var ln = new Rectangle { Width = dev.Width * zoom, Height = 1, Fill = guide }; Canvas.SetTop(ln, dev.Height * zoom / 2); Overlay.Children.Add(ln); }
@@ -478,6 +479,7 @@ namespace BandFace.Creator
                 e.Handled = true;
                 return;
             }
+            if (StartSizeDrag(pt)) { StageHost.CaptureMouse(); e.Handled = true; return; }
             if (StartHandleDrag(pt)) { StageHost.CaptureMouse(); e.Handled = true; return; }
             var l = Hit(pt);
             if (l == null) { if (selected != null) Select(null); return; }
@@ -499,6 +501,7 @@ namespace BandFace.Creator
                 Workspace.ScrollToVerticalOffset(panV - (p.Y - panFrom.Value.Y));
                 return;
             }
+            if (sizeHandle != null) { MoveSize(FacePoint(e)); return; }
             if (handle != null) { MoveHandle(FacePoint(e)); return; }
             if (dragLayout == null) return;
             var pt = FacePoint(e);
@@ -536,6 +539,7 @@ namespace BandFace.Creator
         void Stage_Up(object sender, MouseButtonEventArgs e)
         {
             if (panFrom.HasValue) { panFrom = null; StageHost.ReleaseMouseCapture(); StageHost.Cursor = null; return; }
+            if (sizeHandle != null) { StageHost.ReleaseMouseCapture(); EndSizeDrag(); return; }
             if (handle != null) { StageHost.ReleaseMouseCapture(); EndHandleDrag(); return; }
             if (dragLayout == null) return;
             StageHost.ReleaseMouseCapture();
