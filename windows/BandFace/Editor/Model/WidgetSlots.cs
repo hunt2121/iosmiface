@@ -69,6 +69,9 @@ namespace BandFace.Creator
         }
 
         /// <summary>Розмір віджета: щонайменше вміст; у слоті — не менший за інші віджети слота</summary>
+        /// <summary>Запас окантовки навколо видимого вмісту, px</summary>
+        public const int Pad = 5;
+
         public static bool IsManual(FaceProject p, XNode w) => p.Meta.ManualSize.Contains(w.Str("name") ?? "");
 
         /// <summary>Розмір віджета задано вручну — картинки з прозорими краями не впливають на область</summary>
@@ -115,8 +118,8 @@ namespace BandFace.Creator
                 if (!b.IsEmpty) union = union.IsEmpty ? b : Rect.Union(union, b);
             }
             if (union.IsEmpty) return;
-            int dx = (int)Math.Floor(union.Left), dy = (int)Math.Floor(union.Top);
-            int cw = Math.Max(8, (int)Math.Ceiling(union.Right) - dx), ch = Math.Max(8, (int)Math.Ceiling(union.Bottom) - dy);
+            int dx = (int)Math.Floor(union.Left) - Pad, dy = (int)Math.Floor(union.Top) - Pad;
+            int cw = Math.Max(8, (int)Math.Ceiling(union.Right) + Pad - dx), ch = Math.Max(8, (int)Math.Ceiling(union.Bottom) + Pad - dy);
             foreach (var w in ws)
             {
                 if (Arrange(w) == "free") foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
@@ -134,7 +137,7 @@ namespace BandFace.Creator
             int oldW = w.Int("w"), oldH = w.Int("h");
             w.Remove("w"); w.Remove("h");
             var box = r.VisibleBounds(w) ?? new Rect(0, 0, 40, 30);
-            int cw = Math.Max(8, (int)Math.Ceiling(box.Right)), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom));
+            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + 2 * Pad), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + 2 * Pad);
             bool keep = !shrink && SlotsOf(p, w).Count > 0;
             int fw = Math.Max(cw, hadW && keep ? oldW : 0), fh = Math.Max(ch, hadH && keep ? oldH : 0);
             w.Set("w", fw).Set("h", fh);
@@ -156,11 +159,11 @@ namespace BandFace.Creator
             }
             if (box.IsEmpty) return;
             bool inSlot = !shrink && layout == null && SlotsOf(p, w).Count > 0;
-            int dx = (int)Math.Floor(box.Left), dy = (int)Math.Floor(box.Top);
+            int dx = (int)Math.Floor(box.Left) - Pad, dy = (int)Math.Floor(box.Top) - Pad;
             if (layout == null) { dx = Math.Min(0, dx); dy = Math.Min(0, dy); }
             foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
             if (layout != null) layout.Set("x", layout.Int("x") + dx).Set("y", layout.Int("y") + dy);
-            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) - dx), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) - dy);
+            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + Pad - dx), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + Pad - dy);
             w.Set("w", Math.Max(cw, inSlot ? w.Int("w") : 0)).Set("h", Math.Max(ch, inSlot ? w.Int("h") : 0));
         }
 

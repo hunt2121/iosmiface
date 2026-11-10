@@ -188,7 +188,18 @@ namespace BandFace.Creator
                 {
                     if (horizontal) nh = Math.Max(8, (int)Math.Round(v * (double)h0 / w0)); else nw = Math.Max(8, (int)Math.Round(v * (double)w0 / h0));
                 }
-                project.Edit(p => { foreach (var x in widgets) WidgetSlots.SetSize(p, x, nw, nh); });
+                // змінюючи висоту, тримаємо нижній край на місці: рамка росте й зменшується зверху, вміст не зсувається
+                int up = h0 - nh;
+                project.Edit(p =>
+                {
+                    foreach (var x in widgets)
+                    {
+                        WidgetSlots.SetSize(p, x, nw, nh);
+                        if (up != 0 && layout != null && WidgetSlots.Arrange(x) == "free")
+                            foreach (var it in x.All("Item")) it.Set("y", it.Int("y") - up);
+                    }
+                    if (up != 0 && layout != null) layout.Set("y", layout.Int("y") + up);
+                });
             };
             Add(StepRow(S.Get("wWidth"), w0, v => apply(v, true)));
             Add(StepRow(S.Get("wHeight"), h0, v => apply(v, false)));
