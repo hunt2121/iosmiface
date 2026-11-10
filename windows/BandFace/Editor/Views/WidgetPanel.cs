@@ -290,6 +290,39 @@ namespace BandFace.Creator
             Add(Ui.Note(S.Get("slHint")));
             Add(Ui.Header(S.Get("slOnBand")));
             Add(Ui.Note(S.Get("slOnBandHint")));
+            FramePanel(slot);
+        }
+
+        /// <summary>Вигляд рамки вибору слота на браслеті: швидкі стилі, колір, прозорість, товщина, заливка, форма, кути, запас від елементів</summary>
+        void FramePanel(XNode slot)
+        {
+            var name = slot.Str("name") ?? "";
+            var st = project.Meta.SlotFrames.TryGetValue(name, out var cur) ? cur : new SlotFrame();
+            Action<Action<SlotFrame>> upd = ch => project.Edit(p =>
+            {
+                var s = p.Meta.SlotFrames.TryGetValue(name, out var c) ? c.Copy() : new SlotFrame();
+                ch(s);
+                if (s.IsDefault) p.Meta.SlotFrames.Remove(name); else p.Meta.SlotFrames[name] = s;
+            });
+            Add(Ui.Header(S.Get("frameTitle")));
+            var cur0 = SlotFrame.Presets.FirstOrDefault(x => x.Value.Same(st));
+            Add(Ui.Chips("", SlotFrame.Presets.Select(x => Ui.P(x.Key, S.Get(x.Key))), cur0.Key ?? "", k =>
+            {
+                var pr = SlotFrame.Presets.First(x => x.Key == k).Value;
+                project.Edit(p => p.Meta.SlotFrames[name] = pr.Copy());
+            }));
+            Add(Ui.Chips("", new[] { Ui.P("0", S.Get("frameShapeWidget")), Ui.P("1", S.Get("frameShapeNone")) }, st.Shape.ToString(), k => upd(s => s.Shape = int.Parse(k))));
+            if (st.Shape == 0)
+            {
+                Add(Ui.ColorRow(S.Get("color"), st.Color, h => upd(s => s.Color = h)));
+                Add(Ui.Slider(S.Get("frameAlpha"), st.Alpha, 0, 100, 5, v => upd(s => s.Alpha = (int)v)));
+                Add(Ui.Slider(S.Get("frameWidth"), st.Width, 1, 8, 1, v => upd(s => s.Width = (int)v)));
+                Add(Ui.Slider(S.Get("frameFill"), st.Fill, 0, 50, 2, v => upd(s => s.Fill = (int)v)));
+                Add(Ui.Slider(S.Get("frameRadius"), st.Radius, 0, 40, 1, v => upd(s => s.Radius = (int)v)));
+            }
+            Add(Ui.Slider(S.Get("framePad"), st.Pad, 0, 20, 1, v => upd(s => s.Pad = (int)v)));
+            Add(Ui.Note(S.Get("framePadHint")));
+            if (!st.IsDefault) Add(Ui.Button(S.Get("frameReset"), () => project.Edit(p => p.Meta.SlotFrames.Remove(name))));
         }
     }
 }

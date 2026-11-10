@@ -128,6 +128,8 @@ namespace BandFace.Creator
         public HashSet<string> ManualSize = new HashSet<string>();
         /// <summary>Значення для перегляду в редакторі (на браслет не записуються)</summary>
         public DemoValues Demo = new DemoValues();
+        /// <summary>Вигляд рамки вибору на браслеті для кожного слота (за назвою слота)</summary>
+        public Dictionary<string, SlotFrame> SlotFrames = new Dictionary<string, SlotFrame>();
 
         public ProjectMeta Copy()
         {
@@ -136,6 +138,7 @@ namespace BandFace.Creator
             m.Generators = Generators.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
             m.ColorFollow = new HashSet<string>(ColorFollow);
             m.ManualSize = new HashSet<string>(ManualSize);
+            m.SlotFrames = SlotFrames.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
             return m;
         }
 
@@ -158,6 +161,7 @@ namespace BandFace.Creator
             if (SourceKey != null) d["sourceKey"] = SourceKey;
             if (ColorFollow.Count > 0) d["colorFollow"] = ColorFollow.Cast<object>().ToList();
             if (ManualSize.Count > 0) d["manualSize"] = ManualSize.Cast<object>().ToList();
+            if (SlotFrames.Count > 0) d["slotFrames"] = SlotFrames.ToDictionary(kv => kv.Key, kv => (object)kv.Value.ToJson());
             if (!Demo.IsEmpty) d["demo"] = Demo.ToJson();
             return Json.Write(d);
         }
@@ -179,11 +183,60 @@ namespace BandFace.Creator
                 m.SourceKey = Json.Str(d, "sourceKey", null);
                 if (d.TryGetValue("colorFollow", out var cf) && cf is List<object> cl) m.ColorFollow = new HashSet<string>(cl.Select(o => o?.ToString() ?? ""));
                 if (d.TryGetValue("manualSize", out var ms) && ms is List<object> ml) m.ManualSize = new HashSet<string>(ml.Select(o => o?.ToString() ?? ""));
+                var sf = Json.Obj(d, "slotFrames");
+                if (sf != null)
+                    foreach (var kv in sf)
+                        if (kv.Value is Dictionary<string, object> fd) m.SlotFrames[kv.Key] = SlotFrame.FromJson(fd);
                 m.Demo = DemoValues.FromJson(Json.Obj(d, "demo"));
             }
             catch (Exception) { }
             return m;
         }
+    }
+
+    /// <summary>Вигляд рамки вибору слота на браслеті. Формат editor.json спільний з iOS.</summary>
+    public sealed class SlotFrame
+    {
+        /// <summary>Колір лінії, #RRGGBB</summary>
+        public string Color = "#FFFFFF";
+        /// <summary>Непрозорість лінії, %</summary>
+        public int Alpha = 50;
+        /// <summary>Товщина лінії, px</summary>
+        public int Width = 3;
+        /// <summary>Заливка всередині, %</summary>
+        public int Fill = 0;
+        /// <summary>0 — за формою віджета, 1 — без рамки</summary>
+        public int Shape = 0;
+        /// <summary>Заокруглення кутів біля краю екрана, px</summary>
+        public int Radius = 16;
+        /// <summary>Запас від елементів у режимі «За вмістом», px</summary>
+        public int Pad = 7;
+
+        public SlotFrame Copy() => (SlotFrame)MemberwiseClone();
+        public bool IsDefault => Same(new SlotFrame());
+        public bool Same(SlotFrame o) => string.Equals(Color, o.Color, StringComparison.OrdinalIgnoreCase) && Alpha == o.Alpha && Width == o.Width && Fill == o.Fill && Shape == o.Shape && Radius == o.Radius && Pad == o.Pad;
+
+        static SlotFrame Make(string c, int a, int w, int fill, int r) => new SlotFrame { Color = c, Alpha = a, Width = w, Fill = fill, Radius = r };
+        /// <summary>Швидкі стилі: ключ назви, вигляд</summary>
+        public static readonly List<KeyValuePair<string, SlotFrame>> Presets = new List<KeyValuePair<string, SlotFrame>>
+        {
+            new KeyValuePair<string, SlotFrame>("frameWhite", Make("#FFFFFF", 50, 3, 0, 10)),
+            new KeyValuePair<string, SlotFrame>("frameThin", Make("#FFFFFF", 35, 2, 0, 10)),
+            new KeyValuePair<string, SlotFrame>("frameAccent", Make("#0A84FF", 100, 3, 0, 16)),
+            new KeyValuePair<string, SlotFrame>("frameGlow", Make("#FFFFFF", 90, 2, 14, 16)),
+        };
+
+        public Dictionary<string, object> ToJson() => new Dictionary<string, object>
+        {
+            ["color"] = Color, ["alpha"] = (double)Alpha, ["width"] = (double)Width, ["fill"] = (double)Fill,
+            ["shape"] = (double)Shape, ["radius"] = (double)Radius, ["pad"] = (double)Pad,
+        };
+
+        public static SlotFrame FromJson(Dictionary<string, object> d) => new SlotFrame
+        {
+            Color = Json.Str(d, "color", "#FFFFFF"), Alpha = (int)Json.Num(d, "alpha", 50), Width = (int)Json.Num(d, "width", 3),
+            Fill = (int)Json.Num(d, "fill", 0), Shape = (int)Json.Num(d, "shape", 0), Radius = (int)Json.Num(d, "radius", 16), Pad = (int)Json.Num(d, "pad", 7),
+        };
     }
 
     /// <summary>Значення для перегляду: свої для кожного джерела; час і дата — свої або справжні (з комп'ютера).

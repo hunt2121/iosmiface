@@ -70,7 +70,14 @@ namespace BandFace.Creator
 
         /// <summary>Розмір віджета: щонайменше вміст; у слоті — не менший за інші віджети слота</summary>
         /// <summary>Запас окантовки навколо видимого вмісту, px</summary>
-        public const int Pad = 7;
+        public const int DefaultPad = 7;
+
+        /// <summary>Запас навколо вмісту для віджета: налаштування рамки його слота (або типовий)</summary>
+        public static int PadOf(FaceProject p, XNode w)
+        {
+            foreach (var s in SlotsOf(p, w)) if (p.Meta.SlotFrames.TryGetValue(s.Str("name") ?? "", out var f)) return f.Pad;
+            return DefaultPad;
+        }
 
         public static bool IsManual(FaceProject p, XNode w) => p.Meta.ManualSize.Contains(w.Str("name") ?? "");
 
@@ -118,8 +125,9 @@ namespace BandFace.Creator
                 if (!b.IsEmpty) union = union.IsEmpty ? b : Rect.Union(union, b);
             }
             if (union.IsEmpty) return;
-            int dx = (int)Math.Floor(union.Left) - Pad, dy = (int)Math.Floor(union.Top) - Pad;
-            int cw = Math.Max(8, (int)Math.Ceiling(union.Right) + Pad - dx), ch = Math.Max(8, (int)Math.Ceiling(union.Bottom) + Pad - dy);
+            int pd = ws.Count > 0 ? PadOf(p, ws[0]) : DefaultPad;
+            int dx = (int)Math.Floor(union.Left) - pd, dy = (int)Math.Floor(union.Top) - pd;
+            int cw = Math.Max(8, (int)Math.Ceiling(union.Right) + pd - dx), ch = Math.Max(8, (int)Math.Ceiling(union.Bottom) + pd - dy);
             foreach (var w in ws)
             {
                 if (Arrange(w) == "free") foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
@@ -137,7 +145,8 @@ namespace BandFace.Creator
             int oldW = w.Int("w"), oldH = w.Int("h");
             w.Remove("w"); w.Remove("h");
             var box = r.VisibleBounds(w) ?? new Rect(0, 0, 40, 30);
-            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + 2 * Pad), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + 2 * Pad);
+            int pd = PadOf(p, w);
+            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + 2 * pd), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + 2 * pd);
             bool keep = !shrink && SlotsOf(p, w).Count > 0;
             int fw = Math.Max(cw, hadW && keep ? oldW : 0), fh = Math.Max(ch, hadH && keep ? oldH : 0);
             w.Set("w", fw).Set("h", fh);
@@ -212,11 +221,12 @@ namespace BandFace.Creator
             }
             if (box.IsEmpty) return;
             bool inSlot = !shrink && layout == null && SlotsOf(p, w).Count > 0;
-            int dx = (int)Math.Floor(box.Left) - Pad, dy = (int)Math.Floor(box.Top) - Pad;
+            int pd = PadOf(p, w);
+            int dx = (int)Math.Floor(box.Left) - pd, dy = (int)Math.Floor(box.Top) - pd;
             if (layout == null) { dx = Math.Min(0, dx); dy = Math.Min(0, dy); }
             foreach (var it in w.All("Item")) it.Set("x", it.Int("x") - dx).Set("y", it.Int("y") - dy);
             if (layout != null) layout.Set("x", layout.Int("x") + dx).Set("y", layout.Int("y") + dy);
-            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + Pad - dx), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + Pad - dy);
+            int cw = Math.Max(8, (int)Math.Ceiling(box.Right) + pd - dx), ch = Math.Max(8, (int)Math.Ceiling(box.Bottom) + pd - dy);
             w.Set("w", Math.Max(cw, inSlot ? w.Int("w") : 0)).Set("h", Math.Max(ch, inSlot ? w.Int("h") : 0));
         }
 
@@ -478,33 +488,53 @@ namespace BandFace.Creator
                     // рамка вибору повторює скруглення екрана внизу, не виходить за його край, а кути м'які
                     var lay = p.Layouts(0).FirstOrDefault(l => l.Str("ref") == "@" + (slot.Str("name") ?? ""));
                     double ox = lay?.Int("x") ?? 0, oy = lay?.Int("y") ?? 0;
-                    var box = Imaging.Render(pw, ph, dc =>
-                    {
-                        var boxRect = new Rect(1.5, 1.5, pw - 3, ph - 3);
-                        Tuple<Rect, double> screen = null;
-                        if (lay != null)
-                        {
-                            var dev = p.Meta.Device;
-                            double m = ScreenMargin + 1.5 / PreviewScale;
-                            screen = Tuple.Create(new Rect((m - ox) * PreviewScale, (m - oy) * PreviewScale, (dev.Width - 2 * m) * PreviewScale, (dev.Height - 2 * m) * PreviewScale),
-                                                  (dev.Corner - m) * PreviewScale);
-                        }
-                        double rr;
-                        var core = SoftCore(boxRect, Math.Min(boxRect.Width, boxRect.Height) / 2, screen, CornerRadius * PreviewScale, out rr);
-                        var ring = Geometry.Combine(Dilate(core, rr + 1.5), Dilate(core, Math.Max(rr - 1.5, 0)), GeometryCombineMode.Exclude, null);
-                        dc.DrawGeometry(Imaging.Brush("#FFFFFF", 0.5), null, ring);
-                    });
-                    SetImageRef(p, w, "editbox", box, "weditbox_" + pw + "x" + ph + (lay != null ? "_" + (int)ox + "_" + (int)oy : ""));
+                    var st = p.Meta.SlotFrames.TryGetValue(slot.Str("name") ?? "", out var sfv) ? sfv : new SlotFrame();
+                    var box = FrameImage(p, st, pw, ph, lay == null ? (Tuple<int, int>)null : Tuple.Create((int)ox, (int)oy));
+                    string tag = st.Color.TrimStart('#') + "_" + st.Alpha + "_" + st.Width + "_" + st.Fill + "_" + st.Shape + "_" + st.Radius;
+                    SetImageRef(p, w, "editbox", box, "weditbox_" + pw + "x" + ph + "_" + tag + (lay != null ? "_" + (int)ox + "_" + (int)oy : ""));
                 }
+        }
+
+        /// <summary>Картинка рамки вибору: форма віджета, обрізана екраном (origin — місце слота на екрані), м'які кути, вигляд зі SlotFrame</summary>
+        public static RgbaImage FrameImage(FaceProject p, SlotFrame st, int pw, int ph, Tuple<int, int> origin)
+        {
+            return Imaging.Render(pw, ph, dc =>
+            {
+                if (st.Shape != 0) return;
+                double half = st.Width / 2.0;
+                var boxRect = new Rect(half, half, pw - 2 * half, ph - 2 * half);
+                Tuple<Rect, double> screen = null;
+                if (origin != null)
+                {
+                    var dev = p.Meta.Device;
+                    double m = ScreenMargin + half / PreviewScale;
+                    screen = Tuple.Create(new Rect((m - origin.Item1) * PreviewScale, (m - origin.Item2) * PreviewScale, (dev.Width - 2 * m) * PreviewScale, (dev.Height - 2 * m) * PreviewScale),
+                                          (dev.Corner - m) * PreviewScale);
+                }
+                double rr;
+                var core = SoftCore(boxRect, Math.Min(boxRect.Width, boxRect.Height) / 2, screen, st.Radius * PreviewScale, out rr);
+                if (st.Fill > 0) dc.DrawGeometry(Imaging.Brush(st.Color, st.Fill / 100.0), null, Dilate(core, rr));
+                if (st.Width > 0 && st.Alpha > 0)
+                {
+                    var ring = Geometry.Combine(Dilate(core, rr + half), Dilate(core, Math.Max(rr - half, 0)), GeometryCombineMode.Exclude, null);
+                    dc.DrawGeometry(Imaging.Brush(st.Color, st.Alpha / 100.0), null, ring);
+                }
+            });
         }
 
         static void SetImageRef(FaceProject p, XNode w, string attr, RgbaImage img, string name)
         {
+            if (attr == "editbox")
+            {
+                // рамки спільні для віджетів з однаковим виглядом, тож на місці їх не міняємо: беремо наявну за назвою або створюємо нову
+                var old = w.Str(attr);
+                if (p.Resources.Elements.Any(e => e.Tag == "Image" && e.Str("name") == name)) w.Set(attr, "@" + name);
+                else w.Set(attr, "@" + ElementFactory.AddImageResource(p, img, name));
+                if (old != null && old != w.Str(attr)) ElementFactory.Collect(p, old);
+                return;
+            }
             var cur = p.ResourceRef(w.Str(attr));
-            // спільна рамка одного розміру — один ресурс на всі віджети
-            var same = p.Resources.Elements.FirstOrDefault(e => e.Tag == "Image" && e.Str("name") == name);
-            if (attr == "editbox" && same != null) { w.Set(attr, "@" + name); return; }
-            if (cur != null && cur.Tag == "Image" && (cur.Str("name") ?? "").StartsWith(attr == "preview" ? "wpreview_" : "weditbox_"))
+            if (cur != null && cur.Tag == "Image" && (cur.Str("name") ?? "").StartsWith("wpreview_"))
             {
                 ElementFactory.ReplaceImage(p, cur, img);
                 return;
