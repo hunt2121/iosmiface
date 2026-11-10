@@ -322,17 +322,9 @@ namespace BandFace.Creator
         }
 
         /// <summary>Збирає .bin. Повертає дані й попередження компілятора. Після змін превʼю для браслета малюється заново.</summary>
-        /// <summary>Число з 0 цифр не має місця на браслеті й не малюється (кроки зникали) — беремо запас у 5 цифр.</summary>
-        public void FixDigitCounts()
-        {
-            foreach (var r in Resources.Elements.Where(x => x.Tag == "DataItemImageNumber" && x.Int("totalDigits") <= 0))
-                r.Set("totalDigits", Math.Max(5, r.Int("decimalDigits") + 1));
-        }
-
         public Tuple<byte[], List<string>> Compile()
         {
             var log = new FaceCompilerLog();
-            FixDigitCounts();
             ColorVariants.SyncThemes(this);
             bool needsPreview = Meta.Edited || Themes.Any(t => !t.Has("preview"));
             // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується
