@@ -53,6 +53,9 @@ enum WidgetSlots {
     }
 
     /// Розмір віджета: щонайменше вміст; у слоті — не менший за той, що був
+    /// Запас окантовки навколо видимого вмісту, px
+    static let pad = 5
+
     static func isManual(_ p: FaceProject, _ w: XNode) -> Bool { p.meta.manualSize.contains(w.string("name") ?? "") }
 
     /// Розмір віджета задано вручну — картинки з прозорими краями не впливають на область
@@ -87,8 +90,8 @@ enum WidgetSlots {
             union = union.union(b)
         }
         guard !union.isNull else { return }
-        let dx = Int(union.minX.rounded(.down)), dy = Int(union.minY.rounded(.down))
-        let cw = max(8, Int(union.maxX.rounded(.up)) - dx), ch = max(8, Int(union.maxY.rounded(.up)) - dy)
+        let dx = Int(union.minX.rounded(.down)) - pad, dy = Int(union.minY.rounded(.down)) - pad
+        let cw = max(8, Int(union.maxX.rounded(.up)) + pad - dx), ch = max(8, Int(union.maxY.rounded(.up)) + pad - dy)
         for w in ws {
             if arrange(w) == "free" { for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) } }
             w.set("w", int: cw).set("h", int: ch)
@@ -103,7 +106,7 @@ enum WidgetSlots {
         let oldW = Int(w.int("w")), oldH = Int(w.int("h"))
         w.remove("w"); w.remove("h")
         let box = FaceRenderer(p).visibleBounds(w) ?? CGRect(x: 0, y: 0, width: 40, height: 30)
-        let cw = max(8, Int(box.maxX.rounded(.up))), ch = max(8, Int(box.maxY.rounded(.up)))
+        let cw = max(8, Int(box.maxX.rounded(.up)) + 2 * pad), ch = max(8, Int(box.maxY.rounded(.up)) + 2 * pad)
         w.set("w", int: max(cw, inSlot ? oldW : 0)).set("h", int: max(ch, inSlot ? oldH : 0))
     }
 
@@ -118,11 +121,11 @@ enum WidgetSlots {
         }
         guard !box.isNull else { return }
         let inSlot = !shrink && layout == nil && !slotsOf(p, w).isEmpty
-        var dx = Int(box.minX.rounded(.down)), dy = Int(box.minY.rounded(.down))
+        var dx = Int(box.minX.rounded(.down)) - pad, dy = Int(box.minY.rounded(.down)) - pad
         if layout == nil { dx = min(0, dx); dy = min(0, dy) }
         for it in w.all("Item") { it.set("x", int: Int(it.int("x")) - dx).set("y", int: Int(it.int("y")) - dy) }
         if let l = layout { l.set("x", int: Int(l.int("x")) + dx).set("y", int: Int(l.int("y")) + dy) }
-        let cw = max(8, Int(box.maxX.rounded(.up)) - dx), ch = max(8, Int(box.maxY.rounded(.up)) - dy)
+        let cw = max(8, Int(box.maxX.rounded(.up)) + pad - dx), ch = max(8, Int(box.maxY.rounded(.up)) + pad - dy)
         w.set("w", int: max(cw, inSlot ? Int(w.int("w")) : 0)).set("h", int: max(ch, inSlot ? Int(w.int("h")) : 0))
     }
 

@@ -291,7 +291,17 @@ struct SizeRow: View {
             if horizontal { nh = max(8, Int((Double(v) * Double(h0) / Double(w0)).rounded())) }
             else { nw = max(8, Int((Double(v) * Double(w0) / Double(h0)).rounded())) }
         }
-        project.edit { p in for x in widgets { WidgetSlots.setSize(p, x, width: nw, height: nh) } }
+        // змінюючи висоту, тримаємо нижній край на місці: рамка росте й зменшується зверху, вміст не зсувається
+        let up = h0 - nh
+        project.edit { p in
+            for x in widgets {
+                WidgetSlots.setSize(p, x, width: nw, height: nh)
+                if up != 0, layout != nil, WidgetSlots.arrange(x) == "free" {
+                    for it in x.all("Item") { it.set("y", int: Int(it.int("y")) - up) }
+                }
+            }
+            if up != 0, let l = layout { l.set("y", int: Int(l.int("y")) + up) }
+        }
     }
 
     var body: some View {
