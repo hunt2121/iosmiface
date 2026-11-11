@@ -81,7 +81,9 @@ namespace BandFace
                 InstallBtn.Margin = new Thickness(0);
                 PickBtn.Margin = a ? new Thickness(0, 10, 0, 0) : new Thickness(10, 0, 0, 0);
                 HeroButtons.Children.Add(InstallBtn); HeroButtons.Children.Add(PickBtn);
-                ProgressHost.Margin = new Thickness(0, 16, 0, 0);
+                // прогрес і повідомлення — без запасу висоти: зона перетягування одразу під кнопками
+                ProgressHost.Margin = new Thickness(0, 14, 0, 0);
+                ProgressHost.MinHeight = 0;
                 HeroProgressHost.Child = ProgressHost;
             }
             else
@@ -93,7 +95,9 @@ namespace BandFace
                 InstallBtn.Margin = PickBtn.Margin = new Thickness(0);
                 ButtonsGrid.Children.Add(PickBtn); ButtonsGrid.Children.Add(InstallBtn);
                 ProgressHost.Margin = new Thickness(0, 20, 0, 0);
+                ProgressHost.MinHeight = 34;
                 InstallInfo.Children.Add(ProgressHost);
+                InstallBtn.Visibility = Visibility.Visible;
             }
             InstallCard.Visibility = hero ? Visibility.Collapsed : Visibility.Visible;
             HeroCard.Visibility = hero ? Visibility.Visible : Visibility.Collapsed;
@@ -129,6 +133,13 @@ namespace BandFace
             }
             else HeroFile.Text = S.Get("pickHint");
             HeroChips.Visibility = _face != null ? Visibility.Visible : Visibility.Collapsed;
+            // поки файл не вибрано, у тестових варіантах лише одна кнопка — «Вибрати файл»
+            if (_home.Length > 0)
+            {
+                InstallBtn.Visibility = _face != null ? Visibility.Visible : Visibility.Collapsed;
+                PickBtn.Margin = _face == null ? new Thickness(0) : _home == "a" ? new Thickness(0, 10, 0, 0) : new Thickness(10, 0, 0, 0);
+                if (_home == "a") PickBtn.Height = _face == null ? 46 : 38;
+            }
         }
 
         /// <summary>У тестових варіантах підключений пристрій — плашка біля заголовка замість картки</summary>
@@ -260,7 +271,9 @@ namespace BandFace
                 // невідомий циферблат: порожня пунктирна капсула
                 var g = new Grid { Width = ShelfW, Height = ShelfH };
                 g.Children.Add(new System.Windows.Shapes.Rectangle { RadiusX = ShelfW / 2, RadiusY = ShelfW / 2, Stroke = (Brush)FindResource("Sub"), StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 4, 3 }, Opacity = 0.6 });
-                g.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 18, Foreground = (Brush)FindResource("Sub"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.7 });
+                // значок браслета, як у порожній капсулі
+                var icon = new System.Windows.Shapes.Path { Data = (Geometry)FindResource("BandGeometry"), Fill = (Brush)FindResource("Sub"), Opacity = 0.7 };
+                g.Children.Add(new Viewbox { Width = 22, Height = 22, Child = new Canvas { Width = 26, Height = 26, Children = { icon } }, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
                 capsule = g;
             }
             else
