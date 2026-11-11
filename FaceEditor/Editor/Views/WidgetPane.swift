@@ -300,8 +300,11 @@ struct SlotFramePanel: View {
         let n = name
         project.edit { p in
             var s = p.meta.slotFrames[n] ?? SlotFrame()
+            let pad = s.pad
             f(&s)
             p.meta.slotFrames[n] = s == SlotFrame() ? nil : s
+            // запас від елементів змінює розмір віджетів «За вмістом»
+            if s.pad != pad { WidgetSlots.repadSlot(p, slot, by: s.pad - pad) }
         }
     }
 

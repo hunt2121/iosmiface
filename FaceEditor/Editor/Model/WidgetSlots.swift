@@ -148,6 +148,32 @@ enum WidgetSlots {
         }
     }
 
+    /// Прямокутник картинки дуги відносно елемента (картинка стоїть у точці елемента)
+    static func gaugeImageRect(_ p: FaceProject, _ res: XNode) -> CGRect? {
+        guard res.tag == "DataItemArcProgressBar", let ref = res.string("ref"), ref.hasPrefix("@"),
+              let img = p.resources.elements.first(where: { $0.tag == "Image" && "@" + ($0.string("name") ?? "") == ref }),
+              let src = img.string("src"), let d = p.file(src), let u = UIImage(data: d), let cg = u.cgImage else { return nil }
+        return CGRect(x: 0, y: 0, width: cg.width, height: cg.height)
+    }
+
+    /// Зміна запасу рамки слота на d px: віджети «За вмістом» ростуть/зменшуються на d з кожного боку, елементи
+    /// всередині зсуваються на d, а слот — на −d, тож на екрані вміст лишається на місці
+    static func repadSlot(_ p: FaceProject, _ slot: XNode, by d: Int) {
+        guard d != 0 else { return }
+        let ref = "@" + (slot.string("name") ?? "")
+        for w in widgets(p, slot) {
+            for it in w.all("Item") { it.set("x", int: Int(it.int("x")) + d).set("y", int: Int(it.int("y")) + d) }
+            if !isManual(p, w), w.has("w"), w.has("h") {
+                w.set("w", int: max(8, Int(w.int("w")) + 2 * d)).set("h", int: max(8, Int(w.int("h")) + 2 * d))
+            }
+        }
+        for t in 0..<2 {
+            for l in p.layouts(t) where l.string("ref") == ref {
+                l.set("x", int: Int(l.int("x")) - d).set("y", int: Int(l.int("y")) - d)
+            }
+        }
+    }
+
     private static func opaqueBounds(_ cg: CGImage) -> CGRect? {
         let w = cg.width, h = cg.height
         guard w > 0, h > 0, let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
@@ -182,7 +208,9 @@ enum WidgetSlots {
         let r = FaceRenderer(p)
         var box = CGRect.null
         for it in w.all("Item") {
-            guard let c = p.resource(ref: it.string("ref")), let m = r.visibleBounds(c) else { continue }
+            guard let c = p.resource(ref: it.string("ref")), var m = r.visibleBounds(c) else { continue }
+            // дуга: уся її картинка (із запасом під крапку) має бути всередині віджета — інакше браслет її не показує
+            if let img = gaugeImageRect(p, c) { m = m.union(img) }
             box = box.union(m.offsetBy(dx: CGFloat(it.int("x")), dy: CGFloat(it.int("y"))))
         }
         guard !box.isNull else { return }
