@@ -305,6 +305,14 @@ namespace BandFace.Creator
                 if (s.IsDefault) p.Meta.SlotFrames.Remove(name); else p.Meta.SlotFrames[name] = s;
             });
             Add(Ui.Header(S.Get("frameTitle")));
+            var pv = WidgetSlots.FramePreview(project, slot, st);
+            if (pv != null)
+            {
+                // як на браслеті: віджет і рамка в масштабі екрана налаштувань циферблата (збільшено для зручності)
+                var im = new Image { Source = pv.ToBitmap(), Stretch = Stretch.Uniform, MaxHeight = 150, Margin = new Thickness(10) };
+                RenderOptions.SetBitmapScalingMode(im, BitmapScalingMode.HighQuality);
+                Add(new Border { CornerRadius = new CornerRadius(12), Background = new SolidColorBrush(Color.FromRgb(28, 28, 30)), Margin = new Thickness(0, 0, 0, 8), Child = im });
+            }
             var cur0 = SlotFrame.Presets.FirstOrDefault(x => x.Value.Same(st));
             Add(Ui.Chips("", SlotFrame.Presets.Select(x => Ui.P(x.Key, S.Get(x.Key))), cur0.Key ?? "", k =>
             {

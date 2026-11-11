@@ -495,6 +495,40 @@ namespace BandFace.Creator
                 }
         }
 
+        /// <summary>Перегляд рамки, як її видно в налаштуваннях циферблата на браслеті: вибраний віджет слота в масштабі браслета,
+        /// рамка поверх, навколо — край екрана (поза екраном — сірим)</summary>
+        public static RgbaImage FramePreview(FaceProject p, XNode slot, SlotFrame st)
+        {
+            var ws = Widgets(p, slot);
+            if (ws.Count == 0) return null;
+            var w = ws[Math.Min(Shown(p, slot), ws.Count - 1)];
+            if (!w.Has("w") || !w.Has("h")) return null;
+            double s = PreviewScale;
+            int pw = Math.Max(8, (int)Math.Round(w.Int("w") * s)), ph = Math.Max(8, (int)Math.Round(w.Int("h") * s));
+            var lay = p.Layouts(0).FirstOrDefault(l => l.Str("ref") == "@" + (slot.Str("name") ?? ""));
+            int ox = lay?.Int("x") ?? 0, oy = lay?.Int("y") ?? 0;
+            var r = new FaceRenderer(p);
+            var face = Imaging.Render(pw, ph, dc =>
+            {
+                dc.PushTransform(new ScaleTransform(s, s));
+                r.Draw(w, new Point(0, 0), dc, 0);
+                dc.Pop();
+            });
+            var frame = FrameImage(p, st, pw, ph, lay == null ? null : Tuple.Create(ox, oy));
+            const int m = 16;
+            int cw = pw + 2 * m, ch = ph + 2 * m;
+            return Imaging.Render(cw, ch, dc =>
+            {
+                dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(44, 44, 46)), null, new Rect(0, 0, cw, ch));
+                var dev = p.Meta.Device;
+                var scr = lay == null ? new Rect(0, 0, cw, ch) : new Rect(m - ox * s, m - oy * s, dev.Width * s, dev.Height * s);
+                double cr = lay == null ? 0 : dev.Corner * s;
+                dc.DrawRoundedRectangle(Brushes.Black, null, scr, cr, cr);
+                dc.DrawImage(face.ToBitmap(), new Rect(m, m, pw, ph));
+                dc.DrawImage(frame.ToBitmap(), new Rect(m, m, pw, ph));
+            });
+        }
+
         /// <summary>Картинка рамки вибору: форма віджета, обрізана екраном (origin — місце слота на екрані), м'які кути, вигляд зі SlotFrame</summary>
         public static RgbaImage FrameImage(FaceProject p, SlotFrame st, int pw, int ph, Tuple<int, int> origin)
         {
