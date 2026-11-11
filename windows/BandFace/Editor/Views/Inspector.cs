@@ -481,20 +481,29 @@ namespace BandFace.Creator
                 Add(Ui.Note(S.Get("fontSummary", gen.Font.Length > 0 ? gen.Font : S.Get("st" + char.ToUpper(gen.Style[0]) + gen.Style.Substring(1)), (int)gen.FontSize)));
                 Add(Ui.ColorRow(S.Get("color"), gen.Color, h => Regen(name, gen, g => g.Color = h)));
                 // одиниця біля числа — тим самим шрифтом
-                var unit = new TextBox { Text = gen.Unit, Width = 70 };
+                var unit = new TextBox { Text = gen.Unit };
                 void CommitUnit(string u) { if (u != gen.Unit) Regen(name, gen, g => g.Unit = u); }
                 unit.KeyDown += (s, e) => { if (e.Key == Key.Enter) { CommitUnit(unit.Text.Trim()); e.Handled = true; } };
                 unit.LostKeyboardFocus += (s, e) => CommitUnit(unit.Text.Trim());
-                var up = new StackPanel { Orientation = Orientation.Horizontal };
+                // поле й кнопки ділять ширину панелі (раніше фіксовані розміри не влазили — «bpm» обрізалась)
+                var up = new Grid();
+                var units = new[] { "%", "°", "км", ":", "/", "bpm" };
+                up.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.6, GridUnitType.Star) });
                 up.Children.Add(unit);
-                foreach (var u in new[] { "%", "°", "км", ":", "/", "bpm" })
+                for (int k = 0; k < units.Length; k++)
                 {
-                    var b = new Button { Content = u, Style = (Style)FindResource("Btn"), Width = 36, Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0) };
-                    var uu = u;
+                    up.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(k == units.Length - 1 ? 1.3 : 1, GridUnitType.Star) });
+                    var b = new Button { Content = units[k], Style = (Style)FindResource("Btn"), Padding = new Thickness(0), Margin = new Thickness(6, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Stretch };
+                    var uu = units[k];
                     b.Click += (s, e) => CommitUnit(uu);
+                    Grid.SetColumn(b, k + 1);
                     up.Children.Add(b);
                 }
-                Add(Ui.Row(S.Get("unit"), up, 0));
+                // підпис окремим рядком, поле й кнопки — на всю ширину панелі
+                var ul = Ui.Label(S.Get("unit")); ul.Margin = new Thickness(0, 0, 0, 6);
+                Add(ul);
+                up.Margin = new Thickness(0, 0, 0, 8);
+                Add(up);
             }
             else Add(Ui.Note(S.Get("digitsNoGen")));
             // «Число росте»: діє лише коли кількість цифр змінюється (без нулів попереду)
