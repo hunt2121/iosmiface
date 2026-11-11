@@ -607,21 +607,22 @@ struct NumberField: View {
     var onCommit: (Int) -> Void
     @Environment(\.inputBar) private var bar
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(loc(title)).font(.caption).foregroundStyle(.secondary)
-            // введення — у полі над клавіатурою
-            Button {
-                bar?.begin(title, "\(value)", numeric: true) { t in
-                    if let v = Int(t.trimmingCharacters(in: .whitespaces)), v != value { onCommit(v) }
-                }
-            } label: {
-                Text(verbatim: "\(value)").font(.system(size: 17, weight: .semibold)).monospacedDigit()
-                    .foregroundStyle(.primary).frame(maxWidth: .infinity, alignment: .leading)
+        // уся плитка — одна кнопка: введення в полі над клавіатурою
+        Button {
+            bar?.begin(title, "\(value)", numeric: true) { t in
+                if let v = Int(t.trimmingCharacters(in: .whitespaces)), v != value { onCommit(v) }
             }
-            .buttonStyle(.plain)
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(loc(title)).font(.caption).foregroundStyle(.secondary)
+                Text(verbatim: "\(value)").font(.system(size: 17, weight: .semibold)).monospacedDigit().foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
+        .buttonStyle(.plain)
     }
 }
 

@@ -60,9 +60,11 @@ struct InputBarView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
             .id(r.id)
-            .onAppear {
-                text = ""
-                DispatchQueue.main.async { focused = true }
+            .onAppear { text = "" }
+            // фокус — коли поле вже на екрані (одразу після появи iOS іноді його ігнорує)
+            .task(id: r.id) {
+                try? await Task.sleep(nanoseconds: 60_000_000)
+                focused = true
             }
             .onChange(of: focused) { f in if !f { finish() } }
         }
@@ -82,7 +84,8 @@ struct InputBarView: View {
 
 /// Екран із полем над клавіатурою: вміст не рухається, коли відкривається клавіатура
 struct InputBarHost: ViewModifier {
-    @StateObject private var model = InputBarModel()
+    // @State, а не @StateObject: хост не стежить за моделлю — інакше кожен дотик перемальовує весь редактор (полотно)
+    @State private var model = InputBarModel()
     func body(content: Content) -> some View {
         ZStack(alignment: .bottom) {
             content.environment(\.inputBar, model).ignoresSafeArea(.keyboard, edges: .bottom)
