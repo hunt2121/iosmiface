@@ -123,7 +123,7 @@ namespace BandFace.Creator
             => Row(label, Number(value, commit, min, max), 90);
 
         /// <summary>Повзунок із полем: значення записується, коли відпустили повзунок (одна зміна в історії)</summary>
-        public static FrameworkElement Slider(string label, double value, double min, double max, double step, Action<double> commit)
+        public static FrameworkElement Slider(string label, double value, double min, double max, double step, Action<double> commit, Action<double> live = null)
         {
             var root = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
             var top = new Grid();
@@ -148,7 +148,7 @@ namespace BandFace.Creator
                 committed = v;
                 commit(v);
             }
-            sl.ValueChanged += (s, e) => box.Text = Fmt(sl.Value);
+            sl.ValueChanged += (s, e) => { box.Text = Fmt(sl.Value); live?.Invoke(sl.Value); };
             sl.PreviewMouseLeftButtonUp += (s, e) => Commit(sl.Value);
             sl.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler((s, e) => Commit(sl.Value)));
             sl.KeyUp += (s, e) => Commit(sl.Value);

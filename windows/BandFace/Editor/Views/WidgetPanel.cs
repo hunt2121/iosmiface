@@ -306,10 +306,19 @@ namespace BandFace.Creator
             });
             Add(Ui.Header(S.Get("frameTitle")));
             var pv = WidgetSlots.FramePreview(project, slot, st);
+            Image im = null;
+            // під час руху повзунка — перегляд з чернеткою, у проєкт пишеться після відпускання
+            Action<Action<SlotFrame>> live = ch =>
+            {
+                if (im == null) return;
+                var d = st.Copy(); ch(d);
+                var img = WidgetSlots.FramePreview(project, slot, d);
+                if (img != null) im.Source = img.ToBitmap();
+            };
             if (pv != null)
             {
                 // як на браслеті: віджет і рамка в масштабі екрана налаштувань циферблата (збільшено для зручності)
-                var im = new Image { Source = pv.ToBitmap(), Stretch = Stretch.Uniform, MaxHeight = 150, Margin = new Thickness(10) };
+                im = new Image { Source = pv.ToBitmap(), Stretch = Stretch.Uniform, MaxHeight = 150, Margin = new Thickness(10) };
                 RenderOptions.SetBitmapScalingMode(im, BitmapScalingMode.HighQuality);
                 Add(new Border { CornerRadius = new CornerRadius(12), Background = new SolidColorBrush(Color.FromRgb(28, 28, 30)), Margin = new Thickness(0, 0, 0, 8), Child = im });
             }
@@ -323,10 +332,10 @@ namespace BandFace.Creator
             if (st.Shape == 0)
             {
                 Add(Ui.ColorRow(S.Get("color"), st.Color, h => upd(s => s.Color = h)));
-                Add(Ui.Slider(S.Get("frameAlpha"), st.Alpha, 0, 100, 5, v => upd(s => s.Alpha = (int)v)));
-                Add(Ui.Slider(S.Get("frameWidth"), st.Width, 1, 8, 1, v => upd(s => s.Width = (int)v)));
-                Add(Ui.Slider(S.Get("frameFill"), st.Fill, 0, 50, 2, v => upd(s => s.Fill = (int)v)));
-                Add(Ui.Slider(S.Get("frameRadius"), st.Radius, 0, 40, 1, v => upd(s => s.Radius = (int)v)));
+                Add(Ui.Slider(S.Get("frameAlpha"), st.Alpha, 0, 100, 5, v => upd(s => s.Alpha = (int)v), v => live(s => s.Alpha = (int)v)));
+                Add(Ui.Slider(S.Get("frameWidth"), st.Width, 1, 8, 1, v => upd(s => s.Width = (int)v), v => live(s => s.Width = (int)v)));
+                Add(Ui.Slider(S.Get("frameFill"), st.Fill, 0, 50, 2, v => upd(s => s.Fill = (int)v), v => live(s => s.Fill = (int)v)));
+                Add(Ui.Slider(S.Get("frameRadius"), st.Radius, 0, 40, 1, v => upd(s => s.Radius = (int)v), v => live(s => s.Radius = (int)v)));
             }
             Add(Ui.Slider(S.Get("framePad"), st.Pad, 0, 20, 1, v => upd(s => s.Pad = (int)v)));
             Add(Ui.Note(S.Get("framePadHint")));
