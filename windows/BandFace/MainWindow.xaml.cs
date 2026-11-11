@@ -67,7 +67,8 @@ namespace BandFace
             DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
             Drop += Window_Drop;
 
-            string shot = null, openFile = null;
+            string shot = null, openFile = null, demoFace = null;
+            bool demoDone = false, demoProgress = false;
             foreach (var a in Environment.GetCommandLineArgs().Skip(1))
             {
                 if (a == "--page=settings") NavSettings.IsChecked = true;
@@ -78,8 +79,19 @@ namespace BandFace
                 else if (a == "--demo") { NavEditor.IsChecked = true; EditorTab.Demo(); }
                 else if (a.StartsWith("--demo=")) { var m = a.Substring(7); NavEditor.IsChecked = true; ContentRendered += (s, e) => _shotWindow = EditorTab.Demo(m); }
                 else if (a.StartsWith("--shot=")) shot = a.Substring(7);
+                // для скріншотів на збірковому сервері: вибраний файл, «встановлено», прогрес
+                else if (a.StartsWith("--face=")) demoFace = a.Substring(7);
+                else if (a == "--demo-done") demoDone = true;
+                else if (a == "--demo-progress") demoProgress = true;
                 else if (!a.StartsWith("--") && File.Exists(a)) openFile = a;
             }
+            if (demoFace != null)
+                ContentRendered += (s, e) =>
+                {
+                    LoadFaceFile(demoFace);
+                    if (demoDone) { SetActiveId(_face?.Id); SetStatus(S.Get("doneNew"), false, true); }
+                    if (demoProgress) { ProgressPanel.Visibility = Visibility.Visible; UpdateZone(); Bar.Value = 0.59; ProgressText.Text = S.Get("progress", 16, 27); ProgressPercent.Text = "59%"; }
+                };
             if (shot != null)
                 ContentRendered += async (s, e) =>
                 {
@@ -260,6 +272,8 @@ namespace BandFace
             ClearBtn.Content = S.Get("clear");
             LogFileBtn.Content = S.Get("logFile");
             InstallBtn.Content = S.Get("install");
+            DropText1.Text = S.Get("dropZone");
+            DropText2.Text = S.Get("dropZoneSub");
             DropText.Text = S.Get("dropHint");
             Title = "BandFace";
         }
@@ -405,7 +419,7 @@ namespace BandFace
             BandConnected.Visibility = c ? Visibility.Visible : Visibility.Collapsed;
             BandConnecting.Visibility = _connecting ? Visibility.Visible : Visibility.Collapsed;
             BandIdle.Visibility = !c && !_connecting ? Visibility.Visible : Visibility.Collapsed;
-            if (!c && !_connecting) EditorTab?.SetActiveFace(null);
+            if (!c && !_connecting) { EditorTab?.SetActiveFace(null); SetActiveId(null); }
             BandName.Text = BandModel(_ble.ConnectedName);
             ConnectingText.Text = S.Get("autoConnecting", BandModel(_connectingName));
             BandNone.Text = S.Get("notConnected");
@@ -589,6 +603,7 @@ namespace BandFace
             }
             PreviewPlaceholder.Visibility = _face == null ? Visibility.Visible : Visibility.Collapsed;
             RefreshButtons();
+            RefreshCapsuleBorder();
         }
 
         /// <summary>
@@ -598,7 +613,7 @@ namespace BandFace
         void ShowPreview(byte[] data)
         {
             double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-            var shots = FacePreview.Render(data, Math.Max(328, 236 * dpi * 1.5));
+            var shots = FacePreview.Render(data, Math.Max(328, CapsuleInner.Height * dpi * 1.5));
             if (shots != null && shots.Frames.Count > 0)
             {
                 PreviewImage.Source = shots.Frames[0];
@@ -627,7 +642,7 @@ namespace BandFace
         /// <summary>Як в iOS: поки файл не вибрано, головна кнопка — «Вибрати файл», далі — «Встановити».</summary>
         void RefreshButtons()
         {
-            PickBtn.Style = (Style)FindResource(_face == null ? "PrimaryBtn" : "Btn");
+            PickBtn.Style = (Style)FindResource("Btn");
             PickBtn.IsEnabled = !_busy;
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
@@ -684,6 +699,7 @@ namespace BandFace
             _busy = true; _cancelInstall = false; RefreshButtons();
             SetStatus("", false);
             ProgressPanel.Visibility = Visibility.Visible;
+            UpdateZone();
             // етапи й тексти — точно як в iOS
             Action<string> stage = t => { ProgressText.Text = t; send(Creator.InstallUpdate.Kind.Connecting, t, null); };
             Bar.Value = 0; ProgressPercent.Text = ""; stage(S.Get("phStart"));
@@ -713,6 +729,7 @@ namespace BandFace
             finally
             {
                 ProgressPanel.Visibility = Visibility.Collapsed;
+                UpdateZone();
                 _busy = false; RefreshBand();
             }
         }
@@ -738,6 +755,7 @@ namespace BandFace
                 try { await session.CloseAsync(); } catch (Exception) { }
                 _lastFaceSync = DateTime.Now;
                 EditorTab.SetActiveFace(active);
+                SetActiveId(active);
             }
             catch (Exception ex) { AddLog("faces sync: " + ex.Message); }
             finally { try { session.Dispose(); } catch (Exception) { } _session = null; _bandGate.Release(); }
@@ -778,7 +796,7 @@ namespace BandFace
                     }
                 })));
                 // після установки браслет вмикає цей циферблат
-                Dispatcher.BeginInvoke(new Action(() => { _lastFaceSync = DateTime.Now; EditorTab.SetActiveFace(_face?.Id); }));
+                Dispatcher.BeginInvoke(new Action(() => { _lastFaceSync = DateTime.Now; EditorTab.SetActiveFace(_face?.Id); SetActiveId(_face?.Id); }));
                 return already;
             }
             finally
@@ -861,6 +879,78 @@ namespace BandFace
         {
             StatusText.Text = text;
             StatusText.Foreground = (Brush)FindResource(error ? "Err" : ok ? "Ok" : "Sub");
+            // повідомлення — на місці поля перетягування, 10 секунд (або до нового файла)
+            _msgTimer?.Stop();
+            _showMessage = !string.IsNullOrEmpty(text);
+            if (_showMessage)
+            {
+                _msgTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+                _msgTimer.Tick += (s, e) => HideMessage();
+                _msgTimer.Start();
+            }
+            UpdateZone();
+        }
+
+        // ---------- Поле під кнопками: перетягування файла / прогрес / повідомлення ----------
+
+        System.Windows.Threading.DispatcherTimer _msgTimer;
+        bool _showMessage;
+        string _activeId;
+
+        void UpdateZone()
+        {
+            bool busy = ProgressPanel.Visibility == Visibility.Visible;
+            MessagePanel.Visibility = !busy && _showMessage ? Visibility.Visible : Visibility.Collapsed;
+            DropLayer.Visibility = !busy && !_showMessage ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void HideMessage()
+        {
+            _msgTimer?.Stop();
+            _showMessage = false;
+            UpdateZone();
+        }
+
+        void Zone_DragEnter(object sender, DragEventArgs e)
+        {
+            bool ok = !_busy && Dropped(e).Any(IsFace);
+            e.Effects = ok ? DragDropEffects.Copy : DragDropEffects.None;
+            DropHint.Visibility = Visibility.Collapsed;
+            if (ok)
+            {
+                // новий файл над полем — повідомлення зникає одразу
+                if (_showMessage) HideMessage();
+                DropFrame.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "Accent");
+                DropFrame.Opacity = 1;
+            }
+            e.Handled = true;
+        }
+
+        void Zone_DragLeave(object sender, DragEventArgs e)
+        {
+            DropFrame.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "Sub");
+            DropFrame.Opacity = 0.7;
+        }
+
+        void Zone_Drop(object sender, DragEventArgs e)
+        {
+            Zone_DragLeave(sender, e);
+            DropHint.Visibility = Visibility.Collapsed;
+            e.Handled = true;
+            var f = Dropped(e).FirstOrDefault(IsFace);
+            if (f != null && !_busy) LoadFaceFile(f);
+        }
+
+        void Zone_Click(object sender, MouseButtonEventArgs e) { if (!_busy) Pick_Click(sender, e); }
+        void Message_Click(object sender, MouseButtonEventArgs e) => HideMessage();
+
+        /// <summary>Як у редакторі: циферблат увімкнений на браслеті — зелене обведення капсули</summary>
+        void SetActiveId(string id) { _activeId = id; RefreshCapsuleBorder(); }
+
+        void RefreshCapsuleBorder()
+        {
+            bool on = _face != null && _activeId != null && _face.Id == _activeId;
+            Capsule.Background = new SolidColorBrush(on ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A));
         }
 
         // ---------- Ключ ----------

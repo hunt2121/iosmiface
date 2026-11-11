@@ -65,6 +65,8 @@ namespace BandFace
             ["cloudCancel"] = new[] { "Скасувати", "Cancel", "Отмена" },
             ["cloudNote"] = new[] { "Вхід потрібен лише щоб прочитати ключ пристрою. Дані входу не зберігаються й нікуди не надсилаються, крім серверів Xiaomi.", "Sign-in is only used to read the device key. Sign-in data is not stored and is sent nowhere except Xiaomi's servers.", "Вход нужен только чтобы прочитать ключ устройства. Данные входа не сохраняются и никуда не отправляются, кроме серверов Xiaomi." },
             ["logFile"] = new[] { "Файл журналу", "Log file", "Файл журнала" },
+            ["dropZone"] = new[] { "Перетягніть файл .bin сюди", "Drop a .bin file here", "Перетащите файл .bin сюда" },
+            ["dropZoneSub"] = new[] { "або клікніть, щоб вибрати", "or click to choose", "или кликните, чтобы выбрать" },
             ["store"] = new[] { "Магазин", "Store", "Магазин" },
             ["soon"] = new[] { "Незабаром", "Soon", "Скоро" },
             ["editor"] = new[] { "Редактор", "Editor", "Редактор" },

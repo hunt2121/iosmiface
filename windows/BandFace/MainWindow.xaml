@@ -134,36 +134,57 @@
                 <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                  <!-- Капсула як в iOS: сіре обведення 3 px, рівне закруглення, вміст обрізано по капсулі -->
-                  <Border x:Name="Capsule" Width="102" Height="242" CornerRadius="51" Background="#7A7A7A" Padding="3">
-                    <Grid x:Name="CapsuleInner" Width="96" Height="236" Background="Black">
-                      <Grid.Clip><RectangleGeometry Rect="0,0,96,236" RadiusX="48" RadiusY="48"/></Grid.Clip>
+                  <!-- Капсула як в iOS: обведення 3 px (сіре; зелене — циферблат увімкнений на браслеті), екран 144×354, вміст обрізано по капсулі -->
+                  <Border x:Name="Capsule" Width="150" Height="360" CornerRadius="75" Background="#7A7A7A" Padding="3" VerticalAlignment="Top">
+                    <Grid x:Name="CapsuleInner" Width="144" Height="354" Background="Black">
+                      <Grid.Clip><RectangleGeometry Rect="0,0,144,354" RadiusX="72" RadiusY="72"/></Grid.Clip>
                       <Viewbox x:Name="PreviewPlaceholder" Width="30" Height="30">
                         <Canvas Width="26" Height="26"><Path Data="{StaticResource BandGeometry}" Fill="#666666"/></Canvas>
                       </Viewbox>
                       <Image x:Name="PreviewImage" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Grid>
                   </Border>
-                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
-                    <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="FaceInfo" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                    <Grid Margin="0,18,0,0">
+                  <!-- Праворуч — колонка на висоту капсули: назва, два рядки (завжди два — нічого не стрибає), кнопки,
+                       нижче поле: перетягування файла / прогрес встановлення / повідомлення (одне місце, той самий розмір) -->
+                  <Grid Grid.Column="1" Margin="24,0,0,0">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,-3,0,0"/>
+                    <TextBlock x:Name="FaceInfo" Grid.Row="1" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="FaceFileName" Grid.Row="2" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+                    <Grid Grid.Row="3" Margin="0,16,0,0">
                       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                       <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
                     </Grid>
-                    <Grid Margin="0,20,0,0" MinHeight="34">
-                      <StackPanel x:Name="ProgressPanel" Visibility="Collapsed">
-                        <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
-                        <Grid Margin="0,6,0,0">
-                          <TextBlock x:Name="ProgressText" FontSize="12" Foreground="{DynamicResource Sub}"/>
-                          <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource Sub}"/>
-                        </Grid>
-                      </StackPanel>
-                      <TextBlock x:Name="StatusText" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                    <Grid x:Name="Zone" Grid.Row="4" Margin="0,16,0,0" MinHeight="150" AllowDrop="True"
+                          DragEnter="Zone_DragEnter" DragOver="Zone_DragEnter" DragLeave="Zone_DragLeave" Drop="Zone_Drop">
+                      <!-- перетягування файла (клік — вибрати файл) -->
+                      <Grid x:Name="DropLayer" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="Zone_Click">
+                        <Rectangle x:Name="DropFrame" RadiusX="10" RadiusY="10" Stroke="{DynamicResource Sub}" StrokeThickness="1.2" StrokeDashArray="5 4" Opacity="0.7"/>
+                        <StackPanel VerticalAlignment="Center" Margin="16,0">
+                          <Path Data="M 12,2 L 12,17 M 6,11 L 12,17 L 18,11 M 3,17 L 3,21 Q 3,23 5,23 L 19,23 Q 21,23 21,21 L 21,17" Stroke="{DynamicResource Sub}" StrokeThickness="1.8"
+                                StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                          <TextBlock x:Name="DropText1" FontSize="14" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock x:Name="DropText2" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Sub}"/>
+                        </StackPanel>
+                      </Grid>
+                      <!-- прогрес встановлення — на місці поля перетягування -->
+                      <Border x:Name="ProgressPanel" Visibility="Collapsed" CornerRadius="10" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <StackPanel VerticalAlignment="Center" Margin="48,0">
+                          <TextBlock x:Name="ProgressText" FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,14" TextTrimming="CharacterEllipsis"/>
+                          <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
+                          <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Margin="0,8,0,0" Foreground="{DynamicResource Sub}"/>
+                        </StackPanel>
+                      </Border>
+                      <!-- повідомлення («Встановлено», помилка) — 10 с або до нового файла -->
+                      <Border x:Name="MessagePanel" Visibility="Collapsed" CornerRadius="10" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1"
+                              Cursor="Hand" MouseLeftButtonUp="Message_Click">
+                        <TextBlock x:Name="StatusText" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="32,0"/>
+                      </Border>
                     </Grid>
-                  </StackPanel>
+                  </Grid>
                 </Grid>
               </StackPanel>
             </Border>
