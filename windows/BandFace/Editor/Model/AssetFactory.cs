@@ -192,18 +192,31 @@ namespace BandFace.Creator
         static int PadY(Generator g) => !g.Styled ? 0 : (int)Math.Ceiling(Math.Max(0, g.Outline) + Math.Abs(g.ShadowY)) + 1;
 
         /// <summary>Фон під знаком (коло, капсула, квадрат): кадр більшого розміру з фігурою кольору BadgeColor, знак по центру</summary>
-        static List<RgbaImage> WithBadge(Generator g, List<RgbaImage> frames)
+        /// <summary>Розмір фігури-фону навколо вмісту w×h і заокруглення</summary>
+        static void BadgeBox(Generator g, int w, int h, out int bw, out int bh, out double r)
         {
-            if (string.IsNullOrEmpty(g.Badge) || frames.Count == 0) return frames;
-            int w = frames[0].W, h = frames[0].H;
             int pad = (int)Math.Ceiling(Math.Max(3, g.FontSize * 0.16));
-            int bw, bh; double r;
             switch (g.Badge)
             {
                 case "circle": bw = bh = Math.Max(w, h) + pad * 2; r = bw / 2.0; break;
                 case "capsule": bh = h + pad * 2; bw = Math.Max(bh, w + bh * 2 / 3); r = bh / 2.0; break;
                 default: bw = w + pad * 2; bh = h + pad * 2; r = Math.Max(2, pad * 0.9); break;
             }
+        }
+
+        /// <summary>Лише фігура-фон для вмісту w×h (для числа — під усіма його цифрами)</summary>
+        public static RgbaImage BadgeImage(Generator g, double w, double h)
+        {
+            if (string.IsNullOrEmpty(g.Badge) || w <= 0 || h <= 0) return null;
+            BadgeBox(g, (int)Math.Ceiling(w), (int)Math.Ceiling(h), out int bw, out int bh, out double r);
+            var brush = Imaging.Brush(g.BadgeColor);
+            return Imaging.Render(bw, bh, dc => dc.DrawRoundedRectangle(brush, null, new Rect(0, 0, bw, bh), r, r));
+        }
+
+        static List<RgbaImage> WithBadge(Generator g, List<RgbaImage> frames)
+        {
+            if (string.IsNullOrEmpty(g.Badge) || frames.Count == 0) return frames;
+            BadgeBox(g, frames[0].W, frames[0].H, out int bw, out int bh, out double r);
             var brush = Imaging.Brush(g.BadgeColor);
             return frames.Select(f =>
             {
@@ -273,7 +286,13 @@ namespace BandFace.Creator
         /// <summary>Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).</summary>
         static readonly string[] Digits = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-        public static List<RgbaImage> DigitFrames(Generator g) => TextFrames(g, Digits);
+        /// <summary>Кадри «0»…«9». Фігура-фон для чисел — одна навколо всього числа (NumberBadge), а відстань між цифрами —
+        /// «space» елемента, тому в кожну цифру окремо вони не малюються.</summary>
+        public static List<RgbaImage> DigitFrames(Generator g)
+        {
+            var c = g.Copy(); c.Badge = ""; c.Tracking = 0;
+            return TextFrames(c, Digits);
+        }
 
         /// <summary>Набір рядків одним шрифтом (цифри, дні тижня, місяці, AM/PM…): усі кадри однакової ширини
         /// (рядок по центру) і однаково обрізані по висоті — щоб на браслеті не стрибали.</summary>

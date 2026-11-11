@@ -42,7 +42,8 @@ namespace BandFace.Creator
             catch { return 0; }
         }
 
-        public static bool Is(FaceProject p, XNode layout, int theme) => theme == AodTheme && AlphaOf(p, layout) > 0;
+        /// <summary>Службові шари, яких не видно серед шарів і які не вибираються: приглушення AOD і фігура під числом</summary>
+        public static bool Is(FaceProject p, XNode layout, int theme) => NumberBadge.IsBadge(layout) || (theme == AodTheme && AlphaOf(p, layout) > 0);
 
         /// <summary>Шар-приглушення в AOD (верхній з таких) або null</summary>
         public static XNode Find(FaceProject p)

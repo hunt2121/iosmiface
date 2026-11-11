@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+﻿// SPDX-License-Identifier: MIT
 // Налаштування редактора для проєкту (editor.json): пристрій, параметри згенерованих елементів, час зміни.
 // Формат сумісний з BandFace для iOS, тож проєкти переносяться між телефоном і комп'ютером.
 
@@ -63,13 +63,13 @@ namespace BandFace.Creator
 
         public bool Styled => Outline > 0 || ShadowX != 0 || ShadowY != 0 || !string.IsNullOrEmpty(Color2) || Math.Abs(WidthPct - 100) > 0.01 || FillAlpha < 100 || Tracking != 0;
 
-        /// <summary>Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту</summary>
-        public void ApplyStyle(Generator s)
+        /// <summary>Лише оформлення стилю: шрифт, накреслення, товщина й розмір лишаються</summary>
+        public void ApplyLook(Generator s)
         {
-            Font = s.Font; Style = s.Style; Weight = s.Weight; Color = s.Color; Color2 = s.Color2;
-            Outline = s.Outline; OutlineColor = s.OutlineColor; ShadowX = s.ShadowX; ShadowY = s.ShadowY; ShadowColor = s.ShadowColor; WidthPct = s.WidthPct;
-            Badge = s.Badge; BadgeColor = s.BadgeColor;
-            FillAlpha = s.FillAlpha; OutlinePos = s.OutlinePos; OutlineAlpha = s.OutlineAlpha; ShadowAlpha = s.ShadowAlpha; GradDir = s.GradDir; Tracking = s.Tracking;
+            Color = s.Color; Color2 = s.Color2; GradDir = s.GradDir; FillAlpha = s.FillAlpha;
+            Outline = s.Outline; OutlineColor = s.OutlineColor; OutlinePos = s.OutlinePos; OutlineAlpha = s.OutlineAlpha;
+            ShadowX = s.ShadowX; ShadowY = s.ShadowY; ShadowColor = s.ShadowColor; ShadowAlpha = s.ShadowAlpha;
+            Tracking = s.Tracking; WidthPct = s.WidthPct;
         }
 
         public Generator(GenKind kind) { Kind = kind; }

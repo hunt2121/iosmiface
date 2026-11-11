@@ -103,6 +103,7 @@ namespace BandFace.Creator
             redo.Clear();
             change(this);
             AodDim.KeepOnTop(this);
+            NumberBadge.Sync(this);
             Meta.Modified = DateTime.UtcNow;
             Meta.Edited = true;
             Revision++;

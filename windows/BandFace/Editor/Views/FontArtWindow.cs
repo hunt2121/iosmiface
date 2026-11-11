@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: MIT
+﻿// SPDX-License-Identifier: MIT
 // «Намалювати шрифтом»: окреме вікно, що перемальовує ВСІ картинки елемента одним шрифтом —
 // цифри, дні тижня, місяці, AM/PM, будь-які значки за значенням (свій рядок на кожну картинку), напис.
-// Шрифт, розмір, товщина, колір, набори цифр і ефекти живуть тут, а не в інспекторі.
+// Ліворуч — екран браслета в масштабі 1:1 з усім циферблатом (видно справжній розмір), праворуч — налаштування:
+// шрифт і його накреслення, «Стиль» (лише оформлення), заливка, обведення, розкладка, тінь і одна «Форма» навколо всього.
 
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,10 @@ namespace BandFace.Creator
         readonly int slots;
         Generator g;
         readonly StackPanel settings = new StackPanel();
-        readonly WrapPanel preview = new WrapPanel();
+        /// <summary>Екран браслета в масштабі 1:1 (1 піксель браслета = 1 точка Windows) з усім циферблатом</summary>
+        readonly Image screen = new Image { Stretch = Stretch.Fill };
+        /// <summary>Усі картинки елемента (для написів за значенням — кожен рядок)</summary>
+        readonly WrapPanel frames = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
         readonly TextBlock previewNote = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) };
         TextBox textsBox;
         bool built;
@@ -53,10 +57,14 @@ namespace BandFace.Creator
             g.Kind = kind;
             if (kind == GenKind.Label && string.IsNullOrEmpty(g.Text)) g.Text = S.Get("labelDefault");
             if (kind == GenKind.Texts && g.Texts.Count == 0) g.Texts = DefaultTexts(res.Str("source") ?? "", slots);
+            // відстань між цифрами — це «space» числа: показуємо ту, що вже стоїть
+            if (kind == GenKind.Digits && res.Has("space")) g.Tracking = (sbyte)(byte)res.Int("space");
             if (start == null) GuessSize();
+            FitWeight();
 
+            var dev = p.Meta.Device;
             Title = S.Get("fontArtTitle");
-            Width = 980; Height = 680; MinWidth = 760; MinHeight = 480;
+            Width = 900; Height = 780; MinWidth = 760; MinHeight = 600;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
             FontFamily = new FontFamily("Segoe UI");
@@ -81,30 +89,38 @@ namespace BandFace.Creator
             root.Children.Add(buttons);
 
             var body = new Grid();
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(380) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var sv = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = settings, Padding = new Thickness(0, 0, 14, 0) };
-            body.Children.Add(sv);
-            var right = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(16, 0, 0, 0), Padding = new Thickness(16) };
-            var rp = new DockPanel();
-            var ph = new TextBlock { Text = S.Get("howItLooks").ToUpper(), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) };
-            DockPanel.SetDock(ph, Dock.Top);
-            rp.Children.Add(ph);
+
+            // ліворуч: екран браслета 1:1 (закруглений, як справжній), під ним — усі картинки елемента
+            var left = new StackPanel { Width = dev.Width + 8 };
+            var ph = new TextBlock { Text = S.Get("howItLooks").ToUpper(), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) };
+            ph.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
+            left.Children.Add(ph);
+            screen.Width = dev.Width; screen.Height = dev.Height;
+            screen.Clip = new RectangleGeometry(new Rect(0, 0, dev.Width, dev.Height), dev.Corner, dev.Corner);
+            RenderOptions.SetBitmapScalingMode(screen, BitmapScalingMode.HighQuality);
+            left.Children.Add(new Border
+            {
+                Width = dev.Width + 8, Height = dev.Height + 8, Background = Brushes.Black, Padding = new Thickness(4),
+                CornerRadius = new CornerRadius(dev.Corner + 4), Child = screen, HorizontalAlignment = HorizontalAlignment.Left,
+            });
             previewNote.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
-            DockPanel.SetDock(previewNote, Dock.Bottom);
-            rp.Children.Add(previewNote);
-            rp.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new Border { Background = Brushes.Black, CornerRadius = new CornerRadius(10), Padding = new Thickness(10), Child = preview } });
-            right.Child = rp;
-            Grid.SetColumn(right, 1);
-            body.Children.Add(right);
+            left.Children.Add(previewNote);
+            if (kind == GenKind.Texts) left.Children.Add(frames);
+            var leftScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = left, Padding = new Thickness(0, 0, 8, 0) };
+            body.Children.Add(leftScroll);
+
+            var sv = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = settings, Padding = new Thickness(0, 0, 14, 0), Margin = new Thickness(20, 0, 0, 0), CanContentScroll = false };
+            Grid.SetColumn(sv, 1);
+            body.Children.Add(sv);
             root.Children.Add(body);
             Content = root;
             // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
             SourceInitialized += (s, e) => Theme.Apply(this);
-            Loaded += (s, e) => Theme.Apply(this);
+            Loaded += (s, e) => { Theme.Apply(this); RenderPreview(); };
             Build();
             built = true;
-            RenderPreview();
         }
 
         /// <summary>Розмір шрифту під висоту наявних картинок</summary>
@@ -138,7 +154,7 @@ namespace BandFace.Creator
         void Add(UIElement e) => settings.Children.Add(e);
         static KeyValuePair<string, string> P(string k, string v) => new KeyValuePair<string, string>(k, v);
 
-        void Change(Action<Generator> f) { f(g); if (built) { Rebuild(); RenderPreview(); } }
+        void Change(Action<Generator> f) { f(g); FitWeight(); if (built) { Rebuild(); RenderPreview(); } }
 
         void Rebuild()
         {
@@ -148,6 +164,32 @@ namespace BandFace.Creator
             settings.Children.Clear();
             Build();
             sv?.ScrollToVerticalOffset(off);
+        }
+
+        /// <summary>Товщини, які справді є у вибраному шрифті (без штучного «жирного» від Windows)</summary>
+        List<int> Faces()
+        {
+            if (string.IsNullOrEmpty(g.Font)) return new List<int>();
+            try
+            {
+                return FontLibrary.Family(g.Font).FamilyTypefaces
+                    .Where(t => t.Style == FontStyles.Normal && t.Stretch == FontStretches.Normal)
+                    .Select(t => t.Weight.ToOpenTypeWeight()).Distinct().OrderBy(w => w).ToList();
+            }
+            catch (Exception) { return new List<int>(); }
+        }
+
+        /// <summary>Для свого шрифту товщина — лише одна з наявних у ньому (найближча)</summary>
+        void FitWeight()
+        {
+            var f = Faces();
+            if (f.Count > 0 && !f.Contains(g.Weight)) g.Weight = f.OrderBy(w => Math.Abs(w - g.Weight)).First();
+        }
+
+        static string WeightName(int w)
+        {
+            int k = Math.Max(1, Math.Min(9, (int)Math.Round(w / 100.0))) * 100;
+            return S.Get("w" + k);
         }
 
         void Build()
@@ -177,11 +219,12 @@ namespace BandFace.Creator
                 Add(tb);
             }
 
-            Add(Ui.Header(S.Get("font")));
+            // Шрифт: сімейство, його накреслення (лише наявні), розмір
+            Add(Ui.Header(S.Get("faFont")));
             var combo = new ComboBox { MaxDropDownHeight = 460 };
             var fonts = new List<KeyValuePair<string, string>> { P("", S.Get("fontStyleDefault")) };
             fonts.AddRange(FontLibrary.AllNames().Select(f => P(f, f)));
-            var sample = kind == GenKind.Digits ? "   0123456789" : "   " + string.Join(" ", (kind == GenKind.Texts ? g.Texts : new List<string> { g.Text }).Take(3));
+            var sample = "   " + Sample();
             foreach (var kv in fonts)
             {
                 var tb = new TextBlock { Text = kv.Value, FontSize = 13 };
@@ -199,43 +242,87 @@ namespace BandFace.Creator
             addFont.MouseLeftButtonUp += (s, e) => { var added = Actions.AddFonts(this); if (added.Count > 0) Change(x => x.Font = added[0]); else Rebuild(); };
             Add(addFont);
             if (g.Font.Length == 0)
-                Add(Ui.Chips(S.Get("fontStyle"), new[] { P("rounded", S.Get("stRounded")), P("default", S.Get("stDefault")), P("condensed", S.Get("stCondensed")), P("mono", S.Get("stMono")) },
+            {
+                // вбудований шрифт: накреслення й товщина, як в iOS
+                Add(Ui.Chips(S.Get("fontFaces"), new[] { P("rounded", S.Get("stRounded")), P("default", S.Get("stDefault")), P("condensed", S.Get("stCondensed")), P("mono", S.Get("stMono")) },
                              g.Style, v => Change(x => x.Style = v)));
+                Add(Ui.Chips(S.Get("weight"), new[] { 300, 400, 500, 600, 700, 900 }.Select(w => P(w.ToString(), WeightName(w))), g.Weight.ToString(), v => Change(x => x.Weight = int.Parse(v))));
+            }
+            else
+            {
+                // свій шрифт: лише ті накреслення, що є в цьому сімействі
+                var faces = Faces();
+                if (faces.Count > 1)
+                    Add(Ui.Chips(S.Get("fontFaces"), faces.Select(w => P(w.ToString(), WeightName(w))), g.Weight.ToString(), v => Change(x => x.Weight = int.Parse(v))));
+            }
             Add(Ui.Slider(S.Get("fontSize"), g.FontSize, 8, 200, 1, v => Change(x => x.FontSize = v)));
-            Add(Ui.Row(S.Get("weight"), Ui.Combo(new[] { 100, 300, 400, 500, 600, 700, 800, 900 }.Select(w => P(w.ToString(), w + " · " + S.Get("w" + w))), g.Weight.ToString(),
-                                                 v => Change(x => x.Weight = int.Parse(v))), 190));
-            Add(Ui.ColorRow(S.Get("color"), g.Color, h => Change(x => x.Color = h)));
-            // вигляд знака: лише контур і фігура-фон (коло, капсула, квадрат)
-            Add(Ui.Chips(S.Get("badge"), new[] { P("", S.Get("badgeNone")), P("circle", S.Get("badgeCircle")), P("capsule", S.Get("badgeCapsule")), P("square", S.Get("badgeSquare")) },
-                         g.Badge ?? "", v => Change(x => x.Badge = v)));
-            if (!string.IsNullOrEmpty(g.Badge)) Add(Ui.ColorRow(S.Get("badgeColor"), g.BadgeColor, h => Change(x => x.BadgeColor = h)));
 
-            // набори й ефекти — для будь-якого тексту, не лише цифр
-            Add(Ui.Header(S.Get("digitSet")));
-            var sets = new WrapPanel();
+            // Стиль: лише оформлення — шрифт, накреслення й розмір лишаються вибраними
+            Add(Ui.Header(S.Get("fontStyle")));
+            Add(StyleGrid());
+
+            FontEffects.Build(e => Add(e), g, ch => Change(ch));
+
+            // Форма: одна фігура навколо всього напису / числа
+            Add(Ui.Header(S.Get("shapeHeader")));
+            Add(Ui.Chips(S.Get("shapeFigure"), new[] { P("", S.Get("shapeNone")), P("capsule", S.Get("badgeCapsule")), P("square", S.Get("shapeRect")), P("circle", S.Get("badgeCircle")) },
+                         g.Badge ?? "", v => Change(x => x.Badge = v)));
+            if (!string.IsNullOrEmpty(g.Badge)) Add(Ui.ColorRow(S.Get("shapeColor"), g.BadgeColor, h => Change(x => x.BadgeColor = h)));
+            Add(Ui.Note(S.Get(kind == GenKind.Digits ? "shapeHintDigits" : "shapeHintText")));
+        }
+
+        /// <summary>Зразок у вибраному шрифті: цифри або перші написи</summary>
+        string Sample()
+        {
+            switch (kind)
+            {
+                case GenKind.Digits: return "0123456789";
+                case GenKind.Label: return g.Text;
+                default: return string.Join(" ", g.Texts.Where(t => t.Length > 0).Take(3));
+            }
+        }
+
+        /// <summary>Плитки стилів, намальовані вибраним шрифтом; правий клік — «Видалити стиль»; остання — «Зберегти поточний стиль»</summary>
+        FrameworkElement StyleGrid()
+        {
+            var grid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 10) };
+            string text = kind == GenKind.Digits ? "12" : kind == GenKind.Label ? g.Text : (g.Texts.FirstOrDefault(t => t.Length > 0) ?? "Aa");
+            if (text.Length > 6) text = text.Substring(0, 6);
             foreach (var st in DigitSets.All())
             {
-                var b = new Button { Style = (Style)FindResource("Btn"), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(0, 0, 6, 6), ToolTip = st.Name };
+                var c = g.Copy(); c.ApplyLook(st.Style); c.Badge = ""; c.FontSize = 22; c.Kind = GenKind.Texts;
+                var b = new Button { Style = (Style)FindResource("Btn"), Height = double.NaN, Padding = new Thickness(4, 6, 4, 5), Margin = new Thickness(0, 0, 6, 6), ToolTip = st.Name, HorizontalContentAlignment = HorizontalAlignment.Stretch };
                 var sp = new StackPanel();
-                var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Black, HorizontalAlignment = HorizontalAlignment.Center };
-                var c = st.Style.Copy(); c.FontSize = 20; c.Outline = Math.Min(c.Outline, 1.5);
-                foreach (var f in AssetFactory.TextFrames(c, new[] { "1", "2", "3" })) row.Children.Add(new Image { Source = f.ToBitmap(), Height = 20, Stretch = Stretch.Uniform });
-                sp.Children.Add(row);
-                sp.Children.Add(new TextBlock { Text = st.Name, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 3, 0, 0) });
+                var plate = new Border { Background = Brushes.Black, CornerRadius = new CornerRadius(6), Height = 36, Margin = new Thickness(0, 0, 0, 4) };
+                var f = AssetFactory.TextFrames(c, new[] { text }).FirstOrDefault();
+                if (f != null)
+                {
+                    var img = new Image { Source = f.ToBitmap(), Stretch = Stretch.Uniform, MaxHeight = 28, MaxWidth = 64, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                    RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+                    plate.Child = img;
+                }
+                sp.Children.Add(plate);
+                // назва — в один рядок, задовга обрізається трикрапкою
+                sp.Children.Add(new TextBlock { Text = st.Name, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap, HorizontalAlignment = HorizontalAlignment.Center });
                 b.Content = sp;
-                var stl = st.Style;
-                b.Click += (s, e) => Change(x => x.ApplyStyle(stl));
-                sets.Children.Add(b);
+                var set = st;
+                b.Click += (s, e) => Change(x => x.ApplyLook(set.Style));
+                var cm = new ContextMenu();
+                Ui.MenuAdd(cm, S.Get("styleDelete"), "\uE74D", () => { DigitSets.Remove(set); Rebuild(); }, danger: true);
+                b.ContextMenu = cm;
+                grid.Children.Add(b);
             }
-            Add(sets);
-            var save = new Button { Content = S.Get("dsSave"), Style = (Style)FindResource("Btn"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 10) };
+            var root = new StackPanel();
+            root.Children.Add(grid);
+            var save = new Button { Content = S.Get("styleSave"), Style = (Style)FindResource("Btn"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 4) };
             save.Click += (s, e) =>
             {
-                var n = InputBox.Ask(this, S.Get("digitSet"), S.Get("dsName"), S.Get("dsMine") + " " + (DigitSets.User().Count + 1));
-                if (n != null) { DigitSets.Add(n, g); Rebuild(); }
+                var n = InputBox.Ask(this, S.Get("fontStyle"), S.Get("styleName"), S.Get("dsMine") + " " + (DigitSets.User().Count + 1));
+                if (!string.IsNullOrWhiteSpace(n)) { DigitSets.Add(n.Trim(), g); Rebuild(); }
             };
-            Add(save);
-            FontEffects.Build(e => Add(e), g, ch => Change(ch));
+            root.Children.Add(save);
+            root.Children.Add(Ui.Note(S.Get("styleHint")));
+            return root;
         }
 
         bool CommitTexts()
@@ -248,38 +335,40 @@ namespace BandFace.Creator
             return true;
         }
 
+        /// <summary>Циферблат з перемальованим елементом — на копії проєкту, сам проєкт не змінюється до «Намалювати»</summary>
         void RenderPreview()
         {
-            preview.Children.Clear();
-            List<RgbaImage> frames;
-            List<string> captions;
+            var name = res.Str("name") ?? "";
+            var copy = new FaceProject(project.Id, null, Xml.Parse(Xml.Print(project.Root)), new Dictionary<string, byte[]>(project.Files), project.Meta.Copy());
+            ElementFactory.Regenerate(copy, name, g.Copy());
+            double dpi = 1;
+            try { dpi = VisualTreeHelper.GetDpi(this).DpiScaleX; } catch (Exception) { }
+            screen.Source = new FaceRenderer(copy) { Live = true }.Render(0, Math.Max(1, dpi)).Image;
+
+            List<RgbaImage> fr;
             switch (kind)
             {
-                case GenKind.Digits: frames = AssetFactory.DigitFrames(g); captions = Enumerable.Range(0, 10).Select(i => i.ToString()).ToList(); break;
-                case GenKind.Label: { var li = AssetFactory.LabelImage(g); frames = li == null ? new List<RgbaImage>() : new List<RgbaImage> { li }; captions = new List<string> { "" }; break; }
-                default:
-                {
-                    frames = AssetFactory.TextFrames(g, g.Texts);
-                    // при якому значенні показується картинка (для значків за значенням)
-                    var prm = res.All("Param");
-                    captions = Enumerable.Range(0, frames.Count).Select(i => i < prm.Count ? S.Get("fontArtWhen", prm[i].Int("value")) : "#" + (i + 1)).ToList();
-                    break;
-                }
+                case GenKind.Digits: fr = AssetFactory.DigitFrames(g); break;
+                case GenKind.Label: { var li = AssetFactory.LabelImage(g); fr = li == null ? new List<RgbaImage>() : new List<RgbaImage> { li }; break; }
+                default: fr = AssetFactory.TextFrames(g, g.Texts); break;
             }
-            for (int i = 0; i < frames.Count; i++)
+            var w = fr.Count > 0 ? fr[0].W : 0; var h = fr.Count > 0 ? fr[0].H : 0;
+            previewNote.Text = S.Get("fontArtNote", fr.Count, w, h);
+            if (kind != GenKind.Texts) return;
+            // написи за значенням: кожна картинка з підписом, з якого значення вона показується
+            frames.Children.Clear();
+            var prm = res.All("Param");
+            for (int i = 0; i < fr.Count; i++)
             {
-                var sp = new StackPanel { Margin = new Thickness(6) };
-                var img = new Image { Source = frames[i].ToBitmap(), Stretch = Stretch.None };
-                RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.NearestNeighbor);
-                sp.Children.Add(img);
-                if (captions[i].Length > 0)
-                    sp.Children.Add(new TextBlock { Text = captions[i], FontSize = 10, Foreground = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) });
-                preview.Children.Add(sp);
+                var sp = new StackPanel { Margin = new Thickness(0, 0, 8, 8) };
+                var img = new Image { Source = fr[i].ToBitmap(), Stretch = Stretch.Uniform, MaxWidth = dpiSafe(fr[i].W), MaxHeight = 40, HorizontalAlignment = HorizontalAlignment.Center };
+                sp.Children.Add(new Border { Background = Brushes.Black, CornerRadius = new CornerRadius(6), Padding = new Thickness(4), Child = img });
+                sp.Children.Add(new TextBlock { Text = i < prm.Count ? S.Get("fontArtWhen", prm[i].Int("value")) : "#" + (i + 1), FontSize = 10, Foreground = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 3, 0, 0) });
+                frames.Children.Add(sp);
             }
-            var w = frames.Count > 0 ? frames[0].W : 0; var h = frames.Count > 0 ? frames[0].H : 0;
-            previewNote.Text = S.Get("fontArtNote", frames.Count, w, h);
         }
 
+        static double dpiSafe(int w) => Math.Max(8, Math.Min(200, w));
         /// <summary>Відкрити вікно для елемента; true — картинки перемальовано (одна зміна в історії)</summary>
         public static bool Show(Window owner, FaceProject p, XNode res)
         {

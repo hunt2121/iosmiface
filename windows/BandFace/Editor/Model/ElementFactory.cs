@@ -447,6 +447,9 @@ namespace BandFace.Creator
                         arr.Add("Image").Set("src", src);
                     }
                     if (gen.Unit.Length > 0 || res.Has("unitIcon")) SetUnit(p, res, gen);
+                    // інтервал між літерами для числа — відстань між цифрами; форма — одна навколо всього числа
+                    res.Set("space", (int)Math.Round(gen.Tracking));
+                    NumberBadge.Update(p, res, gen);
                     break;
                 }
                 case GenKind.Texts:
