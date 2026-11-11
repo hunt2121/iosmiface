@@ -92,8 +92,8 @@
                 <StackPanel Orientation="Horizontal">
                   <Ellipse Width="8" Height="8" Fill="{DynamicResource Ok}" VerticalAlignment="Center"/>
                   <TextBlock x:Name="BandPillName" FontSize="13" VerticalAlignment="Center" Margin="9,0,6,0"/>
-                  <Button x:Name="PillDisconnectBtn" Style="{StaticResource IconBtn}" Width="28" Height="28" BorderThickness="0" Background="Transparent" Click="Disconnect_Click">
-                    <Viewbox Width="16" Height="16"><Canvas Width="30" Height="30"><Path Data="{StaticResource DisconnectGeometry}" Fill="{DynamicResource Err}"/></Canvas></Viewbox>
+                  <Button x:Name="PillDisconnectBtn" Style="{StaticResource IconBtn}" Width="30" Height="30" BorderThickness="0" Background="Transparent" Click="Disconnect_Click">
+                    <Viewbox Width="20" Height="20"><Canvas Width="30" Height="30"><Path Data="{StaticResource DisconnectGeometry}" Fill="{DynamicResource Err}"/></Canvas></Viewbox>
                   </Button>
                 </StackPanel>
               </Border>
@@ -145,7 +145,7 @@
             <Border x:Name="InstallCard" Style="{StaticResource CardBox}">
               <StackPanel>
                 <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-                <Grid>
+                <Grid x:Name="InstallGrid">
                   <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                   <!-- Капсула як в iOS: сіре обведення 3 px, рівне закруглення, вміст обрізано по капсулі -->
                   <Border x:Name="Capsule" Width="102" Height="242" CornerRadius="51" Background="#7A7A7A" Padding="3">
@@ -166,7 +166,7 @@
                       <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
                     </Grid>
-                    <Grid Margin="0,20,0,0" MinHeight="34">
+                    <Grid x:Name="ProgressHost" Margin="0,20,0,0" MinHeight="34">
                       <StackPanel x:Name="ProgressPanel" Visibility="Collapsed">
                         <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
                         <Grid Margin="0,6,0,0">
@@ -176,36 +176,54 @@
                       </StackPanel>
                       <TextBlock x:Name="StatusText" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top"/>
                     </Grid>
-                    <!-- тестовий варіант A: помітне місце для перетягування файла (клік — вибрати файл) -->
-                    <Grid x:Name="DropZone" Visibility="Collapsed" Margin="0,16,0,0" Height="64" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="DropZone_Click">
-                      <Rectangle RadiusX="6" RadiusY="6" Stroke="{DynamicResource Sub}" StrokeThickness="1" StrokeDashArray="4 3" Opacity="0.6"/>
-                      <StackPanel VerticalAlignment="Center">
-                        <TextBlock x:Name="DropZoneText" FontSize="13" HorizontalAlignment="Center" Foreground="{DynamicResource Sub}"/>
-                        <TextBlock x:Name="DropZoneSub" FontSize="12" HorizontalAlignment="Center" Margin="0,2,0,0" Foreground="{DynamicResource Sub}" Opacity="0.75"/>
-                      </StackPanel>
-                    </Grid>
                   </StackPanel>
                 </Grid>
               </StackPanel>
             </Border>
 
-            <!-- Тестовий варіант B: полиці «На браслеті» і «Нещодавні» -->
-            <Grid x:Name="Shelves" Visibility="Collapsed" Margin="0,4,0,0">
-              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-              <Border Style="{StaticResource CardBox}">
-                <StackPanel>
-                  <TextBlock x:Name="BandShelfLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-                  <WrapPanel x:Name="BandShelf"/>
-                  <TextBlock x:Name="BandShelfHint" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+            <!-- Тестові варіанти A і B: браслет ліворуч, праворуч — колонка від верху капсули.
+                 Капсула, кнопки й прогрес переносяться сюди з класичної картки (ті самі елементи). -->
+            <Border x:Name="HeroCard" Style="{StaticResource CardBox}" Padding="28,24" Visibility="Collapsed">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="40"/>
+                  <ColumnDefinition x:Name="HeroInfoCol" Width="*" MaxWidth="540"/>
+                  <ColumnDefinition Width="0.001*"/>
+                </Grid.ColumnDefinitions>
+                <Border x:Name="HeroCapsuleHost" VerticalAlignment="Top"/>
+                <StackPanel x:Name="HeroInfo" Grid.Column="2" VerticalAlignment="Top">
+                  <TextBlock x:Name="HeroLabel" FontSize="12" Foreground="{DynamicResource Sub}"/>
+                  <TextBlock x:Name="HeroName" FontSize="28" FontWeight="SemiBold" Margin="0,8,0,0" TextTrimming="CharacterEllipsis"/>
+                  <WrapPanel x:Name="HeroChips" Margin="0,10,0,0"/>
+                  <TextBlock x:Name="HeroFile" FontSize="12" Margin="0,10,0,0" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
+                  <StackPanel x:Name="HeroButtons" Margin="0,20,0,0"/>
+                  <Border x:Name="HeroProgressHost" Margin="0,4,0,0"/>
+                  <!-- A: місце для перетягування файла (клік — вибрати файл) -->
+                  <Grid x:Name="DropZone" Visibility="Collapsed" Margin="0,8,0,0" Height="72" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="DropZone_Click">
+                    <Rectangle RadiusX="8" RadiusY="8" Stroke="{DynamicResource Sub}" StrokeThickness="1" StrokeDashArray="4 3" Opacity="0.55"/>
+                    <StackPanel VerticalAlignment="Center" Margin="12,0">
+                      <TextBlock x:Name="DropZoneText" FontSize="13" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Sub}"/>
+                      <TextBlock x:Name="DropZoneSub" FontSize="12" HorizontalAlignment="Center" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Sub}" Opacity="0.7"/>
+                    </StackPanel>
+                  </Grid>
                 </StackPanel>
-              </Border>
-              <Border Grid.Column="2" Style="{StaticResource CardBox}">
-                <StackPanel>
-                  <TextBlock x:Name="RecentShelfLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
-                  <WrapPanel x:Name="RecentShelf"/>
-                  <TextBlock x:Name="RecentShelfHint" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
-                </StackPanel>
-              </Border>
+              </Grid>
+            </Border>
+
+            <!-- Тестовий варіант B: полиці «На браслеті» і «Нещодавні» — без карток, прямо на сторінці -->
+            <Grid x:Name="Shelves" Visibility="Collapsed" Margin="2,14,0,0">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <StackPanel>
+                <TextBlock x:Name="BandShelfLabel" FontSize="12" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <WrapPanel x:Name="BandShelf"/>
+                <TextBlock x:Name="BandShelfHint" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock x:Name="RecentShelfLabel" FontSize="12" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                <WrapPanel x:Name="RecentShelf"/>
+                <TextBlock x:Name="RecentShelfHint" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </ScrollViewer>

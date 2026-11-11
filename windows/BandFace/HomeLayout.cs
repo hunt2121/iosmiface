@@ -55,62 +55,106 @@ namespace BandFace
             CapsuleInner.Clip = new RectangleGeometry(new Rect(0, 0, innerW, innerH), innerW / 2, innerW / 2);
         }
 
+        static void Detach(FrameworkElement e)
+        {
+            switch (e.Parent)
+            {
+                case Panel p: p.Children.Remove(e); break;
+                case Decorator d: d.Child = null; break;
+            }
+        }
+
         void ApplyHomeLayout()
         {
-            bool a = _home == "a", b = _home == "b";
-            if (a) SetCapsule(212, 520);            // 1 піксель браслета = 1 точка Windows
-            else if (b) SetCapsule(110, 270);
-            else SetCapsule(96, 236);
-
-            InstallInfo.Margin = new Thickness(a ? 36 : b ? 26 : 18, 0, 0, 0);
-            InstallInfo.MaxWidth = a || b ? 440 : double.PositiveInfinity;
-            InstallInfo.HorizontalAlignment = a || b ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
-            FaceName.FontSize = a ? 26 : b ? 20 : 18;
-
-            // A: головна кнопка на всю ширину, «Вибрати файл» під нею; інакше — поруч
-            ButtonsGrid.ColumnDefinitions.Clear(); ButtonsGrid.RowDefinitions.Clear();
-            if (a)
+            bool a = _home == "a", b = _home == "b", hero = a || b;
+            // ті самі елементи: капсула, кнопки й прогрес — у картку тестового варіанта або назад у класичну
+            Detach(Capsule); Detach(InstallBtn); Detach(PickBtn); Detach(ProgressHost);
+            if (hero)
             {
-                ButtonsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                ButtonsGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(10) });
-                ButtonsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                Grid.SetColumn(InstallBtn, 0); Grid.SetRow(InstallBtn, 0);
-                Grid.SetColumn(PickBtn, 0); Grid.SetRow(PickBtn, 2);
-                InstallBtn.Height = 44; PickBtn.Height = 36;
+                SetCapsule(a ? 212 : 110, a ? 520 : 270);   // A: 1 піксель браслета = 1 точка Windows
+                HeroCapsuleHost.Child = Capsule;
+                HeroInfoCol.MaxWidth = a ? 520 : 640;
+                HeroName.FontSize = a ? 30 : 24;
+                HeroButtons.Orientation = a ? Orientation.Vertical : Orientation.Horizontal;
+                InstallBtn.Height = a ? 46 : 40; PickBtn.Height = a ? 38 : 40;
+                InstallBtn.Width = a ? double.NaN : 220; PickBtn.Width = a ? double.NaN : 200;
+                InstallBtn.Margin = new Thickness(0);
+                PickBtn.Margin = a ? new Thickness(0, 10, 0, 0) : new Thickness(10, 0, 0, 0);
+                HeroButtons.Children.Add(InstallBtn); HeroButtons.Children.Add(PickBtn);
+                ProgressHost.Margin = new Thickness(0, 16, 0, 0);
+                HeroProgressHost.Child = ProgressHost;
             }
             else
             {
-                ButtonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                ButtonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
-                ButtonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                // B, як на макеті: спершу «Встановити», потім «Вибрати файл»
-                Grid.SetRow(InstallBtn, 0); Grid.SetRow(PickBtn, 0);
-                Grid.SetColumn(PickBtn, b ? 2 : 0); Grid.SetColumn(InstallBtn, b ? 0 : 2);
+                SetCapsule(96, 236);
+                InstallGrid.Children.Insert(0, Capsule);
+                InstallBtn.Width = PickBtn.Width = double.NaN;
                 InstallBtn.Height = PickBtn.Height = 40;
+                InstallBtn.Margin = PickBtn.Margin = new Thickness(0);
+                ButtonsGrid.Children.Add(PickBtn); ButtonsGrid.Children.Add(InstallBtn);
+                ProgressHost.Margin = new Thickness(0, 20, 0, 0);
+                InstallInfo.Children.Add(ProgressHost);
             }
-
+            InstallCard.Visibility = hero ? Visibility.Collapsed : Visibility.Visible;
+            HeroCard.Visibility = hero ? Visibility.Visible : Visibility.Collapsed;
             DropZone.Visibility = a ? Visibility.Visible : Visibility.Collapsed;
+            Shelves.Visibility = b ? Visibility.Visible : Visibility.Collapsed;
+
+            HeroLabel.Text = S.Get("installCard").ToUpperInvariant();
             DropZoneText.Text = S.Get("dropZone");
             DropZoneSub.Text = S.Get("dropZoneSub");
-            Shelves.Visibility = b ? Visibility.Visible : Visibility.Collapsed;
             BandShelfLabel.Text = S.Get("shelfBand").ToUpperInvariant();
             RecentShelfLabel.Text = S.Get("shelfRecent").ToUpperInvariant();
             PillDisconnectBtn.ToolTip = S.Get("disconnect");
 
             RefreshBand();
-            if (_face != null) RefreshFace();   // превʼю — під новий розмір капсули
+            RefreshFace();   // превʼю — під новий розмір капсули
             if (b) { RefreshShelves(); _ = RefreshActiveFaceAsync(true); }
+        }
+
+        /// <summary>Назва, мітки (ID, розмір) і файл у картці тестового варіанта — з тих самих даних, що й класична картка</summary>
+        void RefreshHero()
+        {
+            HeroName.Text = FaceName.Text;
+            HeroChips.Children.Clear();
+            if (_face != null)
+            {
+                foreach (var t in new[] { "ID " + _face.Id, (_face.Size + 512) / 1024 + " " + S.Get("kb") })
+                    HeroChips.Children.Add(new Border
+                    {
+                        Background = (Brush)FindResource("ChipBg"), CornerRadius = new CornerRadius(11), Padding = new Thickness(10, 3, 10, 4), Margin = new Thickness(0, 0, 6, 0),
+                        Child = new TextBlock { Text = t, FontSize = 12 },
+                    });
+                HeroFile.Text = _faceFile;
+            }
+            else HeroFile.Text = S.Get("pickHint");
+            HeroChips.Visibility = _face != null ? Visibility.Visible : Visibility.Collapsed;
         }
 
         /// <summary>У тестових варіантах підключений пристрій — плашка біля заголовка замість картки</summary>
         void RefreshHomeBand(bool connected)
         {
+            connected |= _demoBand;
             bool pill = _home.Length > 0 && connected;
             BandPill.Visibility = pill ? Visibility.Visible : Visibility.Collapsed;
             DeviceCard.Visibility = pill ? Visibility.Collapsed : Visibility.Visible;
-            BandPillName.Text = BandName.Text;
+            BandPillName.Text = _demoBand ? "Xiaomi Smart Band 10" : BandName.Text;
             if (!connected) _bandFaces = null;
             if (_home == "b") RefreshShelves();
+        }
+
+        /// <summary>Для скріншотів на збірковому сервері: «підключений» браслет з трьома циферблатами</summary>
+        bool _demoBand;
+        void DemoBand(string activeId)
+        {
+            _demoBand = true;
+            _bandFaces = new List<WatchfaceEntry>
+            {
+                new WatchfaceEntry { Id = activeId ?? "266233369", IsActive = true, CanDelete = true },
+                new WatchfaceEntry { Id = "365000101", Name = "Sport 03", CanDelete = true },
+                new WatchfaceEntry { Id = "365000102", CanDelete = false },
+            };
+            RefreshBand();
         }
 
         void DropZone_Click(object sender, MouseButtonEventArgs e) => Pick_Click(sender, e);
@@ -188,7 +232,7 @@ namespace BandFace
                 var data = File.ReadAllBytes(path);
                 try { name = new FaceFile(data).Name; } catch (Exception) { }
                 double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-                var shots = FacePreview.Render(data, 132 * dpi);
+                var shots = FacePreview.Render(data, ShelfH * dpi * 1.5);
                 var img = shots != null && shots.Frames.Count > 0 ? shots.Frames[0] : null;
                 _thumbs[key] = Tuple.Create(img, name);
                 return img;
@@ -198,7 +242,7 @@ namespace BandFace
 
         // MARK: Полиці
 
-        const double ShelfW = 56, ShelfH = 132;
+        const double ShelfW = 76, ShelfH = 184;
 
         /// <summary>Мала капсула з підписом; active — зелене обведення (увімкнений на браслеті)</summary>
         FrameworkElement ShelfTile(ImageSource img, string title, string sub, bool active, bool dashed)
@@ -225,7 +269,7 @@ namespace BandFace
                     Width = ShelfW, Height = ShelfH, CornerRadius = new CornerRadius(ShelfW / 2), Padding = new Thickness(2), Child = inner,
                     Background = active ? (Brush)FindResource("Ok") : new SolidColorBrush(Color.FromRgb(0x7A, 0x7A, 0x7A)),
                 };
-            var sp = new StackPanel { Width = 84, Margin = new Thickness(0, 0, 8, 10), Cursor = Cursors.Hand, Background = Brushes.Transparent };
+            var sp = new StackPanel { Width = 96, Margin = new Thickness(0, 0, 10, 12), Cursor = Cursors.Hand, Background = Brushes.Transparent };
             sp.Children.Add(capsule);
             sp.Children.Add(new TextBlock { Text = title, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 6, 0, 0) });
             if (!string.IsNullOrEmpty(sub))
@@ -239,7 +283,7 @@ namespace BandFace
             if (_home != "b") return;
             // На браслеті
             BandShelf.Children.Clear();
-            bool connected = _ble.IsConnected && !_connecting;
+            bool connected = (_ble.IsConnected && !_connecting) || _demoBand;
             if (!connected) BandShelfHint.Text = S.Get("shelfBandOff");
             else if (_bandFaces == null) BandShelfHint.Text = S.Get("shelfBandLoading");
             else

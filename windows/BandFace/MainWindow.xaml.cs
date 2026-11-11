@@ -68,7 +68,8 @@ namespace BandFace
             DragEnter += Window_DragEnter; DragOver += Window_DragEnter; DragLeave += (s, e) => DropHint.Visibility = Visibility.Collapsed;
             Drop += Window_Drop;
 
-            string shot = null, openFile = null;
+            string shot = null, openFile = null, demoFace = null;
+            bool demoBand = false;
             foreach (var a in Environment.GetCommandLineArgs().Skip(1))
             {
                 if (a == "--page=settings") NavSettings.IsChecked = true;
@@ -79,8 +80,18 @@ namespace BandFace
                 else if (a == "--demo") { NavEditor.IsChecked = true; EditorTab.Demo(); }
                 else if (a.StartsWith("--demo=")) { var m = a.Substring(7); NavEditor.IsChecked = true; ContentRendered += (s, e) => _shotWindow = EditorTab.Demo(m); }
                 else if (a.StartsWith("--shot=")) shot = a.Substring(7);
+                // для скріншотів: тестовий вигляд головного екрана, файл циферблата, «підключений» браслет
+                else if (a.StartsWith("--home=")) { _home = a.Substring(7); ApplyHomeLayout(); }
+                else if (a.StartsWith("--face=")) demoFace = a.Substring(7);
+                else if (a == "--demo-band") demoBand = true;
                 else if (!a.StartsWith("--") && File.Exists(a)) openFile = a;
             }
+            if (demoFace != null || demoBand)
+                ContentRendered += (s, e) =>
+                {
+                    if (demoFace != null) LoadFaceFile(demoFace);
+                    if (demoBand) DemoBand(_face?.Id);
+                };
             if (shot != null)
                 ContentRendered += async (s, e) =>
                 {
@@ -599,6 +610,7 @@ namespace BandFace
             }
             PreviewPlaceholder.Visibility = _face == null ? Visibility.Visible : Visibility.Collapsed;
             RefreshButtons();
+            RefreshHero();
         }
 
         /// <summary>
