@@ -40,9 +40,11 @@ struct InputBarView: View {
             ZStack(alignment: .bottom) {
                 // дотик повз поле — записати й закрити
                 Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finish() }
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(loc(r.title)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                // назва — над полем, з тим самим відступом, що й текст; поле й кнопка однієї висоти, по одній лінії
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(loc(r.title)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        .padding(.leading, 12)
+                    HStack(spacing: 10) {
                         TextField("", text: $text)
                             .font(.body.weight(.semibold))
                             .focused($focused)
@@ -51,14 +53,19 @@ struct InputBarView: View {
                             .keyboardType(r.numeric ? .numbersAndPunctuation : .default)
                             .submitLabel(.done)
                             .onSubmit { finish() }
+                            .padding(.horizontal, 12).frame(height: 40)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemFill)))
+                        Button { finish() } label: {
+                            Image(systemName: "checkmark").font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
+                                .frame(width: 40, height: 40).background(Circle().fill(Color.accentColor))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(loc("Готово")))
                     }
-                    Button { finish() } label: {
-                        Image(systemName: "checkmark.circle.fill").font(.system(size: 30))
-                    }
-                    .accessibilityLabel(Text(loc("Готово")))
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Rectangle().fill(.bar).ignoresSafeArea(edges: .bottom))
+                .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
+                .overlay(alignment: .top) { Divider() }
             }
             .id(r.id)
             .onAppear {
