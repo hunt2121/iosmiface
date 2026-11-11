@@ -34,7 +34,7 @@ namespace BandFace.Creator
 
     sealed class InstallPopup
     {
-        const double W = 292, H = 84;
+        const double W = 292;
         readonly Popup popup;
         readonly FrameworkElement target;
         readonly TextBlock title, percent, info;
@@ -73,7 +73,8 @@ namespace BandFace.Creator
                 if (Current == InstallUpdate.Kind.Failed) Retry?.Invoke();
                 else Cancel?.Invoke();
             };
-            var row = new DockPanel { Height = 18 };
+            // без фіксованої висоти — інакше нижні частини літер обрізаються
+            var row = new DockPanel { MinHeight = 20 };
             DockPanel.SetDock(action, Dock.Right);
             row.Children.Add(action);
             row.Children.Add(info);
@@ -85,7 +86,7 @@ namespace BandFace.Creator
 
             var card = new Border
             {
-                Width = W, Height = H, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1),
+                Width = W, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1),
                 Padding = new Thickness(16, 14, 16, 14), Child = stack,
                 Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 6, Direction = 270, Opacity = 0.18 },
             };
