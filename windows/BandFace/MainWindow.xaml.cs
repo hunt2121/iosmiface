@@ -907,7 +907,7 @@ namespace BandFace
         bool _showMessage;
         string _activeId;
         /// <summary>Циферблати на браслеті (зі списку браслета й щойно встановлені)</summary>
-        readonly List<string> _installedIds = new List<string>();
+        List<string> _installedIds = new List<string>();
 
         void UpdateZone()
         {
