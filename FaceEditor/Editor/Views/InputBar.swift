@@ -38,7 +38,7 @@ struct InputBarView: View {
     var body: some View {
         if let r = model.request {
             // тонкий рядок, прилиплий до клавіатури: лише поле і ✓, без назви й затемнення
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 TextField("", text: $text)
                     .font(.body)
                     .focused($focused)
@@ -47,16 +47,17 @@ struct InputBarView: View {
                     .keyboardType(r.numeric ? .numbersAndPunctuation : .default)
                     .submitLabel(.done)
                     .onSubmit { finish() }
-                    .padding(.horizontal, 10).frame(height: 34)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemFill)))
+                    .padding(.horizontal, 14).frame(height: 36)
+                    .background(Capsule().fill(Color(.tertiarySystemFill)))
                 Button { finish() } label: {
                     Image(systemName: "checkmark").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                        .frame(width: 34, height: 34).background(Circle().fill(Color.accentColor))
+                        .frame(width: 36, height: 36).background(Circle().fill(Color.accentColor))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text(loc("Готово")))
             }
-            .padding(.horizontal, 10).padding(.vertical, 6)
+            // однакові відступи: 16 по боках (як у панелі), 8 зверху й знизу
+            .padding(.horizontal, 16).padding(.vertical, 8)
             .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
             .overlay(alignment: .top) { Divider() }
             .id(r.id)
