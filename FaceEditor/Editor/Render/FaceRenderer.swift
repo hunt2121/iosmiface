@@ -102,6 +102,27 @@ final class FaceRenderer {
         }
     }
 
+    /// Чи є видимі пікселі шару біля точки (у пікселях браслета). Для вибору дотиком: прозорі ділянки рамки
+    /// (середина кільця дуги, поля картинки) не перекривають шари під ними.
+    func opaque(_ l: XNode, near pt: CGPoint, radius: Int = 5) -> Bool {
+        let n = radius * 2 + 1
+        guard let ctx = CGContext(data: nil, width: n, height: n, bitsPerComponent: 8, bytesPerRow: n * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return true }
+        // координати UIKit (0 — угорі), точка — в середині маленького полотна
+        ctx.translateBy(x: 0, y: CGFloat(n)); ctx.scaleBy(x: 1, y: -1)
+        ctx.translateBy(x: CGFloat(radius) - pt.x, y: CGFloat(radius) - pt.y)
+        UIGraphicsPushContext(ctx)
+        let o = overrides[ObjectIdentifier(l)]
+        let x = o?.x ?? CGFloat(l.int("x")), y = o?.y ?? CGFloat(l.int("y"))
+        draw(pick(l.string("ref")), at: CGPoint(x: x, y: y), in: ctx, depth: 0)
+        UIGraphicsPopContext()
+        guard let data = ctx.data else { return true }
+        let px = data.bindMemory(to: UInt8.self, capacity: n * n * 4)
+        for i in 0..<(n * n) where px[i * 4 + 3] > 24 { return true }
+        return false
+    }
+
     private func value(_ res: XNode) -> Int {
         SampleData.value(res.string("source") ?? "", live: live, demo: p.meta.demo)
     }

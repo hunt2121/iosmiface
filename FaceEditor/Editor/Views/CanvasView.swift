@@ -144,10 +144,18 @@ struct CanvasView: View {
     }
 
     private func hit(_ pt: CGPoint, _ boxes: [LayerBox]) -> XNode? {
-        // спершу вже вибраний (щоб його легко тягнути), далі — верхній шар
+        // шари під точкою, згори донизу; приглушення AOD не вибирається — воно у властивостях циферблата
+        let cands = boxes.reversed().filter { !AodDim.isDim(project, $0.layout, theme: theme) && $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }.map(\.layout)
+        // спершу — ті, що справді намальовані в цьому місці: прозора частина рамки (середина дуги, поля картинки)
+        // не закриває шари під нею
+        let rd = renderer ?? FaceRenderer(project)
+        rd.colorVariant = variant
+        let solid = cands.filter { rd.opaque($0, near: pt) }
+        if let s = selected, solid.contains(where: { $0 === s }) { return s }
+        if let top = solid.first { return top }
+        // у порожньому місці: вже вибраний (щоб його легко тягнути), далі — верхній шар
         if let s = selected, let b = boxes.first(where: { $0.layout === s }), b.rect.insetBy(dx: -6, dy: -6).contains(pt) { return s }
-        // приглушення AOD не вибирається — воно у властивостях циферблата
-        return boxes.last { !AodDim.isDim(project, $0.layout, theme: theme) && $0.rect.insetBy(dx: -4, dy: -4).contains(pt) }?.layout
+        return cands.first
     }
 
     // MARK: Розмір віджета й слота
