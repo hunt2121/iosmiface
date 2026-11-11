@@ -203,9 +203,9 @@ enum ElementFactory {
     }
 
     /// Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення.
-    /// Браслет обрізає крапку по картинці дуги; запасу в половину виступу крапки не вистачило (перевірено на браслеті),
-    /// тож запас — повний діаметр крапки (1,5 ширини шкали)
-    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 1.5)) + 1 }
+    /// Браслет обрізає крапку по картинці дуги; запас — радіус крапки (0,75 ширини шкали) + 1 px.
+    /// (Більший запас нічого не змінив — решту обрізання дає сама картинка крапки, див. setIndicator)
+    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 0.75)) + 1 }
 
     static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
         let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
@@ -419,6 +419,8 @@ enum ElementFactory {
                 .set("angleStart", int: Int(gen.start.rounded())).set("angleRange", int: Int(gen.range.rounded()))
                 .set("endingStyle", gen.round ? "round" : "normal")
             if res.has("indicatorRadius") { res.set("indicatorRadius", int: Int(gen.radius)) }
+            // крапка перемальовується разом з дугою (під нову ширину шкали)
+            if res.has("indicatorImage") { setIndicator(p, element: res, on: true, size: gen.width) }
             restore(keep, res, arc: true)
         case .line:
             // початок лінії лишається на місці
@@ -527,9 +529,13 @@ enum ElementFactory {
         }
         guard on else { return }
         let d = Swift.max(6, Int((size * 1.5).rounded()))
-        let dot = AssetFactory.render(d, d) { ctx in
+        // браслет зрізає крайній правий стовпчик і нижній рядок картинки крапки (видно на браслеті) —
+        // крапка в картинці парного розміру з прозорою рамкою 2 px, центр той самий
+        var s = d + 4; if s % 2 != 0 { s += 1 }
+        let o = CGFloat(s - d) / 2
+        let dot = AssetFactory.render(s, s) { ctx in
             ctx.setFillColor(UIColor.white.cgColor)
-            ctx.fillEllipse(in: CGRect(x: 0, y: 0, width: d, height: d))
+            ctx.fillEllipse(in: CGRect(x: o, y: o, width: CGFloat(d), height: CGFloat(d)))
         }
         let name = addImageResource(p, dot, base: (res.string("name") ?? "arc") + "_dot")
         res.set("indicatorImage", "@" + name).set("indicatorRadius", int: Int(res.int("barRadius")))
