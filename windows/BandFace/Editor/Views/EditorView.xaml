@@ -144,7 +144,7 @@
               <!-- знімок циферблата в PNG -->
               <Button x:Name="ShotBtn" Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="13" Margin="6,0,0,0" Content="&#xE722;" Click="Shot_Click"/>
               <!-- замок: елементи не пересуваються, мишею тягнеться полотно -->
-              <ToggleButton x:Name="LockBtn" Style="{StaticResource Chip}" Width="28" Height="28" Margin="6,0,0,0" Padding="0"
+              <ToggleButton x:Name="LockBtn" Style="{StaticResource IconChip}" Width="28" Height="28" Margin="6,0,0,0"
                             FontFamily="Segoe MDL2 Assets" FontSize="13" Content="&#xE785;" Click="Lock_Click"/>
             </StackPanel>
           </WrapPanel>

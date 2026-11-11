@@ -53,6 +53,31 @@
       <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
       <Setter Property="FontSize" Value="14"/>
     </Style>
+    <!-- Перемикач-значок (замок): як Chip, але без внутрішніх відступів — значок не обрізається -->
+    <Style x:Key="IconChip" TargetType="ToggleButton">
+      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+      <Setter Property="Background" Value="{DynamicResource BtnBg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BtnBorder}"/>
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="b" CornerRadius="5" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="b" Property="Background" Value="{DynamicResource Accent}"/>
+                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.88"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
     <!-- Плитка вибору (вирівнювання, стиль): ToggleButton з виділенням -->
     <Style x:Key="Chip" TargetType="ToggleButton">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>
