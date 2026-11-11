@@ -37,36 +37,28 @@ struct InputBarView: View {
 
     var body: some View {
         if let r = model.request {
-            ZStack(alignment: .bottom) {
-                // дотик повз поле — записати й закрити
-                Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finish() }
-                // назва — над полем, з тим самим відступом, що й текст; поле й кнопка однієї висоти, по одній лінії
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(loc(r.title)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        .padding(.leading, 12)
-                    HStack(spacing: 10) {
-                        TextField("", text: $text)
-                            .font(.body.weight(.semibold))
-                            .focused($focused)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(r.caps ? .characters : .never)
-                            .keyboardType(r.numeric ? .numbersAndPunctuation : .default)
-                            .submitLabel(.done)
-                            .onSubmit { finish() }
-                            .padding(.horizontal, 12).frame(height: 40)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemFill)))
-                        Button { finish() } label: {
-                            Image(systemName: "checkmark").font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
-                                .frame(width: 40, height: 40).background(Circle().fill(Color.accentColor))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(loc("Готово")))
-                    }
+            // тонкий рядок, прилиплий до клавіатури: лише поле і ✓, без назви й затемнення
+            HStack(spacing: 8) {
+                TextField("", text: $text)
+                    .font(.body)
+                    .focused($focused)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(r.caps ? .characters : .never)
+                    .keyboardType(r.numeric ? .numbersAndPunctuation : .default)
+                    .submitLabel(.done)
+                    .onSubmit { finish() }
+                    .padding(.horizontal, 10).frame(height: 34)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemFill)))
+                Button { finish() } label: {
+                    Image(systemName: "checkmark").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 34, height: 34).background(Circle().fill(Color.accentColor))
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
-                .overlay(alignment: .top) { Divider() }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(loc("Готово")))
             }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
+            .overlay(alignment: .top) { Divider() }
             .id(r.id)
             .onAppear {
                 text = r.text
