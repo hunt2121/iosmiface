@@ -85,6 +85,7 @@ namespace BandFace
                 else if (a.StartsWith("--face=")) demoFace = a.Substring(7);
                 else if (a == "--demo-done") demoDone = true;
                 else if (a == "--demo-progress") demoProgress = true;
+                else if (a.StartsWith("--demo-installed=")) EditorTab.SetInstalledFaces(new[] { a.Substring(17) });
                 else if (a == "--design=old") AppDesign.Try(false);
                 else if (a == "--design=new") AppDesign.Try(true);
                 else if (a.StartsWith("--editor-list=")) { var f = a.Substring(14); NavEditor.IsChecked = true; EditorTab.OpenPath(f); EditorTab.ShowList(); }
@@ -425,7 +426,7 @@ namespace BandFace
             BandConnected.Visibility = c ? Visibility.Visible : Visibility.Collapsed;
             BandConnecting.Visibility = _connecting ? Visibility.Visible : Visibility.Collapsed;
             BandIdle.Visibility = !c && !_connecting ? Visibility.Visible : Visibility.Collapsed;
-            if (!c && !_connecting) { EditorTab?.SetActiveFace(null); SetActiveId(null); }
+            if (!c && !_connecting) { EditorTab?.SetActiveFace(null); SetActiveId(null); _installedIds.Clear(); EditorTab?.SetInstalledFaces(null); }
             BandName.Text = BandModel(_ble.ConnectedName);
             ConnectingText.Text = S.Get("autoConnecting", BandModel(_connectingName));
             BandNone.Text = S.Get("notConnected");
@@ -761,6 +762,8 @@ namespace BandFace
                 try { await session.CloseAsync(); } catch (Exception) { }
                 _lastFaceSync = DateTime.Now;
                 EditorTab.SetActiveFace(active);
+                EditorTab.SetInstalledFaces(list.Select(x => x.Id));
+                _installedIds = list.Select(x => x.Id).ToList();
                 SetActiveId(active);
             }
             catch (Exception ex) { AddLog("faces sync: " + ex.Message); }
@@ -802,7 +805,8 @@ namespace BandFace
                     }
                 })));
                 // після установки браслет вмикає цей циферблат
-                Dispatcher.BeginInvoke(new Action(() => { _lastFaceSync = DateTime.Now; EditorTab.SetActiveFace(_face?.Id); SetActiveId(_face?.Id); }));
+                Dispatcher.BeginInvoke(new Action(() => { _lastFaceSync = DateTime.Now; EditorTab.SetActiveFace(_face?.Id); SetActiveId(_face?.Id);
+                    if (_face != null && !_installedIds.Contains(_face.Id)) { _installedIds.Add(_face.Id); EditorTab.SetInstalledFaces(_installedIds); } }));
                 return already;
             }
             finally
@@ -902,6 +906,8 @@ namespace BandFace
         System.Windows.Threading.DispatcherTimer _msgTimer;
         bool _showMessage;
         string _activeId;
+        /// <summary>Циферблати на браслеті (зі списку браслета й щойно встановлені)</summary>
+        readonly List<string> _installedIds = new List<string>();
 
         void UpdateZone()
         {

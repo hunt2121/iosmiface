@@ -63,6 +63,7 @@ namespace BandFace.Creator
             ["redo"] = new[] { "Повторити", "Redo", "Повторить" },
             ["preview"] = new[] { "Перегляд", "Preview", "Просмотр" },
             ["installShort"] = new[] { "Встановити", "Install", "Установить" },
+            ["reinstallShort"] = new[] { "Перевстановити", "Reinstall", "Переустановить" },
             ["installBand"] = new[] { "Встановити на пристрій", "Install on device", "Установить на устройство" },
             ["exportBin"] = new[] { "Зберегти .bin", "Save .bin", "Сохранить .bin" },
             ["layers"] = new[] { "Шари", "Layers", "Слои" },

@@ -36,6 +36,16 @@ namespace BandFace.Creator
             RefreshProjects();
         }
 
+        /// <summary>Id усіх циферблатів на браслеті: для них кнопка під превʼю — «Перевстановити»</summary>
+        HashSet<string> installedIds = new HashSet<string>();
+        public void SetInstalledFaces(IEnumerable<string> ids)
+        {
+            var n = new HashSet<string>(ids ?? Enumerable.Empty<string>());
+            if (n.SetEquals(installedIds)) return;
+            installedIds = n;
+            RefreshProjects();
+        }
+
         /// <summary>Прогрес встановлення з редактора — у віконце під кнопкою</summary>
         public void ShowInstall(InstallUpdate u) => Editor.ShowInstall(u);
 
@@ -151,7 +161,7 @@ namespace BandFace.Creator
             if (big)
             {
                 // кнопка під превʼю — те саме, що «Встановити на пристрій» у меню картки
-                var inst = new Button { Content = S.Get("installShort"), Style = (Style)FindResource("Btn"), Height = 34, Width = iw + 6, Margin = new Thickness(0, 12, 0, 0) };
+                var inst = new Button { Content = S.Get(installedIds.Contains(p.Root.Str("id") ?? "") ? "reinstallShort" : "installShort"), Style = (Style)FindResource("Btn"), Height = 34, Width = iw + 6, Margin = new Thickness(0, 12, 0, 0) };
                 inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
                 inst.MouseLeftButtonUp += (s, e) => e.Handled = true;
                 sp.Children.Add(inst);
