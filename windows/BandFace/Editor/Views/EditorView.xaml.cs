@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+﻿// SPDX-License-Identifier: MIT
 // Редактор циферблата: шари, полотно з вибором і перетягуванням мишею (прив'язка до центру, країв і сітки),
 // масштаб, кольорові варіанти, додавання елементів, перегляд і збирання .bin. Властивості — Inspector.cs.
 
@@ -429,19 +429,27 @@ namespace BandFace.Creator
 
         XNode Hit(Point pt)
         {
-            // спершу вже вибраний (щоб його легко тягнути), далі — верхній шар
+            // шари під точкою, згори донизу; приглушення AOD не вибирається — воно у властивостях циферблата
+            var cands = new List<XNode>();
+            for (int i = boxes.Count - 1; i >= 0; i--)
+            {
+                if (AodDim.Is(project, boxes[i].Layout, theme)) continue;
+                var r = boxes[i].Rect; r.Inflate(4, 4);
+                if (r.Contains(pt)) cands.Add(boxes[i].Layout);
+            }
+            // спершу — ті, що справді намальовані в цьому місці: прозора частина рамки (середина дуги, поля картинки)
+            // не закриває шари під нею
+            var rd = new FaceRenderer(project) { ColorVariant = variant };
+            var solid = cands.Where(l => rd.OpaqueNear(l, pt)).ToList();
+            if (selected != null && solid.Contains(selected)) return selected;
+            if (solid.Count > 0) return solid[0];
+            // у порожньому місці: вже вибраний (щоб його легко тягнути), далі — верхній шар
             if (selected != null)
             {
                 var b = boxes.FirstOrDefault(x => x.Layout == selected);
                 if (b != null) { var r = b.Rect; r.Inflate(6, 6); if (r.Contains(pt)) return selected; }
             }
-            for (int i = boxes.Count - 1; i >= 0; i--)
-            {
-                if (AodDim.Is(project, boxes[i].Layout, theme)) continue; // приглушення AOD — у властивостях циферблата
-                var r = boxes[i].Rect; r.Inflate(4, 4);
-                if (r.Contains(pt)) return boxes[i].Layout;
-            }
-            return null;
+            return cands.FirstOrDefault();
         }
 
         Point FacePoint(MouseEventArgs e) { var p = e.GetPosition(Face); return new Point(p.X / zoom, p.Y / zoom); }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+﻿// SPDX-License-Identifier: MIT
 // Малює тему циферблата так, як її покаже браслет (з пробними даними), і повертає рамки шарів для вибору й перетягування.
 
 using System;
@@ -125,6 +125,18 @@ namespace BandFace.Creator
             if (!Overrides.TryGetValue(l, out o)) o = new Point(l.Int("x"), l.Int("y"));
             var r = Draw(Pick(l.Str("ref")), o, dc, 0);
             return new LayerBox { Layout = l, Rect = r ?? new Rect(o.X, o.Y, 16, 16) };
+        }
+
+        /// <summary>Чи є видимі пікселі шару біля точки (у пікселях браслета). Для вибору клацанням: прозорі ділянки рамки
+        /// (середина кільця дуги, поля картинки) не перекривають шари під ними.</summary>
+        public bool OpaqueNear(XNode l, Point pt, int radius = 5)
+        {
+            Point o;
+            if (!Overrides.TryGetValue(l, out o)) o = new Point(l.Int("x"), l.Int("y"));
+            int n = radius * 2 + 1;
+            var img = Imaging.Render(n, n, dc => Draw(Pick(l.Str("ref")), new Point(o.X - pt.X + radius, o.Y - pt.Y + radius), dc, 0));
+            for (int i = 0; i < n * n; i++) if (img.Px[i * 4 + 3] > 24) return true;
+            return false;
         }
 
         /// <summary>Рамки шарів теми без малювання — для інспектора й вирівнювання</summary>
