@@ -29,6 +29,37 @@ namespace BandFace
 
     public partial class MainWindow
     {
+        // MARK: Мінівіконце встановлення поза вкладкою «Циферблати»
+
+        Creator.InstallPopup _navPopup;
+        Creator.InstallUpdate _homeInstall;
+
+        /// <summary>u — новий стан встановлення з головної (null — перейшли на іншу вкладку)</summary>
+        void NavInstall(Creator.InstallUpdate u)
+        {
+            bool fresh = u != null;
+            if (fresh) _homeInstall = u;
+            var cur = _homeInstall;
+            if (cur == null) return;
+            bool onFaces = NavFaces.IsChecked == true && PageFaces.Visibility == Visibility.Visible;
+            bool running = cur.State == Creator.InstallUpdate.Kind.Connecting || cur.State == Creator.InstallUpdate.Kind.Uploading;
+            if (onFaces || (!fresh && !running))
+            {
+                _navPopup?.Close();
+                if (!running) _homeInstall = null;
+                return;
+            }
+            if (_navPopup == null)
+                _navPopup = new Creator.InstallPopup(NavFaces, alignLeft: true)
+                {
+                    Cancel = CancelInstall,
+                    Retry = async () => { NavFaces.IsChecked = true; await InstallAsync(); },
+                };
+            // перехід на іншу вкладку — віконце відкривається; далі проміжні оновлення не відкривають його, якщо закрили
+            _navPopup.Show(cur, !fresh || _navPopup.IsOpen || cur.State == Creator.InstallUpdate.Kind.Done || cur.State == Creator.InstallUpdate.Kind.Failed);
+            if (!running) _homeInstall = null;
+        }
+
         void DesignOld_Click(object sender, RoutedEventArgs e) => AppDesign.Set(false);
         void DesignNew_Click(object sender, RoutedEventArgs e) => AppDesign.Set(true);
 
@@ -51,7 +82,7 @@ namespace BandFace
 
             // колонка праворуч: новий — на висоту капсули, поле внизу заповнює решту; старий — по центру, рядок прогресу під кнопками
             // новий: однакові відступи зверху й знизу — назва не впирається у верх капсули, поле — у низ
-            InfoColumn.Margin = n ? new Thickness(24, 14, 0, 14) : new Thickness(18, 0, 0, 0);
+            InfoColumn.Margin = n ? new Thickness(24, 28, 0, 28) : new Thickness(18, 0, 0, 0);
             InfoColumn.VerticalAlignment = n ? VerticalAlignment.Stretch : VerticalAlignment.Center;
             ZoneRow.Height = n ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
             ButtonsRow.Margin = new Thickness(0, n ? 16 : 18, 0, 0);

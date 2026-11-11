@@ -47,9 +47,13 @@ namespace BandFace.Creator
         public Action Cancel, Retry;
         public InstallUpdate.Kind? Current;
 
-        public InstallPopup(FrameworkElement target)
+        readonly bool alignLeft;
+
+        /// <param name="alignLeft">віконце лівим краєм під ціллю (пункт бічного меню), а не правим</param>
+        public InstallPopup(FrameworkElement target, bool alignLeft = false)
         {
             this.target = target;
+            this.alignLeft = alignLeft;
             title = new TextBlock { FontSize = 14, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
             percent = new TextBlock { FontSize = 14, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             iconText = new TextBlock { FontSize = 11, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -113,8 +117,17 @@ namespace BandFace.Creator
             popup.Opened += (s, e) =>
             {
                 // правий край віконця — під правим краєм кнопки, стрілка — під серединою кнопки
-                popup.HorizontalOffset = target.ActualWidth - W - 14;
-                Canvas.SetLeft(arrow, W - target.ActualWidth / 2 - 8);
+                if (alignLeft)
+                {
+                    // лівий край віконця — під лівим краєм пункту меню, стрілка — під його значком
+                    popup.HorizontalOffset = -14;
+                    Canvas.SetLeft(arrow, Math.Min(target.ActualWidth, 44) / 2 - 8);
+                }
+                else
+                {
+                    popup.HorizontalOffset = target.ActualWidth - W - 14;
+                    Canvas.SetLeft(arrow, W - target.ActualWidth / 2 - 8);
+                }
                 popup.VerticalOffset = 2;
             };
             hide.Tick += (s, e) => { hide.Stop(); popup.IsOpen = false; };
@@ -130,6 +143,7 @@ namespace BandFace.Creator
 
         public bool IsOpen => popup.IsOpen;
         public void Open() { popup.IsOpen = true; }
+        public void Close() { hide.Stop(); popup.IsOpen = false; }
 
         /// <summary>Показ стану; віконце відкривається, якщо закрите (крім проміжних оновлень, коли користувач його закрив)</summary>
         public void Show(InstallUpdate u, bool open)

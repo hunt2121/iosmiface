@@ -298,6 +298,7 @@ namespace BandFace
             if (NavSettings.IsChecked == true) ShowPage(PageSettings);
             CloseFlyout();
             UpdateSidebar();
+            NavInstall(null);
         }
 
         void ShowPage(FrameworkElement page)
@@ -699,8 +700,15 @@ namespace BandFace
             var started = DateTime.Now;
             long bytes = _face.Data?.Length ?? 0;
             double frac = 0;
-            Action<Creator.InstallUpdate.Kind, string, string> send = (k, text, err) => report?.Invoke(new Creator.InstallUpdate
-                { State = k, Text = text, Error = err, Fraction = frac, Bytes = bytes, Seconds = (DateTime.Now - started).TotalSeconds, Name = name });
+            bool fromHome = report == null;
+            string faceName = name ?? _face.Name;
+            Action<Creator.InstallUpdate.Kind, string, string> send = (k, text, err) =>
+            {
+                var u = new Creator.InstallUpdate { State = k, Text = text, Error = err, Fraction = frac, Bytes = bytes, Seconds = (DateTime.Now - started).TotalSeconds, Name = faceName };
+                report?.Invoke(u);
+                // встановлення з головної: якщо перейшли на іншу вкладку — те саме мінівіконце, що й у редакторі
+                if (fromHome) NavInstall(u);
+            };
             if (key == null || key.Length != 16) { SetStatus(S.Get("keyInvalid"), true); send(Creator.InstallUpdate.Kind.Failed, null, S.Get("keyInvalid")); return; }
             if (!_ble.IsConnected) { SetStatus(S.Get("errConnect"), true); send(Creator.InstallUpdate.Kind.Failed, null, S.Get("errConnect")); return; }
             _busy = true; _cancelInstall = false; RefreshButtons();
