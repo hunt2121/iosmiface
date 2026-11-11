@@ -14812,6 +14812,29 @@
           }
         }
       }
+    },
+    "Перевстановити": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reinstall"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переустановить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевстановити"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

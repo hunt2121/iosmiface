@@ -14,8 +14,8 @@ enum SampleData {
         var v: Int
         if s.hasPrefix("time") {
             let own = demo?.hm
-            if s.contains("Hour") { v = liveTime ? cal.component(.hour, from: now) : own?.0 ?? 10; if s.contains("12") { v = v % 12 == 0 ? 12 : v % 12 } }
-            else if s.contains("Minute") { v = liveTime ? cal.component(.minute, from: now) : own?.1 ?? 24 }
+            if s.contains("Hour") { v = liveTime ? cal.component(.hour, from: now) : own?.0 ?? 9; if s.contains("12") { v = v % 12 == 0 ? 12 : v % 12 } }
+            else if s.contains("Minute") { v = liveTime ? cal.component(.minute, from: now) : own?.1 ?? 55 }
             else if s.contains("Second") { v = liveTime ? cal.component(.second, from: now) : 36 }
             else { v = 0 }
             if s.hasSuffix("High") { return v / 10 }
@@ -46,7 +46,7 @@ enum SampleData {
         // стани як у звичайному вигляді: «не турбувати» вимкнено, Bluetooth підключено
         if l.contains("disturb") { return 0 }
         if l.contains("bluetooth") { return 1 }
-        if l.contains("step") { return l.contains("progress") ? 84 : 8412 }
+        if l.contains("step") { return l.contains("progress") ? 71 : 7133 }
         if l.contains("heart") { return 72 }
         if l.contains("battery") { return 80 }
         if l.contains("calorie") { return l.contains("progress") ? 46 : 320 }

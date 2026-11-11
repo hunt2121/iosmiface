@@ -129,7 +129,7 @@ struct ContentView: View {
             if newTab == .store || newTab == .editor { Task { await syncDeviceFaces() } }
         }
         .onChange(of: activeFaceID) { editorInstall.activeID = $0 }
-        .onChange(of: ble.connectedID) { if $0 == nil { editorInstall.activeID = nil } }
+        .onChange(of: ble.connectedID) { if $0 == nil { editorInstall.activeID = nil; editorInstall.onBand = [] } }
         .onChange(of: ble.servicesReady) { ready in
             if ready && (tab == .store || tab == .editor) { Task { await syncDeviceFaces() } }
         }
@@ -342,6 +342,7 @@ struct ContentView: View {
         let standardMissing = !list.contains { $0.id == BandFace.standardID }
         activeFaceID = list.first(where: \.isActive)?.id ?? (standardMissing ? BandFace.standardID : nil)
         let ids = Set(list.map(\.id))
+        editorInstall.onBand = ids
         let storeIDs = Set(storeFaces.map(\.id))
         otherFaces = list.filter { !storeIDs.contains($0.id) }.map { f in
             // Стандартний циферблат Smart Band 10 вбудований: назви браслет не передає, видалити його не можна.
@@ -813,7 +814,7 @@ struct ContentView: View {
                     progressText = text
                     if fromEditor { editorInstall.progress = value; editorInstall.text = text }
                 }
-                if fromEditor { editorInstall.succeeded(); activeFaceID = face.id }
+                if fromEditor { editorInstall.succeeded(); editorInstall.onBand.insert(face.id); activeFaceID = face.id }
                 ble.addLog(String(localized: "Готово: \(text)"))
                 show(text, error: false)
                 if let store {

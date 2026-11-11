@@ -215,7 +215,7 @@ struct SlotFrame: Codable, Equatable {
 /// Формат editor.json спільний з Windows.
 struct DemoValues: Codable, Equatable {
     var values: [String: Int] = [:]
-    /// "HH:mm"; nil — типовий 10:24
+    /// "HH:mm"; nil — типовий 09:55
     var time: String?
     /// "yyyy-MM-dd"; nil — типова 30.05.2026
     var date: String?

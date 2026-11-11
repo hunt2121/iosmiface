@@ -23,7 +23,7 @@ struct FaceInstallAction {
     func callAsFunction(_ data: Data, _ name: String) { run(data, name) }
 }
 
-/// Що зараз встановлюється з редактора і що вже встановлено (поки циферблат не змінювали)
+/// Що зараз встановлюється з редактора і які циферблати вже є на браслеті
 final class EditorInstallStatus: ObservableObject {
     /// id проєкту, який встановлюється
     @Published private(set) var current: String?
@@ -31,20 +31,17 @@ final class EditorInstallStatus: ObservableObject {
     @Published var text = ""
     /// id циферблата, який зараз на екрані браслета (nil — невідомо або пристрій не підключено)
     @Published var activeID: String?
-    /// id проєкту → дата зміни на момент встановлення
-    @Published private(set) var installed: [String: Date] = [:]
-    private var pending: Date?
+    /// id циферблатів, які зараз є на браслеті (зі списку браслета й щойно встановлені)
+    @Published var onBand: Set<String> = []
 
     func begin(_ id: String, modified: Date) {
-        current = id; pending = modified; progress = 0
+        current = id; progress = 0
         text = String(localized: "Старт…")
     }
     func succeeded() {
-        if let id = current, let m = pending { installed[id] = m }
-        current = nil; pending = nil
+        current = nil
     }
-    func failed() { current = nil; pending = nil }
-    func isInstalled(_ id: String, modified: Date) -> Bool { installed[id] == modified }
+    func failed() { current = nil }
 }
 
 private struct FaceInstallActionKey: EnvironmentKey {

@@ -276,8 +276,8 @@ struct NewFaceSheet: View {
     }
 }
 
-/// Кнопка під карткою, як у магазині: «Встановити» → смужка з етапом і відсотками → «Встановлено»
-/// («Встановлено» — доки циферблат не змінювали)
+/// Кнопка під карткою, як у магазині: «Встановити» → смужка з етапом і відсотками;
+/// циферблат уже на браслеті — «Перевстановити»
 struct ProjectInstallButton: View {
     @ObservedObject var project: FaceProject
     @ObservedObject var status: EditorInstallStatus
@@ -288,16 +288,21 @@ struct ProjectInstallButton: View {
             InstallProgress(progress: status.progress, text: status.text, large: false)
                 .padding(.horizontal, 6)
                 .frame(height: 36)
-        } else if status.isInstalled(project.id, modified: project.meta.modified) {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark")
-                Text("Встановлено")
+        } else if status.onBand.contains(project.root.string("id") ?? "") {
+            // циферблат уже на браслеті — «Перевстановити» (замінить його на браслеті)
+            Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Перевстановити")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(Capsule().fill(Color(.systemGroupedBackground)))
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 36)
-            .background(Capsule().fill(Color(.systemGroupedBackground)))
+            .buttonStyle(.plain)
+            .disabled(status.current != nil)
         } else {
             Button(action: action) {
                 Text("Встановити")
