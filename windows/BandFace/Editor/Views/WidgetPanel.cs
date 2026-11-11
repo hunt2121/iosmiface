@@ -75,7 +75,7 @@ namespace BandFace.Creator
                 {
                     var cm = new ContextMenu();
                     menu(cm);
-                    Ui.MenuBelow(cm, more, true);
+                    Ui.MenuBelow(cm, more, true); cm.IsOpen = true;
                     e.Handled = true;
                 };
                 Grid.SetColumn(more, 2);
@@ -160,7 +160,7 @@ namespace BandFace.Creator
                     var lay = l;
                     Ui.MenuAdd(cm, ItemTitle(res) + " — " + ItemSub(res), "", () => project.Edit(p => WidgetSlots.AddToWidget(p, w, origin, lay, t0, ownLayout, slotLayout)));
                 }
-                Ui.MenuBelow(cm, addBtn);
+                Ui.MenuBelow(cm, addBtn); cm.IsOpen = true;
             };
             row.Children.Add(addBtn);
             if (ownLayout != null)
@@ -293,7 +293,7 @@ namespace BandFace.Creator
                     var cw = c;
                     Ui.MenuAdd(cm, (c.Str("widgetName") ?? c.Str("name")) + " · " + c.All("Item").Count, "", () => project.Edit(p => WidgetSlots.SlotAddExisting(p, slot, cw)));
                 }
-                Ui.MenuBelow(cm, ex);
+                Ui.MenuBelow(cm, ex); cm.IsOpen = true;
             };
             row.Children.Add(ex);
             Add(row);
