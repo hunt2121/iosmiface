@@ -478,6 +478,8 @@ struct CommitSlider: View {
     let range: ClosedRange<Double>
     let step: Double
     var onCommit: (Double) -> Void
+    /// Значення під час руху повзунка (для живого перегляду); записується лише onCommit
+    var onLive: ((Double) -> Void)? = nil
     @State private var local: Double?
 
     var body: some View {
@@ -487,7 +489,7 @@ struct CommitSlider: View {
                 Spacer()
                 Text(verbatim: "\(Int(local ?? value))").font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
             }
-            Slider(value: Binding(get: { local ?? value }, set: { local = $0 }), in: range, step: step) { editing in
+            Slider(value: Binding(get: { local ?? value }, set: { local = $0; onLive?($0) }), in: range, step: step) { editing in
                 if !editing, let v = local { onCommit(v); local = nil }
             }
         }

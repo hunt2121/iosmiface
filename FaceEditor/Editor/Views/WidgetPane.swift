@@ -282,8 +282,15 @@ struct SlotPane: View {
 struct SlotFramePanel: View {
     @ObservedObject var project: FaceProject
     let slot: XNode
+    /// Вигляд під час руху повзунка — перегляд оновлюється одразу, у проєкт пишеться після відпускання
+    @State private var draft: SlotFrame?
 
     private var name: String { slot.string("name") ?? "" }
+
+    private func slider(_ title: String, _ v: Int, _ r: ClosedRange<Double>, _ step: Double, _ st: SlotFrame, _ set: @escaping (inout SlotFrame, Int) -> Void) -> some View {
+        CommitSlider(title: title, value: Double(v), range: r, step: step, onCommit: { x in draft = nil; update { set(&$0, Int(x)) } },
+                     onLive: { x in var d = st; set(&d, Int(x)); draft = d })
+    }
 
     private func update(_ f: @escaping (inout SlotFrame) -> Void) {
         let n = name
@@ -298,7 +305,7 @@ struct SlotFramePanel: View {
         let st = project.meta.slotFrames[name] ?? SlotFrame()
         VStack(alignment: .leading, spacing: 10) {
             Text(verbatim: loc("РАМКА ВИБОРУ НА БРАСЛЕТІ")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
-            if let pv = WidgetSlots.framePreview(project, slot: slot, style: st), let cg = pv.cgImage {
+            if let pv = WidgetSlots.framePreview(project, slot: slot, style: draft ?? st), let cg = pv.cgImage {
                 // як на браслеті: віджет і рамка в масштабі екрана налаштувань циферблата (збільшено для зручності)
                 Image(decorative: cg, scale: 1).interpolation(.high).resizable().scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: 150)
@@ -324,10 +331,10 @@ struct SlotFramePanel: View {
             .pickerStyle(.segmented)
             if st.shape == 0 {
                 ColorRow(title: "Колір", hex: st.color) { h in update { $0.color = h } }
-                CommitSlider(title: "Прозорість, %", value: Double(st.alpha), range: 0...100, step: 5) { v in update { $0.alpha = Int(v) } }
-                CommitSlider(title: "Товщина, px", value: Double(st.width), range: 1...8, step: 1) { v in update { $0.width = Int(v) } }
-                CommitSlider(title: "Заливка, %", value: Double(st.fill), range: 0...50, step: 2) { v in update { $0.fill = Int(v) } }
-                CommitSlider(title: "Заокруглення кутів, px", value: Double(st.radius), range: 0...40, step: 1) { v in update { $0.radius = Int(v) } }
+                slider("Прозорість, %", st.alpha, 0...100, 5, st) { $0.alpha = $1 }
+                slider("Товщина, px", st.width, 1...8, 1, st) { $0.width = $1 }
+                slider("Заливка, %", st.fill, 0...50, 2, st) { $0.fill = $1 }
+                slider("Заокруглення кутів, px", st.radius, 0...40, 1, st) { $0.radius = $1 }
             }
             CommitSlider(title: "Запас від елементів, px", value: Double(st.pad), range: 0...20, step: 1) { v in update { $0.pad = Int(v) } }
             Text("Запас діє, коли розмір слота — «За вмістом». Рамку видно на браслеті, коли вибираєш віджет у слоті.")
