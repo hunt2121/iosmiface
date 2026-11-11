@@ -211,7 +211,9 @@ namespace BandFace.Creator
         }
 
         /// <summary>Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення</summary>
-        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 0.25) + 1;
+        /// Браслет обрізає крапку по картинці дуги; запасу в половину виступу крапки не вистачило (перевірено на браслеті),
+        /// тож запас — повний діаметр крапки (1,5 ширини шкали)
+        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 1.5) + 1;
 
         public static RgbaImage ArcImage(Generator g, string color)
         {
