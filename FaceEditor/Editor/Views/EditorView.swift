@@ -146,7 +146,11 @@ struct EditorView: View {
                 Section {
                     Button { showXml = true } label: { Label("Редагувати XML", systemImage: "chevron.left.forwardslash.chevron.right") }
                     Button { showFonts = true } label: { Label("Шрифти", systemImage: "textformat") }
-                    Button { share = ShareItem(url: project.folder) } label: { Label("Поділитися текою проєкту", systemImage: "folder") }
+                    Button {
+                        project.save()
+                        // теку — як .zip, інакше її не вийде надіслати
+                        if let z = ShareItem.zip(project.folder, name: project.name) { share = ShareItem(url: z) }
+                    } label: { Label("Поділитися текою проєкту", systemImage: "folder") }
                 }
             } label: {
                 Text("Готово").font(.subheadline.weight(.semibold)).foregroundStyle(.white)

@@ -239,6 +239,20 @@ struct ShareItem: Identifiable {
         try data.write(to: u)
         return u
     }
+
+    /// Тека проєкту, запакована в .zip (теку саму по собі більшість застосунків не приймає).
+    /// Пакує система: NSFileCoordinator з .forUploading віддає тимчасовий zip теки.
+    static func zip(_ folder: URL, name: String) -> URL? {
+        let safe = name.isEmpty ? folder.lastPathComponent : name.replacingOccurrences(of: "/", with: "-")
+        let out = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).zip")
+        var result: URL?
+        var err: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: folder, options: [.forUploading], error: &err) { tmp in
+            try? FileManager.default.removeItem(at: out)
+            if (try? FileManager.default.copyItem(at: tmp, to: out)) != nil { result = out }
+        }
+        return result
+    }
 }
 
 struct NewFaceSheet: View {
