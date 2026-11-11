@@ -211,9 +211,9 @@ namespace BandFace.Creator
         }
 
         /// <summary>Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення</summary>
-        /// Браслет обрізає крапку по картинці дуги; запасу в половину виступу крапки не вистачило (перевірено на браслеті),
-        /// тож запас — повний діаметр крапки (1,5 ширини шкали)
-        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 1.5) + 1;
+        /// Браслет обрізає крапку по картинці дуги; запас — радіус крапки (0,75 ширини шкали) + 1 px.
+        /// (Більший запас нічого не змінив — решту обрізання дає сама картинка крапки, див. SetIndicator)
+        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 0.75) + 1;
 
         public static RgbaImage ArcImage(Generator g, string color)
         {
@@ -478,6 +478,8 @@ namespace BandFace.Creator
                        .Set("angleStart", (int)Math.Round(gen.Start)).Set("angleRange", (int)Math.Round(gen.Range))
                        .Set("endingStyle", gen.Round ? "round" : "normal");
                     if (res.Has("indicatorRadius")) res.Set("indicatorRadius", (int)gen.Radius);
+                    // крапка перемальовується разом з дугою (під нову ширину шкали)
+                    if (res.Has("indicatorImage")) SetIndicator(p, res, true, gen.Width);
                     Restore(keep, res, true);
                     break;
                 }
@@ -582,7 +584,12 @@ namespace BandFace.Creator
             if (old != null) { res.Remove("indicatorImage"); res.Remove("indicatorRadius"); Collect(p, old); }
             if (!on) return;
             int d = Math.Max(6, (int)Math.Round(size * 1.5));
-            var name = AddImageResource(p, AssetFactory.Dot(d, "#FFFFFF"), (res.Str("name") ?? "arc") + "_dot");
+            // браслет зрізає крайній правий стовпчик і нижній рядок картинки крапки (видно на браслеті) —
+            // крапка в картинці парного розміру з прозорою рамкою 2 px, центр той самий
+            int s = d + 4; if (s % 2 != 0) s++;
+            double c = s / 2.0;
+            var dot = Imaging.Render(s, s, dc => dc.DrawEllipse(Imaging.Brush("#FFFFFF"), null, new Point(c, c), d / 2.0, d / 2.0));
+            var name = AddImageResource(p, dot, (res.Str("name") ?? "arc") + "_dot");
             res.Set("indicatorImage", "@" + name).Set("indicatorRadius", res.Int("barRadius"));
         }
 
