@@ -37,7 +37,7 @@ struct InputBarView: View {
 
     var body: some View {
         if let r = model.request {
-            // тонкий рядок, прилиплий до клавіатури: лише поле і ✓, без назви й затемнення
+            // як рядок повідомлення в месенджерах: скляна капсула з полем і кругла скляна кнопка ✓ над клавіатурою
             HStack(spacing: 10) {
                 TextField("", text: $text)
                     .font(.body)
@@ -47,19 +47,17 @@ struct InputBarView: View {
                     .keyboardType(r.numeric ? .numbersAndPunctuation : .default)
                     .submitLabel(.done)
                     .onSubmit { finish() }
-                    .padding(.horizontal, 14).frame(height: 36)
-                    .background(Capsule().fill(Color(.tertiarySystemFill)))
+                    .padding(.horizontal, 16).frame(height: 44)
+                    .glass(in: Capsule())
                 Button { finish() } label: {
-                    Image(systemName: "checkmark").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                        .frame(width: 36, height: 36).background(Circle().fill(Color.accentColor))
+                    Image(systemName: "checkmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .glass(in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text(loc("Готово")))
             }
-            // однакові відступи: 16 по боках (як у панелі), 8 зверху й знизу
             .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
-            .overlay(alignment: .top) { Divider() }
             .id(r.id)
             .onAppear {
                 text = r.text
@@ -115,5 +113,16 @@ struct InputRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private extension View {
+    /// Liquid Glass на iOS 26; на старіших — матове скло
+    @ViewBuilder func glass<S: Shape>(in shape: S) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.interactive(), in: shape)
+        } else {
+            self.background(shape.fill(.ultraThinMaterial)).overlay(shape.stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
+        }
     }
 }
