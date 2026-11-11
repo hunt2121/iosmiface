@@ -22,7 +22,7 @@ namespace BandFace.Creator
 
         sealed class Item
         {
-            public string Kind, Group, Title, Caption;
+            public string Kind, Group, Title;
             public bool NeedsSource;
             public string DefaultSource;
         }

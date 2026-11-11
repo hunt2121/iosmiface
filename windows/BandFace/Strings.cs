@@ -53,7 +53,6 @@ namespace BandFace
             ["phConnect"] = new[] { "Відкриття сесії…", "Opening session…", "Открытие сессии…" },
             ["phAuth"] = new[] { "Автентифікація…", "Authenticating…", "Аутентификация…" },
             ["phInstall"] = new[] { "Запит на встановлення…", "Requesting installation…", "Запрос на установку…" },
-            ["phRemove"] = new[] { "Видалення старої версії…", "Removing old version…", "Удаление старой версии…" },
             ["phActivate"] = new[] { "Активація…", "Activating…", "Активация…" },
             ["phPair"] = new[] { "Підтвердіть підключення на пристрої…", "Confirm the connection on the device…", "Подтвердите подключение на устройстве…" },
             ["cloudTitle"] = new[] { "Ключ з акаунта Xiaomi", "Key from Xiaomi account", "Ключ из аккаунта Xiaomi" },
@@ -108,13 +107,9 @@ namespace BandFace
             ["forwardDesc"] = new[] { "Пересилати на пристрій сповіщення вибраних програм, поки BandFace відкритий і пристрій підключений", "Forward notifications of the chosen apps while BandFace is open and the device is connected", "Пересылать на устройство уведомления выбранных программ, пока BandFace открыт и устройство подключено" },
             ["forwardOn"] = new[] { "Увімкнено: нові сповіщення вибраних програм ідуть на пристрій", "On: new notifications of the chosen apps go to the device", "Включено: новые уведомления выбранных программ идут на устройство" },
             ["savedBand"] = new[] { "збережений", "saved", "сохранённый" },
-            ["iconsFolder"] = new[] { "Значки…", "Icons…", "Значки…" },
             ["tgHint"] = new[] { "Telegram: у Telegram Desktop відкрийте «Налаштування → Сповіщення і звуки» й увімкніть «Використовувати сповіщення Windows» (системна інтеграція). Інакше Telegram показує власні вікна, і Windows їх не бачить.", "Telegram: in Telegram Desktop open “Settings → Notifications and Sounds” and turn on “Use Windows notifications” (system integration). Otherwise Telegram shows its own windows that Windows can't see.", "Telegram: в Telegram Desktop откройте «Настройки → Уведомления и звуки» и включите «Использовать уведомления Windows» (системная интеграция). Иначе Telegram показывает собственные окна, и Windows их не видит." },
             ["forwardFail"] = new[] { "Windows не дав доступу до сповіщень ({0}). Перевірте Параметри → Конфіденційність → Сповіщення", "Windows didn't allow access to notifications ({0}). Check Settings → Privacy → Notifications", "Windows не дал доступа к уведомлениям ({0}). Проверьте Параметры → Конфиденциальность → Уведомления" },
             ["otherApps"] = new[] { "Інші програми", "Other apps", "Другие программы" },
-            ["testNotify"] = new[] { "Надіслати тестове", "Send a test", "Отправить тестовое" },
-            ["testTitle"] = new[] { "Тестове сповіщення", "Test notification", "Тестовое уведомление" },
-            ["testBody"] = new[] { "Якщо ви це бачите — сповіщення з Windows працюють", "If you can see this, notifications from Windows work", "Если вы это видите — уведомления из Windows работают" },
         };
 
         public static string Get(string key, params object[] args)

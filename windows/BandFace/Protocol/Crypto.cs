@@ -87,15 +87,6 @@ namespace BandFace.Protocol
             using (var m = MD5.Create()) return m.ComputeHash(data);
         }
 
-        public static byte[] Sha1(byte[] data)
-        {
-            using (var m = SHA1.Create()) return m.ComputeHash(data);
-        }
-
-        public static byte[] Sha256(byte[] data)
-        {
-            using (var m = SHA256.Create()) return m.ComputeHash(data);
-        }
 
         /// <summary>HKDF-SHA256 (RFC 5869).</summary>
         public static byte[] Hkdf(byte[] ikm, byte[] salt, byte[] info, int length)

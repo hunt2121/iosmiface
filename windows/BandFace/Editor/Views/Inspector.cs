@@ -472,8 +472,6 @@ namespace BandFace.Creator
             return g;
         }
 
-        static readonly int[] WeightValues = { 100, 200, 300, 400, 500, 600, 700, 800, 900 };
-
         void DigitsLook(XNode layout, XNode res, Generator gen)
         {
             var name = res.Str("name") ?? "";
@@ -696,13 +694,6 @@ namespace BandFace.Creator
             }
             else Add(Ui.Note(S.Get("colorByImages")));
         }
-
-        /// <summary>Швидкі форми дуги: (початок, довжина)</summary>
-        static readonly Tuple<string, double, double>[] ArcShapes =
-        {
-            Tuple.Create("shapeCircle", 0.0, 360.0), Tuple.Create("shapeHorseshoe", 220.0, 280.0),
-            Tuple.Create("shapeHalf", 270.0, 180.0), Tuple.Create("shapeQuarter", 315.0, 90.0),
-        };
 
         void ArcLook(XNode res, Generator gen)
         {
