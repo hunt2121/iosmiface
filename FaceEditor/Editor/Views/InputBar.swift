@@ -39,7 +39,8 @@ struct InputBarView: View {
         if let r = model.request {
             // як рядок повідомлення в месенджерах: скляна капсула з полем і кругла скляна кнопка ✓ над клавіатурою
             HStack(spacing: 10) {
-                TextField("", text: $text)
+                // поточне значення — сірою підказкою; що вводиш, те й замінює його
+                TextField(r.text, text: $text)
                     .font(.body)
                     .focused($focused)
                     .autocorrectionDisabled()
@@ -60,7 +61,7 @@ struct InputBarView: View {
             .padding(.horizontal, 16).padding(.vertical, 8)
             .id(r.id)
             .onAppear {
-                text = r.text
+                text = ""
                 DispatchQueue.main.async { focused = true }
             }
             .onChange(of: focused) { f in if !f { finish() } }
@@ -72,6 +73,8 @@ struct InputBarView: View {
         model.request = nil
         focused = false
         let t = text
+        // нічого не ввели — значення лишається як було
+        guard !t.isEmpty else { return }
         // запис — після закриття поля (інакше перемальовування панелі збиває клавіатуру)
         DispatchQueue.main.async { r.commit(t) }
     }
