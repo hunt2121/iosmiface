@@ -311,8 +311,11 @@ namespace BandFace.Creator
             Action<Action<SlotFrame>> upd = ch => project.Edit(p =>
             {
                 var s = p.Meta.SlotFrames.TryGetValue(name, out var c) ? c.Copy() : new SlotFrame();
+                int pad = s.Pad;
                 ch(s);
                 if (s.IsDefault) p.Meta.SlotFrames.Remove(name); else p.Meta.SlotFrames[name] = s;
+                // запас від елементів змінює розмір віджетів «За вмістом»
+                WidgetSlots.RepadSlot(p, slot, s.Pad - pad);
             });
             Add(Ui.Header(S.Get("frameTitle")));
             var pv = WidgetSlots.FramePreview(project, slot, st);
@@ -336,7 +339,7 @@ namespace BandFace.Creator
             Add(Ui.Chips("", SlotFrame.Presets.Select(x => Ui.P(x.Key, S.Get(x.Key))), cur0.Key ?? "", k =>
             {
                 var pr = SlotFrame.Presets.First(x => x.Key == k).Value;
-                project.Edit(p => p.Meta.SlotFrames[name] = pr.Copy());
+                upd(s => { var c = pr.Copy(); s.Color = c.Color; s.Alpha = c.Alpha; s.Width = c.Width; s.Fill = c.Fill; s.Shape = c.Shape; s.Radius = c.Radius; s.Pad = c.Pad; });
             }));
             Add(Ui.Chips("", new[] { Ui.P("0", S.Get("frameShapeWidget")), Ui.P("1", S.Get("frameShapeNone")) }, st.Shape.ToString(), k => upd(s => s.Shape = int.Parse(k))));
             if (st.Shape == 0)
@@ -349,7 +352,7 @@ namespace BandFace.Creator
             }
             Add(Ui.Slider(S.Get("framePad"), st.Pad, 0, 20, 1, v => upd(s => s.Pad = (int)v)));
             Add(Ui.Note(S.Get("framePadHint")));
-            if (!st.IsDefault) Add(Ui.Button(S.Get("frameReset"), () => project.Edit(p => p.Meta.SlotFrames.Remove(name))));
+            if (!st.IsDefault) Add(Ui.Button(S.Get("frameReset"), () => upd(s => { var d = new SlotFrame(); s.Color = d.Color; s.Alpha = d.Alpha; s.Width = d.Width; s.Fill = d.Fill; s.Shape = d.Shape; s.Radius = d.Radius; s.Pad = d.Pad; })));
         }
     }
 }

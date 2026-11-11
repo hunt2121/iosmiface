@@ -219,7 +219,11 @@ namespace BandFace.Creator
                 var c = p.ResourceRef(it.Str("ref"));
                 var m = c == null ? null : r.VisibleBounds(c);
                 if (m == null) continue;
-                var q = m.Value; q.Offset(it.Int("x"), it.Int("y"));
+                var q = m.Value;
+                // дуга: уся її картинка (із запасом під крапку) має бути всередині віджета — інакше браслет її не показує
+                var gi = GaugeImageRect(p, c);
+                if (gi != null) q = Rect.Union(q, gi.Value);
+                q.Offset(it.Int("x"), it.Int("y"));
                 box = box.IsEmpty ? q : Rect.Union(box, q);
             }
             if (box.IsEmpty) return;
@@ -331,6 +335,36 @@ namespace BandFace.Creator
         {
             var key = "@" + (w.Str("name") ?? "");
             return p.Resources.Elements.Where(e => e.Tag == "Slot" && e.All("Item").Any(i => i.Str("ref") == key)).ToList();
+        }
+
+        /// <summary>Зміна запасу рамки слота на d px: віджети «За вмістом» ростуть/зменшуються на d з кожного боку, елементи
+        /// всередині зсуваються на d, а слот — на −d, тож на екрані вміст лишається на місці</summary>
+        public static void RepadSlot(FaceProject p, XNode slot, int d)
+        {
+            if (d == 0) return;
+            var reference = "@" + (slot.Str("name") ?? "");
+            foreach (var w in Widgets(p, slot))
+            {
+                foreach (var it in w.All("Item")) it.Set("x", it.Int("x") + d).Set("y", it.Int("y") + d);
+                if (!IsManual(p, w) && w.Has("w") && w.Has("h"))
+                    w.Set("w", Math.Max(8, w.Int("w") + 2 * d)).Set("h", Math.Max(8, w.Int("h") + 2 * d));
+            }
+            for (int t = 0; t < 2; t++)
+                foreach (var l in p.Layouts(t))
+                    if (l.Str("ref") == reference) l.Set("x", l.Int("x") - d).Set("y", l.Int("y") - d);
+        }
+
+        /// <summary>Прямокутник картинки дуги відносно елемента (картинка стоїть у точці елемента)</summary>
+        public static Rect? GaugeImageRect(FaceProject p, XNode res)
+        {
+            if (res == null || res.Tag != "DataItemArcProgressBar") return null;
+            var reference = res.Str("ref");
+            if (reference == null || !reference.StartsWith("@")) return null;
+            var img = p.Resources.Elements.FirstOrDefault(e => e.Tag == "Image" && "@" + (e.Str("name") ?? "") == reference);
+            var src = img?.Str("src");
+            var data = src == null ? null : p.File(src);
+            var dec = data == null ? null : Imaging.Decode(data);
+            return dec == null ? (Rect?)null : new Rect(0, 0, dec.W, dec.H);
         }
 
         public static List<XNode> Widgets(FaceProject p, XNode slot)
