@@ -34,6 +34,8 @@ struct EditorView: View {
     /// Замок: елементи не пересуваються, палець рухає полотно
     @State private var locked = false
     @State private var showFonts = false
+    /// Відкрита клавіатура: полотно зменшується, кнопки знизу ховаються — поле введення лишається над клавіатурою
+    @State private var keyboard = false
     @Environment(\.scenePhase) private var scenePhase
 
     enum EditorSheet: Identifiable { case add, layers, background, source, properties
@@ -45,19 +47,22 @@ struct EditorView: View {
             topBar
             CanvasView(project: project, theme: theme, variant: variant, selected: $selected, snap: snap, grid: grid, zoom: zoom, locked: locked)
                 .frame(maxWidth: .infinity)
-                .frame(height: 340)
+                .frame(height: keyboard ? 150 : 340)
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
-                .overlay(alignment: .topTrailing) { canvasButtons }
+                .overlay(alignment: .topTrailing) { if !keyboard { canvasButtons } }
                 .overlay(alignment: .topLeading) {
                     // знімок циферблата: картинка → «Поділитися» (Файли, Фото, месенджери)
-                    roundButton("camera", "Знімок циферблата") { shareShot() }.padding(12)
+                    if !keyboard { roundButton("camera", "Знімок циферблата") { shareShot() }.padding(12) }
                 }
-                .overlay(alignment: .bottomLeading) { zoomChips }
+                .overlay(alignment: .bottomLeading) { if !keyboard { zoomChips } }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
             panel
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .animation(.easeOut(duration: 0.2), value: keyboard)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
         .onAppear {
             if initial == nil { initial = (Data(XML.print(project.root)), project.files, project.meta) }
             if project.themes.isEmpty { project.edit { $0.root.add("Theme").set("type", "normal").set("name", "").set("bgColor", "#000000") } }
@@ -249,14 +254,17 @@ struct EditorView: View {
                     faceInfo
                 }
             }
-            HStack(spacing: 10) {
-                bottomButton("Елемент", icon: "plus", prominent: true) { sheet = .add }
-                bottomButton("Шари", icon: nil) { sheet = .layers }
-                bottomButton("Фон", icon: nil) { sheet = .background }
+            .scrollDismissesKeyboard(.interactively)
+            if !keyboard {
+                HStack(spacing: 10) {
+                    bottomButton("Елемент", icon: "plus", prominent: true) { sheet = .add }
+                    bottomButton("Шари", icon: nil) { sheet = .layers }
+                    bottomButton("Фон", icon: nil) { sheet = .background }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .padding(.top, 6)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-            .padding(.top, 6)
         }
         .frame(maxWidth: .infinity)
         .background(
