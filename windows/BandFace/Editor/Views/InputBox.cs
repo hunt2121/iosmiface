@@ -31,6 +31,8 @@ namespace BandFace.Creator
             buttons.Children.Add(ok);
             sp.Children.Add(buttons);
             Content = sp;
+            // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
+            SourceInitialized += (s, e) => Theme.Apply(this);
             Loaded += (s, e) => { Theme.Apply(this); box.Focus(); box.SelectAll(); };
         }
 

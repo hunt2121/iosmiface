@@ -68,6 +68,8 @@ namespace BandFace.Creator
             Content = root;
             search.TextChanged += (s, e) => Fill();
             Fill();
+            // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
+            SourceInitialized += (s, e) => Theme.Apply(this);
             Loaded += (s, e) => { search.Focus(); Theme.Apply(this); };
         }
 

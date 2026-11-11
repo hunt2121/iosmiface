@@ -111,6 +111,8 @@ namespace BandFace.Creator
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(250) });
             tiles.ItemContainerStyle = (Style)FindResource("LayerItem");
             ScrollViewer.SetHorizontalScrollBarVisibility(tiles, ScrollBarVisibility.Disabled);
+            // плитки в WrapPanel — прокрутка в пікселях (як у інших вікнах), а не «пунктами»
+            ScrollViewer.SetCanContentScroll(tiles, false);
             var wrap = new FrameworkElementFactory(typeof(WrapPanel));
             tiles.ItemsPanel = new ItemsPanelTemplate(wrap);
             tiles.SelectionChanged += (s, e) => { item = (tiles.SelectedItem as ListBoxItem)?.Tag as Item; UpdatePreview(); };
@@ -152,6 +154,8 @@ namespace BandFace.Creator
                     e.Handled = true;
                 }
             };
+            // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
+            SourceInitialized += (s, e) => Theme.Apply(this);
             Loaded += (s, e) => { Theme.Apply(this); search.Focus(); };
             ShowStep(1);
         }

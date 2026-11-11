@@ -99,6 +99,8 @@ namespace BandFace.Creator
             body.Children.Add(right);
             root.Children.Add(body);
             Content = root;
+            // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
+            SourceInitialized += (s, e) => Theme.Apply(this);
             Loaded += (s, e) => Theme.Apply(this);
             Build();
             built = true;

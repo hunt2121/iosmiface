@@ -51,6 +51,8 @@ namespace BandFace.Creator
             var cancel = new Button { Content = S.Get("cancel"), Style = (Style)FindResource("Btn"), IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
             sp.Children.Add(cancel);
             Content = sp;
+            // темний заголовок вікна ставиться до показу — інакше Windows лишає його білим до перемикання вікон
+            SourceInitialized += (s, e) => Theme.Apply(this);
             Loaded += (s, e) => Theme.Apply(this);
         }
 

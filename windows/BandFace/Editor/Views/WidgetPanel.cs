@@ -216,13 +216,23 @@ namespace BandFace.Creator
         {
             int live = value;
             var box = Ui.Number(value, v => { live = v; commit(v); }, 8, 2000);
-            var minus = new System.Windows.Controls.Primitives.RepeatButton { Content = "−", Width = 28, Height = 26, Margin = new Thickness(6, 0, 0, 0), Delay = 400, Interval = 70 };
-            var plus = new System.Windows.Controls.Primitives.RepeatButton { Content = "+", Width = 28, Height = 26, Margin = new Thickness(4, 0, 0, 0), Delay = 400, Interval = 70 };
+            // звичайні кнопки зі стилем «Btn» (стиль для Button не можна ставити на RepeatButton); повтор при утриманні — таймером
+            var minus = new Button { Content = "−", Width = 28, Height = 26, Margin = new Thickness(6, 0, 0, 0) };
+            var plus = new Button { Content = "+", Width = 28, Height = 26, Margin = new Thickness(4, 0, 0, 0) };
             minus.SetResourceReference(FrameworkElement.StyleProperty, "Btn"); plus.SetResourceReference(FrameworkElement.StyleProperty, "Btn");
             Action<int> bump = d => { live = Math.Max(8, Math.Min(2000, live + d)); box.Text = live.ToString(); };
             Action done = () => { if (live != value) { int v = live; commit(v); } };
-            minus.Click += (s, e) => bump(-1); plus.Click += (s, e) => bump(1);
-            foreach (var b in new[] { minus, plus }) { b.PreviewMouseLeftButtonUp += (s, e) => done(); b.LostMouseCapture += (s, e) => { }; }
+            var timer = new System.Windows.Threading.DispatcherTimer();
+            int dir = 0;
+            timer.Tick += (s, e) => { timer.Interval = TimeSpan.FromMilliseconds(70); bump(dir); };
+            foreach (var b in new[] { minus, plus })
+            {
+                int d = b == minus ? -1 : 1;
+                b.PreviewMouseLeftButtonDown += (s, e) => { dir = d; bump(d); timer.Interval = TimeSpan.FromMilliseconds(400); timer.Start(); b.CaptureMouse(); e.Handled = true; };
+                b.PreviewMouseLeftButtonUp += (s, e) => { if (!timer.IsEnabled) return; timer.Stop(); b.ReleaseMouseCapture(); done(); e.Handled = true; };
+                b.LostMouseCapture += (s, e) => { if (timer.IsEnabled) { timer.Stop(); done(); } };
+                b.KeyDown += (s, e) => { if (e.Key == System.Windows.Input.Key.Space || e.Key == System.Windows.Input.Key.Enter) { bump(d); done(); e.Handled = true; } };
+            }
             var line = new StackPanel { Orientation = Orientation.Horizontal };
             box.Width = 70; box.Height = 26;
             line.Children.Add(box); line.Children.Add(minus); line.Children.Add(plus);
