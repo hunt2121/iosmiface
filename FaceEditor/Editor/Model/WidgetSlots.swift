@@ -387,6 +387,37 @@ enum WidgetSlots {
         }
     }
 
+    /// Перегляд рамки, як її видно в налаштуваннях циферблата на браслеті: вибраний віджет слота в масштабі браслета,
+    /// рамка поверх, навколо — край екрана (поза екраном — сірим)
+    static func framePreview(_ p: FaceProject, slot: XNode, style st: SlotFrame) -> RGBAImage? {
+        let ws = widgets(p, slot)
+        guard !ws.isEmpty else { return nil }
+        let w = ws[min(shown(p, slot), ws.count - 1)]
+        guard w.has("w"), w.has("h") else { return nil }
+        let s = previewScale
+        let pw = max(8, Int((CGFloat(w.int("w")) * s).rounded())), ph = max(8, Int((CGFloat(w.int("h")) * s).rounded()))
+        let lay = p.layouts(0).first { $0.string("ref") == "@" + (slot.string("name") ?? "") }
+        let ox = Int(lay?.int("x") ?? 0), oy = Int(lay?.int("y") ?? 0)
+        let r = FaceRenderer(p)
+        let face = AssetFactory.render(pw, ph) { c in
+            c.scaleBy(x: s, y: s)
+            r.draw(w, at: .zero, in: c, depth: 0)
+        }
+        let frame = frameImage(p, st, pw: pw, ph: ph, origin: lay == nil ? nil : (ox, oy))
+        let m = 16
+        let cw = pw + 2 * m, ch = ph + 2 * m
+        return AssetFactory.render(cw, ch) { c in
+            c.setFillColor(UIColor(white: 0.17, alpha: 1).cgColor); c.fill(CGRect(x: 0, y: 0, width: cw, height: ch))
+            let dev = p.meta.device
+            let scr = lay == nil ? CGRect(x: 0, y: 0, width: cw, height: ch)
+                : CGRect(x: CGFloat(m) - CGFloat(ox) * s, y: CGFloat(m) - CGFloat(oy) * s, width: CGFloat(dev.width) * s, height: CGFloat(dev.height) * s)
+            c.setFillColor(UIColor.black.cgColor)
+            c.addPath(UIBezierPath(roundedRect: scr, cornerRadius: lay == nil ? 0 : CGFloat(dev.corner) * s).cgPath); c.fillPath()
+            if let cg = face.cgImage { UIImage(cgImage: cg).draw(in: CGRect(x: m, y: m, width: pw, height: ph)) }
+            if let cg = frame.cgImage { UIImage(cgImage: cg).draw(in: CGRect(x: m, y: m, width: pw, height: ph)) }
+        }
+    }
+
     /// Картинка рамки вибору: форма віджета, обрізана екраном (origin — місце слота на екрані), м'які кути, вигляд зі `SlotFrame`
     static func frameImage(_ p: FaceProject, _ st: SlotFrame, pw: Int, ph: Int, origin: (Int, Int)?) -> RGBAImage {
         AssetFactory.render(pw, ph) { _ in

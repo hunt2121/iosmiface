@@ -298,6 +298,13 @@ struct SlotFramePanel: View {
         let st = project.meta.slotFrames[name] ?? SlotFrame()
         VStack(alignment: .leading, spacing: 10) {
             Text(verbatim: loc("РАМКА ВИБОРУ НА БРАСЛЕТІ")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            if let pv = WidgetSlots.framePreview(project, slot: slot, style: st), let cg = pv.cgImage {
+                // як на браслеті: віджет і рамка в масштабі екрана налаштувань циферблата (збільшено для зручності)
+                Image(decorative: cg, scale: 1).interpolation(.high).resizable().scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: 150)
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.11)))
+            }
             HStack(spacing: 6) {
                 ForEach(Array(SlotFrame.presets.enumerated()), id: \.offset) { _, pr in
                     let on = pr.1 == st
