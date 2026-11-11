@@ -129,8 +129,8 @@ namespace BandFace.Creator
                 Canvas.SetLeft(fill, r.X * zoom); Canvas.SetTop(fill, r.Y * zoom);
                 Overlay.Children.Add(fill);
                 var dev = project.Meta.Device;
-                foreach (var x in sizeGuideX) { var ln = new Rectangle { Width = 1, Height = dev.Height * zoom, Fill = guide }; Canvas.SetLeft(ln, x * zoom); Overlay.Children.Add(ln); }
-                foreach (var y in sizeGuideY) { var ln = new Rectangle { Width = dev.Width * zoom, Height = 1, Fill = guide }; Canvas.SetTop(ln, y * zoom); Overlay.Children.Add(ln); }
+                foreach (var x in sizeGuideX) Ui.GuideLine(Overlay, true, x * zoom, dev.Height * zoom, guide);
+                foreach (var y in sizeGuideY) Ui.GuideLine(Overlay, false, y * zoom, dev.Width * zoom, guide);
                 var tagBg = (sizeGuideX.Count > 0 || sizeGuideY.Count > 0) ? guide : sel;
                 var tag = new Border
                 {

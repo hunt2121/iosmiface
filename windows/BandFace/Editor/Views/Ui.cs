@@ -360,6 +360,24 @@ namespace BandFace.Creator
             return Row(label, panel, 0);
         }
 
+        /// <summary>Лінія прив'язки: 1 px кольору Guide рівно на пікселі з тонкою темною облямівкою — однакова на будь-якому тлі</summary>
+        public static void GuideLine(Panel overlay, bool vertical, double pos, double length, Brush guide)
+        {
+            var halo = new System.Windows.Shapes.Rectangle { Fill = Brushes.Black, Opacity = 0.45, SnapsToDevicePixels = true };
+            var core = new System.Windows.Shapes.Rectangle { Fill = guide, SnapsToDevicePixels = true };
+            if (vertical)
+            {
+                halo.Width = 3; halo.Height = length; core.Width = 1; core.Height = length;
+                Canvas.SetLeft(halo, Math.Round(pos) - 1); Canvas.SetLeft(core, Math.Round(pos));
+            }
+            else
+            {
+                halo.Width = length; halo.Height = 3; core.Width = length; core.Height = 1;
+                Canvas.SetTop(halo, Math.Round(pos) - 1); Canvas.SetTop(core, Math.Round(pos));
+            }
+            overlay.Children.Add(halo); overlay.Children.Add(core);
+        }
+
         public static Border Separator() => new Border { Height = 1, Background = Res("CardBorder"), Margin = new Thickness(0, 8, 0, 4) };
     }
 }

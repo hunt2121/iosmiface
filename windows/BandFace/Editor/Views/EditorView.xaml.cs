@@ -423,8 +423,8 @@ namespace BandFace.Creator
             DrawHandles(sel);
             DrawSizeHandles(sel);
             var guide = (Brush)FindResource("Guide");
-            if (guideV) { var ln = new Rectangle { Width = 1, Height = dev.Height * zoom, Fill = guide }; Canvas.SetLeft(ln, dev.Width * zoom / 2); Overlay.Children.Add(ln); }
-            if (guideH) { var ln = new Rectangle { Width = dev.Width * zoom, Height = 1, Fill = guide }; Canvas.SetTop(ln, dev.Height * zoom / 2); Overlay.Children.Add(ln); }
+            if (guideV) Ui.GuideLine(Overlay, true, dev.Width * zoom / 2, dev.Height * zoom, guide);
+            if (guideH) Ui.GuideLine(Overlay, false, dev.Height * zoom / 2, dev.Width * zoom, guide);
         }
 
         XNode Hit(Point pt)
