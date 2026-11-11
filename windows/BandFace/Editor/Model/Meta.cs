@@ -263,7 +263,7 @@ namespace BandFace.Creator
     public sealed class DemoValues
     {
         public Dictionary<string, int> Values = new Dictionary<string, int>();
-        /// <summary>"HH:mm"; null — типовий 10:24</summary>
+        /// <summary>"HH:mm"; null — типовий 09:55</summary>
         public string Time;
         /// <summary>"yyyy-MM-dd"; null — типова 30.05.2026</summary>
         public string Date;

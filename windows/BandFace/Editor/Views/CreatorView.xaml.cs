@@ -49,6 +49,7 @@ namespace BandFace.Creator
             Editor.BackRequested += ShowList;
             Editor.InstallRequested += (bin, name) => InstallRequested?.Invoke(bin, name);
             Editor.CancelInstallRequested += () => CancelInstallRequested?.Invoke();
+            AppDesign.Changed += RefreshProjects;
             RefreshProjects();
         }
 
@@ -131,19 +132,30 @@ namespace BandFace.Creator
         {
             // капсула така сама, як на вкладці «Циферблати»: 102×242, сіре обведення 3 px, вміст 96×236 обрізано по капсулі,
             // картинка масштабується якісно (без змазування)
+            // новий дизайн — екран 144×354, як на головній; старий — 96×236
+            bool big = AppDesign.New;
+            double iw = big ? 144 : 96, ih = big ? 354 : 236;
             var img = new Image { Stretch = Stretch.UniformToFill };
             RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-            var inner = new Grid { Width = 96, Height = 236, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, 96, 236), 48, 48) };
+            var inner = new Grid { Width = iw, Height = ih, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, iw, ih), iw / 2, iw / 2) };
             inner.Children.Add(img);
             var capsule = new Border
             {
-                Width = 102, Height = 242, CornerRadius = new CornerRadius(51), Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
+                Width = iw + 6, Height = ih + 6, CornerRadius = new CornerRadius((iw + 6) / 2), Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
                 Padding = new Thickness(3), Child = inner,
             };
-            var sp = new StackPanel { Width = 150 };
+            var sp = new StackPanel { Width = big ? 170 : 150 };
             sp.Children.Add(capsule);
             sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 10, 0, 0) });
             sp.Children.Add(new TextBlock { Text = p.Meta.Modified.ToLocalTime().ToString("g"), FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextAlignment = TextAlignment.Center });
+            if (big)
+            {
+                // кнопка під превʼю — те саме, що «Встановити на пристрій» у меню картки
+                var inst = new Button { Content = S.Get("installShort"), Style = (Style)FindResource("Btn"), Height = 34, Width = iw + 6, Margin = new Thickness(0, 12, 0, 0) };
+                inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
+                inst.MouseLeftButtonUp += (s, e) => e.Handled = true;
+                sp.Children.Add(inst);
+            }
             var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 14, 14), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
             card.MouseLeftButtonUp += (s, e) => OpenProject(p);
             var menu = new ContextMenu();
@@ -162,14 +174,14 @@ namespace BandFace.Creator
             }, danger: true);
             card.ContextMenu = menu;
             // мініатюра — коли картки вже на екрані
-            var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks;
+            var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks + "#" + ih;
             if (thumbs.TryGetValue(key, out var t0)) img.Source = t0;
             else Dispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
                     double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                    var src = new FaceRenderer(p).Render(0, Math.Max(328, 236 * dpi * 1.5) / p.Meta.Device.Height).Image;
+                    var src = new FaceRenderer(p).Render(0, Math.Max(328, ih * dpi * 1.5) / p.Meta.Device.Height).Image;
                     thumbs[key] = src;
                     img.Source = src;
                 }

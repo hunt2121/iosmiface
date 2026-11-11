@@ -19,7 +19,7 @@ namespace BandFace.Creator
             int v;
             if (s.StartsWith("time"))
             {
-                int oh = 10, om = 24;
+                int oh = 9, om = 55;
                 if (demo != null && demo.TryTime(out var th, out var tm)) { oh = th; om = tm; }
                 if (s.Contains("Hour")) { v = liveTime ? now.Hour : oh; if (s.Contains("12")) v = v % 12 == 0 ? 12 : v % 12; }
                 else if (s.Contains("Minute")) v = liveTime ? now.Minute : om;
@@ -54,7 +54,7 @@ namespace BandFace.Creator
             // стани як у звичайному вигляді: «не турбувати» вимкнено, Bluetooth підключено
             if (l.Contains("disturb")) return 0;
             if (l.Contains("bluetooth")) return 1;
-            if (l.Contains("step")) return l.Contains("progress") ? 84 : 8412;
+            if (l.Contains("step")) return l.Contains("progress") ? 71 : 7133;
             if (l.Contains("heart")) return 72;
             if (l.Contains("battery")) return 80;
             if (l.Contains("calorie")) return l.Contains("progress") ? 46 : 320;

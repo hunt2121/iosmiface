@@ -146,14 +146,14 @@
                   </Border>
                   <!-- Праворуч — колонка на висоту капсули: назва, два рядки (завжди два — нічого не стрибає), кнопки,
                        нижче поле: перетягування файла / прогрес встановлення / повідомлення (одне місце, той самий розмір) -->
-                  <Grid Grid.Column="1" Margin="24,0,0,0">
+                  <Grid x:Name="InfoColumn" Grid.Column="1" Margin="24,0,0,0">
                     <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition x:Name="ZoneRow" Height="*"/>
                     </Grid.RowDefinitions>
                     <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,-3,0,0"/>
                     <TextBlock x:Name="FaceInfo" Grid.Row="1" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="FaceFileName" Grid.Row="2" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                    <Grid Grid.Row="3" Margin="0,16,0,0">
+                    <Grid x:Name="ButtonsRow" Grid.Row="3" Margin="0,16,0,0">
                       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                       <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
@@ -172,10 +172,13 @@
                       </Grid>
                       <!-- прогрес встановлення — на місці поля перетягування -->
                       <Border x:Name="ProgressPanel" Visibility="Collapsed" CornerRadius="10" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
-                        <StackPanel VerticalAlignment="Center" Margin="48,0">
-                          <TextBlock x:Name="ProgressText" FontSize="15" HorizontalAlignment="Center" Margin="0,0,0,14" TextTrimming="CharacterEllipsis"/>
+                        <!-- смужка як і раніше: під нею зліва етап / «Передача N/M», справа відсотки -->
+                        <StackPanel x:Name="ProgressInner" VerticalAlignment="Center" Margin="48,0">
                           <ProgressBar x:Name="Bar" Minimum="0" Maximum="1"/>
-                          <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Margin="0,8,0,0" Foreground="{DynamicResource Sub}"/>
+                          <Grid Margin="0,6,0,0">
+                            <TextBlock x:Name="ProgressText" FontSize="12" Foreground="{DynamicResource Sub}"/>
+                            <TextBlock x:Name="ProgressPercent" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource Sub}"/>
+                          </Grid>
                         </StackPanel>
                       </Border>
                       <!-- повідомлення («Встановлено», помилка) — 10 с або до нового файла -->
@@ -355,6 +358,16 @@
     <Border x:Name="Sidebar" Width="228" HorizontalAlignment="Left" Background="{DynamicResource Bg}">
       <DockPanel x:Name="SidebarPanel" Margin="10,8">
         <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
+        <!-- перемикач дизайну: старий / новий (видно в повному меню) -->
+        <StackPanel x:Name="DesignSwitch" DockPanel.Dock="Bottom" Margin="10,0,10,14">
+          <TextBlock x:Name="DesignLabel" FontSize="12" Margin="2,0,0,6" Foreground="{DynamicResource Sub}"/>
+          <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="3">
+            <UniformGrid Columns="2">
+              <ToggleButton x:Name="DesignOld" Style="{StaticResource Chip}" Margin="0" Height="26" Click="DesignOld_Click"/>
+              <ToggleButton x:Name="DesignNew" Style="{StaticResource Chip}" Margin="0" Height="26" Click="DesignNew_Click"/>
+            </UniformGrid>
+          </Border>
+        </StackPanel>
         <StackPanel>
           <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="40" Height="36" BorderThickness="0" Background="Transparent"
                   HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click"/>

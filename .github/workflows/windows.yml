@@ -66,6 +66,7 @@ jobs:
           Shot "7-dark-faces" "--page=faces"; Shot "8-dark-editor" "--demo"; Shot "9-dark-settings" "--page=settings"
           $bin = "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
           Shot "f1-dark-face" "--face=$bin"; Shot "f2-dark-done" "--face=$bin --demo-done"; Shot "f3-dark-progress" "--face=$bin --demo-progress"
+          Shot "f5-dark-old" "--design=old --face=$bin"; Shot "f6-dark-editor-list" "--editor-list=$bin"; Shot "f7-dark-editor-list-old" "--design=old --editor-list=$bin"
           Shot "b1-dark-arc" "--demo=arc"; Shot "b2-dark-xml" "--demo=xml"; Shot "b3-dark-gallery" "--demo=gallery"
           if (Test-Path "$env:TEMP\bandface-crash.txt") { Write-Output ("::warning::" + ((Get-Content "$env:TEMP\bandface-crash.txt" -Raw) -replace "`r?`n"," | ").Substring(0,700)) }
           foreach ($t in Get-ChildItem *.txt) { Write-Output ("::warning::" + ((Get-Content $t -Raw) -replace "`r?`n"," | ")) }

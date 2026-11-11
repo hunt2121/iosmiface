@@ -51,6 +51,8 @@ namespace BandFace
             RefreshBand();
             RefreshFace();
             RefreshKeyState();
+            ApplyDesign();
+            AppDesign.Changed += ApplyDesign;
             _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
@@ -83,6 +85,9 @@ namespace BandFace
                 else if (a.StartsWith("--face=")) demoFace = a.Substring(7);
                 else if (a == "--demo-done") demoDone = true;
                 else if (a == "--demo-progress") demoProgress = true;
+                else if (a == "--design=old") AppDesign.Try(false);
+                else if (a == "--design=new") AppDesign.Try(true);
+                else if (a.StartsWith("--editor-list=")) { var f = a.Substring(14); NavEditor.IsChecked = true; EditorTab.OpenPath(f); EditorTab.ShowList(); }
                 else if (!a.StartsWith("--") && File.Exists(a)) openFile = a;
             }
             if (demoFace != null)
@@ -345,6 +350,7 @@ namespace BandFace
             VersionText.Margin = new Thickness(wide ? 12 : 0, 0, 0, 6);
             VersionText.FontSize = wide ? 12 : 10;
             MenuBtn.Visibility = _compact ? Visibility.Visible : Visibility.Collapsed;
+            DesignSwitch.Visibility = textVis;
             Shade.Visibility = _flyout ? Visibility.Visible : Visibility.Collapsed;
             Sidebar.Effect = _flyout ? new DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Direction = 0, Opacity = 0.25 } : null;
             // у вузькій смузі назва вкладки — підказкою
@@ -642,7 +648,7 @@ namespace BandFace
         /// <summary>Як в iOS: поки файл не вибрано, головна кнопка — «Вибрати файл», далі — «Встановити».</summary>
         void RefreshButtons()
         {
-            PickBtn.Style = (Style)FindResource("Btn");
+            PickBtn.Style = (Style)FindResource(AppDesign.New || _face != null ? "Btn" : "PrimaryBtn");
             PickBtn.IsEnabled = !_busy;
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
@@ -882,7 +888,7 @@ namespace BandFace
             // повідомлення — на місці поля перетягування, 10 секунд (або до нового файла)
             _msgTimer?.Stop();
             _showMessage = !string.IsNullOrEmpty(text);
-            if (_showMessage)
+            if (_showMessage && AppDesign.New)
             {
                 _msgTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
                 _msgTimer.Tick += (s, e) => HideMessage();
@@ -901,7 +907,7 @@ namespace BandFace
         {
             bool busy = ProgressPanel.Visibility == Visibility.Visible;
             MessagePanel.Visibility = !busy && _showMessage ? Visibility.Visible : Visibility.Collapsed;
-            DropLayer.Visibility = !busy && !_showMessage ? Visibility.Visible : Visibility.Collapsed;
+            DropLayer.Visibility = AppDesign.New && !busy && !_showMessage ? Visibility.Visible : Visibility.Collapsed;
         }
 
         void HideMessage()
@@ -942,7 +948,7 @@ namespace BandFace
         }
 
         void Zone_Click(object sender, MouseButtonEventArgs e) { if (!_busy) Pick_Click(sender, e); }
-        void Message_Click(object sender, MouseButtonEventArgs e) => HideMessage();
+        void Message_Click(object sender, MouseButtonEventArgs e) { if (AppDesign.New) HideMessage(); }
 
         /// <summary>Як у редакторі: циферблат увімкнений на браслеті — зелене обведення капсули</summary>
         void SetActiveId(string id) { _activeId = id; RefreshCapsuleBorder(); }
