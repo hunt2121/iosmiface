@@ -3244,29 +3244,6 @@
         }
       }
     },
-    "Висота поля": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Box height"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Высота поля"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Висота поля"
-          }
-        }
-      }
-    },
     "Вниз": {
       "extractionState": "manual",
       "localizations": {
@@ -3428,29 +3405,6 @@
         }
       }
     },
-    "Відстань між літерами": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letter spacing"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Расстояние между буквами"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відстань між літерами"
-          }
-        }
-      }
-    },
     "Відступ між цифрами": {
       "extractionState": "manual",
       "localizations": {
@@ -3562,29 +3516,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Година, одиниці"
-          }
-        }
-      }
-    },
-    "Далі обираєте, які дані показує елемент: час, дата, кроки, пульс, погода, батарея та інші. Елемент з'являється по центру — його можна перетягнути й налаштувати.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next, choose what data the element shows: time, date, steps, heart rate, weather, battery and more. The element appears in the center — you can drag and adjust it."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Далее выберите, какие данные показывает элемент: время, дата, шаги, пульс, погода, батарея и другие. Элемент появляется по центру — его можно перетащить и настроить."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Далі обираєте, які дані показує елемент: час, дата, кроки, пульс, погода, батарея та інші. Елемент з'являється по центру — його можна перетягнути й налаштувати."
           }
         }
       }
@@ -3911,52 +3842,6 @@
         }
       }
     },
-    "Замінити зображення": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Replace image"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заменить изображение"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замінити зображення"
-          }
-        }
-      }
-    },
-    "Замінити кадри недоступно": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Replacing frames is not available"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замена кадров недоступна"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замінити кадри недоступно"
-          }
-        }
-      }
-    },
     "Зараз: «Завжди на екрані»": {
       "extractionState": "manual",
       "localizations": {
@@ -4229,52 +4114,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кисень (SpO₂)"
-          }
-        }
-      }
-    },
-    "Колір готової картинки не змінюється. Якщо увімкнути перефарбовування, браслет зможе підставити колір теми.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The color of a ready-made picture doesn't change. With recoloring on, the band can apply the theme color."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цвет готовой картинки не меняется. Если включить перекрашивание, браслет сможет подставить цвет темы."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колір готової картинки не змінюється. Якщо увімкнути перефарбовування, браслет зможе підставити колір теми."
-          }
-        }
-      }
-    },
-    "Колір тексту": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Text color"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цвет текста"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колір тексту"
           }
         }
       }
@@ -4624,29 +4463,6 @@
         }
       }
     },
-    "Назва циферблата": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch face name"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Название циферблата"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Назва циферблата"
-          }
-        }
-      }
-    },
     "Назва": {
       "extractionState": "manual",
       "localizations": {
@@ -4689,29 +4505,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Найбільше значення"
-          }
-        }
-      }
-    },
-    "Намалювати цифри шрифтом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Draw digits with a font"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нарисовать цифры шрифтом"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Намалювати цифри шрифтом"
           }
         }
       }
@@ -4804,29 +4597,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Округлий"
-          }
-        }
-      }
-    },
-    "Перефарбовування браслетом": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recolor on the band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перекрашивание браслетом"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перефарбовування браслетом"
           }
         }
       }
@@ -5567,29 +5337,6 @@
         }
       }
     },
-    "Текст малює сам браслет своїм шрифтом, тож на полотні він виглядає приблизно.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band draws text with its own font, so on the canvas it looks approximate."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст рисует сам браслет своим шрифтом, поэтому на холсте он выглядит приблизительно."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст малює сам браслет своїм шрифтом, тож на полотні він виглядає приблизно."
-          }
-        }
-      }
-    },
     "Текст": {
       "extractionState": "manual",
       "localizations": {
@@ -5981,29 +5728,6 @@
         }
       }
     },
-    "Ширина поля": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Box width"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ширина поля"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ширина поля"
-          }
-        }
-      }
-    },
     "Шкали": {
       "extractionState": "manual",
       "localizations": {
@@ -6023,29 +5747,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шкали"
-          }
-        }
-      }
-    },
-    "Шрифт браслета": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Band font"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Шрифт браслета"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Шрифт браслета"
           }
         }
       }
@@ -6165,29 +5866,6 @@
         }
       }
     },
-    "куди росте число": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "where the number grows"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "куда растёт число"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "куди росте число"
-          }
-        }
-      }
-    },
     "обертання": {
       "extractionState": "manual",
       "localizations": {
@@ -6207,75 +5885,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "обертання"
-          }
-        }
-      }
-    },
-    "перетворюється на картинки цифр": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "turned into digit pictures"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "превращается в картинки цифр"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "перетворюється на картинки цифр"
-          }
-        }
-      }
-    },
-    "рядок із даних": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "line of data"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "строка из данных"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "рядок із даних"
-          }
-        }
-      }
-    },
-    "у готових циферблатах": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in ready-made faces"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "в готовых циферблатах"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "у готових циферблатах"
           }
         }
       }
@@ -6602,29 +6211,6 @@
         }
       }
     },
-    "Циферблат готовий. Підключіть пристрій і натисніть «Встановити»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The watch face is ready. Connect the device and tap “Install”"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат готов. Подключите устройство и нажмите «Установить»"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Циферблат готовий. Підключіть пристрій і натисніть «Встановити»"
-          }
-        }
-      }
-    },
     "Текст малює сам браслет своїм шрифтом — кольорових варіантів для нього немає.": {
       "extractionState": "manual",
       "localizations": {
@@ -6644,29 +6230,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Текст малює сам браслет своїм шрифтом — кольорових варіантів для нього немає."
-          }
-        }
-      }
-    },
-    "Віджети показують дані застосунків — кольорових варіантів для них немає.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Widgets show app data — there are no color variants for them."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виджеты показывают данные приложений — цветовых вариантов для них нет."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Віджети показують дані застосунків — кольорових варіантів для них немає."
           }
         }
       }
@@ -6763,29 +6326,6 @@
         }
       }
     },
-    "Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To make the element change color with the face, add colors on the “Watch face” panel — tap an empty spot on the canvas."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы элемент менял цвет вместе с циферблатом, добавьте цвета на панели «Циферблат» — коснитесь пустого места на холсте."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щоб елемент змінював колір разом із циферблатом, додайте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні."
-          }
-        }
-      }
-    },
     "Кольори циферблата": {
       "extractionState": "manual",
       "localizations": {
@@ -6874,52 +6414,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Основний колір"
-          }
-        }
-      }
-    },
-    "Основний — вигляд, як намальовано. Цей колір показується у виборі кольору на браслеті.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Main is the look as drawn. This color is shown in the color picker on the band."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Основной — вид, как нарисовано. Этот цвет показывается в выборе цвета на браслете."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Основний — вигляд, як намальовано. Цей колір показується у виборі кольору на браслеті."
-          }
-        }
-      }
-    },
-    "Колір варіанта": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Variant color"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цвет варианта"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колір варіанта"
           }
         }
       }
@@ -7775,98 +7269,6 @@
         }
       }
     },
-    "Довгий текст": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Long text"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Длинный текст"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Довгий текст"
-          }
-        }
-      }
-    },
-    "Дугою": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Along an arc"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дугой"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дугою"
-          }
-        }
-      }
-    },
-    "Дуже жирний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heavy"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очень жирный"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дуже жирний"
-          }
-        }
-      }
-    },
-    "Дуже легкий": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Extra light"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очень лёгкий"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дуже легкий"
-          }
-        }
-      }
-    },
     "Екран": {
       "extractionState": "manual",
       "localizations": {
@@ -7909,29 +7311,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Екрани"
-          }
-        }
-      }
-    },
-    "Жирний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bold"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Жирный"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Жирний"
           }
         }
       }
@@ -8047,29 +7426,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замінити картинки"
-          }
-        }
-      }
-    },
-    "Заокруглені кінці": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rounded ends"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скруглённые концы"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заокруглені кінці"
           }
         }
       }
@@ -8373,29 +7729,6 @@
         }
       }
     },
-    "Легкий": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Light"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лёгкий"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Легкий"
-          }
-        }
-      }
-    },
     "Ліхтарик": {
       "extractionState": "manual",
       "localizations": {
@@ -8438,29 +7771,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Музика"
-          }
-        }
-      }
-    },
-    "Між рядками": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Line spacing"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Между строками"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Між рядками"
           }
         }
       }
@@ -8511,75 +7821,6 @@
         }
       }
     },
-    "Написи в редакторі — шрифтом MiSans © Xiaomi.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editor text uses the MiSans font © Xiaomi."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Надписи в редакторе — шрифтом MiSans © Xiaomi."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Написи в редакторі — шрифтом MiSans © Xiaomi."
-          }
-        }
-      }
-    },
-    "Напівжирний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Demibold"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Полужирный"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напівжирний"
-          }
-        }
-      }
-    },
-    "Напівжирний+": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semibold"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Полужирный+"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напівжирний+"
-          }
-        }
-      }
-    },
     "Натискання відкриває": {
       "extractionState": "manual",
       "localizations": {
@@ -8626,29 +7867,6 @@
         }
       }
     },
-    "Нормальний": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Regular"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нормальный"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нормальний"
-          }
-        }
-      }
-    },
     "Нічого": {
       "extractionState": "manual",
       "localizations": {
@@ -8668,29 +7886,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нічого"
-          }
-        }
-      }
-    },
-    "Обрізати": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clip"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обрезать"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обрізати"
           }
         }
       }
@@ -8810,29 +8005,6 @@
         }
       }
     },
-    "Переносити": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wrap"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переносить"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переносити"
-          }
-        }
-      }
-    },
     "Платні": {
       "extractionState": "manual",
       "localizations": {
@@ -8852,52 +8024,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Платні"
-          }
-        }
-      }
-    },
-    "По колу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loop"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "По кругу"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "По колу"
-          }
-        }
-      }
-    },
-    "Поворот, °": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rotation, °"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поворот, °"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поворот, °"
           }
         }
       }
@@ -9132,52 +8258,6 @@
         }
       }
     },
-    "Прокручувати": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scroll"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прокручивать"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прокручувати"
-          }
-        }
-      }
-    },
-    "Радіус дуги": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arc radius"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Радиус дуги"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Радіус дуги"
-          }
-        }
-      }
-    },
     "Розмір файла": {
       "extractionState": "manual",
       "localizations": {
@@ -9197,52 +8277,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Розмір файла"
-          }
-        }
-      }
-    },
-    "Розміщення": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Layout"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Размещение"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Розміщення"
-          }
-        }
-      }
-    },
-    "Рядком": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In a line"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Строкой"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Рядком"
           }
         }
       }
@@ -9312,29 +8346,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Секундомір"
-          }
-        }
-      }
-    },
-    "Середній": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medium"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Средний"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Середній"
           }
         }
       }
@@ -9542,75 +8553,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Так циферблат зветься на браслеті й у списках. %d з %d байтів."
-          }
-        }
-      }
-    },
-    "Текст відносно дуги": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Text relative to the arc"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст относительно дуги"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст відносно дуги"
-          }
-        }
-      }
-    },
-    "Текст малює сам браслет своїм шрифтом MiSans; на полотні — той самий шрифт (кирилиця — системним шрифтом).": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The band draws text with its own MiSans font; the canvas uses the same font (Cyrillic in the system font)."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст рисует сам браслет своим шрифтом MiSans; на холсте — тот же шрифт (кириллица — системным шрифтом)."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст малює сам браслет своїм шрифтом MiSans; на полотні — той самий шрифт (кирилиця — системним шрифтом)."
-          }
-        }
-      }
-    },
-    "Тонкий": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thin"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тонкий"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тонкий"
           }
         }
       }
@@ -9868,29 +8810,6 @@
         }
       }
     },
-    "картинка за значенням": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "picture by value"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "картинка по значению"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "картинка за значенням"
-          }
-        }
-      }
-    },
     "км": {
       "extractionState": "manual",
       "localizations": {
@@ -10029,29 +8948,6 @@
         }
       }
     },
-    "не перевірено на браслеті": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "not tested on the band"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "не проверено на браслете"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "не перевірено на браслеті"
-          }
-        }
-      }
-    },
     "Напис": {
       "extractionState": "manual",
       "localizations": {
@@ -10140,29 +9036,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Текст напису"
-          }
-        }
-      }
-    },
-    "напис стає картинкою": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "the label becomes an image"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "надпись становится картинкой"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "напис стає картинкою"
           }
         }
       }
@@ -10351,29 +9224,6 @@
         }
       }
     },
-    "Градієнт згори донизу": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Top-to-bottom gradient"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Градиент сверху вниз"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Градієнт згори донизу"
-          }
-        }
-      }
-    },
     "До всіх чисел": {
       "extractionState": "manual",
       "localizations": {
@@ -10462,52 +9312,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дуга заповнюється за значенням. Кінці можна тягнути на полотні."
-          }
-        }
-      }
-    },
-    "З Файлів": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "From Files"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Из Файлов"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "З Файлів"
-          }
-        }
-      }
-    },
-    "З Фото": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "From Photos"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Из Фото"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "З Фото"
           }
         }
       }
@@ -10807,29 +9611,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Коло"
-          }
-        }
-      }
-    },
-    "Колір обвідки": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Outline colour"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цвет обводки"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колір обвідки"
           }
         }
       }
@@ -11340,29 +10121,6 @@
         }
       }
     },
-    "Обвідка, px": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Outline, px"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обводка, px"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обвідка, px"
-          }
-        }
-      }
-    },
     "Палітра": {
       "extractionState": "manual",
       "localizations": {
@@ -11635,52 +10393,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прямі"
-          }
-        }
-      }
-    },
-    "Пів кола": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Half"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Полукруг"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пів кола"
-          }
-        }
-      }
-    },
-    "Підкова": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Horseshoe"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подкова"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Підкова"
           }
         }
       }
@@ -12053,29 +10765,6 @@
         }
       }
     },
-    "Чверть": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quarter"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Четверть"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чверть"
-          }
-        }
-      }
-    },
     "Ширина літер, %": {
       "extractionState": "manual",
       "localizations": {
@@ -12394,75 +11083,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Варіанти намалюються, щойно ви додасте кольори на панелі «Циферблат» — торкніться порожнього місця на полотні."
-          }
-        }
-      }
-    },
-    "Як створити картинки?": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How do you want to make the images?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Как создать картинки?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Як створити картинки?"
-          }
-        }
-      }
-    },
-    "Намалювати шрифтом (дні тижня, місяці, числа)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Draw with a font (weekdays, months, numbers)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нарисовать шрифтом (дни недели, месяцы, числа)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Намалювати шрифтом (дні тижня, місяці, числа)"
-          }
-        }
-      }
-    },
-    "Вибрати фото": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pick photos"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбрать фото"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вибрати фото"
           }
         }
       }
@@ -12835,52 +11455,6 @@
         }
       }
     },
-    "Напис — це картинка. Замініть її в блоці «Зображення» нижче.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This label is an image. Replace it in the Images block below."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Надпись — это картинка. Замените её в блоке «Изображения» ниже."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напис — це картинка. Замініть її в блоці «Зображення» нижче."
-          }
-        }
-      }
-    },
-    "Після вибору даних виберіть 10 картинок цифр 0–9 у потрібному порядку. Кожну потім можна замінити в блоці «Зображення».": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "After choosing the data, pick 10 digit images 0–9 in order. Replace any of them later in the Images block."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "После выбора данных выберите 10 картинок цифр 0–9 по порядку. Каждую потом можно заменить в блоке «Изображения»."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Після вибору даних виберіть 10 картинок цифр 0–9 у потрібному порядку. Кожну потім можна замінити в блоці «Зображення»."
-          }
-        }
-      }
-    },
     "Колір %d": {
       "extractionState": "manual",
       "localizations": {
@@ -12973,324 +11547,301 @@
         }
       }
     },
-    "Число росте" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Number grows"
+    "Число росте": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number grows"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Число растёт"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Число растёт"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Число росте"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Число росте"
           }
         }
       }
     },
-    "праворуч" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "right"
+    "праворуч": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "right"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "вправо"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "вправо"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "праворуч"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "праворуч"
           }
         }
       }
     },
-    "від центру" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "from center"
+    "від центру": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from center"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "от центра"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "от центра"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "від центру"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "від центру"
           }
         }
       }
     },
-    "ліворуч" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "left"
+    "ліворуч": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "left"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "влево"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "влево"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ліворуч"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ліворуч"
           }
         }
       }
     },
-    "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15»." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The red mark is the X point. The dashed box is the digit added when “5” becomes “15”."
+    "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The red mark is the X point. The dashed box is the digit added when “5” becomes “15”."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Красная черта — точка X. Пунктир — цифра, которая добавляется, когда «5» становится «15»."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Красная черта — точка X. Пунктир — цифра, которая добавляется, когда «5» становится «15»."
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15»."
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15»."
           }
         }
       }
     },
-    "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No effect: with leading zeros there are always %d digits, so the number doesn't grow. Turn off “Leading zeros” to use it."
+    "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No effect: with leading zeros there are always %d digits, so the number doesn't grow. Turn off “Leading zeros” to use it."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не действует: с нулями впереди цифр всегда %d, число не растёт. Выключите «Нули впереди», чтобы это имело смысл."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не действует: с нулями впереди цифр всегда %d, число не растёт. Выключите «Нули впереди», чтобы это имело смысл."
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс."
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не діє: з нулями попереду цифр завжди %d, число не росте. Вимкніть «Нулі попереду», щоб це мало сенс."
           }
         }
       }
     },
-    "Усе" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
+    "Усе": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всё"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Усе"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усе"
           }
         }
       }
     },
-    "Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The gap stays in place (at the top by default). Length snaps to 90/180/270/360°."
+    "Розріз дуги": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arc gap"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Разрез остаётся на месте (сначала — вверху). Длина прилипает к 90/180/270/360°."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрез дуги"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Розріз лишається на місці (спочатку — угорі). Довжина прилипає до 90/180/270/360°."
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розріз дуги"
           }
         }
       }
     },
-    "Розріз дуги" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arc gap"
+    "Напрямок заповнення": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill direction"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Разрез дуги"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Направление заполнения"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Розріз дуги"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напрямок заповнення"
           }
         }
       }
     },
-    "Напрямок заповнення" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fill direction"
+    "Усі картинки циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All face images"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Направление заполнения"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все картинки циферблата"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Напрямок заповнення"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі картинки циферблата"
           }
         }
       }
     },
-    "Усі картинки циферблата" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All face images"
+    "Картинки шару «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images of “%@”"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все картинки циферблата"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки слоя «%@»"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Усі картинки циферблата"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки шару «%@»"
           }
         }
       }
     },
-    "Картинки шару «%@»" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Images of “%@”"
+    "Лише цього шару": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This layer only"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Картинки слоя «%@»"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только этого слоя"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Картинки шару «%@»"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лише цього шару"
           }
         }
       }
     },
-    "Лише цього шару" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This layer only"
+    "Показати всі": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Только этого слоя"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать все"
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лише цього шару"
-          }
-        }
-      }
-    },
-    "Показати всі" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show all"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показать все"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показати всі"
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати всі"
           }
         }
       }
@@ -13682,29 +12233,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Реальні"
-          }
-        }
-      }
-    },
-    "Лише контур": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Outline only"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Только контур"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лише контур"
           }
         }
       }
@@ -14142,29 +12670,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стани"
-          }
-        }
-      }
-    },
-    "картинка для кожного значення": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "an image for each value"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "картинка для каждого значения"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "картинка для кожного значення"
           }
         }
       }
@@ -14878,29 +13383,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Елементи віджета не можна перефарбувати — вони без картинок або багатоколірні."
-          }
-        }
-      }
-    },
-    "0 — будь-яка кількість цифр: число росте за потреби (без нулів попереду).": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "0 — any number of digits: the number grows as needed (no leading zeros)."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "0 — любое количество цифр: число растёт по мере надобности (без нулей впереди)."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "0 — будь-яка кількість цифр: число росте за потреби (без нулів попереду)."
           }
         }
       }

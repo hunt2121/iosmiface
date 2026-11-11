@@ -104,10 +104,6 @@ struct ByteWriter {
     mutating func append(_ b: [UInt8]) { bytes.append(contentsOf: b) }
 }
 
-extension String {
-    var utf8Bytes: [UInt8] { Array(utf8) }
-}
-
 /// Байти UTF-8 -> String без втрат для коректного UTF-8 (для повідомлень).
 func str(_ b: [UInt8]) -> String { String(decoding: b, as: UTF8.self) }
 

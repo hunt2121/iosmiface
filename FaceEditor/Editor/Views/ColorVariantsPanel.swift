@@ -88,46 +88,6 @@ struct ColorVariantsPanel: View {
         .onChange(of: colors.count) { n in if variant >= n { variant = max(0, n - 1) } }
     }
 
-    private var swatches: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(Array(colors.enumerated()), id: \.offset) { i, c in
-                    Button { variant = i } label: {
-                        VStack(spacing: 4) {
-                            Circle().fill(Color(AssetFactory.color(c)))
-                                .frame(width: 34, height: 34)
-                                .overlay(Circle().stroke(Color.primary.opacity(0.15), lineWidth: 1))
-                                .padding(3)
-                                .overlay(Circle().stroke(i == variant ? Color.accentColor : Color.clear, lineWidth: 2.5))
-                            Text(i == 0 ? loc("Основний") : "\(i)")
-                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text(i == 0 ? loc("Основний колір") : c))
-                }
-                if colors.count < ColorVariants.maxColors {
-                    Button {
-                        let next = Self.palette.first { !colors.contains($0) } ?? "#FFFFFF"
-                        let list = colors + [next]
-                        project.edit { ColorVariants.setColors($0, list) }
-                        variant = list.count - 1
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: "plus").font(.system(size: 15, weight: .bold))
-                                .frame(width: 40, height: 40)
-                                .background(Circle().fill(Color.editorTile))
-                            Text("Додати").font(.caption2).foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Додати колір"))
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
     private func setColor(_ i: Int, _ hex: String) {
         var list = colors
         guard list.indices.contains(i), !list.contains(ColorVariants.normalize(hex)) else { return }

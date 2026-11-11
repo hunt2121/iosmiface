@@ -231,9 +231,6 @@ struct InspectorView: View {
         project.edit { ElementFactory.regenerate($0, element: name, gen: gg) }
     }
 
-    private static let arcShapes: [(String, String, Double, Double)] = [
-        ("circle", "Коло", 0, 360), ("horseshoe", "Підкова", 220, 280), ("half", "Пів кола", 270, 180), ("quarter", "Чверть", 315, 90)]
-
     private static func norm(_ a: Double) -> Double { let m = a.truncatingRemainder(dividingBy: 360); return m < 0 ? m + 360 : m }
 
     @ViewBuilder private func arcLook(_ r: XNode, _ g: Generator) -> some View {
@@ -449,27 +446,6 @@ struct PositionPane: View {
 }
 
 // MARK: - Дрібні елементи
-
-struct Row: View {
-    let title: String
-    let value: String
-    var action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(loc(title)).font(.caption).foregroundStyle(.secondary)
-                    Text(value).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 14).frame(height: 48)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 /// Повзунок, що зберігає значення лише після відпускання (одна зміна в історії).
 struct CommitSlider: View {

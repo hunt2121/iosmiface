@@ -60,12 +60,6 @@ enum ImageSets {
         return p.resources.elements.filter { $0 !== arr && $0.string("ref") == key }
     }
 
-    /// Скільки місць показує набір: кожен шар кожного елемента на кожному екрані
-    static func uses(_ p: FaceProject, _ arr: XNode) -> Int {
-        let ix = index(p)
-        return usersFast(p, arr).reduce(0) { $0 + max(1, ix.layouts[ObjectIdentifier($1)]?.count ?? 0) }
-    }
-
     /// Набір підходить елементу: для числа — 10 цифр, для інших — стільки ж картинок, скільки зараз
     static func fits(_ p: FaceProject, _ res: XNode, _ arr: XNode) -> Bool {
         if res.tag == "DataItemImageNumber" { return count(arr) >= 10 }

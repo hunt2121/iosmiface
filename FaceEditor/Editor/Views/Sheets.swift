@@ -473,32 +473,6 @@ struct SourceButton: View {
 
 // MARK: - Заміна картинки
 
-struct ImageReplaceRow: View {
-    @ObservedObject var project: FaceProject
-    let res: XNode
-    @State private var item: PhotosPickerItem?
-
-    var body: some View {
-        PhotosPicker(selection: $item, matching: .images) {
-            Label(loc(res.tag == "ImageArray" ? "Замінити кадри недоступно" : "Замінити зображення"), systemImage: "photo")
-                .font(.subheadline.weight(.semibold))
-        }
-        .disabled(res.tag != "Image")
-        .onChange(of: item) { it in
-            guard let it else { return }
-            Task { @MainActor in
-                if let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) {
-                    let rgba = AssetFactory.fromUIImage(img, maxSide: CGFloat(max(project.meta.device.width, project.meta.device.height)))
-                    project.edit {
-                        ElementFactory.replaceImage($0, res, rgba)
-                        ColorVariants.refresh($0, element: res)
-                    }
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Шари
 
 /// Підпис шару в списку: джерело даних, текст напису або ім'я ресурсу

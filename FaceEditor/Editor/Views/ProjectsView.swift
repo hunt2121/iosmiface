@@ -241,14 +241,6 @@ struct ShareItem: Identifiable {
     }
 }
 
-struct ActivityView: UIViewControllerRepresentable {
-    let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
-}
-
 struct NewFaceSheet: View {
     var onCreate: (String) -> Void
     @State private var name = loc("Мій циферблат")

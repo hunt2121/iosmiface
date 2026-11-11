@@ -304,11 +304,6 @@ enum AssetFactory {
         }
     }
 
-    private static func onCircle(_ m: CGFloat, _ r: CGFloat, _ deg: Double) -> CGPoint {
-        let t = deg * .pi / 180
-        return CGPoint(x: m + r * CGFloat(sin(t)), y: m - r * CGFloat(cos(t)))
-    }
-
     /// Дуга від start на range градусів (0° — угорі, за годинниковою; від'ємна — проти).
     /// Розмір картинки — як у повного кільця, центр посередині (вісь не залежить від кута).
     static func arcSegment(radius: Double, width: Double, color c: String, start: Double, range: Double, round: Bool) -> RGBAImage {
