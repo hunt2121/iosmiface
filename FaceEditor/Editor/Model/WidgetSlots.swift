@@ -132,6 +132,9 @@ enum WidgetSlots {
                 box = box.union(b)
             }
             guard !box.isNull, let base = decode(fg.first) else { continue }
+            // запас під крапку на кінці заповнення лишається
+            let m = CGFloat(ElementFactory.arcMargin(Double(res.int("barWidth"))))
+            box = box.insetBy(dx: -m, dy: -m).intersection(CGRect(x: 0, y: 0, width: base.width, height: base.height))
             let cx = Int(box.minX), cy = Int(box.minY)
             if cx == 0, cy == 0, Int(box.width) == base.width, Int(box.height) == base.height { continue }
             for n in fg + bg {

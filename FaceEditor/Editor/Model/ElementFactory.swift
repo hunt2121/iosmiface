@@ -197,15 +197,28 @@ enum ElementFactory {
             if x < minX { minX = x }; if x > maxX { maxX = x }; if y < minY { minY = y }; if y > maxY { maxY = y }
         } }
         guard maxX >= 0 else { return nil }
-        return (CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1), full.w)
+        // запас довкола шкали: крапка на кінці заповнення (у 1,5 раза ширша за шкалу) не обрізається
+        let m = arcMargin(g.width)
+        return (CGRect(x: minX - m, y: minY - m, width: maxX - minX + 1 + 2 * m, height: maxY - minY + 1 + 2 * m), full.w)
     }
+
+    /// Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення
+    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 0.25)) + 1 }
 
     static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
         let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
         guard let (b, _) = arcBox(g) else { return full }
         let x0 = Int(b.minX), y0 = Int(b.minY), w = Int(b.width), h = Int(b.height)
         var px = [UInt8](repeating: 0, count: w * h * 4)
-        for y in 0..<h { for i in 0..<(w * 4) { px[y * w * 4 + i] = full.px[((y0 + y) * full.w + x0) * 4 + i] } }
+        for y in 0..<h {
+            let sy = y0 + y
+            guard sy >= 0, sy < full.h else { continue }
+            for x in 0..<w {
+                let sx = x0 + x
+                guard sx >= 0, sx < full.w else { continue }
+                for k in 0..<4 { px[(y * w + x) * 4 + k] = full.px[(sy * full.w + sx) * 4 + k] }
+            }
+        }
         return RGBAImage(w: w, h: h, px: px)
     }
 
