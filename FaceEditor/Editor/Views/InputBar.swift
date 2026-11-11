@@ -37,6 +37,9 @@ struct InputBarView: View {
 
     var body: some View {
         if let r = model.request {
+          ZStack(alignment: .bottom) {
+            // поки відкрите поле, дотики повз нього не проходять до елементів під ним: дотик — записати й закрити
+            Color.black.opacity(0.001).ignoresSafeArea().onTapGesture { finish() }
             // як рядок повідомлення в месенджерах: скляна капсула з полем і кругла скляна кнопка ✓ над клавіатурою
             HStack(spacing: 10) {
                 // поточне значення — сірою підказкою; що вводиш, те й замінює його
@@ -59,6 +62,10 @@ struct InputBarView: View {
                 .accessibilityLabel(Text(loc("Готово")))
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
+            // проміжки між полем і ✓ теж нічого не пропускають донизу
+            .contentShape(Rectangle())
+            .onTapGesture {}
+          }
             .id(r.id)
             .onAppear { text = "" }
             // фокус — коли поле вже на екрані (одразу після появи iOS іноді його ігнорує)
@@ -72,8 +79,10 @@ struct InputBarView: View {
 
     private func finish() {
         guard let r = model.request else { return }
-        model.request = nil
         focused = false
+        // клавіатуру закриваємо явно: якщо прибрати поле, поки воно у фокусі, iOS інколи лишає її відкритою
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        model.request = nil
         let t = text
         // нічого не ввели — значення лишається як було
         guard !t.isEmpty else { return }
