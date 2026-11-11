@@ -204,16 +204,27 @@ namespace BandFace.Creator
             for (int y = 0; y < f.H; y++)
                 for (int x = 0; x < f.W; x++)
                     if (f.Px[(y * f.W + x) * 4 + 3] > 12) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
-            full = f.W; x0 = minX; y0 = minY; w = maxX - minX + 1; h = maxY - minY + 1;
+            // запас довкола шкали: крапка на кінці заповнення (у 1,5 раза ширша за шкалу) не обрізається
+            int m = ArcMargin(g.Width);
+            full = f.W; x0 = minX - m; y0 = minY - m; w = maxX - minX + 1 + 2 * m; h = maxY - minY + 1 + 2 * m;
             return maxX >= 0;
         }
+
+        /// <summary>Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення</summary>
+        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 0.25) + 1;
 
         public static RgbaImage ArcImage(Generator g, string color)
         {
             var f = AssetFactory.ArcSegment(g.Radius, g.Width, color, g.Start, g.Range, g.Round);
             if (!ArcBox(g, out int x0, out int y0, out int w, out int h, out _)) return f;
             var px = new byte[w * h * 4];
-            for (int y = 0; y < h; y++) Buffer.BlockCopy(f.Px, ((y0 + y) * f.W + x0) * 4, px, y * w * 4, w * 4);
+            for (int y = 0; y < h; y++)
+            {
+                int sy = y0 + y;
+                if (sy < 0 || sy >= f.H) continue;
+                int sx0 = Math.Max(0, x0), sx1 = Math.Min(f.W, x0 + w);
+                if (sx1 > sx0) Buffer.BlockCopy(f.Px, (sy * f.W + sx0) * 4, px, (y * w + (sx0 - x0)) * 4, (sx1 - sx0) * 4);
+            }
             return new RgbaImage(w, h, px);
         }
 
