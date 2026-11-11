@@ -3,6 +3,7 @@
 // одразу над клавіатурою. Без підказок і автовиправлення.
 
 import SwiftUI
+import UIKit
 
 final class InputBarModel: ObservableObject {
     struct Request: Identifiable {
