@@ -197,15 +197,8 @@ enum ElementFactory {
             if x < minX { minX = x }; if x > maxX { maxX = x }; if y < minY { minY = y }; if y > maxY { maxY = y }
         } }
         guard maxX >= 0 else { return nil }
-        // запас довкола шкали: крапка на кінці заповнення (у 1,5 раза ширша за шкалу) не обрізається
-        let m = arcMargin(g.width)
-        return (CGRect(x: minX - m, y: minY - m, width: maxX - minX + 1 + 2 * m, height: maxY - minY + 1 + 2 * m), full.w)
+        return (CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1), full.w)
     }
-
-    /// Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення.
-    /// Браслет обрізає крапку по картинці дуги; запас — радіус крапки (0,75 ширини шкали) + 1 px.
-    /// (Більший запас нічого не змінив — решту обрізання дає сама картинка крапки, див. setIndicator)
-    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 0.75)) + 1 }
 
     static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
         let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
