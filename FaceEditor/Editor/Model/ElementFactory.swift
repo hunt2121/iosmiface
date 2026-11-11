@@ -202,8 +202,10 @@ enum ElementFactory {
         return (CGRect(x: minX - m, y: minY - m, width: maxX - minX + 1 + 2 * m, height: maxY - minY + 1 + 2 * m), full.w)
     }
 
-    /// Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення
-    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 0.25)) + 1 }
+    /// Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення.
+    /// Браслет обрізає крапку по картинці дуги; запасу в половину виступу крапки не вистачило (перевірено на браслеті),
+    /// тож запас — повний діаметр крапки (1,5 ширини шкали)
+    static func arcMargin(_ width: Double) -> Int { Int(ceil(width * 1.5)) + 1 }
 
     static func arcImage(_ g: Generator, _ c: String) -> RGBAImage {
         let full = AssetFactory.arcSegment(radius: g.radius, width: g.width, color: c, start: g.start, range: g.range, round: g.round)
