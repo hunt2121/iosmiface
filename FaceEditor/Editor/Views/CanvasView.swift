@@ -98,8 +98,8 @@ struct CanvasView: View {
                 }
                 if cache == nil || handle != nil { handlesOverlay(scale: scale) }
                 if cache == nil { sizeOverlay(scale: scale, W: W, H: H) }
-                if guideV { Rectangle().fill(Color.pink).frame(width: 1, height: size.height).offset(x: size.width / 2) }
-                if guideH { Rectangle().fill(Color.pink).frame(width: size.width, height: 1).offset(y: size.height / 2) }
+                if guideV { guideLine(vertical: true, at: size.width / 2, length: size.height) }
+                if guideH { guideLine(vertical: false, at: size.height / 2, length: size.width) }
             }
             .frame(width: size.width, height: size.height)
             .faceCapsule()
@@ -236,8 +236,8 @@ struct CanvasView: View {
             ZStack(alignment: .topLeading) {
                 if sizeHandle != nil {
                     Rectangle().fill(Color.blue.opacity(0.07)).frame(width: r.width, height: r.height).offset(x: r.minX, y: r.minY)
-                    ForEach(Array(sizeGuideX.enumerated()), id: \.offset) { _, x in Rectangle().fill(Color.pink).frame(width: 1, height: H * scale).offset(x: x * scale) }
-                    ForEach(Array(sizeGuideY.enumerated()), id: \.offset) { _, y in Rectangle().fill(Color.pink).frame(width: W * scale, height: 1).offset(y: y * scale) }
+                    ForEach(Array(sizeGuideX.enumerated()), id: \.offset) { _, x in guideLine(vertical: true, at: x * scale, length: H * scale) }
+                    ForEach(Array(sizeGuideY.enumerated()), id: \.offset) { _, y in guideLine(vertical: false, at: y * scale, length: W * scale) }
                     tag("\(Int(r0.width)) × \(Int(r0.height))", at: CGPoint(x: r.midX - 30, y: max(20, r.minY)), snapped: !sizeGuideX.isEmpty || !sizeGuideY.isEmpty)
                 }
                 ForEach(Array(Self.sizePoints(r0).enumerated()), id: \.offset) { _, np in
@@ -411,6 +411,21 @@ struct CanvasView: View {
     private func dot(_ p: CGPoint, _ size: CGFloat) -> some View {
         Circle().fill(Color.white).overlay(Circle().stroke(Color.blue, lineWidth: 2))
             .frame(width: size, height: size).position(p)
+    }
+
+    /// Лінія прив'язки: 1 pt рожевого рівно на пікселях екрана з тонкою темною облямівкою — однакова на будь-якому тлі
+    private func guideLine(vertical: Bool, at pos: CGFloat, length: CGFloat) -> some View {
+        // початок лінії — рівно на межі фізичних пікселів; ширина 1 pt — ціле число пікселів
+        let p = (pos * displayScale).rounded() / max(1, displayScale)
+        return ZStack(alignment: .topLeading) {
+            Rectangle().fill(Color.black.opacity(0.45))
+                .frame(width: vertical ? 3 : length, height: vertical ? length : 3)
+                .offset(x: vertical ? p - 1 : 0, y: vertical ? 0 : p - 1)
+            Rectangle().fill(Color.pink)
+                .frame(width: vertical ? 1 : length, height: vertical ? length : 1)
+                .offset(x: vertical ? p : 0, y: vertical ? 0 : p)
+        }
+        .allowsHitTesting(false)
     }
 
     private func tag(_ text: String, at p: CGPoint, snapped: Bool) -> some View {
