@@ -51,6 +51,7 @@ namespace BandFace
             RefreshBand();
             RefreshFace();
             RefreshKeyState();
+            ApplyHomeLayout();
             _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
@@ -274,6 +275,7 @@ namespace BandFace
             PagesHost.Visibility = editor ? Visibility.Collapsed : Visibility.Visible;
             EditorTab.Visibility = editor ? Visibility.Visible : Visibility.Collapsed;
             if (editor) _ = RefreshActiveFaceAsync(false);
+            if (NavFaces.IsChecked == true && _home == "b") _ = RefreshActiveFaceAsync(false);
             if (NavFaces.IsChecked == true) ShowPage(PageFaces);
             if (NavSettings.IsChecked == true) ShowPage(PageSettings);
             CloseFlyout();
@@ -365,6 +367,7 @@ namespace BandFace
             var apps = ForwardKinds();
             AppWa.IsChecked = apps.Contains("wa"); AppTg.IsChecked = apps.Contains("tg"); AppOther.IsChecked = apps.Contains("other");
             RefreshForward(null);
+            FillHomeSetting();
             _loadingSettings = false;
         }
 
@@ -412,6 +415,7 @@ namespace BandFace
             ScanBtn.Content = S.Get(_scanning ? "stopScan" : "scan");
             Spin(_connecting);
             RefreshButtons();
+            RefreshHomeBand(c);
         }
 
         /// <summary>Індикатор підключення: дуга, що обертається.</summary>
@@ -499,6 +503,7 @@ namespace BandFace
                 _connecting = false;
                 RefreshBand();
                 await ActivateAsync();
+                if (_home == "b") _ = RefreshActiveFaceAsync(true);
             }
             catch (Exception ex)
             {
@@ -546,7 +551,12 @@ namespace BandFace
 
         bool LoadFaceFile(string path)
         {
-            try { return LoadFace(File.ReadAllBytes(path), Path.GetFileName(path)); }
+            try
+            {
+                bool ok = LoadFace(File.ReadAllBytes(path), Path.GetFileName(path));
+                if (ok) { AddRecent(path); RefreshShelves(); }
+                return ok;
+            }
             catch (Exception) { return LoadFace(null, Path.GetFileName(path)); }
         }
 
@@ -598,10 +608,11 @@ namespace BandFace
         void ShowPreview(byte[] data)
         {
             double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
-            var shots = FacePreview.Render(data, Math.Max(328, 236 * dpi * 1.5));
+            var shots = FacePreview.Render(data, Math.Max(328, CapsuleInner.Height * dpi * 1.5));
             if (shots != null && shots.Frames.Count > 0)
             {
                 PreviewImage.Source = shots.Frames[0];
+                RememberPreview(_face?.Id, shots.Frames[0]);
                 if (shots.Frames.Count > 1)
                 {
                     int i = 0;
@@ -714,6 +725,7 @@ namespace BandFace
             {
                 ProgressPanel.Visibility = Visibility.Collapsed;
                 _busy = false; RefreshBand();
+                if (_home == "b") _ = RefreshActiveFaceAsync(true);
             }
         }
 
@@ -738,6 +750,8 @@ namespace BandFace
                 try { await session.CloseAsync(); } catch (Exception) { }
                 _lastFaceSync = DateTime.Now;
                 EditorTab.SetActiveFace(active);
+                _bandFaces = list;
+                RefreshShelves();
             }
             catch (Exception ex) { AddLog("faces sync: " + ex.Message); }
             finally { try { session.Dispose(); } catch (Exception) { } _session = null; _bandGate.Release(); }

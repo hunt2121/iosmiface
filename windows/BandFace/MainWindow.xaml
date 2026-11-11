@@ -84,7 +84,20 @@
         <!-- Циферблати -->
         <ScrollViewer x:Name="PageFaces" Padding="0,0,36,0" VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="0,0,0,24">
-            <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,18"/>
+            <!-- заголовок; у тестових варіантах праворуч — плашка підключеного пристрою -->
+            <Grid Margin="0,0,0,18">
+              <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold"/>
+              <Border x:Name="BandPill" HorizontalAlignment="Right" VerticalAlignment="Center" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}"
+                      BorderThickness="1" CornerRadius="17" Height="34" Padding="14,0,4,0" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                  <Ellipse Width="8" Height="8" Fill="{DynamicResource Ok}" VerticalAlignment="Center"/>
+                  <TextBlock x:Name="BandPillName" FontSize="13" VerticalAlignment="Center" Margin="9,0,6,0"/>
+                  <Button x:Name="PillDisconnectBtn" Style="{StaticResource IconBtn}" Width="28" Height="28" BorderThickness="0" Background="Transparent" Click="Disconnect_Click">
+                    <Viewbox Width="16" Height="16"><Canvas Width="30" Height="30"><Path Data="{StaticResource DisconnectGeometry}" Fill="{DynamicResource Err}"/></Canvas></Viewbox>
+                  </Button>
+                </StackPanel>
+              </Border>
+            </Grid>
             <!-- Немає ключа: як в iOS, кнопка веде в Налаштування → Ключ -->
             <Border x:Name="KeyNotice" Style="{StaticResource CardBox}" Visibility="Collapsed">
               <StackPanel>
@@ -95,7 +108,7 @@
             </Border>
 
             <!-- Пристрій: як в iOS — значок, назва моделі, червона кнопка «від'єднати» -->
-            <Border Style="{StaticResource CardBox}">
+            <Border x:Name="DeviceCard" Style="{StaticResource CardBox}">
               <StackPanel>
                 <TextBlock x:Name="BandLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
                 <Grid x:Name="BandConnected" Visibility="Collapsed">
@@ -129,7 +142,7 @@
               </StackPanel>
             </Border>
 
-            <Border Style="{StaticResource CardBox}">
+            <Border x:Name="InstallCard" Style="{StaticResource CardBox}">
               <StackPanel>
                 <TextBlock x:Name="InstallLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
                 <Grid>
@@ -144,11 +157,11 @@
                       <Image x:Name="PreviewImage" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Grid>
                   </Border>
-                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
+                  <StackPanel x:Name="InstallInfo" Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
                     <TextBlock x:Name="FaceName" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="FaceInfo" FontSize="12" Margin="0,4,0,2" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="FaceFileName" FontSize="12" Foreground="{DynamicResource Sub}" TextTrimming="CharacterEllipsis"/>
-                    <Grid Margin="0,18,0,0">
+                    <Grid x:Name="ButtonsGrid" Margin="0,18,0,0">
                       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                       <Button x:Name="PickBtn" Style="{StaticResource Btn}" Height="40" Click="Pick_Click"/>
                       <Button x:Name="InstallBtn" Grid.Column="2" Style="{StaticResource PrimaryBtn}" Height="40" Click="Install_Click"/>
@@ -163,10 +176,37 @@
                       </StackPanel>
                       <TextBlock x:Name="StatusText" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top"/>
                     </Grid>
+                    <!-- тестовий варіант A: помітне місце для перетягування файла (клік — вибрати файл) -->
+                    <Grid x:Name="DropZone" Visibility="Collapsed" Margin="0,16,0,0" Height="64" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="DropZone_Click">
+                      <Rectangle RadiusX="6" RadiusY="6" Stroke="{DynamicResource Sub}" StrokeThickness="1" StrokeDashArray="4 3" Opacity="0.6"/>
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="DropZoneText" FontSize="13" HorizontalAlignment="Center" Foreground="{DynamicResource Sub}"/>
+                        <TextBlock x:Name="DropZoneSub" FontSize="12" HorizontalAlignment="Center" Margin="0,2,0,0" Foreground="{DynamicResource Sub}" Opacity="0.75"/>
+                      </StackPanel>
+                    </Grid>
                   </StackPanel>
                 </Grid>
               </StackPanel>
             </Border>
+
+            <!-- Тестовий варіант B: полиці «На браслеті» і «Нещодавні» -->
+            <Grid x:Name="Shelves" Visibility="Collapsed" Margin="0,4,0,0">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Border Style="{StaticResource CardBox}">
+                <StackPanel>
+                  <TextBlock x:Name="BandShelfLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                  <WrapPanel x:Name="BandShelf"/>
+                  <TextBlock x:Name="BandShelfHint" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Style="{StaticResource CardBox}">
+                <StackPanel>
+                  <TextBlock x:Name="RecentShelfLabel" FontSize="13" Margin="0,0,0,12" Foreground="{DynamicResource Sub}"/>
+                  <WrapPanel x:Name="RecentShelf"/>
+                  <TextBlock x:Name="RecentShelfHint" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Sub}"/>
+                </StackPanel>
+              </Border>
+            </Grid>
           </StackPanel>
         </ScrollViewer>
 
@@ -247,6 +287,22 @@
                 <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
                   <TextBlock x:Name="RowLangText" Style="{StaticResource SettingTitle}"/>
                   <TextBlock x:Name="RowLangDesc" Style="{StaticResource SettingDesc}"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <!-- тестове: вигляд головного екрана -->
+            <Border Style="{StaticResource SettingCard}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource SettingGlyph}" Text="&#xE8A9;"/>
+                <ComboBox x:Name="HomeBox" DockPanel.Dock="Right" Width="200" VerticalAlignment="Center" SelectionChanged="Home_Changed"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,12,16,12">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="RowHomeText" Style="{StaticResource SettingTitle}"/>
+                    <Border Background="{DynamicResource ChipBg}" CornerRadius="9" Padding="7,0" Margin="8,0,0,0" VerticalAlignment="Center">
+                      <TextBlock x:Name="HomeTestChip" FontSize="11" Foreground="{DynamicResource Sub}"/>
+                    </Border>
+                  </StackPanel>
+                  <TextBlock x:Name="RowHomeDesc" Style="{StaticResource SettingDesc}"/>
                 </StackPanel>
               </DockPanel>
             </Border>
