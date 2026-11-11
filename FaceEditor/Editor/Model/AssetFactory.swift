@@ -85,17 +85,31 @@ enum AssetFactory {
     /// Поле навколо знака під обвідку й тінь
     static func pad(_ g: Generator) -> Int { g.styled ? Int(ceil(max(0, g.outline) + max(abs(g.shadowX), abs(g.shadowY)))) + 1 : 0 }
 
+    /// Розмір фігури-фону навколо вмісту w×h і заокруглення
+    static func badgeBox(_ g: Generator, w: Int, h: Int) -> (Int, Int, CGFloat) {
+        let pad = Int(ceil(max(3, g.fontSize * 0.16)))
+        switch g.badge {
+        case "circle": let b = max(w, h) + pad * 2; return (b, b, CGFloat(b) / 2)
+        case "capsule": let bh = h + pad * 2; return (max(bh, w + bh * 2 / 3), bh, CGFloat(bh) / 2)
+        default: return (w + pad * 2, h + pad * 2, max(2, CGFloat(pad) * 0.9))
+        }
+    }
+
+    /// Лише фігура-фон для вмісту w×h (для числа — під усіма його цифрами)
+    static func badgeImage(_ g: Generator, w: CGFloat, h: CGFloat) -> RGBAImage? {
+        guard !g.badge.isEmpty, w > 0, h > 0 else { return nil }
+        let (bw, bh, r) = badgeBox(g, w: Int(w.rounded(.up)), h: Int(h.rounded(.up)))
+        let fill = color(g.badgeColor)
+        return render(bw, bh) { _ in
+            fill.setFill()
+            UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: bw, height: bh), cornerRadius: r).fill()
+        }
+    }
+
     /// Фон під знаком (коло, капсула, квадрат): більший кадр з фігурою кольору badgeColor, знак по центру
     static func withBadge(_ g: Generator, _ frames: [RGBAImage]) -> [RGBAImage] {
         guard !g.badge.isEmpty, let f0 = frames.first else { return frames }
-        let w = f0.w, h = f0.h
-        let pad = Int(ceil(max(3, g.fontSize * 0.16)))
-        var bw: Int, bh: Int, r: CGFloat
-        switch g.badge {
-        case "circle": bw = max(w, h) + pad * 2; bh = bw; r = CGFloat(bw) / 2
-        case "capsule": bh = h + pad * 2; bw = max(bh, w + bh * 2 / 3); r = CGFloat(bh) / 2
-        default: bw = w + pad * 2; bh = h + pad * 2; r = max(2, CGFloat(pad) * 0.9)
-        }
+        let (bw, bh, r) = badgeBox(g, w: f0.w, h: f0.h)
         let fill = color(g.badgeColor)
         return frames.map { f in
             render(bw, bh) { ctx in
@@ -199,7 +213,12 @@ enum AssetFactory {
     }
 
     /// Кадри «0»…«9» однакового розміру, щільно по висоті цифр (межі — за справжніми пікселями).
-    static func digitFrames(_ g: Generator) -> [RGBAImage] { textFrames(g, (0...9).map { "\($0)" }) }
+    /// Кадри «0»…«9». Фігура-фон для чисел — одна навколо всього числа (NumberBadge), а відстань між цифрами —
+    /// «space» елемента, тому в кожну цифру окремо вони не малюються.
+    static func digitFrames(_ g: Generator) -> [RGBAImage] {
+        var c = g; c.badge = ""; c.tracking = 0
+        return textFrames(c, (0...9).map { "\($0)" })
+    }
 
     /// Набір рядків одним шрифтом (цифри, дні тижня, місяці, AM/PM…): однакова ширина (рядок по центру)
     /// й однакова вирізка по висоті — щоб на браслеті не стрибали.

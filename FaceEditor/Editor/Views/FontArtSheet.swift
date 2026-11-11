@@ -60,30 +60,19 @@ struct FontArtSheet: View {
         NavigationStack { formBody.inputBarHost() }
     }
 
+    /// Скільки цифр показати в перегляді числа
+    private var previewDigits: Int { let n = Int(res.int("totalDigits")); return n > 0 ? n : 4 }
+
+    private func slider(_ title: String, _ v: Double, _ r: ClosedRange<Double>, _ step: Double, _ set: @escaping (inout Generator, Double) -> Void) -> some View {
+        CommitSlider(title: title, value: v, range: r, step: step, onCommit: { x in set(&g, x) }, onLive: { x in set(&g, x) })
+    }
+
     private var formBody: some View {
         Group {
+          VStack(spacing: 0) {
+            // перегляд завжди видно — закріплений під панеллю, форма прокручується під ним
+            FontArtPreview(g: g, kind: kind, digits: previewDigits, screenWidth: project.meta.device.width)
             Form {
-                Section {
-                    let fr = frames
-                    let prm = res.all("Param")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(alignment: .bottom, spacing: 10) {
-                            ForEach(Array(fr.enumerated()), id: \.offset) { i, f in
-                                VStack(spacing: 4) {
-                                    if let cg = f.cgImage { Image(decorative: cg, scale: 2).interpolation(.high) }
-                                    if kind == .texts {
-                                        Text(verbatim: i < prm.count ? loc("від") + " \(prm[i].int("value"))" : "#\(i + 1)").font(.caption2).foregroundStyle(.gray)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(12)
-                    }
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black))
-                    .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                } header: { Text("Як це виглядає") } footer: {
-                    Text(String(format: loc("Перемальовує всі %d картинок елемента одним шрифтом. Свої картинки замінюйте в блоці «Зображення»."), slots))
-                }
                 if kind == .texts {
                     Section {
                         Menu {
@@ -103,27 +92,52 @@ struct FontArtSheet: View {
                 }
                 Section {
                     FontRow(gen: g) { f in f(&g) }
-                    VStack(alignment: .leading) {
-                        HStack { Text("Розмір шрифту").font(.subheadline); Spacer(); Text(verbatim: "\(Int(g.fontSize))").font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
-                        Slider(value: $g.fontSize, in: 8...200, step: 1)
-                    }
-                    if g.font.isEmpty {
-                        Chips(title: "Товщина", hint: nil, items: [100, 300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
-                              selected: "\(g.weight)") { s in g.weight = Int(s) ?? 700 }
-                    }
-                    ColorRow(title: "Колір", hex: g.color) { h in g.color = h }
+                    slider("Розмір шрифту", g.fontSize, 8...200, 1) { $0.fontSize = $1 }
                 } header: { Text("Шрифт") }
                 Section {
-                    // вигляд знака: лише контур і фігура-фон під кожною цифрою / написом
-                    Chips(title: "Фон знака", hint: nil,
-                          items: [("", "Без фону"), ("circle", "Коло"), ("capsule", "Капсула"), ("square", "Квадрат")],
-                          selected: g.badge) { v in g.badge = v }
-                    if !g.badge.isEmpty { ColorRow(title: "Колір фону", hex: g.badgeColor) { h in g.badgeColor = h } }
-                } header: { Text("Форма") }
+                    StyleGrid(gen: g) { f in f(&g) }
+                } header: { Text("Стиль") }
                 Section {
-                    DigitSetSection(project: project, name: res.string("name") ?? "", gen: g, standalone: true) { f in f(&g) }
+                    ColorRow(title: "Колір", hex: g.color) { h in g.color = h }
+                    slider("Прозорість заливки, %", g.fillAlpha, 0...100, 5) { $0.fillAlpha = $1 }
+                    // градієнт — лише діагональний, вмикається перемикачем
+                    Toggle("Градієнт", isOn: Binding(get: { !g.color2.isEmpty }, set: { on in
+                        if on { if g.color2.isEmpty { g.color2 = ColorRow.suggested.first { $0 != g.color && $0 != "#FFFFFF" } ?? "#FF375F" }; g.gradDir = 1 }
+                        else { g.color2 = "" }
+                    }))
+                    if !g.color2.isEmpty { ColorRow(title: "Колір унизу", hex: g.color2) { h in g.color2 = h; g.gradDir = 1 } }
+                } header: { Text("Заливка") }
+                Section {
+                    slider("Товщина обведення, px", g.outline, 0...12, 0.5) { $0.outline = $1 }
+                    if g.outline > 0 {
+                        ColorRow(title: "Колір обведення", hex: g.outlineColor) { h in g.outlineColor = h }
+                        slider("Прозорість обведення, %", g.outlineAlpha, 0...100, 5) { $0.outlineAlpha = $1 }
+                        Chips(title: "Положення", hint: nil, items: [("0", "Зовні"), ("1", "Посередині"), ("2", "Всередині")], selected: "\(g.outlinePos)") { v in g.outlinePos = Int(v) ?? 0 }
+                    }
+                } header: { Text("Обведення") }
+                Section {
+                    slider(kind == .digits ? "Відстань між цифрами, px" : "Інтервал між літерами, px", g.tracking, -5...20, kind == .digits ? 1 : 0.5) { $0.tracking = $1 }
+                    slider("Ширина літер, %", g.widthPct, 50...150, 1) { $0.widthPct = $1 }
+                } header: { Text("Розкладка") }
+                Section {
+                    slider("Тінь праворуч, px", g.shadowX, -8...8, 1) { $0.shadowX = $1 }
+                    slider("Тінь донизу, px", g.shadowY, -8...8, 1) { $0.shadowY = $1 }
+                    if g.shadowX != 0 || g.shadowY != 0 {
+                        ColorRow(title: "Колір тіні", hex: g.shadowColor) { h in g.shadowColor = h }
+                        slider("Прозорість тіні, %", g.shadowAlpha, 0...100, 5) { $0.shadowAlpha = $1 }
+                    }
+                } header: { Text("Тінь") }
+                Section {
+                    // одна фігура навколо всього напису / числа
+                    Chips(title: "Фігура", hint: nil,
+                          items: [("", "Без"), ("capsule", "Капсула"), ("square", "Прямокутник"), ("circle", "Коло")],
+                          selected: g.badge) { v in g.badge = v }
+                    if !g.badge.isEmpty { ColorRow(title: "Колір фігури", hex: g.badgeColor) { h in g.badgeColor = h } }
+                } header: { Text("Форма") } footer: {
+                    Text(kind == .digits ? "Одна фігура під усім числом (на всю кількість цифр)." : "Одна фігура навколо всього напису.")
                 }
             }
+          }
             .navigationTitle("Намалювати шрифтом")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -154,6 +168,8 @@ struct FontArtSheet: View {
                     }
                 }
                 g.kind = kind
+                // для числа «інтервал» — це відстань між цифрами елемента
+                if kind == .digits { g.tracking = Double(Int8(truncatingIfNeeded: Int(res.int("space")))) }
                 if kind == .label, g.text.isEmpty { g.text = loc("Напис") }
                 if kind == .texts, g.texts.isEmpty { g.texts = defaultTexts() }
                 textsLine = g.texts.joined(separator: ", ")

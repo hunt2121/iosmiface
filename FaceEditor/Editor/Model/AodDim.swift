@@ -34,7 +34,10 @@ enum AodDim {
         return a
     }
 
-    static func isDim(_ p: FaceProject, _ layout: XNode, theme: Int) -> Bool { theme == aodTheme && alpha(p, layout) > 0 }
+    /// Службові шари, яких не видно серед шарів і які не вибираються: приглушення AOD і фігура під числом
+    static func isDim(_ p: FaceProject, _ layout: XNode, theme: Int) -> Bool {
+        NumberBadge.isBadge(layout) || (theme == aodTheme && alpha(p, layout) > 0)
+    }
 
     /// Шар-приглушення в AOD (верхній з таких) або nil
     static func find(_ p: FaceProject) -> XNode? {

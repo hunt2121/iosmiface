@@ -97,10 +97,11 @@ struct InputBarHost: ViewModifier {
     // @State, а не @StateObject: хост не стежить за моделлю — інакше кожен дотик перемальовує весь редактор (полотно)
     @State private var model = InputBarModel()
     func body(content: Content) -> some View {
-        ZStack(alignment: .bottom) {
-            content.environment(\.inputBar, model).ignoresSafeArea(.keyboard, edges: .bottom)
-            InputBarView(model: model)
-        }
+        // поле — накладкою на вміст: вміст не прив'язаний до краю, що піднімається з клавіатурою (інакше екран
+        // зсувався вгору на кілька пікселів), а накладка лишається над клавіатурою
+        content.environment(\.inputBar, model)
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .overlay(alignment: .bottom) { InputBarView(model: model) }
     }
 }
 

@@ -113,23 +113,38 @@ struct FontRow: View {
     var apply: ((inout Generator) -> Void) -> Void
     @State private var library = false
 
+    /// Накреслення вибраного шрифту — лише ті, що є в його родині (у бібліотеці)
+    private var faces: [FontLibrary.Entry] {
+        let all = FontLibrary.all()
+        guard let cur = all.first(where: { $0.name == gen.font }) else { return [] }
+        return all.filter { $0.family == cur.family }
+    }
+    private var family: String { FontLibrary.all().first { $0.name == gen.font }?.family ?? gen.font }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Chips(title: "Шрифт", hint: gen.font.isEmpty ? "перетворюється на картинки" : nil,
-                  items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
-                  selected: gen.font.isEmpty ? gen.style : "") { s in apply { $0.style = s; $0.font = "" } }
+        VStack(alignment: .leading, spacing: 12) {
             Button { library = true } label: {
                 HStack {
-                    Image(systemName: "textformat")
-                    Text(gen.font.isEmpty ? loc("Мої шрифти…") : gen.font).lineLimit(1)
+                    Text("Шрифт").foregroundStyle(.primary)
                     Spacer()
+                    Text(verbatim: gen.font.isEmpty ? loc("Вбудований") : family).foregroundStyle(.secondary).lineLimit(1)
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                .font(.subheadline)
-                .padding(.horizontal, 12).frame(height: 40)
-                .background(RoundedRectangle(cornerRadius: 10).fill(gen.font.isEmpty ? Color.editorTile : Color.accentColor.opacity(0.18)))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            if gen.font.isEmpty {
+                // вбудований шрифт має ці варіанти й будь-яку товщину
+                Chips(title: "Накреслення", hint: nil,
+                      items: [("rounded", "Округлий"), ("default", "Прямий"), ("condensed", "Вузький"), ("mono", "Моно")],
+                      selected: gen.style) { s in apply { $0.style = s } }
+                Chips(title: "Товщина", hint: nil, items: [300, 400, 500, 600, 700, 900].map { ("\($0)", "\($0)") },
+                      selected: "\(gen.weight)") { s in apply { $0.weight = Int(s) ?? 700 } }
+            } else if faces.count > 1 {
+                // свій шрифт: лише накреслення, які справді є у файлах цієї родини
+                Chips(title: "Накреслення", hint: nil, items: faces.map { ($0.name, $0.style.isEmpty ? $0.name : $0.style) },
+                      selected: gen.font) { s in apply { $0.font = s } }
+            }
         }
         .sheet(isPresented: $library) {
             FontLibraryView(selected: gen.font) { name in library = false; apply { $0.font = name } }
@@ -195,109 +210,3 @@ struct FontLibraryView: View {
     }
 }
 
-/// Набір цифр: готові й свої стилі, ефекти (градієнт, обвідка, тінь, ширина), застосування до всіх чисел
-struct DigitSetSection: View {
-    @ObservedObject var project: FaceProject
-    let name: String
-    let gen: Generator
-    /// у вікні «Намалювати шрифтом»: зміни застосовуються кнопкою «Намалювати», без «До всіх чисел»
-    var standalone = false
-    var regen: ((inout Generator) -> Void) -> Void
-    @Environment(\.inputBar) private var bar
-    @State private var sets: [DigitSets.DigitSet] = []
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("НАБІР ЦИФР").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(sets) { s in
-                        Button { regen { $0.applyStyle(s.style) } } label: {
-                            VStack(spacing: 4) {
-                                SetPreview(style: s.style).frame(height: 30)
-                                Text(verbatim: s.name).font(.caption2).lineLimit(1)
-                            }
-                            .frame(width: 84, height: 62)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.editorTile))
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if !s.builtIn { Button(role: .destructive) { DigitSets.remove(s.name); sets = DigitSets.all() } label: { Label("Видалити набір", systemImage: "trash") } }
-                        }
-                    }
-                }
-            }
-            HStack(spacing: 8) {
-                Button {
-                    bar?.begin("Набір цифр", loc("Мій") + " \(DigitSets.user().count + 1)") { t in
-                        let n = t.trimmingCharacters(in: .whitespaces)
-                        if !n.isEmpty { DigitSets.add(n, style: gen); sets = DigitSets.all() }
-                    }
-                } label: {
-                    Label("Зберегти як набір", systemImage: "square.and.arrow.down").font(.caption.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 34)
-                }
-                .buttonStyle(.bordered)
-                if !standalone { Button {
-                    let me = name, g = gen
-                    project.edit { p in
-                        // інші числа отримують той самий вигляд, розмір кожного лишається своїм
-                        for (k, v) in p.meta.generators where v.kind == .digits && k != me {
-                            var c = v; c.applyStyle(g); ElementFactory.regenerate(p, element: k, gen: c)
-                        }
-                    }
-                } label: {
-                    Label("До всіх чисел", systemImage: "square.stack.3d.up").font(.caption.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 34)
-                }
-                .buttonStyle(.bordered) }
-            }
-            Group {
-                Text("Заливка тексту").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
-                CommitSlider(title: "Прозорість заливки, %", value: gen.fillAlpha, range: 0...100, step: 5) { v in regen { $0.fillAlpha = v } }
-                Chips(title: "Градієнт", hint: nil, items: [("0", "Без"), ("1", "Вертикальний"), ("2", "Діагональний")],
-                      selected: gen.color2.isEmpty ? "0" : (gen.gradDir == 1 ? "2" : "1")) { v in
-                    regen {
-                        if v == "0" { $0.color2 = "" } else {
-                            if $0.color2.isEmpty { $0.color2 = ColorRow.suggested.first { $0 != gen.color && $0 != "#FFFFFF" } ?? "#FF375F" }
-                            $0.gradDir = v == "2" ? 1 : 0
-                        }
-                    }
-                }
-                if !gen.color2.isEmpty { ColorRow(title: "Колір унизу", hex: gen.color2) { h in regen { $0.color2 = h } } }
-                Text("Обведення").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
-                CommitSlider(title: "Товщина обведення, px", value: gen.outline, range: 0...12, step: 0.5) { v in regen { $0.outline = v } }
-                if gen.outline > 0 {
-                    ColorRow(title: "Колір обведення", hex: gen.outlineColor) { h in regen { $0.outlineColor = h } }
-                    CommitSlider(title: "Прозорість обведення, %", value: gen.outlineAlpha, range: 0...100, step: 5) { v in regen { $0.outlineAlpha = v } }
-                    Chips(title: "Положення", hint: nil, items: [("0", "Зовні"), ("1", "Посередині"), ("2", "Всередині")], selected: "\(gen.outlinePos)") { v in regen { $0.outlinePos = Int(v) ?? 0 } }
-                }
-                Text("Розкладка").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
-                CommitSlider(title: "Інтервал між літерами, px", value: gen.tracking, range: -5...20, step: 0.5) { v in regen { $0.tracking = v } }
-                CommitSlider(title: "Ширина літер, %", value: gen.widthPct, range: 50...150, step: 1) { v in regen { $0.widthPct = v } }
-                Text("Тінь").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
-                CommitSlider(title: "Тінь праворуч, px", value: gen.shadowX, range: -8...8, step: 1) { v in regen { $0.shadowX = v } }
-                CommitSlider(title: "Тінь донизу, px", value: gen.shadowY, range: -8...8, step: 1) { v in regen { $0.shadowY = v } }
-                if gen.shadowX != 0 || gen.shadowY != 0 {
-                    ColorRow(title: "Колір тіні", hex: gen.shadowColor) { h in regen { $0.shadowColor = h } }
-                    CommitSlider(title: "Прозорість тіні, %", value: gen.shadowAlpha, range: 0...100, step: 5) { v in regen { $0.shadowAlpha = v } }
-                }
-            }
-        }
-        .onAppear { sets = DigitSets.all() }
-    }
-}
-
-/// Мініатюра набору: «1234» його стилем
-struct SetPreview: View {
-    let style: Generator
-    var body: some View {
-        let g: Generator = { var c = style; c.fontSize = 22; c.outline = min(c.outline, 1.5); return c }()
-        let frames = AssetFactory.digitFrames(g)
-        HStack(spacing: 0) {
-            ForEach([1, 2, 3, 4], id: \.self) { d in
-                if d < frames.count, let cg = frames[d].cgImage { Image(decorative: cg, scale: 1).resizable().scaledToFit() }
-            }
-        }
-        .padding(4)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.black))
-    }
-}

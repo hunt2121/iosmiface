@@ -64,6 +64,14 @@ struct Generator: Codable, Equatable {
     var styled: Bool { outline > 0 || shadowX != 0 || shadowY != 0 || !color2.isEmpty || abs(widthPct - 100) > 0.01 || fillAlpha < 100 || tracking != 0 }
 
     /// Скопіювати вигляд (шрифт, колір, ефекти) з набору, не чіпаючи розміру й тексту
+    /// Лише оформлення стилю: шрифт, накреслення, товщина й розмір лишаються
+    mutating func applyLook(_ s: Generator) {
+        color = s.color; color2 = s.color2; gradDir = s.gradDir; fillAlpha = s.fillAlpha
+        outline = s.outline; outlineColor = s.outlineColor; outlinePos = s.outlinePos; outlineAlpha = s.outlineAlpha
+        shadowX = s.shadowX; shadowY = s.shadowY; shadowColor = s.shadowColor; shadowAlpha = s.shadowAlpha
+        tracking = s.tracking; widthPct = s.widthPct
+    }
+
     mutating func applyStyle(_ s: Generator) {
         font = s.font; style = s.style; weight = s.weight; color = s.color; color2 = s.color2
         outline = s.outline; outlineColor = s.outlineColor; shadowX = s.shadowX; shadowY = s.shadowY; shadowColor = s.shadowColor; widthPct = s.widthPct
@@ -317,6 +325,7 @@ final class FaceProject: ObservableObject, Identifiable {
         redoStack.removeAll()
         change(self)
         AodDim.keepOnTop(self)
+        NumberBadge.sync(self)
         meta.modified = Date()
         meta.edited = true
         revision += 1

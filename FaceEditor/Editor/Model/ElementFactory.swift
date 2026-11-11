@@ -401,6 +401,9 @@ enum ElementFactory {
             }
             // одиниця — тим самим шрифтом
             if !gen.unit.isEmpty || res.has("unitIcon") { setUnit(p, element: res, gen: gen) }
+            // інтервал між літерами для числа — відстань між цифрами; форма — одна навколо всього числа
+            res.set("space", int: Int(gen.tracking.rounded()))
+            NumberBadge.update(p, number: res, gen: gen)
         case .texts:
             // кожна картинка елемента — свій рядок шрифтом (дні тижня, місяці, значки…); шляхи файлів лишаються
             guard let target = mainImages(p, res) else { return }

@@ -95,35 +95,48 @@ enum FontLibrary {
     }
 }
 
-/// Набори цифр (П-2): готові стилі й збережені користувачем — вигляд без розміру
+/// Стилі шрифту: лише оформлення (колір, градієнт, обведення, тінь, інтервал, ширина літер) — шрифт, накреслення
+/// й розмір лишаються вибраними. Вбудовані можна прибрати (запам'ятовується), свої — зберегти й видалити.
 enum DigitSets {
-    struct DigitSet: Identifiable { let name: String; let style: Generator; let builtIn: Bool; var id: String { name } }
+    struct DigitSet: Identifiable { let name: String; let style: Generator; let builtIn: Bool; var id: String { (builtIn ? "b:" : "u:") + name } }
 
     private static var file: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("digitsets.json")
     }
+    private static let hiddenKey = "hiddenBuiltInStyles"
 
     private struct Stored: Codable { var name: String; var style: Generator }
 
     private static func g(_ f: (inout Generator) -> Void) -> Generator {
-        var g = Generator(kind: .digits); g.color = "#FFFFFF"; g.weight = 700; g.style = "rounded"; f(&g); return g
+        var g = Generator(kind: .digits); g.color = "#FFFFFF"; f(&g); return g
     }
 
     static var builtIns: [DigitSet] { [
-        DigitSet(name: loc("Класичний"), style: g { _ in }, builtIn: true),
-        DigitSet(name: loc("Неон"), style: g { $0.color = "#7DF9FF"; $0.outline = 2; $0.outlineColor = "#0A84FF" }, builtIn: true),
-        DigitSet(name: loc("Захід сонця"), style: g { $0.color = "#FFD60A"; $0.color2 = "#FF375F"; $0.weight = 800 }, builtIn: true),
-        DigitSet(name: loc("З тінню"), style: g { $0.shadowX = 2; $0.shadowY = 3; $0.weight = 800 }, builtIn: true),
-        DigitSet(name: loc("Вузький"), style: g { $0.style = "condensed"; $0.widthPct = 80; $0.weight = 600 }, builtIn: true),
-        DigitSet(name: loc("Контур"), style: g { $0.color = "#000000"; $0.outline = 2; $0.outlineColor = "#FFFFFF"; $0.weight = 800 }, builtIn: true),
+        DigitSet(name: loc("Чистий"), style: g { _ in }, builtIn: true),
+        DigitSet(name: loc("Захід"), style: g { $0.color = "#FFD60A"; $0.color2 = "#FF375F"; $0.gradDir = 1 }, builtIn: true),
+        DigitSet(name: loc("Неон"), style: g { $0.color = "#7DF9FF"; $0.outline = 2; $0.outlineColor = "#0A84FF"; $0.outlineAlpha = 70 }, builtIn: true),
+        DigitSet(name: loc("Контур"), style: g { $0.fillAlpha = 0; $0.outline = 1.5; $0.outlinePos = 1; $0.outlineColor = "#FFFFFF" }, builtIn: true),
+        DigitSet(name: loc("Тінь"), style: g { $0.shadowX = 2; $0.shadowY = 3; $0.shadowColor = "#000000"; $0.shadowAlpha = 70 }, builtIn: true),
+        DigitSet(name: loc("Обведення"), style: g { $0.outline = 2; $0.outlineColor = "#FF9F0A" }, builtIn: true),
+        DigitSet(name: loc("Океан"), style: g { $0.color = "#64D2FF"; $0.color2 = "#5E5CE6"; $0.gradDir = 1 }, builtIn: true),
+        DigitSet(name: loc("Скло"), style: g { $0.fillAlpha = 45 }, builtIn: true),
+        DigitSet(name: loc("Термінал"), style: g { $0.color = "#30D158" }, builtIn: true),
+        DigitSet(name: loc("Тиснення"), style: g { $0.shadowX = 1; $0.shadowY = 1; $0.shadowColor = "#000000"; $0.shadowAlpha = 90; $0.outline = 1; $0.outlineColor = "#8E8E93"; $0.outlinePos = 2 }, builtIn: true),
+        DigitSet(name: loc("Золото"), style: g { $0.color = "#FFE08A"; $0.color2 = "#B8860B"; $0.gradDir = 1 }, builtIn: true),
+        DigitSet(name: loc("Розріджений"), style: g { $0.tracking = 4 }, builtIn: true),
     ] }
+
+    private static var hidden: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: hiddenKey) ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: hiddenKey) }
+    }
 
     static func user() -> [DigitSet] {
         guard let d = try? Data(contentsOf: file), let l = try? JSONDecoder().decode([Stored].self, from: d) else { return [] }
         return l.map { DigitSet(name: $0.name, style: $0.style, builtIn: false) }
     }
 
-    static func all() -> [DigitSet] { builtIns + user() }
+    static func all() -> [DigitSet] { builtIns.filter { !hidden.contains($0.name) } + user() }
 
     private static func save(_ l: [DigitSet]) {
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -132,10 +145,13 @@ enum DigitSets {
 
     static func add(_ name: String, style: Generator) {
         var l = user().filter { $0.name.lowercased() != name.lowercased() }
-        var s = Generator(kind: .digits); s.applyStyle(style)
+        var s = Generator(kind: .digits); s.applyLook(style)
         l.append(DigitSet(name: name, style: s, builtIn: false))
         save(l)
     }
 
-    static func remove(_ name: String) { save(user().filter { $0.name != name }) }
+    static func remove(_ set: DigitSet) {
+        if set.builtIn { var h = hidden; h.insert(set.name); hidden = h }
+        else { save(user().filter { $0.name != set.name }) }
+    }
 }

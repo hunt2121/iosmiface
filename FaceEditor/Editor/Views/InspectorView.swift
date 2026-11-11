@@ -160,6 +160,8 @@ struct InspectorView: View {
             Text(String(format: loc("Шрифт: %@, %d px. Змінити — «Намалювати шрифтом…» нижче."), g.font.isEmpty ? loc(styleTitle(g.style)) : g.font, Int(g.fontSize)))
                 .font(.caption).foregroundStyle(.secondary)
             ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+            // градієнт: обидва кольори тут, без повторного «Намалювати шрифтом»
+            if !g.color2.isEmpty { ColorRow(title: "Колір унизу", hex: g.color2) { h in regen { $0.color2 = h } } }
         } else {
             Text("Цифри — це картинки 0–9. Замінюйте їх по одній у блоці «Зображення» нижче.").font(.caption).foregroundStyle(.secondary)
         }
@@ -182,6 +184,8 @@ struct InspectorView: View {
         if let g = gen {
             LabelField(text: g.text) { t in regen { $0.text = t } }
             ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+            // градієнт: обидва кольори тут, без повторного «Намалювати шрифтом»
+            if !g.color2.isEmpty { ColorRow(title: "Колір унизу", hex: g.color2) { h in regen { $0.color2 = h } } }
         }
     }
 
@@ -318,6 +322,8 @@ struct InspectorView: View {
         if let r = res { variantRow(r) }
         if let g = gen, g.kind != .image, g.kind != .frames {
             ColorRow(title: "Колір", hex: g.color) { h in regen { $0.color = h } }
+            // градієнт: обидва кольори тут, без повторного «Намалювати шрифтом»
+            if !g.color2.isEmpty { ColorRow(title: "Колір унизу", hex: g.color2) { h in regen { $0.color2 = h } } }
             if g.kind == .arc || g.kind == .line {
                 ColorRow(title: "Колір фону шкали", hex: g.bgColor) { h in regen { $0.bgColor = h } }
             }
