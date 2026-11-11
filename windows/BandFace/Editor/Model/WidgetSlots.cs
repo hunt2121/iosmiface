@@ -188,6 +188,9 @@ namespace BandFace.Creator
                 }
                 var baseImg = decode(fg[0]);
                 if (x1 < 0 || baseImg == null) continue;
+                // запас під крапку на кінці заповнення лишається
+                int am = ElementFactory.ArcMargin(res.Int("barWidth"));
+                x0 = Math.Max(0, x0 - am); y0 = Math.Max(0, y0 - am); x1 = Math.Min(baseImg.W - 1, x1 + am); y1 = Math.Min(baseImg.H - 1, y1 + am);
                 int bw = x1 - x0 + 1, bh = y1 - y0 + 1;
                 if (x0 == 0 && y0 == 0 && bw == baseImg.W && bh == baseImg.H) continue;
                 foreach (var n in fg.Concat(bg))

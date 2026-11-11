@@ -204,9 +204,16 @@ namespace BandFace.Creator
             for (int y = 0; y < f.H; y++)
                 for (int x = 0; x < f.W; x++)
                     if (f.Px[(y * f.W + x) * 4 + 3] > 12) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
-            full = f.W; x0 = minX; y0 = minY; w = maxX - minX + 1; h = maxY - minY + 1;
+            // запас довкола шкали: крапка на кінці заповнення (у 1,5 раза ширша за шкалу) не обрізається
+            int m = ArcMargin(g.Width);
+            full = f.W; x0 = minX - m; y0 = minY - m; w = maxX - minX + 1 + 2 * m; h = maxY - minY + 1 + 2 * m;
             return maxX >= 0;
         }
+
+        /// <summary>Запас картинки дуги довкола шкали, px — під крапку на кінці заповнення</summary>
+        /// Браслет обрізає крапку по картинці дуги; запас — радіус крапки (0,75 ширини шкали) + 1 px.
+        /// (Більший запас нічого не змінив — решту обрізання дає сама картинка крапки, див. SetIndicator)
+        public static int ArcMargin(double width) => (int)Math.Ceiling(width * 0.75) + 1;
 
         public static RgbaImage ArcImage(Generator g, string color)
         {
