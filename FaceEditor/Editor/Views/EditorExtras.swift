@@ -13,9 +13,8 @@ struct ColorRow: View {
     let title: String
     let hex: String
     var onCommit: (String) -> Void
-    @State private var text = ""
     @State private var palette = false
-    @FocusState private var focused: Bool
+    @Environment(\.inputBar) private var bar
 
     static let suggested = ["#FFFFFF", "#000000", "#8E8E93", "#FF453A", "#FF9F0A", "#FFD60A",
                             "#30D158", "#64D2FF", "#0A84FF", "#5E5CE6", "#BF5AF2", "#FF375F"]
@@ -34,28 +33,25 @@ struct ColorRow: View {
             .compactPopover(isPresented: $palette) {
                 PaletteGrid(current: hex) { h, close in if close { palette = false }; if h != hex { onCommit(h) } }
             }
-            TextField("#RRGGBB", text: $text)
-                .font(.system(.subheadline, design: .monospaced))
-                .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                .focused($focused)
-                .onSubmit(commit)
-                .frame(width: 96).padding(.horizontal, 8).frame(height: 34)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Color.editorTile))
+            Button {
+                bar?.begin(title, hex, caps: true) { t in commit(t) }
+            } label: {
+                Text(verbatim: hex).font(.system(.subheadline, design: .monospaced)).foregroundStyle(.primary)
+                    .frame(width: 96, alignment: .leading).padding(.horizontal, 8).frame(height: 34)
+                    .background(RoundedRectangle(cornerRadius: 9).fill(Color.editorTile))
+            }
+            .buttonStyle(.plain)
         }
-        .onAppear { text = hex }
-        .onChange(of: hex) { v in if !focused { text = v } }
-        .onChange(of: focused) { f in if !f { commit() } }
     }
 
     /// «fff», «#ffaa00», «FFAA00» → «#FFAA00»; неправильне — повертаємо як було
-    private func commit() {
-        var t = text.trimmingCharacters(in: .whitespaces).uppercased()
+    private func commit(_ s: String) {
+        var t = s.trimmingCharacters(in: .whitespaces).uppercased()
         if t.hasPrefix("#") { t.removeFirst() }
         if t.count == 3 { t = t.map { "\($0)\($0)" }.joined() }
-        guard t.count == 6, t.allSatisfy({ $0.isHexDigit }) else { text = hex; return }
+        guard t.count == 6, t.allSatisfy({ $0.isHexDigit }) else { return }
         let h = "#" + t
-        text = h
-        if h != hex { DispatchQueue.main.async { onCommit(h) } }
+        if h != hex { onCommit(h) }
     }
 }
 
@@ -207,8 +203,7 @@ struct DigitSetSection: View {
     /// у вікні «Намалювати шрифтом»: зміни застосовуються кнопкою «Намалювати», без «До всіх чисел»
     var standalone = false
     var regen: ((inout Generator) -> Void) -> Void
-    @State private var saving = false
-    @State private var setName = ""
+    @Environment(\.inputBar) private var bar
     @State private var sets: [DigitSets.DigitSet] = []
 
     var body: some View {
@@ -233,7 +228,12 @@ struct DigitSetSection: View {
                 }
             }
             HStack(spacing: 8) {
-                Button { setName = loc("Мій") + " \(DigitSets.user().count + 1)"; saving = true } label: {
+                Button {
+                    bar?.begin("Набір цифр", loc("Мій") + " \(DigitSets.user().count + 1)") { t in
+                        let n = t.trimmingCharacters(in: .whitespaces)
+                        if !n.isEmpty { DigitSets.add(n, style: gen); sets = DigitSets.all() }
+                    }
+                } label: {
                     Label("Зберегти як набір", systemImage: "square.and.arrow.down").font(.caption.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 34)
                 }
                 .buttonStyle(.bordered)
@@ -283,14 +283,6 @@ struct DigitSetSection: View {
             }
         }
         .onAppear { sets = DigitSets.all() }
-        .alert(loc("Набір цифр"), isPresented: $saving) {
-            TextField(loc("Назва"), text: $setName)
-            Button("Скасувати", role: .cancel) {}
-            Button("Зберегти") {
-                let n = setName.trimmingCharacters(in: .whitespaces)
-                if !n.isEmpty { DigitSets.add(n, style: gen); sets = DigitSets.all() }
-            }
-        } message: { Text("Набір можна застосувати до будь-якого числа в будь-якому проєкті.") }
     }
 }
 

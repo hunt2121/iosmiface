@@ -605,29 +605,23 @@ struct NumberField: View {
     let title: String
     let value: Int
     var onCommit: (Int) -> Void
-    @State private var text = ""
-    @FocusState private var focused: Bool
+    @Environment(\.inputBar) private var bar
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(loc(title)).font(.caption).foregroundStyle(.secondary)
-            TextField("", text: $text)
-                .font(.system(size: 17, weight: .semibold)).monospacedDigit()
-                .keyboardType(.numbersAndPunctuation)
-                .focused($focused)
-                .onSubmit { commit() }
-                .onChange(of: focused) { f in if !f { commit() } }
-                .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button(loc("Готово")) { focused = false } } }
+            // введення — у полі над клавіатурою
+            Button {
+                bar?.begin(title, "\(value)", numeric: true) { t in
+                    if let v = Int(t.trimmingCharacters(in: .whitespaces)), v != value { onCommit(v) }
+                }
+            } label: {
+                Text(verbatim: "\(value)").font(.system(size: 17, weight: .semibold)).monospacedDigit()
+                    .foregroundStyle(.primary).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color.editorTile))
-        .onAppear { text = "\(value)" }
-        .onChange(of: value) { v in if !focused { text = "\(v)" } }
-    }
-
-    /// Запис — після того, як фокус уже перейшов (інакше перемальовування панелі збиває клавіатуру)
-    private func commit() {
-        guard let v = Int(text.trimmingCharacters(in: .whitespaces)), v != value else { text = "\(value)"; return }
-        DispatchQueue.main.async { onCommit(v) }
     }
 }
 
@@ -677,35 +671,35 @@ struct DebouncedColor: View {
 struct LabelField: View {
     let text: String
     var onCommit: (String) -> Void
-    @State private var value = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Текст напису").font(.subheadline)
-            TextField(loc("Напис"), text: $value)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
-                .onSubmit {
-                    let t = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !t.isEmpty && t != text { onCommit(t) } else { value = text }
-                }
+            InputRow(title: "Текст напису", value: text, placeholder: "Напис") { t in
+                let v = t.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !v.isEmpty && v != text { onCommit(v) }
+            }
+            .padding(.horizontal, 10).frame(height: 36)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.editorTile))
             Text("Будь-яка мова, зокрема кирилиця: напис малюється шрифтом телефона й іде на браслет картинкою.")
                 .font(.caption).foregroundStyle(.secondary)
         }
-        .onAppear { value = text }
     }
 }
 
 struct UnitField: View {
     let unit: String
     var onCommit: (String) -> Void
-    /// Редагування — у вікні посеред екрана: клавіатура його не перекриває, поле видно, «Гаразд» записує
-    @State private var editing = false
-    @State private var draft = ""
+    @Environment(\.inputBar) private var bar
     var body: some View {
         HStack(spacing: 6) {
             Text("Одиниця").font(.subheadline)
             Spacer()
-            Button { draft = unit; editing = true } label: {
+            Button {
+                bar?.begin("Одиниця", unit) { t in
+                    let v = t.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if v != unit { onCommit(v) }
+                }
+            } label: {
                 Text(unit.isEmpty ? loc("немає") : unit)
                     .font(.subheadline)
                     .foregroundStyle(unit.isEmpty ? Color.secondary : Color.primary)
@@ -722,14 +716,6 @@ struct UnitField: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Прибрати одиницю"))
             }
-        }
-        .alert("Одиниця", isPresented: $editing) {
-            TextField(loc("немає"), text: $draft)
-            Button("Гаразд") {
-                let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-                if t != unit { DispatchQueue.main.async { onCommit(t) } }
-            }
-            Button("Скасувати", role: .cancel) {}
         }
     }
 }

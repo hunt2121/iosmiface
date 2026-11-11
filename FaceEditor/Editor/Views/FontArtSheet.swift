@@ -57,7 +57,11 @@ struct FontArtSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack { formBody.inputBarHost() }
+    }
+
+    private var formBody: some View {
+        Group {
             Form {
                 Section {
                     let fr = frames
@@ -87,14 +91,15 @@ struct FontArtSheet: View {
                                 Button(loc(p.0)) { g.texts = fit(p.1, slots); textsLine = g.texts.joined(separator: ", ") }
                             }
                         } label: { Label("Готовий список…", systemImage: "list.bullet") }
-                        TextField("ПН, ВТ, СР…", text: $textsLine, axis: .vertical)
-                            .onSubmit { g.texts = fit(textsLine.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, slots) }
-                            .onChange(of: textsLine) { t in g.texts = fit(t.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }, slots) }
+                        InputRow(title: "Що написати на картинках", value: textsLine, placeholder: "ПН, ВТ, СР…") { t in
+                            textsLine = t
+                            g.texts = fit(t.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }, slots)
+                        }
                     } header: { Text("Що написати на картинках") } footer: {
                         Text(String(format: loc("Через кому, по одному на кожну з %d картинок, по порядку."), slots))
                     }
                 } else if kind == .label {
-                    Section("Текст напису") { TextField("", text: $g.text) }
+                    Section("Текст напису") { InputRow(title: "Текст напису", value: g.text) { t in g.text = t } }
                 }
                 Section {
                     FontRow(gen: g) { f in f(&g) }

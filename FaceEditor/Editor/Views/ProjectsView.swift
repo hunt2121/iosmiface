@@ -248,8 +248,9 @@ struct NewFaceSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Назва") { TextField("Назва", text: $name) }
+                Section("Назва") { InputRow(title: "Назва", value: name, placeholder: "Назва") { t in name = t } }
             }
+            .inputBarHost()
             .navigationTitle("Новий циферблат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

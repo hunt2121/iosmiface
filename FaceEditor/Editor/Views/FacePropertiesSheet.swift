@@ -11,9 +11,7 @@ struct FacePropertiesSheet: View {
     @State private var name = ""
     @State private var size: Int?
     @State private var askDeleteAOD = false
-    @FocusState private var nameFocused: Bool
     @State private var idText = ""
-    @FocusState private var idFocused: Bool
     @State private var idInvalid = false
 
     /// Браслет зберігає назву в 64 байтах UTF-8 (кирилиця — 2 байти на літеру)
@@ -32,17 +30,7 @@ struct FacePropertiesSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    HStack {
-                        TextField(loc("Назва"), text: $name)
-                            .focused($nameFocused)
-                            .submitLabel(.done)
-                            .onSubmit(saveName)
-                        if !name.isEmpty {
-                            Button { name = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text("Очистити"))
-                        }
-                    }
+                    InputRow(title: "Назва", value: name, placeholder: "Назва") { t in name = t; saveName() }
                 } header: {
                     Text("Назва")
                 } footer: {
@@ -53,18 +41,11 @@ struct FacePropertiesSheet: View {
                 Section {
                     HStack {
                         // ID можна ввести вручну: рівно 9 цифр
-                        TextField("ID", text: $idText)
-                            .font(.body.monospacedDigit())
-                            .keyboardType(.numberPad)
-                            .focused($idFocused)
-                            .onChange(of: idFocused) { f in if !f { commitId() } }
-                            .onChange(of: idText) { v in
-                                let d = String(v.filter({ $0.isASCII && $0.isNumber }).prefix(9))
-                                if d != v { idText = d }
-                            }
-                            .onAppear { idText = project.root.string("id") ?? "" }
-                            .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Готово") { idFocused = false } } }
-                        Spacer()
+                        InputRow(title: "ID", value: idText, numeric: true) { t in
+                            idText = String(t.filter { $0.isASCII && $0.isNumber }.prefix(9)); commitId()
+                        }
+                        .font(.body.monospacedDigit())
+                        .onAppear { idText = project.root.string("id") ?? "" }
                         Button("Новий ID") {
                             let n = ProjectStore.newFaceID()
                             project.edit { $0.root.set("id", n) }
@@ -123,6 +104,7 @@ struct FacePropertiesSheet: View {
                     }
                 }
             }
+            .inputBarHost()
             .navigationTitle("Циферблат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

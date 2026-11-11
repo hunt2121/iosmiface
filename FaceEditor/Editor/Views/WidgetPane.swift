@@ -93,6 +93,7 @@ struct WidgetPane: View {
     /// Розташування слота, якщо віджет відкрито всередині слота
     var slotLayout: XNode? = nil
     @State private var name = ""
+    @Environment(\.inputBar) private var bar
 
     var body: some View {
         let w = widget
@@ -102,10 +103,13 @@ struct WidgetPane: View {
             HStack {
                 Text("Назва").font(.subheadline)
                 Spacer()
-                TextField(loc("Віджет"), text: $name)
-                    .multilineTextAlignment(.trailing).submitLabel(.done)
-                    .onSubmit { commitName() }
-                    .frame(maxWidth: 200)
+                Button {
+                    bar?.begin("Назва", w.string("widgetName") ?? "") { t in name = t; commitName() }
+                } label: {
+                    Text(verbatim: w.string("widgetName") ?? loc("Віджет")).font(.subheadline).foregroundStyle(.primary)
+                        .lineLimit(1).frame(maxWidth: 200, alignment: .trailing)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 14).frame(height: 44)
             .background(RoundedRectangle(cornerRadius: 10).fill(Color.editorTile))
