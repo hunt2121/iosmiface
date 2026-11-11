@@ -82,24 +82,11 @@ namespace BandFace.Protocol
     public sealed class WatchfaceEntry
     {
         public string Id; public bool IsActive; public bool CanDelete;
-        /// <summary>Назва, якщо браслет її передає (поле 2); інакше null</summary>
-        public string Name;
 
         static WatchfaceEntry From(ProtoMessage m)
         {
             var id = m.String(1);
-            return id == null ? null : new WatchfaceEntry { Id = id, Name = Readable(m), IsActive = m.Bool(3) ?? false, CanDelete = m.Bool(4) ?? false };
-        }
-
-        static string Readable(ProtoMessage m)
-        {
-            try
-            {
-                var s = m.String(2);
-                if (string.IsNullOrWhiteSpace(s) || s.Length > 40) return null;
-                return s.All(c => !char.IsControl(c) && c != '\uFFFD') ? s.Trim() : null;
-            }
-            catch (System.Exception) { return null; }
+            return id == null ? null : new WatchfaceEntry { Id = id, IsActive = m.Bool(3) ?? false, CanDelete = m.Bool(4) ?? false };
         }
 
         public static List<WatchfaceEntry> List(Command c)

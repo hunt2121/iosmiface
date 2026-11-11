@@ -56,17 +56,12 @@ jobs:
           $k = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
           New-Item $k -Force | Out-Null
           Set-ItemProperty $k AppsUseLightTheme 1 -Type DWord
-          $bin = "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
-          Shot "h5-light-home-a" "--home=a --face=$bin --demo-band"; Shot "h6-light-home-b" "--home=b --face=$bin --demo-band"
           Shot "1-light-faces" "--page=faces"; Shot "2-light-editor-list" "--page=editor"; Shot "3-light-editor" "--demo"
           Shot "4-light-settings" "--page=settings"; Shot "5-light-key" "--page=key"; Shot "6-light-fonts" "--page=fonts"
           Shot "a1-light-arc" "--demo=arc"; Shot "a2-light-line" "--demo=line"; Shot "a3-light-digits" "--demo=digits"
           Shot "a4-light-xml" "--demo=xml"; Shot "a5-light-images" "--demo=images"; Shot "a6-light-gallery" "--demo=gallery"; Shot "a7-light-gallery2" "--demo=gallery2"
           Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
           Shot "7-dark-faces" "--page=faces"; Shot "8-dark-editor" "--demo"; Shot "9-dark-settings" "--page=settings"
-          $bin = "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
-          Shot "h1-dark-home-a" "--home=a --face=$bin --demo-band"; Shot "h2-dark-home-b" "--home=b --face=$bin --demo-band"
-          Shot "h3-dark-home-a-empty" "--home=a"; Shot "h4-dark-home-b-off" "--home=b"
           Shot "b1-dark-arc" "--demo=arc"; Shot "b2-dark-xml" "--demo=xml"; Shot "b3-dark-gallery" "--demo=gallery"
           if (Test-Path "$env:TEMP\bandface-crash.txt") { Write-Output ("::warning::" + ((Get-Content "$env:TEMP\bandface-crash.txt" -Raw) -replace "`r?`n"," | ").Substring(0,700)) }
           foreach ($t in Get-ChildItem *.txt) { Write-Output ("::warning::" + ((Get-Content $t -Raw) -replace "`r?`n"," | ")) }

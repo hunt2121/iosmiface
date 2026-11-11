@@ -29,25 +29,6 @@ namespace BandFace.Creator
         public event Action CancelInstallRequested;
         /// <summary>Id циферблата, який зараз на екрані браслета (null — невідомо)</summary>
         string activeFaceId;
-        /// <summary>Превʼю й назва проєкту з цим ID циферблата (для полиці «На браслеті»); null — такого проєкту немає</summary>
-        public ImageSource PreviewFor(string faceId, out string name)
-        {
-            name = null;
-            var p = store.Projects.FirstOrDefault(x => x.Root.Str("id") == faceId);
-            if (p == null) return null;
-            name = p.DisplayName;
-            var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks;
-            if (thumbs.TryGetValue(key, out var t)) return t;
-            try
-            {
-                double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                var src = new FaceRenderer(p).Render(0, Math.Max(328, 236 * dpi * 1.5) / p.Meta.Device.Height).Image;
-                thumbs[key] = src;
-                return src;
-            }
-            catch (Exception) { return null; }
-        }
-
         public void SetActiveFace(string id)
         {
             if (activeFaceId == id) return;
