@@ -31,22 +31,46 @@
             <Image src="d_sec/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="sec" source="timeSecond" ref="@d_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="wk_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="wk_n/0.png"/>
-            <Image src="wk_n/1.png"/>
-            <Image src="wk_n/2.png"/>
-            <Image src="wk_n/3.png"/>
-            <Image src="wk_n/4.png"/>
-            <Image src="wk_n/5.png"/>
-            <Image src="wk_n/6.png"/>
+        <ImageArray name="wk0_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk0_n/0.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_wk_n" source="dateWeek" ref="@wk_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_wk0_n" source="dateWeek" ref="@wk0_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="0"/>
+        </DataItemImageValues>
+        <ImageArray name="wk1_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk1_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk1_n" source="dateWeek" ref="@wk1_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="wk2_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk2_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk2_n" source="dateWeek" ref="@wk2_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="2"/>
+        </DataItemImageValues>
+        <ImageArray name="wk3_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk3_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk3_n" source="dateWeek" ref="@wk3_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="3"/>
+        </DataItemImageValues>
+        <ImageArray name="wk4_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk4_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk4_n" source="dateWeek" ref="@wk4_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="4"/>
+        </DataItemImageValues>
+        <ImageArray name="wk5_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk5_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk5_n" source="dateWeek" ref="@wk5_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="5"/>
+        </DataItemImageValues>
+        <ImageArray name="wk6_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk6_n/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk6_n" source="dateWeek" ref="@wk6_n" renderRule="hideWhenOutRange" rotation="0">
             <Param value="6"/>
         </DataItemImageValues>
         <ImageArray name="d_day_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
@@ -62,6 +86,16 @@
             <Image src="d_day_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="day_n" source="dateDay" ref="@d_day_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <Widget name="date_n" widgetName="number" groupType="general" w="123" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="5">
+            <Item ref="@v_wk0_n" x="0" y="0"/>
+            <Item ref="@v_wk1_n" x="0" y="0"/>
+            <Item ref="@v_wk2_n" x="0" y="0"/>
+            <Item ref="@v_wk3_n" x="0" y="0"/>
+            <Item ref="@v_wk4_n" x="0" y="0"/>
+            <Item ref="@v_wk5_n" x="0" y="0"/>
+            <Item ref="@v_wk6_n" x="0" y="0"/>
+            <Item ref="@day_n" x="0" y="0"/>
+        </Widget>
         <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_n/0.png"/>
             <Image src="d_st_n/1.png"/>
@@ -105,22 +139,46 @@
         </ImageArray>
         <DataItemImageNumber name="min_a" source="timeMinute" ref="@d_min_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="xv_a" src="xv_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="wk_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="wk_a/0.png"/>
-            <Image src="wk_a/1.png"/>
-            <Image src="wk_a/2.png"/>
-            <Image src="wk_a/3.png"/>
-            <Image src="wk_a/4.png"/>
-            <Image src="wk_a/5.png"/>
-            <Image src="wk_a/6.png"/>
+        <ImageArray name="wk0_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk0_a/0.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_wk_a" source="dateWeek" ref="@wk_a" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_wk0_a" source="dateWeek" ref="@wk0_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="0"/>
+        </DataItemImageValues>
+        <ImageArray name="wk1_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk1_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk1_a" source="dateWeek" ref="@wk1_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="wk2_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk2_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk2_a" source="dateWeek" ref="@wk2_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="2"/>
+        </DataItemImageValues>
+        <ImageArray name="wk3_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk3_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk3_a" source="dateWeek" ref="@wk3_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="3"/>
+        </DataItemImageValues>
+        <ImageArray name="wk4_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk4_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk4_a" source="dateWeek" ref="@wk4_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="4"/>
+        </DataItemImageValues>
+        <ImageArray name="wk5_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk5_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk5_a" source="dateWeek" ref="@wk5_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="5"/>
+        </DataItemImageValues>
+        <ImageArray name="wk6_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk6_a/0.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk6_a" source="dateWeek" ref="@wk6_a" renderRule="hideWhenOutRange" rotation="0">
             <Param value="6"/>
         </DataItemImageValues>
         <ImageArray name="d_day_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
@@ -136,6 +194,16 @@
             <Image src="d_day_a/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <Widget name="date_a" widgetName="number" groupType="general" w="123" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="5">
+            <Item ref="@v_wk0_a" x="0" y="0"/>
+            <Item ref="@v_wk1_a" x="0" y="0"/>
+            <Item ref="@v_wk2_a" x="0" y="0"/>
+            <Item ref="@v_wk3_a" x="0" y="0"/>
+            <Item ref="@v_wk4_a" x="0" y="0"/>
+            <Item ref="@v_wk5_a" x="0" y="0"/>
+            <Item ref="@v_wk6_a" x="0" y="0"/>
+            <Item ref="@day_a" x="0" y="0"/>
+        </Widget>
         <ImageArray name="d_st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_a/0.png"/>
             <Image src="d_st_a/1.png"/>
@@ -157,8 +225,7 @@
         <Layout ref="@min_n" x="15" y="178"/>
         <Layout ref="@xv_n" x="40" y="266"/>
         <Layout ref="@sec" x="42" y="300"/>
-        <Layout ref="@v_wk_n" x="4" y="73"/>
-        <Layout ref="@day_n" x="76" y="73"/>
+        <Layout ref="@date_n" x="0" y="73"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
@@ -167,8 +234,7 @@
         <Layout ref="@ptr_a" x="0" y="248"/>
         <Layout ref="@min_a" x="15" y="178"/>
         <Layout ref="@xv_a" x="40" y="266"/>
-        <Layout ref="@v_wk_a" x="4" y="73"/>
-        <Layout ref="@day_a" x="76" y="73"/>
+        <Layout ref="@date_a" x="0" y="73"/>
         <Layout ref="@st_a" x="60" y="413"/>
     </Theme>
 </Watchface>

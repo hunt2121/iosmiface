@@ -9,7 +9,7 @@ OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
 H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
-DATE_DX={"ua":0,"ru":1,"en":-1,"en12":-1}[LANGV]   # поправка, щоб дата стояла по центру осі x=61 (виміряно на всіх днях тижня)
+DGAP=5   # проміжок між днем тижня й числом
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
@@ -35,8 +35,8 @@ def soles_icon(col,gap,boxh,top):
     c=im.crop(im.getbbox()); w=round(c.width*22/c.height)
     ic=c.convert("RGBa").resize((w,22),Image.LANCZOS).convert("RGBA")
     out=Image.new("RGBA",(gap+w,boxh),(0,0,0,0)); out.alpha_composite(ic,(gap,top)); return out
-def values(n,src,arr,ps):
-    res.append('<DataItemImageValues name="v_%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(n,src,arr))
+def values(n,src,arr,ps,rr="alwaysShow"):
+    res.append('<DataItemImageValues name="v_%s" source="%s" ref="@%s" renderRule="%s" rotation="0">'%(n,src,arr,rr))
     for p in ps: res.append('    <Param value="%d"/>'%p)
     res.append('</DataItemImageValues>')
 def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,round(x),round(y)))
@@ -121,10 +121,18 @@ for t,dim in (("n",False),("a",True)):
         else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
-    ww=math.ceil(max(fd.getlength(w+" ") for w in WEEK)/K)+1
-    array("wk_"+t,[text_img(w+" ",fd,col,w=ww,h=34,align="right") for w in WEEK]); values("wk_"+t,"dateWeek","wk_"+t,range(7))
-    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
-    x0=58-(ww+2*cd)/2+DATE_DX; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
+    # Дата по центру осі за будь-якого дня тижня й числа: рядок (flex), який браслет сам центрує.
+    # Кожен день тижня — окремий елемент точно по ширині напису; він показується лише у свій день
+    # (hideWhenOutRange з одним значенням), тож у рядку завжди тільки потрібна назва + число.
+    rows=[]
+    for k,w in enumerate(WEEK):
+        im=text_img(w,fd,col,h=34); a=im.getchannel("A"); b=a.getbbox(); im=im.crop((b[0],0,b[2],34))
+        array("wk%d_%s"%(k,t),[im]); values("wk%d_%s"%(k,t),"dateWeek","wk%d_%s"%(k,t),[k],"hideWhenOutRange"); rows.append("v_wk%d_%s"%(k,t))
+    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False); rows.append("day_"+t)
+    DW=123   # ширина рядка: середина — піксель 61
+    res.append('<Widget name="date_%s" widgetName="number" groupType="general" w="%d" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="%d">'%(t,DW,DGAP))
+    for r in rows: res.append('    <Item ref="@%s" x="0" y="0"/>'%r)
+    res.append('</Widget>'); lay(t,"date_"+t,0,90-17)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
