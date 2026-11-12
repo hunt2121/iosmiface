@@ -98,7 +98,7 @@ STY=round(67.5-SH/2)
 lay("n","title",TX,TY); lay("n","v_st",0,STY)
 
 # ── заряд: блискавка · 6 · три клітинки · 5 · % — по центру
-h=26; wI,sp=metrics(h); digits("d26",h)
+h=26; wI,sp=metrics(h); digits("d26",h,True)   # один набір цифр 26 px на все (з мінусом — для температури)
 bolt=image("bolt",picon(pix.BOLT))
 pc=D7.ring_pct(400); sc=(14/2.4)/pc.info['ring']; pc=pc.resize((round(pc.width*sc*K),round(pc.height*sc*K)),Image.LANCZOS); pc=pc.crop(pc.getbbox())
 pc=tint(pc.resize((round(pc.width/K),round(pc.height/K)),Image.LANCZOS),WH)
@@ -206,7 +206,7 @@ nwk=max(len(w) for w in WEEK)
 array("wk",[text_lcd(w,h) for w in WEEK]); values("v_wk","dateWeek","wk",range(7))
 image("g_wk",ghost(nwk,h)); lay("n","g_wk",Lc,y1); lay("n","v_wk",Lc,y1)
 DW=cells_w(5,h); xd=Rc-DW
-image("g_date",ghost(5,h)); lay("n","g_date",xd,y1)
+image("g5",ghost(5,h)); lay("n","g5",xd,y1)   # та сама підкладка на 5 клітинок, що й під кроками
 image("dash",cell('-',h))
 first,second=("dateMonth","dateDay") if H12 else ("dateDay","dateMonth")   # місяць-день лише в EN 12h
 number("dd1",first,"d26",2,"left",True,sp); number("dd2",second,"d26",2,"left",True,sp)
@@ -226,20 +226,20 @@ lay("n","anim",AX,AY)
 yc=y2+(Hm-colH)/2
 DOTX=1   # крапкові іконки: щілина праворуч робить їх на вигляд ~0,7 px лівіше — компенсуємо
 lay("n","heart",Rc-w3/2-heart.width/2+DOTX,yc)
-image("g_hr",ghost(3,h)); lay("n","g_hr",Rc-w3,yc+heart.height+G)
+lay("n","g3",Rc-w3,yc+heart.height+G)   # та сама підкладка на 3 клітинки, що й під зарядом
 number("hrt","healthHeartRate","d26",3,"right",False,sp); lay("n","hrt",Rc,yc+heart.height+G)
 yt=yc+heart.height+G+h+V+wh_+G
-array("wx",wxi); values("v_wx","weatherCurrentWeather","wx",range(len(wxi)))
+wxp=[(i,im) for i,im in enumerate(wxi) if i==0 or im.tobytes()!=wxi[i-1].tobytes()]   # однакові сусідні значки — один кадр на кілька кодів погоди
+array("wx",[im for _,im in wxp]); values("v_wx","weatherCurrentWeather","wx",[i for i,_ in wxp])
 lay("n","v_wx",Rc-w3/2-wxi[0].width/2+DOTX,yt-G-wh_+1)   # +1: на браслеті погода виглядала на 1 px вище за серце
-digits("d26m",h,True)
-image("g_tp",ghost(3,h)); lay("n","g_tp",Rc-w3,yt)
-number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp); lay("n","tmp",Rc,yt)   # цифри закінчуються рівно на Rc, як пульс
+lay("n","g3",Rc-w3,yt)
+number("tmp","weatherCurrentTemperature","d26",3,"right",False,sp); lay("n","tmp",Rc,yt)   # цифри закінчуються рівно на Rc, як пульс
 lay("n","deg",Rc+3,yt+1)
 # кроки: сліди · 6 · п'ять клітинок — по центру
 soles=image("soles",picon(pix.SOLES)); w5=cells_w(5,h)
 tot=soles.width+G+w5; x0=floor_c((W-tot)/2)
 lay("n","soles",x0,round(y3+13-soles.height/2))
-image("g5",ghost(5,h)); lay("n","g5",x0+soles.width+G,y3)
+lay("n","g5",x0+soles.width+G,y3)
 number("stp","healthStepCount","d26",5,"right",False,sp); lay("n","stp",x0+tot,y3)
 
 # ── AOD: ті самі картинки без підкладки, поверх — чорний шар 128/255 (50 %, білий → 127); «звʼязок втрачено» — над шаром

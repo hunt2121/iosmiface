@@ -29,6 +29,7 @@
             <Image src="d26/7.png"/>
             <Image src="d26/8.png"/>
             <Image src="d26/9.png"/>
+            <Image src="d26/10.png"/>
         </ImageArray>
         <Image name="bolt" src="bolt.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="pct" src="pct.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
@@ -71,7 +72,7 @@
             <Param value="6"/>
         </DataItemImageValues>
         <Image name="g_wk" src="g_wk.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <Image name="g_date" src="g_date.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="g5" src="g5.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="dash" src="dash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="dd1" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <DataItemImageNumber name="dd2" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
@@ -126,7 +127,6 @@
             <Image src="astro/47.png"/>
         </ImageArray>
         <Sprite name="anim" ref="@astro" interval="83" repeatCount="0"/>
-        <Image name="g_hr" src="g_hr.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="hrt" source="healthHeartRate" ref="@d26" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <ImageArray name="wx" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="wx/0.png"/>
@@ -152,7 +152,6 @@
             <Image src="wx/20.png"/>
             <Image src="wx/21.png"/>
             <Image src="wx/22.png"/>
-            <Image src="wx/23.png"/>
         </ImageArray>
         <DataItemImageValues name="v_wx" source="weatherCurrentWeather" ref="@wx" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
@@ -167,7 +166,6 @@
             <Param value="9"/>
             <Param value="10"/>
             <Param value="11"/>
-            <Param value="12"/>
             <Param value="13"/>
             <Param value="14"/>
             <Param value="15"/>
@@ -180,23 +178,8 @@
             <Param value="22"/>
             <Param value="23"/>
         </DataItemImageValues>
-        <ImageArray name="d26m" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="d26m/0.png"/>
-            <Image src="d26m/1.png"/>
-            <Image src="d26m/2.png"/>
-            <Image src="d26m/3.png"/>
-            <Image src="d26m/4.png"/>
-            <Image src="d26m/5.png"/>
-            <Image src="d26m/6.png"/>
-            <Image src="d26m/7.png"/>
-            <Image src="d26m/8.png"/>
-            <Image src="d26m/9.png"/>
-            <Image src="d26m/10.png"/>
-        </ImageArray>
-        <Image name="g_tp" src="g_tp.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="tmp" source="weatherCurrentTemperature" ref="@d26m" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <DataItemImageNumber name="tmp" source="weatherCurrentTemperature" ref="@d26" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <Image name="soles" src="soles.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <Image name="g5" src="g5.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="stp" source="healthStepCount" ref="@d26" totalDigits="5" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
     </Resources>
@@ -213,16 +196,16 @@
         <Layout ref="@mn" x="116" y="136"/>
         <Layout ref="@g_wk" x="25" y="219"/>
         <Layout ref="@v_wk" x="25" y="219"/>
-        <Layout ref="@g_date" x="96" y="219"/>
+        <Layout ref="@g5" x="96" y="219"/>
         <Layout ref="@dd1" x="96" y="219"/>
         <Layout ref="@dash" x="134" y="219"/>
         <Layout ref="@dd2" x="153" y="219"/>
         <Layout ref="@anim" x="0" y="255"/>
         <Layout ref="@heart" x="149" y="274"/>
-        <Layout ref="@g_hr" x="134" y="301"/>
+        <Layout ref="@g3" x="134" y="301"/>
         <Layout ref="@hrt" x="187" y="301"/>
         <Layout ref="@v_wx" x="140" y="357"/>
-        <Layout ref="@g_tp" x="134" y="389"/>
+        <Layout ref="@g3" x="134" y="389"/>
         <Layout ref="@tmp" x="187" y="389"/>
         <Layout ref="@deg" x="190" y="390"/>
         <Layout ref="@soles" x="44" y="445"/>

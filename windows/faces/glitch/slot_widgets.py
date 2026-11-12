@@ -126,7 +126,6 @@ YV = SLOT_Y - HV / 2             # верх рядка значень на ек�
 WNAME = {"ua": ("Батарея", "Погода", "Відстань", "Нічого", "Мін/макс", "Секунди"), "ru": ("Заряд", "Погода", "Расстояние", "Ничего", "Мин/макс", "Секунды")}.get(LANGV, ("Battery", "Weather", "Distance", "None", "Min/max", "AM/PM" if LANGV == "en12" else "Seconds"))   # назви в меню вибору (як в офіційних)
 
 # 1. Погода: «14°» + значок погоди
-deg = deg_img("u_deg")            # для AOD (там число з unitIcon)
 plain_img("f_deg", "°", font=FV, gap_text=0)
 ICS = [WI.centered_icon(p) for _, p in WI.ICONS]
 padI = lambda im: (lambda o: (o.paste(im, (2, 0)), o)[1])(Image.new("RGBA", (im.width + 2, im.height), (0, 0, 0, 0)))
@@ -142,9 +141,6 @@ plain_img("f_km", TXT[LANGV]["km"], i_route)
 number("dist", "healthStepKiloMeter", "dig_val", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
 widget("w_distance", WNAME[2], [row("r_distance", ["dist", "f_km"])])
 
-# для AOD: правий край «°» (як було)
-tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
-XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 # Один стиль: усе вибирається лише слотом (батарея — перша, типова). AOD показує батарею сірим.
 theme.update({"a_slot": [], "a_bt": []})

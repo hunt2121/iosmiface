@@ -119,20 +119,8 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <ImageArray name="d_st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="d_st_a/0.png"/>
-            <Image src="d_st_a/1.png"/>
-            <Image src="d_st_a/2.png"/>
-            <Image src="d_st_a/3.png"/>
-            <Image src="d_st_a/4.png"/>
-            <Image src="d_st_a/5.png"/>
-            <Image src="d_st_a/6.png"/>
-            <Image src="d_st_a/7.png"/>
-            <Image src="d_st_a/8.png"/>
-            <Image src="d_st_a/9.png"/>
-        </ImageArray>
         <Image name="stic_a" src="stic_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@stic_a"/>
+        <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_day_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@stic_a"/>
         <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="ptr_n" src="c1/ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
         <Image name="xv_n" src="c1/xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>

@@ -169,11 +169,12 @@ for t,dim in (("n",False),("a",True)):
             x1,y1=icon_pos(162)      # стиль 1: посередині між датою (низ 122) і хвилинами (верх 202)
             ST2["v_bat_n"]=(x1,y1); ST2["v_bt_n"]=(x1,y1)
     # кроки
-    cst=digits("st_"+t,fd,WH if dim else OR,34)
+    if dim: sarr="day_n"   # AOD: ті самі білі цифри, що й у даті
+    else: cst=digits("st_n",fd,OR,34); sarr="st_n"
     SI=os.environ.get("STEPS_ICON","right")
     if SI=="right":
         image("stic_"+t,soles_icon(WH if dim else OR,5,34,6))   # підошви праворуч, 5 px від цифр
-        number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,STX,440-17-10+STDY)
+        number("st_"+t,"healthStepCount",sarr,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,STX,440-17-10+STDY)
         if t=="n": ST2["st_n"]=(60,440-17-10)   # стиль 2: кроки на осі x=61, низ за 80 px від краю   # кроки з підошвами — разом по центру осі x=61
     else:
         ic=soles_icon(WH if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
@@ -181,7 +182,7 @@ for t,dim in (("n",False),("a",True)):
         ybot=439                                         # нижній видимий рядок блоку
         if SI=="top": ny=ybot-19; iy=ny-GAPV-22
         else: iy=ybot-21; ny=iy-GAPV-20
-        number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,61,ny-7)
+        number("st_"+t,"healthStepCount",sarr,5,"center",False); lay(t,"st_"+t,61,ny-7)
         lay(t,"stic_"+t,math.floor(61.5-ic.width/2),iy)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]

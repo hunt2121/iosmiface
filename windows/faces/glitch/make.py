@@ -179,9 +179,7 @@ def bt_frame(cols,slash):
 for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),):   # в AOD батареї немає — ресурси для AOD не потрібні
     array("batt_"+t,[batt_frame(l/10,cols,fill) for l in range(11)])
     values("batt_"+t,"systemStatusBattery","batt_"+t,[l*10 for l in range(11)])
-    empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
-    array("bt_"+t,[bt_frame(cols,PNK if t=="n" else G2),empty])     # 0 — зв'язку немає: значок; 1 — є: порожньо
-    values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
+    # значок «немає зв'язку» — плашка bt_cover у slot_widgets.py
     Y=102   # посередині між низом дати і верхом годин
     if BSTYLE=="ORIG":                 # як на мокапі: значок, праворуч «85%»; група по центру для двох цифр
         f=SEMI(TS); pct=image("pct_"+t,text_img("%",f,tc,h=SH)); ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
@@ -205,8 +203,9 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),):   # в AOD 
         pass   # AOD: на цьому місці погода (перший віджет слота) — див. slot_widgets.py
 
 # ── секунди (лише звичайний екран)
-fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
+fs=BOLD(33*1.3+1.5)
 if LANGV!="en12":
+    ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
     number("sec","timeSecond","dig_sec",2,"left",True); SEC_ITEM=("sec",106-cw+1,392-28)   # секунди — віджет другого слота
 else:   # 12-годинний: замість секунд — AM/PM тим самим шрифтом і на тому ж місці (в AOD — немає)
     for t,col in (("n",PNK),):
@@ -230,14 +229,15 @@ def icon_heart(cols,up=0):
         d.ellipse([(x-8.4)*Q,(cy-6.5)*Q,(x)*Q,(cy+1.9)*Q],fill=col); d.ellipse([(x)*Q,(cy-6.5)*Q,(x+8.4)*Q,(cy+1.9)*Q],fill=col)
         d.polygon([((x-8.1)*Q,(cy-1.2)*Q),((x+8.1)*Q,(cy-1.2)*Q),(x*Q,(cy+7.5)*Q)],fill=col)
     return down(im)
-def centered(t,name,src,digits,col,cy,icon,dx=0):
-    image("ico_"+name,icon); small(col,"s"+name)
-    number(name,src,"dig_s"+name,digits,"center",False,0,"ico_"+name)
+def centered(t,name,src,digits,col,cy,icon,dx=0,arr=None):
+    image("ico_"+name,icon)
+    if arr is None: small(col,"s"+name); arr="dig_s"+name
+    number(name,src,arr,digits,"center",False,0,"ico_"+name)
     lay(t,name,106+dx,cy-SH/2)         # для align=center x — середина рядка; dx — поправка на видиму частину
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
-centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
+centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC),arr="dig_cn")   # ті самі блакитні цифри, що й у даті
 centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1),dx=-2)   # цифри на 2 px нижче, серце — на місці
-centered("a","steps_a","healthStepCount",5,G2,447,icon_steps(((G2,0),)))   # AOD — те саме місце, що й на звичайному екрані
+centered("a","steps_a","healthStepCount",5,G2,447,icon_steps(((G2,0),)),arr="dig_ca")   # ті самі цифри, що й у даті AOD   # AOD — те саме місце, що й на звичайному екрані
 
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]

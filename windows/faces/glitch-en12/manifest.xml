@@ -147,14 +147,6 @@
             <Param value="90"/>
             <Param value="100"/>
         </DataItemImageValues>
-        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="bt_n/0.png"/>
-            <Image src="bt_n/1.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_bt_n" source="systemStatusBluetooth" ref="@bt_n" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-        </DataItemImageValues>
         <Image name="pct_n" src="pct_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="dig_bn" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_bn/0.png"/>
@@ -169,18 +161,6 @@
             <Image src="dig_bn/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
-        <ImageArray name="dig_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="dig_sec/0.png"/>
-            <Image src="dig_sec/1.png"/>
-            <Image src="dig_sec/2.png"/>
-            <Image src="dig_sec/3.png"/>
-            <Image src="dig_sec/4.png"/>
-            <Image src="dig_sec/5.png"/>
-            <Image src="dig_sec/6.png"/>
-            <Image src="dig_sec/7.png"/>
-            <Image src="dig_sec/8.png"/>
-            <Image src="dig_sec/9.png"/>
-        </ImageArray>
         <ImageArray name="ampm_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="ampm_n/0.png"/>
             <Image src="ampm_n/1.png"/>
@@ -190,19 +170,7 @@
             <Param value="1"/>
         </DataItemImageValues>
         <Image name="ico_steps_n" src="ico_steps_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ssteps_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="dig_ssteps_n/0.png"/>
-            <Image src="dig_ssteps_n/1.png"/>
-            <Image src="dig_ssteps_n/2.png"/>
-            <Image src="dig_ssteps_n/3.png"/>
-            <Image src="dig_ssteps_n/4.png"/>
-            <Image src="dig_ssteps_n/5.png"/>
-            <Image src="dig_ssteps_n/6.png"/>
-            <Image src="dig_ssteps_n/7.png"/>
-            <Image src="dig_ssteps_n/8.png"/>
-            <Image src="dig_ssteps_n/9.png"/>
-        </ImageArray>
-        <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_ssteps_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_n"/>
+        <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_cn" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_n"/>
         <Image name="ico_pulse_n" src="ico_pulse_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="dig_spulse_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_spulse_n/0.png"/>
@@ -218,19 +186,7 @@
         </ImageArray>
         <DataItemImageNumber name="pulse_n" source="healthHeartRate" ref="@dig_spulse_n" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_pulse_n"/>
         <Image name="ico_steps_a" src="ico_steps_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ssteps_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="dig_ssteps_a/0.png"/>
-            <Image src="dig_ssteps_a/1.png"/>
-            <Image src="dig_ssteps_a/2.png"/>
-            <Image src="dig_ssteps_a/3.png"/>
-            <Image src="dig_ssteps_a/4.png"/>
-            <Image src="dig_ssteps_a/5.png"/>
-            <Image src="dig_ssteps_a/6.png"/>
-            <Image src="dig_ssteps_a/7.png"/>
-            <Image src="dig_ssteps_a/8.png"/>
-            <Image src="dig_ssteps_a/9.png"/>
-        </ImageArray>
-        <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
+        <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ca" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
         <ImageArray name="dig_val" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_val/0.png"/>
             <Image src="dig_val/1.png"/>
@@ -245,7 +201,6 @@
             <Image src="dig_val/10.png"/>
             <Image src="dig_val/11.png"/>
         </ImageArray>
-        <Image name="u_deg" src="u_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="f_deg" src="f_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="wx_icons" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="wx_icons/0.png"/>
