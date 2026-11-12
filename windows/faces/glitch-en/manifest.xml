@@ -362,20 +362,10 @@
         <Widget name="w_distance" widgetName="Distance" groupType="general" w="212" h="96">
             <Item ref="@r_distance" x="0" y="28"/>
         </Widget>
-        <Slot name="slot_bat" type="widget">
+        <Slot name="slot_top" type="widget">
             <Item ref="@w_battery"/>
             <Item ref="@w_weather"/>
             <Item ref="@w_distance"/>
-        </Slot>
-        <Slot name="slot_wx" type="widget">
-            <Item ref="@w_weather"/>
-            <Item ref="@w_battery"/>
-            <Item ref="@w_distance"/>
-        </Slot>
-        <Slot name="slot_dist" type="widget">
-            <Item ref="@w_distance"/>
-            <Item ref="@w_battery"/>
-            <Item ref="@w_weather"/>
         </Slot>
         <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="bt_cover/0.png"/>
@@ -474,7 +464,7 @@
             <Item ref="@f_km_a" x="0" y="0"/>
         </Widget>
     </Resources>
-    <Theme type="normal" name="Battery" bgColor="#000000">
+    <Theme type="normal" name="GLITCH" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
         <Layout ref="@timeMinute_n" x="6" y="241"/>
         <Layout ref="@v_week_n" x="29" y="35"/>
@@ -485,10 +475,10 @@
         <Layout ref="@sec" x="78" y="364"/>
         <Layout ref="@steps_n" x="106" y="432"/>
         <Layout ref="@pulse_n" x="104" y="467"/>
-        <Layout ref="@slot_bat" x="0" y="54"/>
+        <Layout ref="@slot_top" x="0" y="54"/>
         <Layout ref="@v_bt_cover" x="5" y="84"/>
     </Theme>
-    <Theme type="AOD" name="Battery" bgColor="#000000">
+    <Theme type="AOD" name="GLITCH" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
         <Layout ref="@timeMinute_a" x="6" y="241"/>
         <Layout ref="@v_week_a" x="29" y="35"/>
@@ -499,58 +489,6 @@
         <Layout ref="@steps_a" x="106" y="432"/>
         <Layout ref="@v_batt_a" x="69" y="85"/>
         <Layout ref="@bat_a" x="106" y="87"/>
-        <Layout ref="@v_bt_cover_a" x="5" y="84"/>
-    </Theme>
-    <Theme type="normal" name="Weather" bgColor="#000000">
-        <Layout ref="@timeHour_n" x="6" y="133"/>
-        <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@v_week_n" x="29" y="35"/>
-        <Layout ref="@us_n" x="105" y="35"/>
-        <Layout ref="@day_n" x="116" y="35"/>
-        <Layout ref="@dot_n" x="146" y="35"/>
-        <Layout ref="@mon_n" x="154" y="35"/>
-        <Layout ref="@sec" x="78" y="364"/>
-        <Layout ref="@steps_n" x="106" y="432"/>
-        <Layout ref="@pulse_n" x="104" y="467"/>
-        <Layout ref="@slot_wx" x="0" y="54"/>
-        <Layout ref="@v_bt_cover" x="5" y="84"/>
-    </Theme>
-    <Theme type="AOD" name="Weather" bgColor="#000000">
-        <Layout ref="@timeHour_a" x="6" y="133"/>
-        <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@v_week_a" x="29" y="35"/>
-        <Layout ref="@us_a" x="105" y="35"/>
-        <Layout ref="@day_a" x="116" y="35"/>
-        <Layout ref="@dot_a" x="146" y="35"/>
-        <Layout ref="@mon_a" x="154" y="35"/>
-        <Layout ref="@steps_a" x="106" y="432"/>
-        <Layout ref="@r_weather_a" x="0" y="82"/>
-        <Layout ref="@v_bt_cover_a" x="5" y="84"/>
-    </Theme>
-    <Theme type="normal" name="Distance" bgColor="#000000">
-        <Layout ref="@timeHour_n" x="6" y="133"/>
-        <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@v_week_n" x="29" y="35"/>
-        <Layout ref="@us_n" x="105" y="35"/>
-        <Layout ref="@day_n" x="116" y="35"/>
-        <Layout ref="@dot_n" x="146" y="35"/>
-        <Layout ref="@mon_n" x="154" y="35"/>
-        <Layout ref="@sec" x="78" y="364"/>
-        <Layout ref="@steps_n" x="106" y="432"/>
-        <Layout ref="@pulse_n" x="104" y="467"/>
-        <Layout ref="@slot_dist" x="0" y="54"/>
-        <Layout ref="@v_bt_cover" x="5" y="84"/>
-    </Theme>
-    <Theme type="AOD" name="Distance" bgColor="#000000">
-        <Layout ref="@timeHour_a" x="6" y="133"/>
-        <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@v_week_a" x="29" y="35"/>
-        <Layout ref="@us_a" x="105" y="35"/>
-        <Layout ref="@day_a" x="116" y="35"/>
-        <Layout ref="@dot_a" x="146" y="35"/>
-        <Layout ref="@mon_a" x="154" y="35"/>
-        <Layout ref="@steps_a" x="106" y="432"/>
-        <Layout ref="@r_distance_a" x="0" y="82"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
     </Theme>
 </Watchface>

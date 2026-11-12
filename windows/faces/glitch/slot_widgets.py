@@ -146,14 +146,12 @@ widget("w_distance", WNAME[2], [row("r_distance", ["dist", "f_km"])])
 tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
-# Три стилі циферблата — у кожного свій слот (типовий віджет перший) і свій AOD з тим самим віджетом сірим.
+# Один стиль: усе вибирається лише слотом (батарея — перша, типова). AOD показує батарею сірим.
 theme.update({"a_bat": [], "a_wx": [], "a_dist": [], "a_bt": []})
-BASE = ["w_battery", "w_weather", "w_distance"]
-for key, first in (("bat", "w_battery"), ("wx", "w_weather"), ("dist", "w_distance")):
-    res.append('<Slot name="slot_%s" type="widget">' % key)
-    for w in [first] + [x for x in BASE if x != first]: res.append('    <Item ref="@%s"/>' % w)
-    res.append('</Slot>')
-lay("n", "slot_bat", WX, WY)     # у стилях «Погода» / «Відстань» тут підставляється slot_wx / slot_dist
+res.append('<Slot name="slot_top" type="widget">')
+for w in ["w_battery", "w_weather", "w_distance"]: res.append('    <Item ref="@%s"/>' % w)
+res.append('</Slot>')
+lay("n", "slot_top", WX, WY)
 
 # Блютуз «немає зв'язку» — поверх слота: чорна плашка, більша за будь-який віджет слота на 1 px з кожного боку
 # (межі виміряно на крайніх значеннях: −12°, 12.34 км, 100% …), значок — рівно по центру. Є зв'язок — порожньо.
