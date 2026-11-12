@@ -237,7 +237,7 @@ def centered(t,name,src,digits,col,cy,icon,dx=0):
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
 centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
 centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1),dx=-2)   # цифри на 2 px нижче, серце — на місці
-centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
+centered("a","steps_a","healthStepCount",5,G2,447,icon_steps(((G2,0),)))   # AOD — те саме місце, що й на звичайному екрані
 
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]

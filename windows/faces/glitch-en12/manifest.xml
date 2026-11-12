@@ -503,7 +503,7 @@
         <Layout ref="@day_a" x="116" y="35"/>
         <Layout ref="@dot_a" x="146" y="35"/>
         <Layout ref="@mon_a" x="154" y="35"/>
-        <Layout ref="@steps_a" x="107" y="418"/>
+        <Layout ref="@steps_a" x="106" y="432"/>
         <Layout ref="@v_batt_a" x="69" y="85"/>
         <Layout ref="@bat_a" x="106" y="87"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
@@ -530,7 +530,7 @@
         <Layout ref="@day_a" x="116" y="35"/>
         <Layout ref="@dot_a" x="146" y="35"/>
         <Layout ref="@mon_a" x="154" y="35"/>
-        <Layout ref="@steps_a" x="107" y="418"/>
+        <Layout ref="@steps_a" x="106" y="432"/>
         <Layout ref="@r_weather_a" x="0" y="82"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
     </Theme>
@@ -556,7 +556,7 @@
         <Layout ref="@day_a" x="116" y="35"/>
         <Layout ref="@dot_a" x="146" y="35"/>
         <Layout ref="@mon_a" x="154" y="35"/>
-        <Layout ref="@steps_a" x="107" y="418"/>
+        <Layout ref="@steps_a" x="106" y="432"/>
         <Layout ref="@r_distance_a" x="0" y="82"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
     </Theme>
