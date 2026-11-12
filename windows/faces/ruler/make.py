@@ -137,7 +137,7 @@ for t,dim in (("n",False),("a",True)):
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
     if SI=="right":
-        image("stic_"+t,soles_icon((115,115,115) if dim else OR,4,34,6))   # підошви праворуч, 4 px від цифр
+        image("stic_"+t,soles_icon((115,115,115) if dim else OR,5,34,6))   # підошви праворуч, 5 px від цифр
         number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,60,440-17-10)   # кроки з підошвами — разом по центру осі x=61
     else:
         ic=soles_icon((115,115,115) if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
