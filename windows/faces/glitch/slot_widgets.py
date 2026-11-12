@@ -7,8 +7,8 @@ sys.path.insert(0, HERE)
 import weather_icons as WI
 
 SLOT_Y = 102                     # середина цифр значення на екрані
-WH = 44                          # висота віджета
-WX, WY = 0, SLOT_Y - WH // 2     # лівий верхній кут віджета на екрані
+WH = 56                          # висота віджета (усі елементи мають бути всередині, інакше браслет їх обрізає)
+WX, WY = 0, SLOT_Y - 28          # лівий верхній кут віджета на екрані
 HV = 40                          # висота картинок цифр, одиниць і значків; середина цифр — HV/2
 FV = ImageFont.truetype(FD + "Inter-Bold.otf", 28 * K)
 FU = ImageFont.truetype(FD + "Inter-Bold.otf", 18 * K)
@@ -86,7 +86,9 @@ def deg_img(name, extra=None):
 widgets = []
 def widget(name, title, items):
     res.append('<Widget name="%s" widgetName="%s" groupType="general" w="%d" h="%d">' % (name, title, W, WH))
-    for ref, x, y in items: res.append('    <Item ref="@%s" x="%d" y="%d"/>' % (ref, round(x - WX), round(y - WY)))
+    for ref, x, y in items:
+        assert 0 <= round(y - WY) and 0 <= round(x - WX) or ref in ("wx_t", "tmin", "dist", "rain", "wind", "bat_n"), (name, ref, x - WX, y - WY)   # не за межами віджета
+        res.append('    <Item ref="@%s" x="%d" y="%d"/>' % (ref, round(x - WX), round(y - WY)))
     res.append('</Widget>'); widgets.append(name)
 
 YV = SLOT_Y - HV / 2             # верх картинок значень на екрані
