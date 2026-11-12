@@ -107,7 +107,7 @@ for t,col in (("n",CYN),("a",G2)):
     number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
 
 # ── батарея й блютуз (Y=101): батарея з «85%» — по центру, блютуз ліворуч на сталому місці
-BSTYLE=os.environ.get("BATT","A")
+BSTYLE=os.environ.get("BATT","BIG")
 # ORIG — маленька батарейка з мокапу, «85%» праворуч; BIG — 66×30, відсоток усередині, тьмяна заливка;
 # A/B/C — 50×22, відсоток усередині (контур / смужка / тьмяна заливка); S1/S2 — 60×28, яскрава заливка (суцільна / рядками)
 BW,BH={"ORIG":(30,16),"BIG":(66,30),"S1":(60,28),"S2":(60,28)}.get(BSTYLE,(50,22))
@@ -177,7 +177,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     array("dig_b"+t,ds)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
     bx=106-BW/2; ty=-1.5 if BSTYLE=="B" else 0
-    lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3,Y-15*1.3)
+    lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-2,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
@@ -192,8 +192,8 @@ def icon_steps(cols):
             d.ellipse([(x-3)*Q,(fy-6.5)*Q,(x+3)*Q,(fy+2.5)*Q],fill=col)
             d.ellipse([(x-2.3)*Q,(fy+3.5)*Q,(x+2.3)*Q,(fy+7)*Q],fill=col)
     return down(im)
-def icon_heart(cols):
-    im=Image.new("RGBA",(int(26*Q),SH*K),(0,0,0,0)); d=ImageDraw.Draw(im); cy=SH*K/Q/2
+def icon_heart(cols,up=0):
+    im=Image.new("RGBA",(int(26*Q),SH*K),(0,0,0,0)); d=ImageDraw.Draw(im); cy=SH*K/Q/2-up*K/Q
     for col,dx in cols:
         x=16+dx; r=4.2
         d.ellipse([(x-8.4)*Q,(cy-6.5)*Q,(x)*Q,(cy+1.9)*Q],fill=col); d.ellipse([(x)*Q,(cy-6.5)*Q,(x+8.4)*Q,(cy+1.9)*Q],fill=col)
@@ -205,7 +205,7 @@ def centered(t,name,src,digits,col,cy,icon):
     lay(t,name,106,cy-SH/2)            # для align=center x — середина рядка
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
 centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
-centered("n","pulse_n","healthHeartRate",3,PNK,481,icon_heart(GLP))
+centered("n","pulse_n","healthHeartRate",3,PNK,483,icon_heart(GLP,up=2))   # цифри на 2 px нижче, серце — на місці
 centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
 
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
