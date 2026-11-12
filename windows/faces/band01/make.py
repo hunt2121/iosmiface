@@ -182,7 +182,8 @@ def wx_norm(ims):
     # і по центру кадру по ширині; кадри масиву — однакового розміру
     W_=max(i.width for i in ims); H_=max(i.height for i in ims); out=[]
     for i in ims:
-        bb=i.getchannel("A").getbbox(); ink=i.crop(bb); c=Image.new("RGBA",(W_,H_),(0,0,0,0))
+        bb=i.getchannel("A").point(lambda v:255 if v>=64 else 0).getbbox();   # без ледь видимого «ореолу» від згладжування (альфа 4 під хмарою)
+        ink=i.crop(bb); c=Image.new("RGBA",(W_,H_),(0,0,0,0))
         c.alpha_composite(ink,(floor_c((W_-ink.width)/2),H_-ink.height)); out.append(c)
     return out
 wxi=wx_norm(wxi); wh_=wxi[0].height
