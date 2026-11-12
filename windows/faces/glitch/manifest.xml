@@ -274,27 +274,27 @@
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
         <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@week_n" x="56" y="38"/>
-        <Layout ref="@day_n" x="106" y="38"/>
-        <Layout ref="@dot_n" x="128" y="38"/>
-        <Layout ref="@mon_n" x="134" y="38"/>
-        <Layout ref="@batt_n" x="63" y="91"/>
-        <Layout ref="@bat_n" x="107" y="89"/>
-        <Layout ref="@bt_n" x="21" y="86"/>
-        <Layout ref="@sec" x="84" y="368"/>
-        <Layout ref="@steps_n" x="106" y="428"/>
-        <Layout ref="@pulse_n" x="106" y="454"/>
+        <Layout ref="@week_n" x="42" y="35"/>
+        <Layout ref="@day_n" x="107" y="35"/>
+        <Layout ref="@dot_n" x="135" y="35"/>
+        <Layout ref="@mon_n" x="142" y="35"/>
+        <Layout ref="@batt_n" x="52" y="88"/>
+        <Layout ref="@bat_n" x="107" y="86"/>
+        <Layout ref="@bt_n" x="6" y="82"/>
+        <Layout ref="@sec" x="78" y="362"/>
+        <Layout ref="@steps_n" x="106" y="421"/>
+        <Layout ref="@pulse_n" x="106" y="457"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
         <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@week_a" x="56" y="38"/>
-        <Layout ref="@day_a" x="106" y="38"/>
-        <Layout ref="@dot_a" x="128" y="38"/>
-        <Layout ref="@mon_a" x="134" y="38"/>
-        <Layout ref="@batt_a" x="63" y="91"/>
-        <Layout ref="@bat_a" x="107" y="89"/>
-        <Layout ref="@bt_a" x="21" y="86"/>
-        <Layout ref="@steps_a" x="106" y="421"/>
+        <Layout ref="@week_a" x="42" y="35"/>
+        <Layout ref="@day_a" x="107" y="35"/>
+        <Layout ref="@dot_a" x="135" y="35"/>
+        <Layout ref="@mon_a" x="142" y="35"/>
+        <Layout ref="@batt_a" x="52" y="88"/>
+        <Layout ref="@bat_a" x="107" y="86"/>
+        <Layout ref="@bt_a" x="6" y="82"/>
+        <Layout ref="@steps_a" x="106" y="418"/>
     </Theme>
 </Watchface>
