@@ -74,8 +74,12 @@ for t,dim in (("n",False),("a",True)):
     else:
         # AOD — шкала нерухома, просто декорація: шматок ±60 px лише з дрібними поділками; година навпроти риски
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        for i in range(-6,7):
-            y=60+i*PXH/6; d.line([176*K,y*K,194*K,y*K],fill=(80,80,80),width=K)
+        cx=136+float(os.environ.get("DIAL_R","250"))      # центр того самого диска, що на звичайному екрані
+        for i in range(-12,13):                          # дрібні поділки по дузі диска (2,5° = 10 хв), лише в межах ±60 px
+            a=math.radians(270+2.5*i); r0,r1=cx-194,cx-176
+            p0=(cx+r0*math.sin(a),60-r0*math.cos(a)); p1=(cx+r1*math.sin(a),60-r1*math.cos(a))
+            if abs(p0[1]-60)>60: continue
+            d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(80,80,80),width=K)
         image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-60)
         ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
     cP=(115,115,115) if dim else OR
