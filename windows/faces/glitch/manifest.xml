@@ -284,9 +284,9 @@
         <Layout ref="@v_batt_n" x="69" y="85"/>
         <Layout ref="@bat_n" x="106" y="87"/>
         <Layout ref="@v_bt_n" x="20" y="82"/>
-        <Layout ref="@sec" x="77" y="364"/>
+        <Layout ref="@sec" x="78" y="364"/>
         <Layout ref="@steps_n" x="106" y="432"/>
-        <Layout ref="@pulse_n" x="106" y="467"/>
+        <Layout ref="@pulse_n" x="104" y="467"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
@@ -299,6 +299,6 @@
         <Layout ref="@v_batt_a" x="69" y="85"/>
         <Layout ref="@bat_a" x="106" y="87"/>
         <Layout ref="@v_bt_a" x="20" y="82"/>
-        <Layout ref="@steps_a" x="106" y="418"/>
+        <Layout ref="@steps_a" x="107" y="418"/>
     </Theme>
 </Watchface>

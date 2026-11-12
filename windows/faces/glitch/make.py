@@ -187,7 +187,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
-number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,392-28)
+number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw+1,392-28)
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
 def icon_steps(cols):
@@ -205,14 +205,14 @@ def icon_heart(cols,up=0):
         d.ellipse([(x-8.4)*Q,(cy-6.5)*Q,(x)*Q,(cy+1.9)*Q],fill=col); d.ellipse([(x)*Q,(cy-6.5)*Q,(x+8.4)*Q,(cy+1.9)*Q],fill=col)
         d.polygon([((x-8.1)*Q,(cy-1.2)*Q),((x+8.1)*Q,(cy-1.2)*Q),(x*Q,(cy+7.5)*Q)],fill=col)
     return down(im)
-def centered(t,name,src,digits,col,cy,icon):
+def centered(t,name,src,digits,col,cy,icon,dx=0):
     image("ico_"+name,icon); small(col,"s"+name)
     number(name,src,"dig_s"+name,digits,"center",False,0,"ico_"+name)
-    lay(t,name,106,cy-SH/2)            # для align=center x — середина рядка
+    lay(t,name,106+dx,cy-SH/2)         # для align=center x — середина рядка; dx — поправка на видиму частину
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
 centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
-centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1))   # цифри на 2 px нижче, серце — на місці
-centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
+centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1),dx=-2)   # цифри на 2 px нижче, серце — на місці
+centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
 
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
