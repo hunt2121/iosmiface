@@ -203,5 +203,4 @@ def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None
 plain_img_gray("f_km_a", TXT[LANGV]["km"], i_route)
 number("dist_a", "healthStepKiloMeter", "dig_val_a", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
 r = row("r_distance_a", ["dist_a", "f_km_a"])
-# AOD: Band 10 не дає вибирати віджет для AOD — там завжди батарея сірим
-for ref, x, y in BATT_ITEMS_A: lay("a_slot", ref, x, y)
+# AOD: без віджета (Band 10 не дає вибирати віджет для AOD) — на цьому місці порожньо, лише значок блютуз при обриві
