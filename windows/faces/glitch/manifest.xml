@@ -276,11 +276,11 @@
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
         <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@v_week_n" x="36" y="35"/>
+        <Layout ref="@v_week_n" x="37" y="35"/>
         <Layout ref="@us_n" x="96" y="35"/>
-        <Layout ref="@day_n" x="106" y="35"/>
-        <Layout ref="@dot_n" x="136" y="35"/>
-        <Layout ref="@mon_n" x="144" y="35"/>
+        <Layout ref="@day_n" x="107" y="35"/>
+        <Layout ref="@dot_n" x="137" y="35"/>
+        <Layout ref="@mon_n" x="145" y="35"/>
         <Layout ref="@v_batt_n" x="69" y="85"/>
         <Layout ref="@bat_n" x="106" y="87"/>
         <Layout ref="@v_bt_n" x="20" y="82"/>
@@ -291,11 +291,11 @@
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
         <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@v_week_a" x="36" y="35"/>
+        <Layout ref="@v_week_a" x="37" y="35"/>
         <Layout ref="@us_a" x="96" y="35"/>
-        <Layout ref="@day_a" x="106" y="35"/>
-        <Layout ref="@dot_a" x="136" y="35"/>
-        <Layout ref="@mon_a" x="144" y="35"/>
+        <Layout ref="@day_a" x="107" y="35"/>
+        <Layout ref="@dot_a" x="137" y="35"/>
+        <Layout ref="@mon_a" x="145" y="35"/>
         <Layout ref="@v_batt_a" x="69" y="85"/>
         <Layout ref="@bat_a" x="106" y="87"/>
         <Layout ref="@v_bt_a" x="20" y="82"/>
