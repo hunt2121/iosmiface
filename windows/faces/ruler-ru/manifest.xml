@@ -61,11 +61,7 @@
             <Image src="d_day_n/8.png"/>
             <Image src="d_day_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="day_n" source="dateDay" ref="@d_day_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Widget name="date_n" widgetName="number" groupType="general" w="123" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="7">
-            <Item ref="@v_wk_n" x="0" y="0"/>
-            <Item ref="@day_n" x="0" y="0"/>
-        </Widget>
+        <DataItemImageNumber name="day_n" source="dateDay" ref="@d_day_n" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_n/0.png"/>
             <Image src="d_st_n/1.png"/>
@@ -139,11 +135,7 @@
             <Image src="d_day_a/8.png"/>
             <Image src="d_day_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Widget name="date_a" widgetName="number" groupType="general" w="123" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="7">
-            <Item ref="@v_wk_a" x="0" y="0"/>
-            <Item ref="@day_a" x="0" y="0"/>
-        </Widget>
+        <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="d_st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_a/0.png"/>
             <Image src="d_st_a/1.png"/>
@@ -160,21 +152,23 @@
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@stic_a"/>
     </Resources>
     <Theme type="normal" name="Линейка" bgColor="#000000">
-        <Layout ref="@v_dial_n" x="120" y="-6"/>
-        <Layout ref="@ptr_n" x="0" y="248"/>
-        <Layout ref="@min_n" x="15" y="178"/>
-        <Layout ref="@xv_n" x="35" y="266"/>
-        <Layout ref="@sec" x="42" y="300"/>
-        <Layout ref="@date_n" x="1" y="73"/>
+        <Layout ref="@v_dial_n" x="120" y="4"/>
+        <Layout ref="@ptr_n" x="0" y="258"/>
+        <Layout ref="@min_n" x="15" y="189"/>
+        <Layout ref="@xv_n" x="35" y="277"/>
+        <Layout ref="@sec" x="42" y="311"/>
+        <Layout ref="@v_wk_n" x="26" y="75"/>
+        <Layout ref="@day_n" x="61" y="96"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
-        <Layout ref="@ruler_a" x="0" y="170"/>
-        <Layout ref="@hr_a" x="120" y="245"/>
-        <Layout ref="@ptr_a" x="0" y="248"/>
-        <Layout ref="@min_a" x="15" y="178"/>
-        <Layout ref="@xv_a" x="35" y="266"/>
-        <Layout ref="@date_a" x="1" y="73"/>
+        <Layout ref="@ruler_a" x="0" y="180"/>
+        <Layout ref="@hr_a" x="120" y="255"/>
+        <Layout ref="@ptr_a" x="0" y="258"/>
+        <Layout ref="@min_a" x="15" y="189"/>
+        <Layout ref="@xv_a" x="35" y="277"/>
+        <Layout ref="@v_wk_a" x="26" y="75"/>
+        <Layout ref="@day_a" x="61" y="96"/>
         <Layout ref="@st_a" x="60" y="413"/>
     </Theme>
 </Watchface>
