@@ -176,7 +176,16 @@ WX=[fin(sun_c()),partly(),fin(cloud_c()),
     fin(tornado()),fin(dust()),
     fin(under([(3,0),(3,1),(7,2),(10,0),(10,1)])),fin(under([(3,1),(7,0),(7,1),(11,1)])),fin(under([(4,1),(6,2),(9,1)])),   # крижаний дощ, сніг із дощем, мокрий сніг
     fin(fog()),fin(unknown()),fin(under([(3,1),(6,2),(9,1),(12,2)]))]
-wxi=[picon(g) for g in WX]; wh_=wxi[0].height
+wxi=[picon(g) for g in WX]
+def wx_norm(ims):
+    # іконки стоять над числом: малюнок притиснутий до низу кадру (відступ до температури не залежить від погоди)
+    # і по центру кадру по ширині; кадри масиву — однакового розміру
+    W_=max(i.width for i in ims); H_=max(i.height for i in ims); out=[]
+    for i in ims:
+        bb=i.getchannel("A").getbbox(); ink=i.crop(bb); c=Image.new("RGBA",(W_,H_),(0,0,0,0))
+        c.alpha_composite(ink,(floor_c((W_-ink.width)/2),H_-ink.height)); out.append(c)
+    return out
+wxi=wx_norm(wxi); wh_=wxi[0].height
 colH=heart.height+G+h+(0)+wh_+G+h
 YB=470
 V=(YB-(YC+hc)-h*2-bh)/3
@@ -207,12 +216,13 @@ AX=floor_c((colL-bw)/2)+5-BODY[0]*scA; AY=y2+(Hm-bh)/2-BODY[1]*scA
 lay("n","anim",AX,AY)
 # права колонка: серце над пульсом, погода над температурою; цифри — по правому краю годинника, «°» виступає
 yc=y2+(Hm-colH)/2
-lay("n","heart",Rc-w3/2-heart.width/2,yc)
+DOTX=1   # крапкові іконки: щілина праворуч робить їх на вигляд ~0,7 px лівіше — компенсуємо
+lay("n","heart",Rc-w3/2-heart.width/2+DOTX,yc)
 image("g_hr",ghost(3,h)); lay("n","g_hr",Rc-w3,yc+heart.height+G)
 number("hrt","healthHeartRate","d26",3,"right",False,sp); lay("n","hrt",Rc,yc+heart.height+G)
 yt=yc+heart.height+G+h+V+wh_+G
 array("wx",wxi); values("v_wx","weatherCurrentWeather","wx",range(len(wxi)))
-lay("n","v_wx",Rc-w3/2-wxi[0].width/2,yt-G-wh_)
+lay("n","v_wx",Rc-w3/2-wxi[0].width/2+DOTX,yt-G-wh_+1)   # +1: на браслеті погода виглядала на 1 px вище за серце
 digits("d26m",h,True)
 image("g_tp",ghost(3,h)); lay("n","g_tp",Rc-w3,yt)
 number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp); lay("n","tmp",Rc,yt)   # цифри закінчуються рівно на Rc, як пульс

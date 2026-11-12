@@ -218,10 +218,10 @@
         <Layout ref="@dash" x="134" y="219"/>
         <Layout ref="@dd2" x="153" y="219"/>
         <Layout ref="@anim" x="0" y="255"/>
-        <Layout ref="@heart" x="148" y="274"/>
+        <Layout ref="@heart" x="149" y="274"/>
         <Layout ref="@g_hr" x="134" y="301"/>
         <Layout ref="@hrt" x="187" y="301"/>
-        <Layout ref="@v_wx" x="139" y="356"/>
+        <Layout ref="@v_wx" x="140" y="357"/>
         <Layout ref="@g_tp" x="134" y="389"/>
         <Layout ref="@tmp" x="187" y="389"/>
         <Layout ref="@deg" x="190" y="390"/>
