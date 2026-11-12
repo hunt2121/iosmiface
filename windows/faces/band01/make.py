@@ -94,20 +94,21 @@ h=26; wI,sp=metrics(h); digits("d26",h)
 bolt=image("bolt",picon(pix.BOLT))
 pc=D7.ring_pct(400); sc=(14/2.4)/pc.info['ring']; pc=pc.resize((round(pc.width*sc*K),round(pc.height*sc*K)),Image.LANCZOS); pc=pc.crop(pc.getbbox())
 pc=tint(pc.resize((round(pc.width/K),round(pc.height/K)),Image.LANCZOS),WH)
-unit=Image.new("RGBA",(5+pc.width,h),(0,0,0,0)); unit.alpha_composite(pc,(5,h-pc.height)); image("pct",unit)
-tot=bolt.width+6+cells_w(3,h)+unit.width; x0=floor_c((W-tot)/2); BY=91
+UP=max(0,5-sp)   # браслет сам додає space між останньою цифрою й одиницею
+unit=Image.new("RGBA",(UP+pc.width,h),(0,0,0,0)); unit.alpha_composite(pc,(UP,h-pc.height)); image("pct",unit)
+tot=bolt.width+6+cells_w(3,h)+sp+unit.width; x0=floor_c((W-tot)/2); BY=91
 lay("n","bolt",x0,round(BY+13-bolt.height/2))
 image("g3",ghost(3,h)); lay("n","g3",x0+bolt.width+6,BY)
-number("bat","systemStatusBattery","d26",3,"right",False,sp,"pct"); lay("n","bat",x0+tot,BY)
+number("bat","systemStatusBattery","d26",3,"right",False,sp,"pct"); lay("n","bat",x0+tot-sp,BY)   # ширина, яку рахує браслет, — без space перед одиницею
 
 # ── годинник 54 px: години · двокрапка · хвилини
 hc=54; wc,spc=metrics(hc); digits("d54",hc)
 col_=D7.glyph(':',400); cb=col_.getbbox(); colw=round(CC*hc/H8)
 cimg=col_.crop((cb[0],B8[1],cb[2],B8[3])); cimg=tint(cimg.resize((max(1,round((cb[2]-cb[0])*hc/H8)),hc),Image.LANCZOS),WH)
-colon=Image.new("RGBA",(colw,hc),(0,0,0,0)); colon.alpha_composite(cimg,((colw-cimg.width)//2,0)); image("colon",colon)
+colon=image("colon",cimg)
 CLW=2*wc+spc+spc+colw+2*wc+spc
 Lc=floor_c((W-CLW)/2); Rc=Lc+CLW; YC=136
-xh=Lc; xcol=Lc+2*wc+spc+spc; xm=xcol+colw
+xh=Lc; hrR=Lc+2*wc+spc; xm=hrR+spc+colw; xcol=hrR+floor_c((xm-hrR-cimg.width)/2)   # однакові проміжки зліва й справа
 image("g_clock",ghost(4,hc,[0,wc+spc,xm-Lc,xm-Lc+wc+spc])); lay("n","g_clock",Lc,YC)
 hsrc="timeHour12H" if H12 else "timeHour"
 number("hr",hsrc,"d54",2,"left",True,spc); number("mn","timeMinute","d54",2,"left",True,spc)
@@ -118,7 +119,7 @@ G=6
 heart=image("heart",picon(pix.HEART))
 w3=cells_w(3,h)
 degL=D7.cyr('°',400); degL=degL.crop(degL.getbbox()); degL=degL.resize((round(degL.width*9/degL.height),9),Image.LANCZOS)
-deg=Image.new("RGBA",(3+degL.width,h),(0,0,0,0)); deg.alpha_composite(tint(degL,WH),(3,1)); image("deg",deg)
+deg=Image.new("RGBA",(degL.width,h),(0,0,0,0)); deg.alpha_composite(tint(degL,WH),(0,1)); image("deg",deg)   # проміжок перед «°» додає сам браслет (space)
 colL=Rc-w3
 BODY=(31,26,170,224)     # обриси астронавта в кадрі 200×250 (обʼєднання всіх кадрів)
 scA=(colL-10-Lc)/(BODY[2]-BODY[0]); bh=(BODY[3]-BODY[1])*scA
