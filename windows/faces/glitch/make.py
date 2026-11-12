@@ -79,7 +79,7 @@ def big_set(tag,cy,strips,mode):
             main=mask(0)
             if not AOD_PLAIN:
                 for col,dx in ((GL,-4),(GR,4)): im.paste(Image.new("RGBA",im.size,col+(255,)),(0,0),ImageChops.subtract(mask(dx),main))
-            edge=ImageChops.subtract(main,main.filter(ImageFilter.MinFilter(13)))
+            edge=ImageChops.subtract(main,main.filter(ImageFilter.MinFilter(21 if AOD_PLAIN else 13)))   # без гліча — контур товщий
             im.paste(Image.new("RGBA",im.size,G1+(255,)),(0,0),edge)
         for (y,h,dx) in ([] if (mode!="normal" and AOD_PLAIN) else strips):           # ті самі «зламані» смуги, що й на мокапі (на весь рядок)
             yy=int(y*K-top); hh=h*K
