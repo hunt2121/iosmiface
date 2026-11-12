@@ -5,9 +5,11 @@ import os, math, shutil
 HERE=os.path.dirname(os.path.abspath(__file__))
 DTOP_=45   # дата — по центру екрана, верх за 45 px від краю; кроки — по центру, низ за 45 px від краю
 LANGV=os.environ.get("LANGV","ua")      # ua / ru / en / en12 (англійська, 12 год з AM/PM)
-DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"ruler-"+LANGV))
+CENTER=os.environ.get("STYLE")=="center"   # окремий циферблат: дата й кроки по центру екрана, 45 px від країв
+DEST=os.environ.get("FACE_DEST") or os.path.join(os.path.dirname(HERE),("ruler" if LANGV=="ua" else "ruler-"+LANGV)+("-c" if CENTER else ""))
 OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
+if CENTER: FACE_ID=str(int(FACE_ID)+10); FACE_NAME={"ua":"Лінійка 2","ru":"Линейка 2","en":"Ruler 2","en12":"Ruler 12h 2"}[LANGV]
 H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
 DTOP=DTOP_; DCX=105.5; DLGAP=7; DAYDX=0; STX=105; STDY=35; BDY=1   # BDY — блок хвилини/ХВ/секунди посередині між датою й кроками   # верх дати; проміжок між рядками дати; поправка числа по осі
@@ -153,17 +155,18 @@ for t,dim in (("n",False),("a",True)):
         lay(t,"stic_"+t,math.floor(61.5-ic.width/2),iy)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
-# Два стилі: головний (перший) — дата й кроки на лівій осі x=61, 80 px від країв (як раніше);
-# другий — дата й кроки по центру екрана, 45 px від країв. Вибираються на браслеті як стилі циферблата.
+# theme["n2"] — дата й кроки на лівій осі x=61, 80 px від країв (основний циферблат);
+# theme["n"] — по центру екрана, 45 px від країв (окремий циферблат STYLE=center).
 import re as _re
 theme["n2"]=[]
 for l in theme["n"]:
     r=_re.search(r'ref="@([^"]+)"',l).group(1)
     theme["n2"].append('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r][0]),round(ST2[r][1])) if r in ST2 else l)
-# AOD — під головний стиль (дата й кроки на лівій осі)
-theme["a"]=[('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r[:-1]+"n"][0]),round(ST2[r[:-1]+"n"][1])) if (r[:-1]+"n") in ST2 and r.endswith("_a") else l)
-            for l in theme["a"] for r in [_re.search(r'ref="@([^"]+)"',l).group(1)]]
+if not CENTER:
+    # AOD — під головний стиль (дата й кроки на лівій осі)
+    theme["a"]=[('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r[:-1]+"n"][0]),round(ST2[r[:-1]+"n"][1])) if (r[:-1]+"n") in ST2 and r.endswith("_a") else l)
+                for l in theme["a"] for r in [_re.search(r'ref="@([^"]+)"',l).group(1)]]
 STYLE2={"ua":"Лінійка 2","ru":"Линейка 2","en":"Ruler 2","en12":"Ruler 12h 2"}[LANGV]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME)+'','    <Resources>']+["        "+r for r in res]+['    </Resources>',
-     '    <Theme type="normal" name="%s" bgColor="#000000">'%FACE_NAME]+["        "+l for l in theme["n2"]]+['    </Theme>','    <Theme type="normal" name="%s" bgColor="#000000">'%STYLE2]+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
+     '    <Theme type="normal" name="%s" bgColor="#000000">'%FACE_NAME]+["        "+l for l in theme["n" if CENTER else "n2"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
 os.makedirs(DEST,exist_ok=True); open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))

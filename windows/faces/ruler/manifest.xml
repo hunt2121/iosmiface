@@ -161,16 +161,6 @@
         <Layout ref="@day_n" x="61" y="96"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
-    <Theme type="normal" name="Лінійка 2" bgColor="#000000">
-        <Layout ref="@v_dial_n" x="120" y="4"/>
-        <Layout ref="@ptr_n" x="0" y="258"/>
-        <Layout ref="@min_n" x="15" y="189"/>
-        <Layout ref="@xv_n" x="46" y="277"/>
-        <Layout ref="@sec" x="42" y="311"/>
-        <Layout ref="@v_wk_n" x="71" y="40"/>
-        <Layout ref="@day_n" x="106" y="61"/>
-        <Layout ref="@st_n" x="105" y="448"/>
-    </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@ruler_a" x="0" y="180"/>
         <Layout ref="@hr_a" x="120" y="255"/>
