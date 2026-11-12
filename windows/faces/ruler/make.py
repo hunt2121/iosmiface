@@ -9,7 +9,8 @@ OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
 H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
-DGAP=5   # проміжок між днем тижня й числом
+DGAP=7   # проміжок між днем тижня й числом
+DSHIFT=int(os.environ.get("DSHIFT",{"ua":-1,"ru":1,"en":-2,"en12":-2}[LANGV]))
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
@@ -121,18 +122,30 @@ for t,dim in (("n",False),("a",True)):
         else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
-    # Дата по центру осі за будь-якого дня тижня й числа: рядок (flex), який браслет сам центрує.
-    # Кожен день тижня — окремий елемент точно по ширині напису; він показується лише у свій день
-    # (hideWhenOutRange з одним значенням), тож у рядку завжди тільки потрібна назва + число.
-    rows=[]
-    for k,w in enumerate(WEEK):
-        im=text_img(w,fd,col,h=34); a=im.getchannel("A"); b=a.getbbox(); im=im.crop((b[0],0,b[2],34))
-        array("wk%d_%s"%(k,t),[im]); values("wk%d_%s"%(k,t),"dateWeek","wk%d_%s"%(k,t),[k],"hideWhenOutRange"); rows.append("v_wk%d_%s"%(k,t))
-    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False); rows.append("day_"+t)
-    DW=123   # ширина рядка: середина — піксель 61
+    # Дата «ЧТ 12» — рядок (flex), який браслет сам центрує (тож і «СБ 1» по центру).
+    # Назви днів різної ширини, а картинки одного набору мусять бути однакові. Тому ширину назв вирівнюємо
+    # трекінгом (від −1 до +3 px між літерами) до медіанної, а решту різниці компенсуємо зсувом рядка.
+    def word(w,tr):
+        x=0; W_=Image.new("RGBA",(200*K,34*K),(0,0,0,0))
+        for i,ch in enumerate(w):
+            ImageDraw.Draw(W_).text((5*K+x,17*K),ch,font=fd,fill=col,anchor="lm")
+            if i<len(w)-1: x+=fd.getlength(w[i:i+2])-fd.getlength(w[i+1])+tr*K   # крок літери з кернінгом пари + трекінг
+        bb=W_.getbbox(); return W_.crop((bb[0],0,bb[2],34*K))
+    def vis(im): return im.getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
+    base=[(vis(down(word(w,0)))[2]-vis(down(word(w,0)))[0]) for w in WEEK]; med=sorted(base)[3]
+    ims=[]
+    for w,bw in zip(WEEK,base):
+        g=len(w)-1; tr=max(-1,min(3,(med-bw)/g)); ims.append(down(word(w,tr)))
+    WW=max(i.width for i in ims)
+    frames=[]
+    for im in ims:
+        fr=Image.new("RGBA",(WW,34),(0,0,0,0)); fr.alpha_composite(im,(WW-im.width,0)); frames.append(fr)   # притиснуто праворуч — до числа
+    array("wk_"+t,frames); values("wk_"+t,"dateWeek","wk_"+t,range(7))
+    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
+    DW=123
     res.append('<Widget name="date_%s" widgetName="number" groupType="general" w="%d" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="%d">'%(t,DW,DGAP))
-    for r in rows: res.append('    <Item ref="@%s" x="0" y="0"/>'%r)
-    res.append('</Widget>'); lay(t,"date_"+t,0,90-17)
+    for r in ("v_wk_"+t,"day_"+t): res.append('    <Item ref="@%s" x="0" y="0"/>'%r)
+    res.append('</Widget>'); lay(t,"date_"+t,DSHIFT,90-17)   # DSHIFT — зсув, з яким дата найрівніше на осі (виміряно)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
