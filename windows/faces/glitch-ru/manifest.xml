@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Watchface id="318470553" name="GLITCH">
     <Resources>
-        <ImageArray name="big_n_hour" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="big_n_hour" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="big_n_hour/0.png"/>
             <Image src="big_n_hour/1.png"/>
             <Image src="big_n_hour/2.png"/>
@@ -14,7 +14,7 @@
             <Image src="big_n_hour/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="timeHour_n" source="timeHour" ref="@big_n_hour" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
-        <ImageArray name="big_n_minute" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="big_n_minute" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="big_n_minute/0.png"/>
             <Image src="big_n_minute/1.png"/>
             <Image src="big_n_minute/2.png"/>
@@ -27,7 +27,7 @@
             <Image src="big_n_minute/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="timeMinute_n" source="timeMinute" ref="@big_n_minute" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
-        <ImageArray name="big_a_hour" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="big_a_hour" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="big_a_hour/0.png"/>
             <Image src="big_a_hour/1.png"/>
             <Image src="big_a_hour/2.png"/>
@@ -40,7 +40,7 @@
             <Image src="big_a_hour/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="timeHour_a" source="timeHour" ref="@big_a_hour" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
-        <ImageArray name="big_a_minute" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="big_a_minute" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="big_a_minute/0.png"/>
             <Image src="big_a_minute/1.png"/>
             <Image src="big_a_minute/2.png"/>
@@ -53,7 +53,7 @@
             <Image src="big_a_minute/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="timeMinute_a" source="timeMinute" ref="@big_a_minute" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
-        <ImageArray name="dig_cn" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="dig_cn" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_cn/0.png"/>
             <Image src="dig_cn/1.png"/>
             <Image src="dig_cn/2.png"/>
@@ -65,7 +65,7 @@
             <Image src="dig_cn/8.png"/>
             <Image src="dig_cn/9.png"/>
         </ImageArray>
-        <ImageArray name="week_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="week_n" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="week_n/0.png"/>
             <Image src="week_n/1.png"/>
             <Image src="week_n/2.png"/>
@@ -74,7 +74,7 @@
             <Image src="week_n/5.png"/>
             <Image src="week_n/6.png"/>
         </ImageArray>
-        <Image name="us_n" src="us_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="us_n" src="us_n.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageValues name="v_week_n" source="dateWeek" ref="@week_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
@@ -84,10 +84,10 @@
             <Param value="5"/>
             <Param value="6"/>
         </DataItemImageValues>
-        <Image name="dot_n" src="dot_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="dot_n" src="dot_n.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="day_n" source="dateDay" ref="@dig_cn" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <DataItemImageNumber name="mon_n" source="dateMonth" ref="@dig_cn" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="dig_ca" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="dig_ca" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_ca/0.png"/>
             <Image src="dig_ca/1.png"/>
             <Image src="dig_ca/2.png"/>
@@ -99,7 +99,7 @@
             <Image src="dig_ca/8.png"/>
             <Image src="dig_ca/9.png"/>
         </ImageArray>
-        <ImageArray name="week_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="week_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="week_a/0.png"/>
             <Image src="week_a/1.png"/>
             <Image src="week_a/2.png"/>
@@ -108,7 +108,7 @@
             <Image src="week_a/5.png"/>
             <Image src="week_a/6.png"/>
         </ImageArray>
-        <Image name="us_a" src="us_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="us_a" src="us_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageValues name="v_week_a" source="dateWeek" ref="@week_a" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
@@ -118,10 +118,10 @@
             <Param value="5"/>
             <Param value="6"/>
         </DataItemImageValues>
-        <Image name="dot_a" src="dot_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="dot_a" src="dot_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="day_a" source="dateDay" ref="@dig_ca" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <DataItemImageNumber name="mon_a" source="dateMonth" ref="@dig_ca" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="batt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="batt_n" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="batt_n/0.png"/>
             <Image src="batt_n/1.png"/>
             <Image src="batt_n/2.png"/>
@@ -147,7 +147,7 @@
             <Param value="90"/>
             <Param value="100"/>
         </DataItemImageValues>
-        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="bt_n/0.png"/>
             <Image src="bt_n/1.png"/>
         </ImageArray>
@@ -155,8 +155,8 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <Image name="pct_n" src="pct_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_bn" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="pct_n" src="pct_n.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="dig_bn" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_bn/0.png"/>
             <Image src="dig_bn/1.png"/>
             <Image src="dig_bn/2.png"/>
@@ -169,7 +169,7 @@
             <Image src="dig_bn/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
-        <ImageArray name="batt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="batt_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="batt_a/0.png"/>
             <Image src="batt_a/1.png"/>
             <Image src="batt_a/2.png"/>
@@ -195,7 +195,7 @@
             <Param value="90"/>
             <Param value="100"/>
         </DataItemImageValues>
-        <ImageArray name="bt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="bt_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="bt_a/0.png"/>
             <Image src="bt_a/1.png"/>
         </ImageArray>
@@ -203,8 +203,8 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <Image name="pct_a" src="pct_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ba" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="pct_a" src="pct_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="dig_ba" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_ba/0.png"/>
             <Image src="dig_ba/1.png"/>
             <Image src="dig_ba/2.png"/>
@@ -217,7 +217,7 @@
             <Image src="dig_ba/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="bat_a" source="systemStatusBattery" ref="@dig_ba" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_a"/>
-        <ImageArray name="dig_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="dig_sec" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_sec/0.png"/>
             <Image src="dig_sec/1.png"/>
             <Image src="dig_sec/2.png"/>
@@ -230,8 +230,8 @@
             <Image src="dig_sec/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="sec" source="timeSecond" ref="@dig_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Image name="ico_steps_n" src="ico_steps_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ssteps_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="ico_steps_n" src="ico_steps_n.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="dig_ssteps_n" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_ssteps_n/0.png"/>
             <Image src="dig_ssteps_n/1.png"/>
             <Image src="dig_ssteps_n/2.png"/>
@@ -244,8 +244,8 @@
             <Image src="dig_ssteps_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_ssteps_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_n"/>
-        <Image name="ico_pulse_n" src="ico_pulse_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_spulse_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="ico_pulse_n" src="ico_pulse_n.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="dig_spulse_n" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_spulse_n/0.png"/>
             <Image src="dig_spulse_n/1.png"/>
             <Image src="dig_spulse_n/2.png"/>
@@ -258,8 +258,8 @@
             <Image src="dig_spulse_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="pulse_n" source="healthHeartRate" ref="@dig_spulse_n" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_pulse_n"/>
-        <Image name="ico_steps_a" src="ico_steps_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ssteps_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="ico_steps_a" src="ico_steps_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="dig_ssteps_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_ssteps_a/0.png"/>
             <Image src="dig_ssteps_a/1.png"/>
             <Image src="dig_ssteps_a/2.png"/>
@@ -272,7 +272,7 @@
             <Image src="dig_ssteps_a/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
-        <ImageArray name="dig_val" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="dig_val" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_val/0.png"/>
             <Image src="dig_val/1.png"/>
             <Image src="dig_val/2.png"/>
@@ -286,9 +286,9 @@
             <Image src="dig_val/10.png"/>
             <Image src="dig_val/11.png"/>
         </ImageArray>
-        <Image name="u_deg" src="u_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <Image name="f_deg" src="f_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="wx_icons" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="u_deg" src="u_deg.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <Image name="f_deg" src="f_deg.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="wx_icons" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="wx_icons/0.png"/>
             <Image src="wx_icons/1.png"/>
             <Image src="wx_icons/2.png"/>
@@ -353,7 +353,7 @@
             <Item ref="@v_batt_n" x="69" y="31"/>
             <Item ref="@bat_n" x="106" y="33"/>
         </Widget>
-        <Image name="f_km" src="f_km.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="f_km" src="f_km.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="dist" source="healthStepKiloMeter" ref="@dig_val" totalDigits="5" decimalDigits="2" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7"/>
         <Widget name="r_distance" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
             <Item ref="@dist" x="0" y="0"/>
@@ -362,8 +362,8 @@
         <Widget name="w_distance" widgetName="Расстояние" groupType="general" w="212" h="96">
             <Item ref="@r_distance" x="0" y="28"/>
         </Widget>
-        <Image name="f_slash" src="f_slash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <Image name="f_deg_mm" src="f_deg_mm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="f_slash" src="f_slash.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <Image name="f_deg_mm" src="f_deg_mm.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="tmin" source="weatherTodayTemperatureMin" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
         <DataItemImageNumber name="tmax" source="weatherTodayTemperatureMax" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
         <Widget name="r_minmax" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
@@ -398,7 +398,7 @@
             <Item ref="@w_minmax"/>
             <Item ref="@w_none"/>
         </Slot>
-        <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="bt_cover" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="bt_cover/0.png"/>
             <Image src="bt_cover/1.png"/>
         </ImageArray>
@@ -406,7 +406,7 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <ImageArray name="dig_val_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="dig_val_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="dig_val_a/0.png"/>
             <Image src="dig_val_a/1.png"/>
             <Image src="dig_val_a/2.png"/>
@@ -420,8 +420,8 @@
             <Image src="dig_val_a/10.png"/>
             <Image src="dig_val_a/11.png"/>
         </ImageArray>
-        <Image name="u_deg_a" src="u_deg_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="wx_icons_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <Image name="u_deg_a" src="u_deg_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
+        <ImageArray name="wx_icons_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="wx_icons_a/0.png"/>
             <Image src="wx_icons_a/1.png"/>
             <Image src="wx_icons_a/2.png"/>
@@ -473,14 +473,14 @@
             <Param value="22"/>
             <Param value="23"/>
         </DataItemImageValues>
-        <Image name="f_deg_a" src="f_deg_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="f_deg_a" src="f_deg_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="wx_t_a" source="weatherCurrentTemperature" ref="@dig_val_a" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
         <Widget name="r_weather_a" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
             <Item ref="@wx_t_a" x="0" y="0"/>
             <Item ref="@f_deg_a" x="0" y="0"/>
             <Item ref="@v_wx_a" x="0" y="0"/>
         </Widget>
-        <ImageArray name="bt_cover_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+        <ImageArray name="bt_cover_a" compressMethod="RLEReversed" format="indexed8" recolorEnable="false">
             <Image src="bt_cover_a/0.png"/>
             <Image src="bt_cover_a/1.png"/>
         </ImageArray>
@@ -488,7 +488,7 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <Image name="f_km_a" src="f_km_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="f_km_a" src="f_km_a.png" compressMethod="RLEReversed" format="indexed8" recolorEnable="false"/>
         <DataItemImageNumber name="dist_a" source="healthStepKiloMeter" ref="@dig_val_a" totalDigits="5" decimalDigits="2" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7"/>
         <Widget name="r_distance_a" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
             <Item ref="@dist_a" x="0" y="0"/>
