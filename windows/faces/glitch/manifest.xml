@@ -74,7 +74,7 @@
             <Image src="week_n/5.png"/>
             <Image src="week_n/6.png"/>
         </ImageArray>
-        <DataItemImageValues name="week_n" source="dateWeek" ref="@week_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_week_n" source="dateWeek" ref="@week_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
             <Param value="2"/>
@@ -107,7 +107,7 @@
             <Image src="week_a/5.png"/>
             <Image src="week_a/6.png"/>
         </ImageArray>
-        <DataItemImageValues name="week_a" source="dateWeek" ref="@week_a" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_week_a" source="dateWeek" ref="@week_a" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
             <Param value="2"/>
@@ -132,7 +132,7 @@
             <Image src="batt_n/9.png"/>
             <Image src="batt_n/10.png"/>
         </ImageArray>
-        <DataItemImageValues name="batt_n" source="systemStatusBattery" ref="@batt_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_batt_n" source="systemStatusBattery" ref="@batt_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="10"/>
             <Param value="20"/>
@@ -149,7 +149,7 @@
             <Image src="bt_n/0.png"/>
             <Image src="bt_n/1.png"/>
         </ImageArray>
-        <DataItemImageValues name="bt_n" source="systemStatusBluetooth" ref="@bt_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_bt_n" source="systemStatusBluetooth" ref="@bt_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
@@ -166,7 +166,7 @@
             <Image src="dig_bn/8.png"/>
             <Image src="dig_bn/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
+        <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
         <ImageArray name="batt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="batt_a/0.png"/>
             <Image src="batt_a/1.png"/>
@@ -180,7 +180,7 @@
             <Image src="batt_a/9.png"/>
             <Image src="batt_a/10.png"/>
         </ImageArray>
-        <DataItemImageValues name="batt_a" source="systemStatusBattery" ref="@batt_a" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_batt_a" source="systemStatusBattery" ref="@batt_a" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="10"/>
             <Param value="20"/>
@@ -197,7 +197,7 @@
             <Image src="bt_a/0.png"/>
             <Image src="bt_a/1.png"/>
         </ImageArray>
-        <DataItemImageValues name="bt_a" source="systemStatusBluetooth" ref="@bt_a" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_bt_a" source="systemStatusBluetooth" ref="@bt_a" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
@@ -214,7 +214,7 @@
             <Image src="dig_ba/8.png"/>
             <Image src="dig_ba/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="bat_a" source="systemStatusBattery" ref="@dig_ba" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_a"/>
+        <DataItemImageNumber name="bat_a" source="systemStatusBattery" ref="@dig_ba" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_a"/>
         <ImageArray name="dig_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_sec/0.png"/>
             <Image src="dig_sec/1.png"/>
@@ -274,13 +274,13 @@
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
         <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@week_n" x="42" y="35"/>
-        <Layout ref="@day_n" x="107" y="35"/>
-        <Layout ref="@dot_n" x="135" y="35"/>
-        <Layout ref="@mon_n" x="142" y="35"/>
-        <Layout ref="@batt_n" x="52" y="88"/>
-        <Layout ref="@bat_n" x="107" y="86"/>
-        <Layout ref="@bt_n" x="6" y="82"/>
+        <Layout ref="@v_week_n" x="40" y="35"/>
+        <Layout ref="@day_n" x="105" y="35"/>
+        <Layout ref="@dot_n" x="133" y="35"/>
+        <Layout ref="@mon_n" x="140" y="35"/>
+        <Layout ref="@v_batt_n" x="70" y="84"/>
+        <Layout ref="@bat_n" x="106" y="86"/>
+        <Layout ref="@v_bt_n" x="28" y="82"/>
         <Layout ref="@sec" x="78" y="362"/>
         <Layout ref="@steps_n" x="106" y="432"/>
         <Layout ref="@pulse_n" x="106" y="466"/>
@@ -288,13 +288,13 @@
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
         <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@week_a" x="42" y="35"/>
-        <Layout ref="@day_a" x="107" y="35"/>
-        <Layout ref="@dot_a" x="135" y="35"/>
-        <Layout ref="@mon_a" x="142" y="35"/>
-        <Layout ref="@batt_a" x="52" y="88"/>
-        <Layout ref="@bat_a" x="107" y="86"/>
-        <Layout ref="@bt_a" x="6" y="82"/>
+        <Layout ref="@v_week_a" x="40" y="35"/>
+        <Layout ref="@day_a" x="105" y="35"/>
+        <Layout ref="@dot_a" x="133" y="35"/>
+        <Layout ref="@mon_a" x="140" y="35"/>
+        <Layout ref="@v_batt_a" x="70" y="84"/>
+        <Layout ref="@bat_a" x="106" y="86"/>
+        <Layout ref="@v_bt_a" x="28" y="82"/>
         <Layout ref="@steps_a" x="106" y="418"/>
     </Theme>
 </Watchface>

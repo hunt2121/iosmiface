@@ -26,6 +26,7 @@ def number(name,src,arr,digits,align="left",lz=True,space=0,unit=None):
     res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="0" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="%d"%s/>'
                %(name,src,arr,digits,align,"true" if lz else "false",space,' unitIcon="@%s"'%unit if unit else ""))
 def values(name,src,arr,params):
+    name="v_"+name
     res.append('<DataItemImageValues name="%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(name,src,arr))
     for v in params: res.append('    <Param value="%d"/>'%v)
     res.append('</DataItemImageValues>')
@@ -99,24 +100,25 @@ for t,col in (("n",CYN),("a",G2)):
     array("week_"+t,[text_img("// %s_"%w,f,col,w=ww,align="right",h=SH) for w in WEEK])
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
-    total=ww+2*cw+dw+2*cw; x=106-total/2; y=50-SH/2
-    lay(t,"week_"+t,x,y); x+=ww
+    total=ww+2*cw+dw+2*cw; x=106-total/2-2; y=50-SH/2
+    lay(t,"v_week_"+t,x,y); x+=ww
     number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
     number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
 
 # ── батарея й блютуз (Y=101): батарея з «85%» — по центру, блютуз ліворуч на сталому місці
+BW,BH=66,30          # корпус батареї (у ньому — відсоток)
 def batt_frame(level,cols,fill):
-    # цілі пікселі (масштаб 5 = 1,25×K): проміжки між контуром і заливкою однакові з усіх боків
-    Z=5; im=Image.new("RGBA",(40*Z,20*Z),(0,0,0,0)); d=ImageDraw.Draw(im)
-    top,bot=10*Z-8*Z,10*Z+8*Z; ow=2*Z; g=Z//2+1
+    # цілі пікселі в масштабі K: проміжки між контуром і заливкою однакові з усіх боків
+    Z=K; im=Image.new("RGBA",((BW+10)*Z,(BH+4)*Z),(0,0,0,0)); d=ImageDraw.Draw(im)
+    top,bot=2*Z,(2+BH)*Z; ow=2*Z; g=2*Z
     for col,dx in cols:
-        l=round((3+dx)*Z); r=l+30*Z
-        d.rounded_rectangle([l,top,r-1,bot-1],radius=3*Z,outline=col,width=ow)
-        d.rectangle([r+Z,10*Z-3*Z,r+4*Z-1,10*Z+3*Z-1],fill=col)
+        l=round((3+dx)*Z); r=l+BW*Z
+        d.rounded_rectangle([l,top,r-1,bot-1],radius=6*Z,outline=col,width=ow)
+        d.rounded_rectangle([r+Z,(2+BH/2-5)*Z,r+5*Z-1,(2+BH/2+5)*Z-1],radius=Z,fill=col)
     if level>0:
-        l=3*Z+ow+g; full=30*Z-2*ow-2*g
-        d.rectangle([l,top+ow+g,l+round(full*level)-1,bot-ow-g-1],fill=fill)
+        l=3*Z+ow+g; full=BW*Z-2*ow-2*g
+        d.rounded_rectangle([l,top+ow+g,l+max(3*Z,round(full*level))-1,bot-ow-g-1],radius=3*Z,fill=fill)
     return down(im)
 def bt_frame(cols,slash):
     im=Image.new("RGBA",(int(30*Q),int(30*Q)),(0,0,0,0)); d=ImageDraw.Draw(im); x,y=15,15
@@ -125,17 +127,18 @@ def bt_frame(cols,slash):
         d.line([(a*Q,b*Q) for a,b in p],fill=col,width=int(2.4*Q),joint="curve")
     d.line([((x-12)*Q,(y-12)*Q),((x+12)*Q,(y+12)*Q)],fill=slash,width=int(3*Q))
     return down(im)
-for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),CYN,CYN),("a",((G2,0),),G2,G2)):
+# батарея по центру, відсоток — усередині корпусу (по центру, хоч 5%, хоч 100%); блютуз — ліворуч на сталому місці
+for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,78,92),WHT),("a",((G2,0),),(45,45,45),G1)):
     array("batt_"+t,[batt_frame(l/10,cols,fill) for l in range(11)])
     values("batt_"+t,"systemStatusBattery","batt_"+t,[l*10 for l in range(11)])
     empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
     array("bt_"+t,[bt_frame(cols,PNK if t=="n" else G2),empty])     # 0 — зв'язку немає: значок; 1 — є: порожньо
     values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
-    f=SEMI(TS); pct=image("pct_"+t,text_img("%",f,tc,h=SH))
-    cw=small(tc,"b"+t) if t=="n" else small(tc,"b"+t)
-    number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"left",False,0,"pct_"+t)
-    z=1.25; tw=2*cw+pct.width; total=34*z+7*z+tw; ax=106-total/2; Y=101
-    lay(t,"batt_"+t,ax-3*z,Y-10*z); lay(t,"bat_"+t,ax+(34+7)*z,Y-SH/2); lay(t,"bt_"+t,ax-24*z-15*1.3,Y-15*1.3)
+    f=SEMI(17); pct=image("pct_"+t,text_img("%",f,tc,h=SH))
+    ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
+    number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
+    Y=101; bx=106-BW/2               # лівий край корпусу
+    lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2); lay(t,"v_bt_"+t,bx-26-15*1.3,Y-15*1.3)
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
@@ -166,6 +169,8 @@ centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
 centered("n","pulse_n","healthHeartRate",3,PNK,481,icon_heart(GLP))
 centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
 
+names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
+assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470552" name="Глітч">','    <Resources>']
 xml+=["        "+r for r in res]+['    </Resources>','    <Theme type="normal" name="Глітч" bgColor="#000000">']
 xml+=["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']
