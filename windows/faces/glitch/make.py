@@ -18,8 +18,8 @@ K=4                                   # малюємо в 4 рази більш�
 W,H=212,520
 CYN=(0,240,255); PNK=(255,0,90); WHT=(255,255,255)
 G1=(200,200,200); G2=(130,130,130); GL=(120,120,120); GR=(180,180,180)
-if os.environ.get("AOD_MONO","1")=="1":   # AOD одним кольором для всього (і для кайми гліча)
-    G1=G2=GL=GR=(150,150,150)
+if os.environ.get("AOD_MONO","1")=="1":   # AOD одним кольором для всього (і для кайми гліча):
+    G1=G2=GL=GR=(255,255,255)                 # білим — яскравість задає чорний шар 50 % поверх AOD
 def font(name,size): return ImageFont.truetype(FD+name+".otf",round(size*K))
 BLACK=lambda s: font("InterDisplay-Black",s); BOLD=lambda s: font("InterDisplay-Bold",s); SEMI=lambda s: font("Inter-SemiBold",s)
 if os.path.isdir(OUT): shutil.rmtree(OUT)
@@ -176,7 +176,7 @@ def bt_frame(cols,slash):
     d.line([((x-12)*Q,(y-12)*Q),((x+12)*Q,(y+12)*Q)],fill=slash,width=int(3*Q))
     return down(im)
 # батарея по центру, відсоток — усередині корпусу (по центру, хоч 5%, хоч 100%); блютуз — ліворуч на сталому місці
-for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),),(45,45,45),G2)):
+for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),):   # в AOD батареї немає — ресурси для AOD не потрібні
     array("batt_"+t,[batt_frame(l/10,cols,fill) for l in range(11)])
     values("batt_"+t,"systemStatusBattery","batt_"+t,[l*10 for l in range(11)])
     empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
@@ -242,9 +242,10 @@ centered("a","steps_a","healthStepCount",5,G2,447,icon_steps(((G2,0),)))   # AOD
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
+image("dimmer",Image.new("RGBA",(W,H),(0,0,0,128)))   # AOD = білі елементи під чорним шаром 50 % (як BAND·01)
 def T(typ,name,lines): return ['    <Theme type="%s" name="%s" bgColor="#000000">'%(typ,name)]+["        "+l for l in lines]+['    </Theme>']
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'    <Resources>']+["        "+r for r in res]+['    </Resources>']
-xml+=T("normal",FACE_NAME,theme["n"])+T("AOD",FACE_NAME,theme["a"]+theme["a_slot"]+theme["a_bt"])   # один стиль; віджет — лише слотом; в AOD — без віджета
+xml+=T("normal",FACE_NAME,theme["n"])+T("AOD",FACE_NAME,theme["a"]+theme["a_slot"]+theme["a_bt"]+['<Layout ref="@dimmer" x="0" y="0"/>'])   # один стиль; віджет — лише слотом; в AOD — без віджета
 xml+=['</Watchface>']
 open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n")
 print("ok", len(res), "resources")

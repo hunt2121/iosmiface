@@ -169,54 +169,6 @@
             <Image src="dig_bn/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
-        <ImageArray name="batt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="batt_a/0.png"/>
-            <Image src="batt_a/1.png"/>
-            <Image src="batt_a/2.png"/>
-            <Image src="batt_a/3.png"/>
-            <Image src="batt_a/4.png"/>
-            <Image src="batt_a/5.png"/>
-            <Image src="batt_a/6.png"/>
-            <Image src="batt_a/7.png"/>
-            <Image src="batt_a/8.png"/>
-            <Image src="batt_a/9.png"/>
-            <Image src="batt_a/10.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_batt_a" source="systemStatusBattery" ref="@batt_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="10"/>
-            <Param value="20"/>
-            <Param value="30"/>
-            <Param value="40"/>
-            <Param value="50"/>
-            <Param value="60"/>
-            <Param value="70"/>
-            <Param value="80"/>
-            <Param value="90"/>
-            <Param value="100"/>
-        </DataItemImageValues>
-        <ImageArray name="bt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="bt_a/0.png"/>
-            <Image src="bt_a/1.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_bt_a" source="systemStatusBluetooth" ref="@bt_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-        </DataItemImageValues>
-        <Image name="pct_a" src="pct_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="dig_ba" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="dig_ba/0.png"/>
-            <Image src="dig_ba/1.png"/>
-            <Image src="dig_ba/2.png"/>
-            <Image src="dig_ba/3.png"/>
-            <Image src="dig_ba/4.png"/>
-            <Image src="dig_ba/5.png"/>
-            <Image src="dig_ba/6.png"/>
-            <Image src="dig_ba/7.png"/>
-            <Image src="dig_ba/8.png"/>
-            <Image src="dig_ba/9.png"/>
-        </ImageArray>
-        <DataItemImageNumber name="bat_a" source="systemStatusBattery" ref="@dig_ba" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_a"/>
         <ImageArray name="dig_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_sec/0.png"/>
             <Image src="dig_sec/1.png"/>
@@ -406,80 +358,6 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <ImageArray name="dig_val_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="dig_val_a/0.png"/>
-            <Image src="dig_val_a/1.png"/>
-            <Image src="dig_val_a/2.png"/>
-            <Image src="dig_val_a/3.png"/>
-            <Image src="dig_val_a/4.png"/>
-            <Image src="dig_val_a/5.png"/>
-            <Image src="dig_val_a/6.png"/>
-            <Image src="dig_val_a/7.png"/>
-            <Image src="dig_val_a/8.png"/>
-            <Image src="dig_val_a/9.png"/>
-            <Image src="dig_val_a/10.png"/>
-            <Image src="dig_val_a/11.png"/>
-        </ImageArray>
-        <Image name="u_deg_a" src="u_deg_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="wx_icons_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="wx_icons_a/0.png"/>
-            <Image src="wx_icons_a/1.png"/>
-            <Image src="wx_icons_a/2.png"/>
-            <Image src="wx_icons_a/3.png"/>
-            <Image src="wx_icons_a/4.png"/>
-            <Image src="wx_icons_a/5.png"/>
-            <Image src="wx_icons_a/6.png"/>
-            <Image src="wx_icons_a/7.png"/>
-            <Image src="wx_icons_a/8.png"/>
-            <Image src="wx_icons_a/9.png"/>
-            <Image src="wx_icons_a/10.png"/>
-            <Image src="wx_icons_a/11.png"/>
-            <Image src="wx_icons_a/12.png"/>
-            <Image src="wx_icons_a/13.png"/>
-            <Image src="wx_icons_a/14.png"/>
-            <Image src="wx_icons_a/15.png"/>
-            <Image src="wx_icons_a/16.png"/>
-            <Image src="wx_icons_a/17.png"/>
-            <Image src="wx_icons_a/18.png"/>
-            <Image src="wx_icons_a/19.png"/>
-            <Image src="wx_icons_a/20.png"/>
-            <Image src="wx_icons_a/21.png"/>
-            <Image src="wx_icons_a/22.png"/>
-            <Image src="wx_icons_a/23.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_wx_a" source="weatherCurrentWeather" ref="@wx_icons_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-            <Param value="7"/>
-            <Param value="8"/>
-            <Param value="9"/>
-            <Param value="10"/>
-            <Param value="11"/>
-            <Param value="12"/>
-            <Param value="13"/>
-            <Param value="14"/>
-            <Param value="15"/>
-            <Param value="16"/>
-            <Param value="17"/>
-            <Param value="18"/>
-            <Param value="19"/>
-            <Param value="20"/>
-            <Param value="21"/>
-            <Param value="22"/>
-            <Param value="23"/>
-        </DataItemImageValues>
-        <Image name="f_deg_a" src="f_deg_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="wx_t_a" source="weatherCurrentTemperature" ref="@dig_val_a" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
-        <Widget name="r_weather_a" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
-            <Item ref="@wx_t_a" x="0" y="0"/>
-            <Item ref="@f_deg_a" x="0" y="0"/>
-            <Item ref="@v_wx_a" x="0" y="0"/>
-        </Widget>
         <ImageArray name="bt_cover_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="bt_cover_a/0.png"/>
             <Image src="bt_cover_a/1.png"/>
@@ -488,12 +366,7 @@
             <Param value="0"/>
             <Param value="1"/>
         </DataItemImageValues>
-        <Image name="f_km_a" src="f_km_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="dist_a" source="healthStepKiloMeter" ref="@dig_val_a" totalDigits="5" decimalDigits="2" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7"/>
-        <Widget name="r_distance_a" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
-            <Item ref="@dist_a" x="0" y="0"/>
-            <Item ref="@f_km_a" x="0" y="0"/>
-        </Widget>
+        <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
     </Resources>
     <Theme type="normal" name="GLITCH" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
@@ -519,5 +392,6 @@
         <Layout ref="@mon_a" x="145" y="35"/>
         <Layout ref="@steps_a" x="106" y="432"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
+        <Layout ref="@dimmer" x="0" y="0"/>
     </Theme>
 </Watchface>

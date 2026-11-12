@@ -98,19 +98,21 @@ for t,dim in (("n",False),("a",True)):
             a=math.radians(270+2.5*i); r0,r1=cx-194,cx-176
             p0=(cx+r0*math.sin(a),HA-r0*math.cos(a)); p1=(cx+r1*math.sin(a),HA-r1*math.cos(a))
             al=min(1.0,(8-abs(i))/3)                    # три крайні поділки з кожного боку плавно гаснуть
-            d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(80,80,80,round(255*al)),width=K)
+            d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(160,160,160,round(255*al)),width=K)   # під шаром 50 % — 80
         image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-HA)
-        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30)
+        ch=digits("hr_a",F("SemiBold",24),WH,30)
         if H12: number("hr_a","timeHour12H","hr_a",2,"center",False); lay(t,"hr_a",136,MID-15)   # 12 год: без нуля попереду, по центру
         else: number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
-    cP=(115,115,115) if dim else OR
+    cP=WH if dim else OR   # AOD: білим, яскравість задає чорний шар 50 %
     # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
     im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
     d.line([156*K,12*K,196*K,12*K],fill=cP,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=cP)
     image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
     # хвилини, «ХВ», секунди, дата й кроки — по одній вертикальній осі x=61 (за видимими пікселями; пів пікселя — ліворуч)
-    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2+BDY)
-    image("xv_"+t,text_img(MINW,F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3+BDY)
+    fm=F("Bold",72)
+    if not dim: cw=digits("min_n",fm,WH,80); number("min_n","timeMinute","min_n",2)
+    lay(t,"min_n",62-cw,MID-44-40+2+BDY)   # хвилини білі — AOD показує ті самі під шаром 50 %
+    image("xv_"+t,text_img(MINW,F("Bold",21,False),WH if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3+BDY)
     if t=="n":
         fs=F("Medium",28)
         if H12:   # 12 год: замість секунд — AM/PM того самого розміру й на тому самому місці (лише на звичайному екрані)
@@ -123,24 +125,24 @@ for t,dim in (("n",False),("a",True)):
         else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10+BDY)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # Дата у два рядки: день тижня (менший) зверху, число під ним; кожен рядок рівно по осі x=61.
     # Верх дня тижня — 80 px від верху екрана (як кроки від низу).
-    fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
+    fd=F("SemiBold",26,False); col=WH   # дата біла — AOD показує ті самі елементи під шаром 50 %
     fw=F("SemiBold",20,False)
     def vc(img,cx):   # зсунути напис у картинці так, щоб видима середина була в пікселі cx (пів пікселя — ліворуч)
         a=img.getchannel("A").point(lambda v:255 if v>40 else 0); b=a.getbbox(); dx=cx-(b[0]+b[2]-1)/2; dx=math.floor(dx)
         out=Image.new("RGBA",img.size,(0,0,0,0)); out.alpha_composite(img.crop((max(0,-dx),0,img.width,img.height)),(max(0,dx),0)); return out
-    WWK=70; wk=[vc(text_img(w,fw,col,w=WWK,h=26),WWK/2-0.5) for w in WEEK]
-    array("wk_"+t,wk); values("wk_"+t,"dateWeek","wk_"+t,range(7))
+    WWK=70
+    if not dim: wk=[vc(text_img(w,fw,col,w=WWK,h=26),WWK/2-0.5) for w in WEEK]; array("wk_n",wk); values("wk_n","dateWeek","wk_n",range(7))
     wb=wk[4].getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()      # видимі рядки назви (верх/низ однакові для всіх)
-    lay(t,"v_wk_"+t,DCX+0.5-WWK/2,DTOP-wb[1])
-    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"center",False)
-    db=Image.open(os.path.join(OUT,"d_day_%s"%t,"1.png")).getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
-    lay(t,"day_"+t,DCX+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
+    lay(t,"v_wk_n",DCX+0.5-WWK/2,DTOP-wb[1])
+    if not dim: cd=digits("day_n",fd,col,34); number("day_n","dateDay","day_n",2,"center",False)
+    db=Image.open(os.path.join(OUT,"d_day_n","1.png")).getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
+    lay(t,"day_n",DCX+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
     if t=="n":   # стиль 2 (як раніше): дата на осі x=61, верх за 80 px від краю
         ST2={"v_wk_n":(26,80-wb[1]),"day_n":(61,80+(wb[3]-wb[1])+DLGAP-db[1])}
     # Значки стану над хвилинами (30 px): блискавка — заряд нижче 20 %, блютуз — немає зв'язку.
     # Блютуз — шаром поверх, під ним чорна підкладка (на 1 px більша за обидва значки), тож при обох показується він.
     if t=="n" or dim:
-        cI=(115,115,115) if dim else OR; k=8
+        cI=WH if dim else OR; k=8
         def crop_(im): return im.crop(im.getchannel("A").point(lambda v:255 if v>40 else 0).getbbox())
         def bt_icon(h=30,lw=2.6):
             w=round(h*0.64); im=Image.new("RGBA",(w*k,h*k),(0,0,0,0)); d=ImageDraw.Draw(im); L=round(lw*k)
@@ -167,14 +169,14 @@ for t,dim in (("n",False),("a",True)):
             x1,y1=icon_pos(162)      # стиль 1: посередині між датою (низ 122) і хвилинами (верх 202)
             ST2["v_bat_n"]=(x1,y1); ST2["v_bt_n"]=(x1,y1)
     # кроки
-    cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
+    cst=digits("st_"+t,fd,WH if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
     if SI=="right":
-        image("stic_"+t,soles_icon((115,115,115) if dim else OR,5,34,6))   # підошви праворуч, 5 px від цифр
+        image("stic_"+t,soles_icon(WH if dim else OR,5,34,6))   # підошви праворуч, 5 px від цифр
         number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,STX,440-17-10+STDY)
         if t=="n": ST2["st_n"]=(60,440-17-10)   # стиль 2: кроки на осі x=61, низ за 80 px від краю   # кроки з підошвами — разом по центру осі x=61
     else:
-        ic=soles_icon((115,115,115) if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
+        ic=soles_icon(WH if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
         # блок «значок + число» від низу екрана — 80 px, як дата від верху; значок над або під числом
         ybot=439                                         # нижній видимий рядок блоку
         if SI=="top": ny=ybot-19; iy=ny-GAPV-22
@@ -192,8 +194,12 @@ for l in theme["n"]:
     theme["n2"].append('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r][0]),round(ST2[r][1])) if r in ST2 else l)
 # AOD для кожного стилю: по центру — як намальовано (theme["a"]), ліва вісь — з тими самими позиціями, що й theme["n2"]
 theme["a_c"]=list(theme["a"])
-theme["a"]=[('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r[:-1]+"n"][0]),round(ST2[r[:-1]+"n"][1])) if (r[:-1]+"n") in ST2 and r.endswith("_a") else l)
+def _k(r): return r if r in ST2 else (r[:-1]+"n" if r.endswith("_a") and (r[:-1]+"n") in ST2 else None)
+theme["a"]=[('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[_k(r)][0]),round(ST2[_k(r)][1])) if _k(r) else l)
             for l in theme["a"] for r in [_re.search(r'ref="@([^"]+)"',l).group(1)]]
+# AOD — білі елементи під чорним шаром 50 % (останнім)
+res.append('<Image name="dimmer" src="%s" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>'%save(Image.new("RGBA",(W,H),(0,0,0,128)),"dimmer.png"))
+for k_ in ("a","a_c"): theme[k_].append('<Layout ref="@dimmer" x="0" y="0"/>')
 S1,S2={"ua":("Стиль 1","Стиль 2"),"ru":("Стиль 1","Стиль 2")}.get(LANGV,("Style 1","Style 2"))
 T=lambda typ,name,key: ['    <Theme type="%s" name="%s" bgColor="#000000">'%(typ,name)]+["        "+l for l in theme[key]]+['    </Theme>']
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'    <Resources>']+["        "+r for r in res]+['    </Resources>']\

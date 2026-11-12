@@ -187,41 +187,7 @@ array("bt_cover", [bt_cover(((PNK, -1.5), (CYN, 1.5)), PNK), Image.new("RGBA", (
 values("bt_cover", "systemStatusBluetooth", "bt_cover", [0, 1])
 lay("n", "v_bt_cover", BX0, BY0)
 
-# AOD: погода (перший віджет слота) сірим, без гліча; «немає зв'язку» — та сама плашка, сіра
-def gglyph(s, col, w=CWV):
-    im = Image.new("RGBA", (w * K, HV * K), (0, 0, 0, 0)); im.paste(Image.new("RGBA", im.size, col + (255,)), (0, 0), text_mask(s, FV, w)); return down(im)
-array("dig_val_a", [gglyph(str(i), G2) for i in range(10)] + [gglyph("-", G2), gglyph(".", G2)])
-tw_ = math.ceil(FV.getlength("°") / K) + 4
-dg = Image.new("RGBA", (tw_ * K, HV * K), (0, 0, 0, 0)); dg.paste(Image.new("RGBA", dg.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw_, "left")); image("u_deg_a", pad_left(down(dg)))
-array("wx_icons_a", [padI(WI.centered_icon(p, ((G2, 0),))) for _, p in WI.ICONS]); values("wx_a", "weatherCurrentWeather", "wx_icons_a", range(len(WI.ICONS)))
-tw2 = math.ceil(FV.getlength("°") / K) + 2
-dga = Image.new("RGBA", (tw2 * K, HV * K), (0, 0, 0, 0)); dga.paste(Image.new("RGBA", dga.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw2, "left")); image("f_deg_a", down(dga))
-number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "left", False, SPV)
-r = row("r_weather_a", ["wx_t_a", "f_deg_a", "v_wx_a"])        # той самий рядок, що й на звичайному екрані — значок і текст на тих самих місцях
-R_WX_A = r
-array("bt_cover_a", [bt_cover(((G2, 0),), G2), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
+# AOD: «немає зв'язку» — та сама плашка, білим (приглушує шар AOD)
+array("bt_cover_a", [bt_cover(((WHT, 0),), WHT), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover_a", "systemStatusBluetooth", "bt_cover_a", [0, 1])
 lay("a_bt", "v_bt_cover_a", BX0, BY0)
-
-# AOD «Батарея»: та сама батарея, сіра (елементи batt_a / bat_a з make.py), на тому ж місці, що у віджеті
-BATT_ITEMS_A = [(ref[:-1] + "a", x, y) for ref, x, y in BATT_ITEMS]
-
-# AOD «Відстань»: «5.43 км» + маршрут, сірим, той самий рядок, що й на звичайному екрані
-def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
-    font = font or FU
-    tw = math.ceil(font.getlength(text) / K) + 2 if text else 0
-    im_icon = icon_mask(icon) if icon else None
-    iw = im_icon.width // K + 3 if im_icon else 0
-    w = (gap_text if text else 0) + tw + (gap_icon if icon else 0) + iw
-    im = Image.new("RGBA", (w * K, HV * K), (0, 0, 0, 0))
-    if text:
-        m = text_mask(text, font, tw, "left", bottom=(font is FU)); mm = Image.new("L", im.size, 0); mm.paste(m, (gap_text * K, 0))
-        im.paste(Image.new("RGBA", im.size, G2 + (255,)), (0, 0), mm)
-    if im_icon:
-        x = ((gap_text if text else 0) + tw + gap_icon) * K; y = int(HV * K / 2 - im_icon.height / 2)
-        im.paste(Image.new("RGBA", im_icon.size, G2 + (255,)), (x, y), im_icon)
-    return image(name, down(im))
-plain_img_gray("f_km_a", TXT[LANGV]["km"], i_route)
-number("dist_a", "healthStepKiloMeter", "dig_val_a", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
-r = row("r_distance_a", ["dist_a", "f_km_a"])
-# AOD: без віджета (Band 10 не дає вибирати віджет для AOD) — на цьому місці порожньо, лише значок блютуз при обриві

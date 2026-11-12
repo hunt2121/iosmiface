@@ -107,51 +107,7 @@
         </ImageArray>
         <DataItemImageNumber name="hr_a" source="timeHour" ref="@d_hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="ptr_a" src="ptr_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="d_min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="d_min_a/0.png"/>
-            <Image src="d_min_a/1.png"/>
-            <Image src="d_min_a/2.png"/>
-            <Image src="d_min_a/3.png"/>
-            <Image src="d_min_a/4.png"/>
-            <Image src="d_min_a/5.png"/>
-            <Image src="d_min_a/6.png"/>
-            <Image src="d_min_a/7.png"/>
-            <Image src="d_min_a/8.png"/>
-            <Image src="d_min_a/9.png"/>
-        </ImageArray>
-        <DataItemImageNumber name="min_a" source="timeMinute" ref="@d_min_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="xv_a" src="xv_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="wk_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="wk_a/0.png"/>
-            <Image src="wk_a/1.png"/>
-            <Image src="wk_a/2.png"/>
-            <Image src="wk_a/3.png"/>
-            <Image src="wk_a/4.png"/>
-            <Image src="wk_a/5.png"/>
-            <Image src="wk_a/6.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_wk_a" source="dateWeek" ref="@wk_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-        </DataItemImageValues>
-        <ImageArray name="d_day_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="d_day_a/0.png"/>
-            <Image src="d_day_a/1.png"/>
-            <Image src="d_day_a/2.png"/>
-            <Image src="d_day_a/3.png"/>
-            <Image src="d_day_a/4.png"/>
-            <Image src="d_day_a/5.png"/>
-            <Image src="d_day_a/6.png"/>
-            <Image src="d_day_a/7.png"/>
-            <Image src="d_day_a/8.png"/>
-            <Image src="d_day_a/9.png"/>
-        </ImageArray>
-        <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="bat_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="bat_a/0.png"/>
             <Image src="bat_a/1.png"/>
@@ -182,6 +138,7 @@
         </ImageArray>
         <Image name="stic_a" src="stic_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@stic_a"/>
+        <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="ptr_n" src="c1/ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
         <Image name="xv_n" src="c1/xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
         <Image name="stic_n" src="c1/stic_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
@@ -217,13 +174,14 @@
         <Layout ref="@ruler_a" x="0" y="180"/>
         <Layout ref="@hr_a" x="120" y="255"/>
         <Layout ref="@ptr_a" x="0" y="258"/>
-        <Layout ref="@min_a" x="15" y="189"/>
+        <Layout ref="@min_n" x="15" y="189"/>
         <Layout ref="@xv_a" x="35" y="277"/>
-        <Layout ref="@v_wk_a" x="26" y="75"/>
-        <Layout ref="@day_a" x="61" y="96"/>
+        <Layout ref="@v_wk_n" x="26" y="75"/>
+        <Layout ref="@day_n" x="61" y="96"/>
         <Layout ref="@v_bat_a" x="52" y="146"/>
         <Layout ref="@v_bt_a" x="52" y="146"/>
         <Layout ref="@st_a" x="60" y="413"/>
+        <Layout ref="@dimmer" x="0" y="0"/>
     </Theme>
     <Theme type="normal" name="Стиль 2" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
         <Layout ref="@v_dial_n" x="120" y="4"/>
@@ -241,12 +199,13 @@
         <Layout ref="@ruler_a" x="0" y="180"/>
         <Layout ref="@hr_a" x="120" y="255"/>
         <Layout ref="@ptr_a" x="0" y="258"/>
-        <Layout ref="@min_a" x="15" y="189"/>
+        <Layout ref="@min_n" x="15" y="189"/>
         <Layout ref="@xv_a" x="35" y="277"/>
-        <Layout ref="@v_wk_a" x="71" y="40"/>
-        <Layout ref="@day_a" x="105" y="61"/>
+        <Layout ref="@v_wk_n" x="71" y="40"/>
+        <Layout ref="@day_n" x="105" y="61"/>
         <Layout ref="@v_bat_a" x="52" y="129"/>
         <Layout ref="@v_bt_a" x="52" y="129"/>
         <Layout ref="@st_a" x="105" y="448"/>
+        <Layout ref="@dimmer" x="0" y="0"/>
     </Theme>
 </Watchface>

@@ -242,11 +242,11 @@ lay("n","soles",x0,round(y3+13-soles.height/2))
 image("g5",ghost(5,h)); lay("n","g5",x0+soles.width+G,y3)
 number("stp","healthStepCount","d26",5,"right",False,sp); lay("n","stp",x0+tot,y3)
 
-# ── AOD: ті самі картинки без підкладки, поверх — чорний шар 150/255 (білий → 105); «звʼязок втрачено» — над шаром
+# ── AOD: ті самі картинки без підкладки, поверх — чорний шар 128/255 (50 %, білий → 127); «звʼязок втрачено» — над шаром
 for n,(x,y) in (("hr",(xh,YC)),("colon",(xcol,YC)),("mn",(xm,YC)),("v_wk",(Lc,y1)),("dd1",(xd,y1)),("dash",(xd+2*(wI+sp),y1)),("dd2",(xd+3*(wI+sp),y1)),
                 ("soles",(x0,round(y3+13-soles.height/2))),("stp",(x0+tot,y3))):
     lay("a",n,x,y)
-image("dimmer",Image.new("RGBA",(W,H),(0,0,0,150))); lay("a","dimmer",0,0)
+image("dimmer",Image.new("RGBA",(W,H),(0,0,0,128))); lay("a","dimmer",0,0)   # 50 %
 lay("a","v_st_a",0,STY)
 
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
