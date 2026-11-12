@@ -107,23 +107,45 @@ for t,col in (("n",CYN),("a",G2)):
     number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
 
 # ── батарея й блютуз (Y=101): батарея з «85%» — по центру, блютуз ліворуч на сталому місці
-BW,BH=50,22          # корпус батареї (у ньому — відсоток)
-BSTYLE=os.environ.get("BATT","A")   # A — лише контур, B — смужка під цифрами, C — тьмяна заливка
+BSTYLE=os.environ.get("BATT","A")
+# ORIG — маленька батарейка з мокапу, «85%» праворуч; BIG — 66×30, відсоток усередині, тьмяна заливка;
+# A/B/C — 50×22, відсоток усередині (контур / смужка / тьмяна заливка); S1/S2 — 60×28, яскрава заливка (суцільна / рядками)
+BW,BH={"ORIG":(30,16),"BIG":(66,30),"S1":(60,28),"S2":(60,28)}.get(BSTYLE,(50,22))
 def batt_frame(level,cols,fill):
-    # цілі пікселі в масштабі K; подвійний контур рожевий/блакитний, як в інших значків
     Z=K; im=Image.new("RGBA",((BW+10)*Z,(BH+4)*Z),(0,0,0,0)); d=ImageDraw.Draw(im)
-    top,bot=2*Z,(2+BH)*Z; ow=2*Z; ox=3
-    if BSTYLE=="C" and level>0:
-        l=ox*Z+ow+Z; full=BW*Z-2*ow-2*Z
-        d.rectangle([l,top+ow+Z,l+round(full*level)-1,bot-ow-Z-1],fill=fill)
+    top,bot=2*Z,(2+BH)*Z; ow=2*Z; ox=3; g={"ORIG":1,"BIG":2,"S1":2,"S2":2}.get(BSTYLE,1)*Z
+    rad={"ORIG":3,"BIG":6,"S1":4,"S2":4}.get(BSTYLE,3)*Z; tip={"ORIG":3,"BIG":5,"S1":4,"S2":4}.get(BSTYLE,3)
+    if level>0 and BSTYLE in ("ORIG","BIG","C","S1","S2"):
+        l=ox*Z+ow+g; full=BW*Z-2*ow-2*g; r=l+max(Z,round(full*level))
+        col=fill if BSTYLE in ("BIG","C") else cols[-1][0]
+        if BSTYLE=="S2":
+            for y in range(top+ow+g,bot-ow-g,2*Z): d.rectangle([l,y,r-1,y+Z-1],fill=col)
+        else: d.rectangle([l,top+ow+g,r-1,bot-ow-g-1],fill=col)
     for col,dx in cols:
         l=round((ox+dx)*Z); r=l+BW*Z
-        d.rounded_rectangle([l,top,r-1,bot-1],radius=3*Z,outline=col,width=ow)
-        d.rectangle([r+Z,(2+BH/2-3)*Z,r+4*Z-1,(2+BH/2+3)*Z-1],fill=col)
+        d.rounded_rectangle([l,top,r-1,bot-1],radius=rad,outline=col,width=ow)
+        d.rectangle([r+Z,(2+BH/2-tip)*Z,r+(tip+1)*Z-1,(2+BH/2+tip)*Z-1],fill=col)
     if BSTYLE=="B" and level>0:
         l=(ox+4)*Z; full=(BW-8)*Z
         d.rectangle([l,bot-ow-int(3.5*Z),l+round(full*level)-1,bot-ow-int(1.5*Z)-1],fill=cols[-1][0])
     return down(im)
+def batt_digits(f,tc,t):
+    """цифри відсотка: звичайні; S1 — чорні з обвідкою кольору; S2 — білі з рожево-блакитним зсувом"""
+    if BSTYLE not in ("S1","S2") or t=="a": return digit_set(f,tc,SH)
+    from PIL import ImageFilter
+    cw=math.ceil(max(f.getlength(str(i),features=["tnum"]) for i in range(10))/K)+2
+    def one(ch):
+        b=f.getbbox("0"); m=Image.new("L",(cw*K,SH*K),0); dd=ImageDraw.Draw(m)
+        tw=f.getlength(ch,features=["tnum"]); x=(cw*K-tw)/2; y=SH*K/2-(b[1]+b[3])/2
+        im=Image.new("RGBA",m.size,(0,0,0,0))
+        def mk(dx):
+            mm=Image.new("L",m.size,0); ImageDraw.Draw(mm).text((x+dx*K,y),ch,font=f,fill=255,features=["tnum"]); return mm
+        if BSTYLE=="S1":
+            mm=mk(0); im.paste(Image.new("RGBA",im.size,CYN+(255,)),(0,0),mm.filter(ImageFilter.MaxFilter(7))); im.paste(Image.new("RGBA",im.size,(0,0,0,255)),(0,0),mm)
+        else:
+            for col,dx in ((PNK,-1),(CYN,1),(WHT,0)): im.paste(Image.new("RGBA",im.size,col+(255,)),(0,0),mk(dx))
+        return down(im)
+    return [one(str(i)) for i in range(10)]+[one("%")], cw
 def bt_frame(cols,slash):
     im=Image.new("RGBA",(int(30*Q),int(30*Q)),(0,0,0,0)); d=ImageDraw.Draw(im); x,y=15,15
     for col,dx in cols:
@@ -138,11 +160,23 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
     array("bt_"+t,[bt_frame(cols,PNK if t=="n" else G2),empty])     # 0 — зв'язку немає: значок; 1 — є: порожньо
     values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
-    f=SEMI(12.5); pct=image("pct_"+t,text_img("%",f,tc,h=SH))
-    ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
+    Y=101
+    if BSTYLE=="ORIG":                 # як на мокапі: значок, праворуч «85%»; група по центру для двох цифр
+        f=SEMI(TS); pct=image("pct_"+t,text_img("%",f,tc,h=SH)); ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
+        number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"left",False,0,"pct_"+t)
+        total=(BW+4)+7+2*cw+pct.width; bx=106-total/2
+        lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,bx+BW+4+7,Y-SH/2); lay(t,"v_bt_"+t,bx-24-15*1.3,Y-15*1.3)
+        continue
+    tsz={"BIG":17,"S1":15,"S2":15}.get(BSTYLE,12.5); f=(BOLD if BSTYLE in ("S1","S2") else SEMI)(tsz)
+    tcol=WHT if BSTYLE=="BIG" and t=="n" else (G1 if BSTYLE=="BIG" else tc)
+    r=batt_digits(f,tcol,t)
+    if BSTYLE in ("S1","S2") and t=="n":
+        ds,cw=r; pct=ds[10]; image("pct_"+t,pct); ds=ds[:10]
+    else:
+        ds,cw=r; pct=image("pct_"+t,text_img("%",f,tcol,h=SH))
+    array("dig_b"+t,ds)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
-    Y=101; bx=106-BW/2               # лівий край корпусу; відсоток — по центру корпусу
-    ty=-1.5 if BSTYLE=="B" else 0
+    bx=106-BW/2; ty=-1.5 if BSTYLE=="B" else 0
     lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3,Y-15*1.3)
 
 # ── секунди (лише звичайний екран)
