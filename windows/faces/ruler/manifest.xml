@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Watchface id="318470560" name="Лінійка">
     <Resources>
-        <ImageArray name="scale_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="scale_n/0.png"/>
-            <Image src="scale_n/1.png"/>
-            <Image src="scale_n/2.png"/>
-            <Image src="scale_n/3.png"/>
-            <Image src="scale_n/4.png"/>
-            <Image src="scale_n/5.png"/>
-            <Image src="scale_n/6.png"/>
-            <Image src="scale_n/7.png"/>
-            <Image src="scale_n/8.png"/>
-            <Image src="scale_n/9.png"/>
-            <Image src="scale_n/10.png"/>
-            <Image src="scale_n/11.png"/>
-            <Image src="scale_n/12.png"/>
-            <Image src="scale_n/13.png"/>
-            <Image src="scale_n/14.png"/>
-            <Image src="scale_n/15.png"/>
-            <Image src="scale_n/16.png"/>
-            <Image src="scale_n/17.png"/>
-            <Image src="scale_n/18.png"/>
-            <Image src="scale_n/19.png"/>
-            <Image src="scale_n/20.png"/>
-            <Image src="scale_n/21.png"/>
-            <Image src="scale_n/22.png"/>
-            <Image src="scale_n/23.png"/>
+        <ImageArray name="ticks_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ticks_n/0.png"/>
+            <Image src="ticks_n/1.png"/>
+            <Image src="ticks_n/2.png"/>
+            <Image src="ticks_n/3.png"/>
+            <Image src="ticks_n/4.png"/>
+            <Image src="ticks_n/5.png"/>
+            <Image src="ticks_n/6.png"/>
+            <Image src="ticks_n/7.png"/>
+            <Image src="ticks_n/8.png"/>
+            <Image src="ticks_n/9.png"/>
+            <Image src="ticks_n/10.png"/>
+            <Image src="ticks_n/11.png"/>
+            <Image src="ticks_n/12.png"/>
+            <Image src="ticks_n/13.png"/>
+            <Image src="ticks_n/14.png"/>
+            <Image src="ticks_n/15.png"/>
+            <Image src="ticks_n/16.png"/>
+            <Image src="ticks_n/17.png"/>
+            <Image src="ticks_n/18.png"/>
+            <Image src="ticks_n/19.png"/>
+            <Image src="ticks_n/20.png"/>
+            <Image src="ticks_n/21.png"/>
+            <Image src="ticks_n/22.png"/>
+            <Image src="ticks_n/23.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_scale_n" source="timeHour" ref="@scale_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_ticks_n" source="timeHour" ref="@ticks_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
             <Param value="2"/>
@@ -177,6 +177,58 @@
             <Param value="58"/>
             <Param value="59"/>
         </DataItemImageValues>
+        <ImageArray name="lbl_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="lbl_n/0.png"/>
+            <Image src="lbl_n/1.png"/>
+            <Image src="lbl_n/2.png"/>
+            <Image src="lbl_n/3.png"/>
+            <Image src="lbl_n/4.png"/>
+            <Image src="lbl_n/5.png"/>
+            <Image src="lbl_n/6.png"/>
+            <Image src="lbl_n/7.png"/>
+            <Image src="lbl_n/8.png"/>
+            <Image src="lbl_n/9.png"/>
+            <Image src="lbl_n/10.png"/>
+            <Image src="lbl_n/11.png"/>
+            <Image src="lbl_n/12.png"/>
+            <Image src="lbl_n/13.png"/>
+            <Image src="lbl_n/14.png"/>
+            <Image src="lbl_n/15.png"/>
+            <Image src="lbl_n/16.png"/>
+            <Image src="lbl_n/17.png"/>
+            <Image src="lbl_n/18.png"/>
+            <Image src="lbl_n/19.png"/>
+            <Image src="lbl_n/20.png"/>
+            <Image src="lbl_n/21.png"/>
+            <Image src="lbl_n/22.png"/>
+            <Image src="lbl_n/23.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_lbl_n" source="timeHour" ref="@lbl_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+            <Param value="7"/>
+            <Param value="8"/>
+            <Param value="9"/>
+            <Param value="10"/>
+            <Param value="11"/>
+            <Param value="12"/>
+            <Param value="13"/>
+            <Param value="14"/>
+            <Param value="15"/>
+            <Param value="16"/>
+            <Param value="17"/>
+            <Param value="18"/>
+            <Param value="19"/>
+            <Param value="20"/>
+            <Param value="21"/>
+            <Param value="22"/>
+            <Param value="23"/>
+        </DataItemImageValues>
         <ImageArray name="d_min_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_min_n/0.png"/>
             <Image src="d_min_n/1.png"/>
@@ -321,9 +373,10 @@
         </ImageArray>
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
     </Resources>
-    <Theme type="normal" name="Лінійка" bgColor="#0E0E10">
-        <Layout ref="@v_scale_n" x="110" y="0"/>
+    <Theme type="normal" name="Лінійка" bgColor="#000000">
+        <Layout ref="@v_ticks_n" x="110" y="0"/>
         <Layout ref="@v_ptr_n" x="0" y="220"/>
+        <Layout ref="@v_lbl_n" x="110" y="0"/>
         <Layout ref="@min_n" x="15" y="176"/>
         <Layout ref="@xv_n" x="46" y="263"/>
         <Layout ref="@sec" x="43" y="290"/>

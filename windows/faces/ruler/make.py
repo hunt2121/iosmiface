@@ -33,15 +33,16 @@ def digits(n,f,col,h):
     array("d_"+n,[text_img(str(i),f,col,w=cw,h=h) for i in range(10)]); return cw
 
 MID=260; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
-def strip(Hh,dim):
+def strip(Hh,dim,part="all"):   # part: all / ticks (без підписів) / labels (підписи на підкладці кольору фону)
     im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im); f=F("SemiBold",24)
     c=Hh+0.5                    # посередині кадру — H:30; риска ходить між H:00 і H+1:00
     for h10 in range(int((c-5)*6),int((c+5)*6)+2):
         h=h10/6; y=MID+(h-c)*PXH
         if not -10<y<H+10: continue
         big=h10%6==0; lc=(110,110,110) if dim else ((255,255,255) if big else DT)
-        d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
-        if big: d.text(((136-SX0)*K,y*K),"%02d"%((h10//6)%24),font=f,fill=(90,90,90) if dim else LG,anchor="mm")
+        if part!="labels": d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
+        if big and part=="labels": d.rectangle([(115-SX0)*K,(y-12)*K,(156-SX0)*K,(y+12)*K],fill=(0,0,0))
+        if big and part!="ticks": d.text(((136-SX0)*K,y*K),"%02d"%((h10//6)%24),font=f,fill=(90,90,90) if dim else LG,anchor="mm")
     return down(im)
 PY0,PH=MID-40,80               # область кадрів риски
 def pointer(m,dim):
@@ -51,14 +52,16 @@ def pointer(m,dim):
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
     if t=="n":
-        # шкала з підписами зсувається раз на годину (H:30 посередині), коротка риска повзе щохвилини від H:00 до H+1:00.
-        # Риска починається праворуч від цифр (цифри — до 150 px), тож ніколи на них не наїжджає.
-        array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24)); lay(t,"v_scale_n",SX0,0)
+        # шкала зсувається раз на годину (H:30 посередині), коротка риска повзе щохвилини від H:00 до H+1:00.
+        # Шари: поділки → риска → підписи годин на підкладці кольору фону. Коли риска підходить до цифри,
+        # вона ховається під підкладку — цифра «зависає» над рискою.
+        array("ticks_n",[strip(h,False,"ticks") for h in range(24)]); values("ticks_n","timeHour","ticks_n",range(24)); lay(t,"v_ticks_n",SX0,0)
         def ptr(m):
             im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH
-            d.line([156*K,y*K,196*K,y*K],fill=OR,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=OR)
+            d.line([116*K,y*K,196*K,y*K],fill=OR,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=OR)
             return down(im)
         array("ptr_n",[ptr(m) for m in range(60)]); values("ptr_n","timeMinute","ptr_n",range(60)); lay(t,"v_ptr_n",0,PY0)
+        array("lbl_n",[strip(h,False,"labels") for h in range(24)]); values("lbl_n","timeHour","lbl_n",range(24)); lay(t,"v_lbl_n",SX0,0)
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
@@ -84,5 +87,5 @@ for t,dim in (("n",False),("a",True)):
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
-     '    <Theme type="normal" name="Лінійка" bgColor="#0E0E10">']+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
+     '    <Theme type="normal" name="Лінійка" bgColor="#000000">']+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
 open(os.path.join(HERE,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
