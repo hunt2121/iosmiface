@@ -139,7 +139,7 @@ def bt_cover(cols, slash):
     w, h = BX1 - BX0, BY1 - BY0
     im = Image.new("RGBA", (w, h), (0, 0, 0, 255))
     ic = bt_frame(cols, slash)
-    im.alpha_composite(ic, (round(106 - BX0 - ic.width / 2), round(SLOT_Y - BY0 - ic.height / 2)))
+    im.alpha_composite(ic, (round(106 - BX0 - ic.width / 2), round(SLOT_Y - BY0 - ic.height / 2) + 1))   # значок на 1 px нижче, плашка на місці
     return im
 array("bt_cover", [bt_cover(((PNK, -1.5), (CYN, 1.5)), PNK), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover", "systemStatusBluetooth", "bt_cover", [0, 1])
