@@ -52,25 +52,25 @@ def pointer(m,dim):
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
     if t=="n":
-        # Шкала — край великого диска (барабана), що обертається як годинна стрілка: раз на добу (24 год = 360°).
-        # Стрілка годинника на браслеті рухається плавно (година з урахуванням хвилин), тож шкала з підписами
-        # пливе під нерухомою рискою. Центр диска — праворуч за екраном (380, MID); до риски повернута поточна година.
-        RL=PXH*24/(2*math.pi)                    # радіус підписів: 64 px між годинами, як на лінійці (≈244)
-        CX=136+RL; S=2*258; PV=S//2               # картинка диска S×S, вісь посередині
+        # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
+        # з урахуванням хвилин), тож шкала з підписами пливе під нерухомою рискою. Доба = 240° (10° на годину) —
+        # диск більший і шкала пряміша; опівночі диск стрибає на 240° назад, але там намальовано те саме (00 після 23).
+        DEG=10; RL=PXH/math.radians(DEG)          # радіус підписів: 64 px між годинами (≈367)
+        CX=136+RL; PV=round(RL+16); S=2*PV        # картинка диска S×S, вісь посередині; центр — праворуч за екраном
         im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
         def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
-        for j10 in range(24*6):
-            psi=270-15*j10/6; big=j10%6==0         # годинний кут: 270° — ліворуч (до риски)
+        for j10 in range(-4*6,28*6+1):            # видно ±4 год довкола риски: підписи −4…28 (за модулем 24)
+            psi=270-DEG*j10/6; big=j10%6==0        # годинний кут: 270° — ліворуч (до риски)
             r0,r1=(CX-194),(CX-160 if big else CX-176)
             d.line([at(psi,r0),at(psi,r1)],fill=(255,255,255) if big else DT,width=(3 if big else 1)*K)
-        for j in range(24):
-            psi=270-15*j; beta=270-psi           # підпис ставимо так, щоб біля риски він був рівно
-            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=LG,anchor="mm")
+        for j in range(-4,29):
+            psi=270-DEG*j; beta=270-psi            # підпис повернуто так, щоб біля риски він стояв рівно
+            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%(j%24),font=fl,fill=LG,anchor="mm")
             tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
             im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
         image("dial_n",down(im))
-        res.append('<DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="360"/>'%(PV,PV))
-        lay(t,"v_dial_n",round(CX)-PV,MID-PV)
+        res.append('<DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="%d"/>'%(PV,PV,24*DEG))
+        lay(t,"v_dial_n",round(CX)-PV,MID-PV)    # y від'ємний: диск більший за екран (у форматі координати знакові)
         # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         d.line([156*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
