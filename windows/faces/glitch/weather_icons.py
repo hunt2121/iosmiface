@@ -3,9 +3,9 @@ import math
 K=4; CYN=(0,240,255); PNK=(255,0,90); BLK=(0,0,0)
 S=44   # розмір значка
 def down(im): return im.convert("RGBa").resize((im.width//K,im.height//K),Image.LANCZOS).convert("RGBA")
-def icon(parts):
+def icon(parts, cols=None):
     im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-    for col,dx in ((PNK,-1.3),(CYN,1.3)):
+    for col,dx in (cols or ((PNK,-1.3),(CYN,1.3))):
         for p in parts: p(d,col,dx)
     return down(im)
 W2=2
@@ -94,8 +94,8 @@ if __name__=="__main__":
         x=c*cw+55; y=r*(S*Z+60)+10; out.paste(im,(x,y),im); dd.text((x+S*Z//2,y+S*Z+22),"%d. %s"%(k,name),font=lf,fill=(200,200,205),anchor="mm")
     out.save("/tmp/claude-0/-home-claude/db6005de-023b-57f2-8d4f-7e2b4fccd61e/scratchpad/wicons.png")
 
-def centered_icon(parts):
+def centered_icon(parts, cols=None):
     """значок, видима частина якого — точно посередині полотна S×S (усі значки центровані однаково)"""
-    im=icon(parts); bb=im.getchannel("A").point(lambda v:255 if v>30 else 0).getbbox()
+    im=icon(parts, cols); bb=im.getchannel("A").point(lambda v:255 if v>30 else 0).getbbox()
     out=Image.new("RGBA",(S,S),(0,0,0,0)); cx=(bb[0]+bb[2])/2; cy=(bb[1]+bb[3])/2
     out.alpha_composite(im,(round(S/2-cx),round(S/2-cy))); return out

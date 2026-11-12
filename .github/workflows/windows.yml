@@ -96,18 +96,20 @@ jobs:
         if: ${{ inputs.face != '' && inputs.face != null }}
         shell: pwsh
         run: |
-          $dir = "$PWD\${{ inputs.face }}" -replace '/', '\'
-          $name = Split-Path $dir -Leaf
-          $out = "$PWD\$name.bin"
-          $p = Start-Process -FilePath "$PWD\windows\out\BandFace.exe" -ArgumentList "`"--build-face=$dir|$out`"" -PassThru
-          $p.WaitForExit(120000) | Out-Null
-          if (!$p.HasExited) { Stop-Process $p -Force; Write-Output "::error::timeout" }
-          Write-Output "exit $($p.ExitCode)"
-          if (Test-Path "$out.log") { Get-Content "$out.log" | ForEach-Object { Write-Output "::warning::$_" } }
-          if (!(Test-Path $out)) { Write-Output "::error::no bin"; exit 1 }
-          (Get-Item $out).Length
-          $files = @("$name.bin") + (Get-ChildItem "$name.bin.theme*.png" | ForEach-Object { $_.Name })
-          gh release create "face-$name-${{ github.run_number }}" @files --draft --title "Face $name ${{ github.run_number }}" --notes face
+          $files = @()
+          foreach ($f in ("${{ inputs.face }}" -split ' ')) {
+            if (!$f) { continue }
+            $dir = "$PWD\$f" -replace '/', '\'
+            $name = Split-Path $dir -Leaf
+            $out = "$PWD\$name.bin"
+            $p = Start-Process -FilePath "$PWD\windows\out\BandFace.exe" -ArgumentList "`"--build-face=$dir|$out`"" -PassThru
+            $p.WaitForExit(120000) | Out-Null
+            if (!$p.HasExited) { Stop-Process $p -Force; Write-Output "::error::timeout $name" }
+            if (Test-Path "$out.log") { Get-Content "$out.log" | ForEach-Object { Write-Output "::warning::$name $_" } }
+            if (!(Test-Path $out)) { Write-Output "::error::no bin $name"; exit 1 }
+            $files += "$name.bin"; $files += (Get-ChildItem "$name.bin.theme*.png" | ForEach-Object { $_.Name })
+          }
+          gh release create "face-${{ github.run_number }}" @files --draft --title "Faces ${{ github.run_number }}" --notes face
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Screenshots
