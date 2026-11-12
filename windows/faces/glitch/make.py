@@ -100,7 +100,7 @@ for t,col in (("n",CYN),("a",G2)):
     array("week_"+t,[text_img("// %s_"%w,f,col,w=ww,align="right",h=SH) for w in WEEK])
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
-    total=ww+2*cw+dw+2*cw; x=106-total/2-2; y=50-SH/2
+    total=ww+2*cw+dw+2*cw; x=106-total/2-3; y=50-SH/2
     lay(t,"v_week_"+t,x,y); x+=ww
     number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
@@ -177,7 +177,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     array("dig_b"+t,ds)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
     bx=106-BW/2; ty=-1.5 if BSTYLE=="B" else 0
-    lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-2,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
+    lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-9,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
@@ -205,7 +205,7 @@ def centered(t,name,src,digits,col,cy,icon):
     lay(t,name,106,cy-SH/2)            # для align=center x — середина рядка
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
 centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
-centered("n","pulse_n","healthHeartRate",3,PNK,483,icon_heart(GLP,up=2))   # цифри на 2 px нижче, серце — на місці
+centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1))   # цифри на 2 px нижче, серце — на місці
 centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
 
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
