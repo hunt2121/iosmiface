@@ -40,7 +40,8 @@ def strip(Hh,dim):
         h=h10/6; y=MID+(h-c)*PXH
         if not -10<y<H+10: continue
         big=h10%6==0; lc=(110,110,110) if dim else ((255,255,255) if big else DT)
-        d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
+        if not (h10==Hh*6 and not dim):   # поділку поточної години не малюємо — там риска (шкала лежить над нею)
+            d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
         if big: d.text(((136-SX0)*K,y*K),"%02d"%((h10//6)%24),font=f,fill=(90,90,90) if dim else LG,anchor="mm")
     return down(im)
 PY0,PH=MID-40,80               # область кадрів риски
@@ -55,12 +56,12 @@ for t,dim in (("n",False),("a",True)):
         # поточна година — біля риски (підписи на шкалі не можуть їхати разом із хвилинами — браслет не дає «хвилину доби»)
         # шкала з підписами годин їде під нерухомою рискою: щогодини зсувається на одну поділку (24 кадри),
         # поточна година — навпроти риски; хвилини показують великі цифри
-        array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24)); lay(t,"v_scale_n",SX0,0)
+        array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24))
         # риска як була — довга, з розривом там, де стоїть підпис поточної години
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
         # розрив під підписом — плавне згасання FL px, до нуля впритул до цифр (GL, GR — 2 px від краю підпису)
-        GL,GR,FL=124,145,5      # повна до краю цифр (119 і 150), гасне вже під ними
+        GL,GR,FL=126,143,9      # починає гаснути за 2 px до цифр (117 і 152, цифри 119…150), до нуля — під ними
         al=im.getchannel("A"); px=al.load()
         for X in range(W*K):
             x=X/K; f=1.0 if x<GL-FL or x>GR+FL else (max(0,(GL-x)/FL) if x<136 else max(0,(x-GR)/FL))
@@ -68,6 +69,7 @@ for t,dim in (("n",False),("a",True)):
                 for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
         im.putalpha(al)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
+        lay(t,"v_scale_n",SX0,0)     # шкала з підписами — над рискою
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)

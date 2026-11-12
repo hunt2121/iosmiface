@@ -199,8 +199,8 @@
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
     </Resources>
     <Theme type="normal" name="Лінійка" bgColor="#0E0E10">
-        <Layout ref="@v_scale_n" x="110" y="0"/>
         <Layout ref="@ptr_n" x="0" y="248"/>
+        <Layout ref="@v_scale_n" x="110" y="0"/>
         <Layout ref="@min_n" x="15" y="176"/>
         <Layout ref="@xv_n" x="46" y="263"/>
         <Layout ref="@sec" x="43" y="290"/>
