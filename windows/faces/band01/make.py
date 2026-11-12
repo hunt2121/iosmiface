@@ -95,12 +95,13 @@ h=26; wI,sp=metrics(h); digits("d26",h)
 bolt=image("bolt",picon(pix.BOLT))
 pc=D7.ring_pct(400); sc=(14/2.4)/pc.info['ring']; pc=pc.resize((round(pc.width*sc*K),round(pc.height*sc*K)),Image.LANCZOS); pc=pc.crop(pc.getbbox())
 pc=tint(pc.resize((round(pc.width/K),round(pc.height/K)),Image.LANCZOS),WH)
-UP=max(0,5-sp)   # браслет сам додає space між останньою цифрою й одиницею
-unit=Image.new("RGBA",(UP+pc.width,h),(0,0,0,0)); unit.alpha_composite(pc,(UP,h-pc.height)); image("pct",unit)
-tot=bolt.width+6+cells_w(3,h)+sp+unit.width; x0=floor_c((W-tot)/2); BY=91
+image("pct",pc)   # «%» — окрема нерухома картинка, не одиниця числа: число вирівнюється рівно по клітинках
+tot=bolt.width+6+cells_w(3,h)+5+pc.width; x0=floor_c((W-tot)/2); BY=91
 lay("n","bolt",x0,round(BY+13-bolt.height/2))
 image("g3",ghost(3,h)); lay("n","g3",x0+bolt.width+6,BY)
-number("bat","systemStatusBattery","d26",3,"right",False,sp,"pct"); lay("n","bat",x0+tot,BY)   # браслет рахує ширину разом зі space перед одиницею: правий край «%» — рівно на прив'язці
+xb=x0+bolt.width+6+cells_w(3,h)   # правий край клітинок заряду
+number("bat","systemStatusBattery","d26",3,"right",False,sp); lay("n","bat",xb,BY)
+lay("n","pct",xb+5,BY+h-pc.height)
 
 # ── годинник 54 px: години · двокрапка · хвилини
 hc=54; wc,spc=metrics(hc); digits("d54",hc)
@@ -120,7 +121,7 @@ G=6
 heart=image("heart",picon(pix.HEART))
 w3=cells_w(3,h)
 degL=D7.cyr('°',400); degL=degL.crop(degL.getbbox()); degL=degL.resize((round(degL.width*9/degL.height),9),Image.LANCZOS)
-deg=Image.new("RGBA",(degL.width,h),(0,0,0,0)); deg.alpha_composite(tint(degL,WH),(0,1)); image("deg",deg)   # проміжок перед «°» додає сам браслет (space)
+deg=image("deg",tint(degL,WH))   # «°» — окрема нерухома картинка
 colL=Rc-w3
 BODY=(31,26,170,224)     # обриси астронавта в кадрі 200×250 (обʼєднання всіх кадрів)
 scA=(colL-10-Lc)/(BODY[2]-BODY[0]); bh=(BODY[3]-BODY[1])*scA
@@ -214,7 +215,8 @@ array("wx",wxi); values("v_wx","weatherCurrentWeather","wx",range(len(wxi)))
 lay("n","v_wx",Rc-w3/2-wxi[0].width/2,yt-G-wh_)
 digits("d26m",h,True)
 image("g_tp",ghost(3,h)); lay("n","g_tp",Rc-w3,yt)
-number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp,"deg"); lay("n","tmp",Rc+sp+deg.width,yt)   # цифри закінчуються на Rc, далі space і «°»
+number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp); lay("n","tmp",Rc,yt)   # цифри закінчуються рівно на Rc, як пульс
+lay("n","deg",Rc+3,yt+1)
 # кроки: сліди · 6 · п'ять клітинок — по центру
 soles=image("soles",picon(pix.SOLES)); w5=cells_w(5,h)
 tot=soles.width+G+w5; x0=floor_c((W-tot)/2)
