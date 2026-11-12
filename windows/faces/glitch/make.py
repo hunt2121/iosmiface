@@ -207,12 +207,12 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
 if LANGV!="en12":
-    number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw+1,392-28)
+    number("sec","timeSecond","dig_sec",2,"left",True); SEC_ITEM=("sec",106-cw+1,392-28)   # секунди — віджет другого слота
 else:   # 12-годинний: замість секунд — AM/PM тим самим шрифтом і на тому ж місці (в AOD — немає)
     for t,col in (("n",PNK),):
         wa=math.ceil(max(fs.getlength(x) for x in ("AM","PM"))/K)+4      # однакова ширина — обидва по центру
         array("ampm_"+t,[text_img(x,fs,col,w=wa,h=56) for x in ("AM","PM")]); values("ampm_"+t,"miscIsPM","ampm_"+t,[0,1])
-        lay(t,"v_ampm_"+t,106-wa/2,392-28)
+        SEC_ITEM=("v_ampm_"+t,106-wa/2,392-28)   # AM/PM — віджет другого слота
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
 def icon_steps(cols):

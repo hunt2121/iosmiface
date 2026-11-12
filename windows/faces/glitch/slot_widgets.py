@@ -123,7 +123,7 @@ def plain_img(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
     return image(name, down(im))
 
 YV = SLOT_Y - HV / 2             # верх рядка значень на екрані
-WNAME = {"ua": ("Батарея", "Погода", "Відстань", "Нічого"), "ru": ("Заряд", "Погода", "Расстояние", "Ничего")}.get(LANGV, ("Battery", "Weather", "Distance", "None"))   # назви в меню вибору (як в офіційних)
+WNAME = {"ua": ("Батарея", "Погода", "Відстань", "Нічого", "Мін/макс", "Секунди"), "ru": ("Заряд", "Погода", "Расстояние", "Ничего", "Мин/макс", "Секунды")}.get(LANGV, ("Battery", "Weather", "Distance", "None", "Min/max", "AM/PM" if LANGV == "en12" else "Seconds"))   # назви в меню вибору (як в офіційних)
 
 # 1. Погода: «14°» + значок погоди
 deg = deg_img("u_deg")            # для AOD (там число з unitIcon)
@@ -148,13 +148,31 @@ XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 # Один стиль: усе вибирається лише слотом (батарея — перша, типова). AOD показує батарею сірим.
 theme.update({"a_slot": [], "a_bt": []})
+# 4. Мін / макс сьогодні: «9°/16°» + стрілки
+slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("f_slash", down(slash))
+plain_img("f_deg_mm", "°", i_minmax, font=FV, gap_text=0)
+number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "left", False, SPV)
+number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV)
+widget("w_minmax", WNAME[4], [row("r_minmax", ["tmin", "f_deg", "f_slash", "tmax", "f_deg_mm"])])
+
 # «Нічого» — порожній віджет (одна прозора крапка, бо віджет без елементів може не прийнятися)
 image("f_none", Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
 widget("w_none", WNAME[3], [("f_none", WX + 106, WY + WH // 2)])
 res.append('<Slot name="slot_top" type="widget">')
-for w in ["w_battery", "w_weather", "w_distance", "w_none"]: res.append('    <Item ref="@%s"/>' % w)
+for w in ["w_battery", "w_weather", "w_distance", "w_minmax", "w_none"]: res.append('    <Item ref="@%s"/>' % w)
 res.append('</Slot>')
 lay("n", "slot_top", WX, WY)
+
+# Другий слот — на місці секунд. Ті самі віджети (без копій — посилання на ті самі), плюс секунди (лише тут, перші).
+# Віджет — у своїх координатах, тож на новому місці все стоїть так само відносно рамки.
+SLOT2_Y = 392                            # середина секунд
+WY2 = SLOT2_Y - WH // 2
+sref, sx, sy = SEC_ITEM
+widget("w_seconds", WNAME[5], [(sref, sx, sy - WY2 + WY)])   # widget() рахує від WY — переносимо координати секунд
+res.append('<Slot name="slot_bottom" type="widget">')
+for w in ["w_seconds", "w_battery", "w_weather", "w_distance", "w_minmax", "w_none"]: res.append('    <Item ref="@%s"/>' % w)
+res.append('</Slot>')
+lay("n", "slot_bottom", WX, WY2)
 
 # Блютуз «немає зв'язку» — поверх слота: чорна плашка, більша за будь-який віджет слота на 1 px з кожного боку
 # (межі виміряно на крайніх значеннях: −12°, 12.34 км, 100% …), значок — рівно по центру. Є зв'язок — порожньо.
