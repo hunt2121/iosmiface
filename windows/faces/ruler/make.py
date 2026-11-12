@@ -2,7 +2,13 @@
 # Браслет не дає «хвилину доби», тож шкала зсувається щогодини (24 кадри), а риска рухається за хвилинами (60 кадрів).
 from PIL import Image, ImageDraw, ImageFont
 import os, math, shutil
-HERE=os.path.dirname(os.path.abspath(__file__)); OUT=os.path.join(HERE,"files")
+HERE=os.path.dirname(os.path.abspath(__file__))
+LANGV=os.environ.get("LANGV","ua")      # ua / ru / en
+DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"ruler-"+LANGV))
+OUT=os.path.join(DEST,"files")
+FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler")}[LANGV]
+MINW={"ua":"ХВ","ru":"МИН","en":"MIN"}[LANGV]
+DATE_DX={"ua":0,"ru":1,"en":-1}[LANGV]   # поправка, щоб дата стояла по центру осі x=61 (виміряно на всіх днях тижня)
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
@@ -58,7 +64,7 @@ def pointer(m,dim):
     im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH; c=(115,115,115) if dim else OR
     d.line([18*K,y*K,196*K,y*K],fill=c,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=c)
     return down(im)
-WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
+WEEK={"ua":["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"ru":["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"en":["SUN","MON","TUE","WED","THU","FRI","SAT"]}[LANGV]   # dateWeek: 0 — неділя
 for t,dim in (("n",False),("a",True)):
     if not dim:
         # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
@@ -99,7 +105,7 @@ for t,dim in (("n",False),("a",True)):
     image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
     # хвилини, «ХВ», секунди, дата й кроки — по одній вертикальній осі x=61 (за видимими пікселями; пів пікселя — ліворуч)
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
-    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+3)
+    image("xv_"+t,text_img(MINW,F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3)
     if t=="n":
         fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
@@ -107,7 +113,7 @@ for t,dim in (("n",False),("a",True)):
     ww=math.ceil(max(fd.getlength(w+" ") for w in WEEK)/K)+1
     array("wk_"+t,[text_img(w+" ",fd,col,w=ww,h=34,align="right") for w in WEEK]); values("wk_"+t,"dateWeek","wk_"+t,range(7))
     cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
-    x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
+    x0=58-(ww+2*cd)/2+DATE_DX; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
@@ -124,6 +130,6 @@ for t,dim in (("n",False),("a",True)):
         lay(t,"stic_"+t,math.floor(61.5-ic.width/2),iy)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
-xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
-     '    <Theme type="normal" name="Лінійка" bgColor="#000000">']+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
-open(os.path.join(HERE,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
+xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME)+'','    <Resources>']+["        "+r for r in res]+['    </Resources>',
+     '    <Theme type="normal" name="%s" bgColor="#000000">'%FACE_NAME]+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
+os.makedirs(DEST,exist_ok=True); open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
