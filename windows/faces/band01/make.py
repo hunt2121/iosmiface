@@ -35,7 +35,8 @@ def values(n,src,arr,ps):
     res.append('<DataItemImageValues name="%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(n,src,arr))
     for p in ps: res.append('    <Param value="%d"/>'%p)
     res.append('</DataItemImageValues>')
-def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,round(x),round(y)))
+def rnd(v): return math.floor(v+0.5-1e-9)   # пів пікселя — ліворуч / вгору (а не банківське округлення)
+def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,rnd(x),rnd(y)))
 def tint(L,col):
     im=Image.new("RGBA",L.size,col+(0,)); im.putalpha(L); return im
 
@@ -99,7 +100,7 @@ unit=Image.new("RGBA",(UP+pc.width,h),(0,0,0,0)); unit.alpha_composite(pc,(UP,h-
 tot=bolt.width+6+cells_w(3,h)+sp+unit.width; x0=floor_c((W-tot)/2); BY=91
 lay("n","bolt",x0,round(BY+13-bolt.height/2))
 image("g3",ghost(3,h)); lay("n","g3",x0+bolt.width+6,BY)
-number("bat","systemStatusBattery","d26",3,"right",False,sp,"pct"); lay("n","bat",x0+tot-sp,BY)   # ширина, яку рахує браслет, — без space перед одиницею
+number("bat","systemStatusBattery","d26",3,"right",False,sp,"pct"); lay("n","bat",x0+tot,BY)   # браслет рахує ширину разом зі space перед одиницею: правий край «%» — рівно на прив'язці
 
 # ── годинник 54 px: години · двокрапка · хвилини
 hc=54; wc,spc=metrics(hc); digits("d54",hc)
@@ -205,15 +206,15 @@ AX=floor_c((colL-bw)/2)+5-BODY[0]*scA; AY=y2+(Hm-bh)/2-BODY[1]*scA
 lay("n","anim",AX,AY)
 # права колонка: серце над пульсом, погода над температурою; цифри — по правому краю годинника, «°» виступає
 yc=y2+(Hm-colH)/2
-lay("n","heart",round(Rc-w3/2-heart.width/2),yc)
+lay("n","heart",Rc-w3/2-heart.width/2,yc)
 image("g_hr",ghost(3,h)); lay("n","g_hr",Rc-w3,yc+heart.height+G)
 number("hrt","healthHeartRate","d26",3,"right",False,sp); lay("n","hrt",Rc,yc+heart.height+G)
 yt=yc+heart.height+G+h+V+wh_+G
 array("wx",wxi); values("v_wx","weatherCurrentWeather","wx",range(len(wxi)))
-lay("n","v_wx",round(Rc-w3/2-wxi[0].width/2),yt-G-wh_)
+lay("n","v_wx",Rc-w3/2-wxi[0].width/2,yt-G-wh_)
 digits("d26m",h,True)
 image("g_tp",ghost(3,h)); lay("n","g_tp",Rc-w3,yt)
-number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp,"deg"); lay("n","tmp",Rc+deg.width,yt)
+number("tmp","weatherCurrentTemperature","d26m",3,"right",False,sp,"deg"); lay("n","tmp",Rc+sp+deg.width,yt)   # цифри закінчуються на Rc, далі space і «°»
 # кроки: сліди · 6 · п'ять клітинок — по центру
 soles=image("soles",picon(pix.SOLES)); w5=cells_w(5,h)
 tot=soles.width+G+w5; x0=floor_c((W-tot)/2)
