@@ -458,6 +458,7 @@ final class FaceProject: ObservableObject, Identifiable {
             }
         }
         let project = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
+        AodDim.markFromOrder(project)   // шари вище за приглушення (з .bin або старих проєктів) лишаються над ним
         project.markSaved()
         return project
     }

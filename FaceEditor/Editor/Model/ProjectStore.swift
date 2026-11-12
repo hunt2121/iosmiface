@@ -64,6 +64,7 @@ final class ProjectStore: ObservableObject {
         // id = ім'я теки, як у FaceProject.load: інакше після reload() id змінюється і прогрес встановлення губиться
         let p = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
         if (root.string("name") ?? "").isEmpty { root.set("name", name) }
+        AodDim.markFromOrder(p)   // шари, що в циферблаті стоять над приглушенням AOD, — «над приглушенням»
         if asCopy {
             root.set("id", Self.newFaceID())
             root.set("name", (root.string("name") ?? name) + loc(" (копія)"))

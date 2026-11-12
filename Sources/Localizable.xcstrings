@@ -7821,6 +7821,29 @@
         }
       }
     },
+    "Над приглушенням AOD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Above AOD dimming"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Над приглушением AOD"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Над приглушенням AOD"
+          }
+        }
+      }
+    },
     "Натискання відкриває": {
       "extractionState": "manual",
       "localizations": {

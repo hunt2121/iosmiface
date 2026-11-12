@@ -78,12 +78,39 @@ enum AodDim {
         keepOnTop(p)
     }
 
-    /// Приглушення завжди найвище в AOD — нові та переміщені шари йдуть під нього
+    /// Позначка шару AOD «над приглушенням» (лише для редактора; компілятор читає в Layout тільки ref, x, y)
+    static let aboveKey = "aboveDim"
+
+    static func isAbove(_ l: XNode) -> Bool { l.bool(aboveKey) }
+
+    /// Підняти шар над приглушенням або повернути під нього
+    static func setAbove(_ p: FaceProject, _ l: XNode, _ on: Bool) {
+        if on { l.set(aboveKey, "true") } else { l.remove(aboveKey) }
+        keepOnTop(p)
+    }
+
+    /// Порядок AOD: звичайні шари, потім приглушення, потім шари «над приглушенням» (фігура під числом — разом із числом)
     static func keepOnTop(_ p: FaceProject) {
-        guard let th = p.theme(aodTheme), let l = find(p) else { return }
-        if th.kids.last(where: { !$0.isComment && $0.tag == "Layout" }) === l { return }
-        th.kids.removeAll { $0 === l }
-        th.kids.append(l)
+        guard let th = p.theme(aodTheme), let dim = find(p) else { return }
+        let lays = th.kids.filter { !$0.isComment && $0.tag == "Layout" && $0 !== dim }
+        var above: [XNode] = []
+        for (i, l) in lays.enumerated() {
+            let next = i + 1 < lays.count ? lays[i + 1] : nil
+            if isAbove(l) || (NumberBadge.isBadge(l) && next.map(isAbove) == true) { above.append(l) }
+        }
+        let tail = [dim] + above
+        let cur = th.kids.filter { !$0.isComment && $0.tag == "Layout" }.suffix(tail.count)
+        if cur.count == tail.count && zip(cur, tail).allSatisfy({ $0 === $1 }) { return }
+        th.kids.removeAll { k in tail.contains { $0 === k } }
+        th.kids.append(contentsOf: tail)
+    }
+
+    /// Відкритий .bin / старий проєкт: шари, що стоять вище за приглушення, позначаються «над приглушенням»
+    static func markFromOrder(_ p: FaceProject) {
+        guard let th = p.theme(aodTheme), let dim = find(p) else { return }
+        let lays = th.kids.filter { !$0.isComment && $0.tag == "Layout" }
+        guard !lays.contains(where: isAbove), let i = lays.firstIndex(where: { $0 === dim }) else { return }
+        for l in lays[(i + 1)...] where !NumberBadge.isBadge(l) && alpha(p, l) == 0 { l.set(aboveKey, "true") }
     }
 }
 
