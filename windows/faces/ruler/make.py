@@ -57,9 +57,17 @@ for t,dim in (("n",False),("a",True)):
         # шкала з підписами годин їде під нерухомою рискою: щогодини зсувається на одну поділку (24 кадри),
         # поточна година — навпроти риски; хвилини показують великі цифри
         array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24))
-        # коротка риска — точно та, що була у face-111 (від 116 px до стрілки)
+        # довга риска з розривом під підписом поточної години: плавне згасання 9 px, розрив відцентровано
+        # за видимими пікселями цифр (центр — піксель 135, напр. «09» займає 121…149)
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([116*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        GL,GR,FL=124,147,9      # гасне з 115 і з 156 (по 6 px від цифр з обох боків), нуль — 124…147
+        al=im.getchannel("A"); px=al.load()
+        for X in range(W*K):
+            x=(X+0.5)/K; f=1.0 if x<GL-FL or x>GR+FL else (max(0,(GL-x)/FL) if x<135.5 else max(0,(x-GR)/FL))
+            if f<1:
+                for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
+        im.putalpha(al)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
         lay(t,"v_scale_n",SX0,0)     # шкала з підписами — над рискою
     else:
