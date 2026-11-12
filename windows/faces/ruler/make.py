@@ -85,10 +85,10 @@ for t,dim in (("n",False),("a",True)):
         image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
         ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
-    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40)
-    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12)
+    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+1)
+    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+1)
     if t=="n":
-        fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18)
+        fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18+11)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
     ww=math.ceil(max(fd.getlength(w+" ") for w in WEEK)/K)+1
@@ -96,7 +96,7 @@ for t,dim in (("n",False),("a",True)):
     cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
     x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
-    cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,60,440-17)
+    cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,60,440-17-10)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
