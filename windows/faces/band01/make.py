@@ -85,7 +85,7 @@ def st_frame(parts):
     for p in parts: im.alpha_composite(p,(x,(SH-p.height)//2)); x+=p.width+6
     return im
 array("st",[st_frame([rune,lost]),st_frame([ok])]); values("v_st","systemStatusBluetooth","st",[0,1])
-array("st_a",[st_frame([rune,lost]),Image.new("RGBA",(1,1),(0,0,0,0))]); values("v_st_a","systemStatusBluetooth","st_a",[0,1])
+array("st_a",[st_frame([rune,lost]),Image.new("RGBA",(STW,SH),(0,0,0,0))])   # кадри масиву — однакового розміру; values("v_st_a","systemStatusBluetooth","st_a",[0,1])
 STY=round(67.5-SH/2)
 lay("n","title",TX,TY); lay("n","v_st",0,STY)
 

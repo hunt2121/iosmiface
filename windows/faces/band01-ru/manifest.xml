@@ -14,10 +14,6 @@
             <Image src="st_a/0.png"/>
             <Image src="st_a/1.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_st_a" source="systemStatusBluetooth" ref="@st_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-        </DataItemImageValues>
         <ImageArray name="d26" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d26/0.png"/>
             <Image src="d26/1.png"/>
