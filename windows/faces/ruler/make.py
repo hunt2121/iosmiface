@@ -9,8 +9,7 @@ OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
 H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
-DGAP=7   # проміжок між днем тижня й числом
-DSHIFT=int(os.environ.get("DSHIFT",{"ua":-1,"ru":1,"en":-2,"en12":-2}[LANGV]))
+DTOP=80; DLGAP=7; DAYDX=0; BDY=1   # BDY — блок хвилини/ХВ/секунди посередині між датою й кроками   # верх дати; проміжок між рядками дати; поправка числа по осі
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
@@ -49,7 +48,7 @@ def digits(n,f,col,h):
     cw=math.ceil(max(f.getlength(str(i),features=["tnum"]) for i in range(10))/K)
     array("d_"+n,[text_img(str(i),f,col,w=cw,h=h) for i in range(10)]); return cw
 
-MID=260; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
+MID=270; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
 def strip(Hh,dim,part="all"):   # part: all / ticks (без підписів) / labels (підписи на підкладці кольору фону)
     im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im); f=F("SemiBold",24)
     c=Hh+0.5                    # посередині кадру — H:30; риска ходить між H:00 і H+1:00
@@ -108,8 +107,8 @@ for t,dim in (("n",False),("a",True)):
     d.line([156*K,12*K,196*K,12*K],fill=cP,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=cP)
     image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
     # хвилини, «ХВ», секунди, дата й кроки — по одній вертикальній осі x=61 (за видимими пікселями; пів пікселя — ліворуч)
-    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
-    image("xv_"+t,text_img(MINW,F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3)
+    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2+BDY)
+    image("xv_"+t,text_img(MINW,F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3+BDY)
     if t=="n":
         fs=F("Medium",28)
         if H12:   # 12 год: замість секунд — AM/PM того самого розміру й на тому самому місці (лише на звичайному екрані)
@@ -118,34 +117,22 @@ for t,dim in (("n",False),("a",True)):
                 im=text_img(x,fs,GY,w=AW,h=36); a=im.getchannel("A").point(lambda v:255 if v>40 else 0); b=a.getbbox()
                 dx=30-(b[0]+b[2]-1)/2; dx=math.floor(dx) if dx!=int(dx) else int(dx)   # пів пікселя — ліворуч
                 out=Image.new("RGBA",im.size,(0,0,0,0)); out.alpha_composite(im,(int(dx),0)) if dx>=0 else out.alpha_composite(im.crop((-int(dx),0,im.width,im.height)),(0,0)); return out
-            array("ampm",[vis_center(x) for x in ("AM","PM")]); values("ampm","miscIsPM","ampm",[0,1]); lay("n","v_ampm",61-30,MID+48-18+10)
-        else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
-    # дата «ЧТ 12»
+            array("ampm",[vis_center(x) for x in ("AM","PM")]); values("ampm","miscIsPM","ampm",[0,1]); lay("n","v_ampm",61-30,MID+48-18+10+BDY)
+        else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10+BDY)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
+    # Дата у два рядки: день тижня (менший) зверху, число під ним; кожен рядок рівно по осі x=61.
+    # Верх дня тижня — 80 px від верху екрана (як кроки від низу).
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
-    # Дата «ЧТ 12» — рядок (flex), який браслет сам центрує (тож і «СБ 1» по центру).
-    # Назви днів різної ширини, а картинки одного набору мусять бути однакові. Тому ширину назв вирівнюємо
-    # трекінгом (від −1 до +3 px між літерами) до медіанної, а решту різниці компенсуємо зсувом рядка.
-    def word(w,tr):
-        x=0; W_=Image.new("RGBA",(200*K,34*K),(0,0,0,0))
-        for i,ch in enumerate(w):
-            ImageDraw.Draw(W_).text((5*K+x,17*K),ch,font=fd,fill=col,anchor="lm")
-            if i<len(w)-1: x+=fd.getlength(w[i:i+2])-fd.getlength(w[i+1])+tr*K   # крок літери з кернінгом пари + трекінг
-        bb=W_.getbbox(); return W_.crop((bb[0],0,bb[2],34*K))
-    def vis(im): return im.getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
-    base=[(vis(down(word(w,0)))[2]-vis(down(word(w,0)))[0]) for w in WEEK]; med=sorted(base)[3]
-    ims=[]
-    for w,bw in zip(WEEK,base):
-        g=len(w)-1; tr=max(-1,min(3,(med-bw)/g)); ims.append(down(word(w,tr)))
-    WW=max(i.width for i in ims)
-    frames=[]
-    for im in ims:
-        fr=Image.new("RGBA",(WW,34),(0,0,0,0)); fr.alpha_composite(im,(WW-im.width,0)); frames.append(fr)   # притиснуто праворуч — до числа
-    array("wk_"+t,frames); values("wk_"+t,"dateWeek","wk_"+t,range(7))
-    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
-    DW=123
-    res.append('<Widget name="date_%s" widgetName="number" groupType="general" w="%d" h="34" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="%d">'%(t,DW,DGAP))
-    for r in ("v_wk_"+t,"day_"+t): res.append('    <Item ref="@%s" x="0" y="0"/>'%r)
-    res.append('</Widget>'); lay(t,"date_"+t,DSHIFT,90-17)   # DSHIFT — зсув, з яким дата найрівніше на осі (виміряно)
+    fw=F("SemiBold",20,False)
+    def vc(img,cx):   # зсунути напис у картинці так, щоб видима середина була в пікселі cx (пів пікселя — ліворуч)
+        a=img.getchannel("A").point(lambda v:255 if v>40 else 0); b=a.getbbox(); dx=cx-(b[0]+b[2]-1)/2; dx=math.floor(dx)
+        out=Image.new("RGBA",img.size,(0,0,0,0)); out.alpha_composite(img.crop((max(0,-dx),0,img.width,img.height)),(max(0,dx),0)); return out
+    WWK=70; wk=[vc(text_img(w,fw,col,w=WWK,h=26),WWK//2) for w in WEEK]
+    array("wk_"+t,wk); values("wk_"+t,"dateWeek","wk_"+t,range(7))
+    wb=wk[4].getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()      # видимі рядки назви (верх/низ однакові для всіх)
+    lay(t,"v_wk_"+t,61-WWK//2,DTOP-wb[1])
+    cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"center",False)
+    db=Image.open(os.path.join(OUT,"d_day_%s"%t,"1.png")).getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
+    lay(t,"day_"+t,61+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
