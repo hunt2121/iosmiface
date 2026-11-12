@@ -73,14 +73,15 @@ for t,dim in (("n",False),("a",True)):
         lay(t,"v_dial_"+t,round(CX)-PV,MID-PV)        # y від'ємний: диск трохи більший за екран (у форматі координати знакові)
     else:
         # AOD — шкала нерухома, просто декорація: шматок ±60 px лише з дрібними поділками; година навпроти риски
-        im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+        HA=90; im=Image.new("RGBA",(W*K,2*HA*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         cx=136+float(os.environ.get("DIAL_R","250"))      # центр того самого диска, що на звичайному екрані
-        for i in range(-12,13):                          # дрібні поділки по дузі диска (2,5° = 10 хв), лише в межах ±60 px
+        for i in range(-7,8):                            # дрібні поділки по дузі диска (2,5° = 10 хв), симетрично
+            if i==0: continue                            # під рискою поділки немає
             a=math.radians(270+2.5*i); r0,r1=cx-194,cx-176
-            p0=(cx+r0*math.sin(a),60-r0*math.cos(a)); p1=(cx+r1*math.sin(a),60-r1*math.cos(a))
-            if abs(p0[1]-60)>60: continue
-            d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(80,80,80),width=K)
-        image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-60)
+            p0=(cx+r0*math.sin(a),HA-r0*math.cos(a)); p1=(cx+r1*math.sin(a),HA-r1*math.cos(a))
+            al=min(1.0,(8-abs(i))/3)                    # три крайні поділки з кожного боку плавно гаснуть
+            d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(80,80,80,round(255*al)),width=K)
+        image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-HA)
         ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
     cP=(115,115,115) if dim else OR
     # нерухома риска — коротка, праворуч від підписів, вістрям до поділок

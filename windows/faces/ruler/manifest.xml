@@ -160,7 +160,7 @@
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
-        <Layout ref="@ruler_a" x="0" y="200"/>
+        <Layout ref="@ruler_a" x="0" y="170"/>
         <Layout ref="@hr_a" x="120" y="245"/>
         <Layout ref="@ptr_a" x="0" y="248"/>
         <Layout ref="@min_a" x="15" y="178"/>
