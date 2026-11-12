@@ -1,7 +1,7 @@
 # «Лінійка» для Xiaomi Smart Band 10 (212×520): справа шкала годин, помаранчева риска — поточний момент.
 # Браслет не дає «хвилину доби», тож шкала зсувається щогодини (24 кадри), а риска рухається за хвилинами (60 кадрів).
 from PIL import Image, ImageDraw, ImageFont
-import os, math, shutil
+import os, math, shutil, sys
 HERE=os.path.dirname(os.path.abspath(__file__))
 DTOP_=45   # дата — по центру екрана, верх за 45 px від краю; кроки — по центру, низ за 45 px від краю
 LANGV=os.environ.get("LANGV","ua")      # ua / ru / en / en12 (англійська, 12 год з AM/PM)
@@ -198,3 +198,31 @@ T=lambda typ,name,key: ['    <Theme type="%s" name="%s" bgColor="#000000">'%(typ
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'    <Resources>']+["        "+r for r in res]+['    </Resources>']\
     +T("normal",S1,"n2")+T("AOD",S1,"a")+T("normal",S2,"n")+T("AOD",S2,"a_c")+['</Watchface>']
 os.makedirs(DEST,exist_ok=True); open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
+
+# ── Перефарбування (вибір кольору на браслеті): стандартний, фламінго, лайм, білий.
+# Генеруємо циферблат ще раз з кожним кольором акценту, і для кожної картинки/набору, що змінився,
+# додаємо варіант з тим самим іменем і colorGroup (як в офіційних). AOD сірий — без варіантів.
+ACCENTS=["FF5F1F","FC8EAC","B8F02A","F2F2F2"]
+if not os.environ.get("NO_VARIANTS"):
+    import subprocess,tempfile,filecmp
+    man=open(os.path.join(DEST,"manifest.xml"),encoding="utf-8").read()
+    extra=[]
+    for ci,hx in enumerate(ACCENTS[1:],1):
+        tmp=tempfile.mkdtemp()
+        subprocess.run([sys.executable,os.path.abspath(__file__)],env=dict(os.environ,ACCENT=hx,FACE_DEST=tmp,NO_VARIANTS="1"),check=True,stdout=subprocess.DEVNULL)
+        def changed(src): return not filecmp.cmp(os.path.join(OUT,src),os.path.join(tmp,"files",src),shallow=False)
+        def copy(src):
+            dst=os.path.join("c%d"%ci,src); os.makedirs(os.path.dirname(os.path.join(OUT,dst)),exist_ok=True)
+            shutil.copy(os.path.join(tmp,"files",src),os.path.join(OUT,dst)); return dst
+        for m in _re.finditer(r'<Image name="([^"]+)" src="([^"]+)"([^>]*)/>',man):
+            if changed(m.group(2)): extra.append('<Image name="%s" src="%s"%s colorGroup="#%s"/>'%(m.group(1),copy(m.group(2)),m.group(3),hx))
+        for m in _re.finditer(r'<ImageArray name="([^"]+)"([^>]*)>(.*?)</ImageArray>',man,_re.S):
+            srcs=_re.findall(r'src="([^"]+)"',m.group(3))
+            if any(changed(x) for x in srcs):
+                extra.append('<ImageArray name="%s"%s colorGroup="#%s">'%(m.group(1),m.group(2),hx)+"".join('<Image src="%s"/>'%copy(x) for x in srcs)+'</ImageArray>')
+        shutil.rmtree(tmp)
+    CG=",".join("#"+h for h in ACCENTS)
+    man=man.replace('<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'<Watchface id="%s" name="%s" colorGroupTable="%s">'%(FACE_ID,FACE_NAME,CG))
+    man=man.replace("    </Resources>","".join("        "+e+"\n" for e in extra)+"    </Resources>")
+    man=_re.sub(r'(<Theme type="\w+" name="[^"]+" bgColor="#000000")>',r'\1 colorGroup="%s">'%CG,man)
+    open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write(man); print("variants",len(extra))

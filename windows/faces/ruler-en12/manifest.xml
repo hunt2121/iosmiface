@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Watchface id="318470563" name="VISUAL">
+<Watchface id="318470563" name="VISUAL" colorGroupTable="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
     <Resources>
         <Image name="dial_n" src="dial_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="266" pivotY="266" angleStart="0" angleRange="360"/>
@@ -177,8 +177,26 @@
         </ImageArray>
         <Image name="stic_a" src="stic_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@stic_a"/>
+        <Image name="ptr_n" src="c1/ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
+        <Image name="xv_n" src="c1/xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
+        <Image name="stic_n" src="c1/stic_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"/>
+        <ImageArray name="bat_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"><Image src="c1/bat_n/0.png"/><Image src="c1/bat_n/1.png"/></ImageArray>
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"><Image src="c1/bt_n/0.png"/><Image src="c1/bt_n/1.png"/></ImageArray>
+        <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#FC8EAC"><Image src="c1/d_st_n/0.png"/><Image src="c1/d_st_n/1.png"/><Image src="c1/d_st_n/2.png"/><Image src="c1/d_st_n/3.png"/><Image src="c1/d_st_n/4.png"/><Image src="c1/d_st_n/5.png"/><Image src="c1/d_st_n/6.png"/><Image src="c1/d_st_n/7.png"/><Image src="c1/d_st_n/8.png"/><Image src="c1/d_st_n/9.png"/></ImageArray>
+        <Image name="ptr_n" src="c2/ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"/>
+        <Image name="xv_n" src="c2/xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"/>
+        <Image name="stic_n" src="c2/stic_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"/>
+        <ImageArray name="bat_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"><Image src="c2/bat_n/0.png"/><Image src="c2/bat_n/1.png"/></ImageArray>
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"><Image src="c2/bt_n/0.png"/><Image src="c2/bt_n/1.png"/></ImageArray>
+        <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#B8F02A"><Image src="c2/d_st_n/0.png"/><Image src="c2/d_st_n/1.png"/><Image src="c2/d_st_n/2.png"/><Image src="c2/d_st_n/3.png"/><Image src="c2/d_st_n/4.png"/><Image src="c2/d_st_n/5.png"/><Image src="c2/d_st_n/6.png"/><Image src="c2/d_st_n/7.png"/><Image src="c2/d_st_n/8.png"/><Image src="c2/d_st_n/9.png"/></ImageArray>
+        <Image name="ptr_n" src="c3/ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"/>
+        <Image name="xv_n" src="c3/xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"/>
+        <Image name="stic_n" src="c3/stic_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"/>
+        <ImageArray name="bat_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"><Image src="c3/bat_n/0.png"/><Image src="c3/bat_n/1.png"/></ImageArray>
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"><Image src="c3/bt_n/0.png"/><Image src="c3/bt_n/1.png"/></ImageArray>
+        <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false" colorGroup="#F2F2F2"><Image src="c3/d_st_n/0.png"/><Image src="c3/d_st_n/1.png"/><Image src="c3/d_st_n/2.png"/><Image src="c3/d_st_n/3.png"/><Image src="c3/d_st_n/4.png"/><Image src="c3/d_st_n/5.png"/><Image src="c3/d_st_n/6.png"/><Image src="c3/d_st_n/7.png"/><Image src="c3/d_st_n/8.png"/><Image src="c3/d_st_n/9.png"/></ImageArray>
     </Resources>
-    <Theme type="normal" name="Style 1" bgColor="#000000">
+    <Theme type="normal" name="Style 1" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
         <Layout ref="@v_dial_n" x="120" y="4"/>
         <Layout ref="@ptr_n" x="0" y="258"/>
         <Layout ref="@min_n" x="15" y="189"/>
@@ -190,7 +208,7 @@
         <Layout ref="@v_bt_n" x="52" y="146"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
-    <Theme type="AOD" name="Style 1" bgColor="#000000">
+    <Theme type="AOD" name="Style 1" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
         <Layout ref="@ruler_a" x="0" y="180"/>
         <Layout ref="@hr_a" x="136" y="255"/>
         <Layout ref="@ptr_a" x="0" y="258"/>
@@ -202,7 +220,7 @@
         <Layout ref="@v_bt_a" x="52" y="146"/>
         <Layout ref="@st_a" x="60" y="413"/>
     </Theme>
-    <Theme type="normal" name="Style 2" bgColor="#000000">
+    <Theme type="normal" name="Style 2" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
         <Layout ref="@v_dial_n" x="120" y="4"/>
         <Layout ref="@ptr_n" x="0" y="258"/>
         <Layout ref="@min_n" x="15" y="189"/>
@@ -214,7 +232,7 @@
         <Layout ref="@v_bt_n" x="52" y="129"/>
         <Layout ref="@st_n" x="105" y="448"/>
     </Theme>
-    <Theme type="AOD" name="Style 2" bgColor="#000000">
+    <Theme type="AOD" name="Style 2" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
         <Layout ref="@ruler_a" x="0" y="180"/>
         <Layout ref="@hr_a" x="136" y="255"/>
         <Layout ref="@ptr_a" x="0" y="258"/>
