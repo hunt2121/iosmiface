@@ -2,7 +2,7 @@
 <Watchface id="318470560" name="Лінійка">
     <Resources>
         <Image name="dial_n" src="dial_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="383" pivotY="383" angleStart="0" angleRange="240"/>
+        <DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="266" pivotY="266" angleStart="0" angleRange="360"/>
         <Image name="ptr_n" src="ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="d_min_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_min_n/0.png"/>
@@ -149,7 +149,7 @@
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
     </Resources>
     <Theme type="normal" name="Лінійка" bgColor="#000000">
-        <Layout ref="@v_dial_n" x="120" y="-123"/>
+        <Layout ref="@v_dial_n" x="120" y="-6"/>
         <Layout ref="@ptr_n" x="0" y="248"/>
         <Layout ref="@min_n" x="15" y="176"/>
         <Layout ref="@xv_n" x="46" y="263"/>
