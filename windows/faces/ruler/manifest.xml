@@ -125,59 +125,20 @@
             <Image src="d_st_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="st_n" source="healthStepCount" ref="@d_st_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="scale_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="scale_a/0.png"/>
-            <Image src="scale_a/1.png"/>
-            <Image src="scale_a/2.png"/>
-            <Image src="scale_a/3.png"/>
-            <Image src="scale_a/4.png"/>
-            <Image src="scale_a/5.png"/>
-            <Image src="scale_a/6.png"/>
-            <Image src="scale_a/7.png"/>
-            <Image src="scale_a/8.png"/>
-            <Image src="scale_a/9.png"/>
-            <Image src="scale_a/10.png"/>
-            <Image src="scale_a/11.png"/>
-            <Image src="scale_a/12.png"/>
-            <Image src="scale_a/13.png"/>
-            <Image src="scale_a/14.png"/>
-            <Image src="scale_a/15.png"/>
-            <Image src="scale_a/16.png"/>
-            <Image src="scale_a/17.png"/>
-            <Image src="scale_a/18.png"/>
-            <Image src="scale_a/19.png"/>
-            <Image src="scale_a/20.png"/>
-            <Image src="scale_a/21.png"/>
-            <Image src="scale_a/22.png"/>
-            <Image src="scale_a/23.png"/>
+        <Image name="ruler_a" src="ruler_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="d_hr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_hr_a/0.png"/>
+            <Image src="d_hr_a/1.png"/>
+            <Image src="d_hr_a/2.png"/>
+            <Image src="d_hr_a/3.png"/>
+            <Image src="d_hr_a/4.png"/>
+            <Image src="d_hr_a/5.png"/>
+            <Image src="d_hr_a/6.png"/>
+            <Image src="d_hr_a/7.png"/>
+            <Image src="d_hr_a/8.png"/>
+            <Image src="d_hr_a/9.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_scale_a" source="timeHour" ref="@scale_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-            <Param value="7"/>
-            <Param value="8"/>
-            <Param value="9"/>
-            <Param value="10"/>
-            <Param value="11"/>
-            <Param value="12"/>
-            <Param value="13"/>
-            <Param value="14"/>
-            <Param value="15"/>
-            <Param value="16"/>
-            <Param value="17"/>
-            <Param value="18"/>
-            <Param value="19"/>
-            <Param value="20"/>
-            <Param value="21"/>
-            <Param value="22"/>
-            <Param value="23"/>
-        </DataItemImageValues>
-        <Image name="ptr_a" src="ptr_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="hr_a" source="timeHour" ref="@d_hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="d_min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_min_a/0.png"/>
             <Image src="d_min_a/1.png"/>
@@ -241,17 +202,17 @@
         <Layout ref="@v_scale_n" x="110" y="0"/>
         <Layout ref="@ptr_n" x="0" y="248"/>
         <Layout ref="@min_n" x="15" y="176"/>
-        <Layout ref="@xv_n" x="44" y="264"/>
+        <Layout ref="@xv_n" x="46" y="263"/>
         <Layout ref="@sec" x="43" y="290"/>
         <Layout ref="@v_wk_n" x="16" y="73"/>
         <Layout ref="@day_n" x="66" y="73"/>
         <Layout ref="@st_n" x="60" y="423"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
-        <Layout ref="@v_scale_a" x="110" y="0"/>
-        <Layout ref="@ptr_a" x="0" y="248"/>
+        <Layout ref="@ruler_a" x="0" y="200"/>
+        <Layout ref="@hr_a" x="120" y="223"/>
         <Layout ref="@min_a" x="15" y="176"/>
-        <Layout ref="@xv_a" x="44" y="264"/>
+        <Layout ref="@xv_a" x="46" y="263"/>
         <Layout ref="@v_wk_a" x="16" y="73"/>
         <Layout ref="@day_a" x="66" y="73"/>
         <Layout ref="@st_a" x="60" y="423"/>

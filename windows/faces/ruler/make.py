@@ -62,15 +62,17 @@ for t,dim in (("n",False),("a",True)):
         d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
     else:
-        # AOD — та сама годинна шкала й риска, сіра (шкала змінюється лише раз на годину)
-        array("scale_a",[strip(h,True) for h in range(24)]); values("scale_a","timeHour","scale_a",range(24)); lay(t,"v_scale_a",SX0,0)
-        g=(115,115,115); im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([18*K,12*K,118*K,12*K],fill=g,width=2*K); d.line([154*K,12*K,196*K,12*K],fill=g,width=2*K)
-        d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=g)
-        image("ptr_a",down(im)); lay(t,"ptr_a",0,MID-12)
+        # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
+        im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+        for i in range(-6,7):
+            y=60+i*PXH/6; big=i%6==0
+            d.line([((160 if big else 176))*K,y*K,194*K,y*K],fill=(80,80,80),width=(3 if big else 1)*K)
+        d.line([116*K,60*K,196*K,60*K],fill=(115,115,115),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(115,115,115))
+        image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
+        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40)
-    image("xv_"+t,text_img("ХВ",F("Bold",24,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+16-12)
+    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12)
     if t=="n":
         fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18)
     # дата «ЧТ 12»
