@@ -288,7 +288,7 @@
         <Layout ref="@ptr_n" x="0" y="248"/>
         <Layout ref="@hr_n" x="120" y="223"/>
         <Layout ref="@min_n" x="15" y="176"/>
-        <Layout ref="@xv_n" x="48" y="261"/>
+        <Layout ref="@xv_n" x="44" y="264"/>
         <Layout ref="@sec" x="43" y="290"/>
         <Layout ref="@v_wk_n" x="16" y="73"/>
         <Layout ref="@day_n" x="66" y="73"/>
@@ -298,7 +298,7 @@
         <Layout ref="@ruler_a" x="0" y="200"/>
         <Layout ref="@hr_a" x="120" y="223"/>
         <Layout ref="@min_a" x="15" y="176"/>
-        <Layout ref="@xv_a" x="48" y="261"/>
+        <Layout ref="@xv_a" x="44" y="264"/>
         <Layout ref="@v_wk_a" x="16" y="73"/>
         <Layout ref="@day_a" x="66" y="73"/>
         <Layout ref="@st_a" x="60" y="423"/>

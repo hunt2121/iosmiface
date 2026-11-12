@@ -77,7 +77,7 @@ for t,dim in (("n",False),("a",True)):
         ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40)
-    image("xv_"+t,text_img("ХВ",F("Bold",18,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+13-12)
+    image("xv_"+t,text_img("ХВ",F("Bold",24,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+16-12)
     if t=="n":
         fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18)
     # дата «ЧТ 12»
