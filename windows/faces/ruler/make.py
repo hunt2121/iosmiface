@@ -60,7 +60,7 @@ for t,dim in (("n",False),("a",True)):
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
         # розрив під підписом — плавне згасання FL px, до нуля впритул до цифр (GL, GR — 2 px від краю підпису)
-        GL,GR,FL=117,152,9
+        GL,GR,FL=124,145,5      # повна до краю цифр (119 і 150), гасне вже під ними
         al=im.getchannel("A"); px=al.load()
         for X in range(W*K):
             x=X/K; f=1.0 if x<GL-FL or x>GR+FL else (max(0,(GL-x)/FL) if x<136 else max(0,(x-GR)/FL))
