@@ -32,7 +32,7 @@ def digits(n,f,col,h):
     cw=math.ceil(max(f.getlength(str(i),features=["tnum"]) for i in range(10))/K)
     array("d_"+n,[text_img(str(i),f,col,w=cw,h=h) for i in range(10)]); return cw
 
-MID=260; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
+MID=260; PXH=64; SX0=110; PX0=116   # PX0 — лівий край риски (праворуч від хвилин)      # центр шкали, пікселів на годину, лівий край смуги шкали
 def strip(Hh,dim):
     im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im); f=F("SemiBold",24)
     c=Hh+0.5                    # посередині кадру — H:30
@@ -53,40 +53,28 @@ for t,dim in (("n",False),("a",True)):
     if t=="n":
         # шкала їде щохвилини (60 кадрів: поділки повторюються щогодини), риска стоїть посередині;
         # поточна година — біля риски (підписи на шкалі не можуть їхати разом із хвилинами — браслет не дає «хвилину доби»)
-        def fade(y): return max(0.0,min(1.0,min(y-6,H-6-y)/110))      # краї шкали гаснуть — там підписи не встигають
         def ticks(m):
             im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im)
             for j in range(-60,61):
                 y=MID+(j-m/10)*PXH/6            # j — десятихвилинні поділки від H:00
                 if not -5<y<H+5: continue
-                big=j%6==0; a=fade(y); c=(255,255,255) if big else DT
-                d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=c+(round(255*a),),width=(3 if big else 1)*K)
+                big=j%6==0
+                d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=(255,255,255) if big else DT,width=(3 if big else 1)*K)
             return down(im)
         array("ticks_n",[ticks(m) for m in range(60)]); values("ticks_n","timeMinute","ticks_n",range(60)); lay(t,"v_ticks_n",SX0,0)
-        # підписи годин їдуть разом зі шкалою: стовпчик (flex column) — зверху невидимий відступ, що залежить від хвилин,
-        # під ним 6 підписів по 64 px (H-2 … H+3), кожен змінюється щогодини. Відступ штовхає підписи — вони їдуть щохвилини.
-        LW,LH=48,PXH; fl=F("SemiBold",24)
-        sp=lambda m: round(MID-2*PXH-LH/2-m*PXH/60)        # верх підпису H-2
-        array("sp_n",[Image.new("RGBA",(2,sp(m)),(0,0,0,0)) for m in range(60)]); values("sp_n","timeMinute","sp_n",range(60))
-        refs=["v_sp_n"]
-        for k in range(-2,4):
-            nm="lb%d_n"%(k+2)
-            array(nm,[text_img("%02d"%((h+k)%24),fl,LG,w=LW,h=LH) for h in range(24)]); values(nm,"timeHour",nm,range(24)); refs.append("v_"+nm)
-        res.append('<Widget name="col_lbl" widgetName="number" groupType="general" w="%d" h="%d" flex_direction="column" justify_content="flex-start" align_content="center" align_items="center" gap="0">'%(LW,H))
-        for r in refs: res.append('    <Item ref="@%s" x="0" y="0"/>'%r)
-        res.append('</Widget>'); lay(t,"col_lbl",136-LW//2,0)
-        # риска стоїть; посередині розрив — крізь нього проїжджає підпис години
+        # (підписи, що їдуть разом зі шкалою, неможливі: усі кадри набору мусять бути одного розміру — відступ змінної висоти не зробити)
+        # риска стоїть; коротка — починається праворуч від хвилин, не заходить під них
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([18*K,12*K,116*K,12*K],fill=OR,width=2*K); d.line([156*K,12*K,196*K,12*K],fill=OR,width=2*K)
-        d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        d.line([PX0*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
+        ch=digits("hr_n",F("SemiBold",24),LG,30); number("hr_n","timeHour","hr_n",2); lay(t,"hr_n",136-ch,MID-22-15)
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         for i in range(-6,7):
             y=60+i*PXH/6; big=i%6==0
             d.line([((160 if big else 176))*K,y*K,194*K,y*K],fill=(80,80,80),width=(3 if big else 1)*K)
-        d.line([18*K,60*K,196*K,60*K],fill=(115,115,115),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(115,115,115))
+        d.line([PX0*K,60*K,196*K,60*K],fill=(115,115,115),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(115,115,115))
         image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
         ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
