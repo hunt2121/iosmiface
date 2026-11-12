@@ -79,6 +79,19 @@
         <DataItemPointer name="v_dial_a" source="timeHour" ref="@dial_a" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="266" pivotY="266" angleStart="0" angleRange="360"/>
         <Image name="ptr_a" src="ptr_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="mask_a" src="mask_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="d_hr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_hr_a/0.png"/>
+            <Image src="d_hr_a/1.png"/>
+            <Image src="d_hr_a/2.png"/>
+            <Image src="d_hr_a/3.png"/>
+            <Image src="d_hr_a/4.png"/>
+            <Image src="d_hr_a/5.png"/>
+            <Image src="d_hr_a/6.png"/>
+            <Image src="d_hr_a/7.png"/>
+            <Image src="d_hr_a/8.png"/>
+            <Image src="d_hr_a/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="hr_a" source="timeHour" ref="@d_hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="d_min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_min_a/0.png"/>
             <Image src="d_min_a/1.png"/>
@@ -152,6 +165,7 @@
         <Layout ref="@v_dial_a" x="120" y="-6"/>
         <Layout ref="@ptr_a" x="0" y="248"/>
         <Layout ref="@mask_a" x="110" y="0"/>
+        <Layout ref="@hr_a" x="120" y="245"/>
         <Layout ref="@min_a" x="15" y="178"/>
         <Layout ref="@xv_a" x="46" y="266"/>
         <Layout ref="@v_wk_a" x="16" y="73"/>

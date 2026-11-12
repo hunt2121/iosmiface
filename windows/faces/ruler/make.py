@@ -64,7 +64,7 @@ for t,dim in (("n",False),("a",True)):
         r0,r1=(CX-194),(CX-160 if big else CX-176)
         if dim: r1=CX-176; big=False                # AOD — як раніше: лише дрібні поділки (і на місці годинних теж)
         d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
-    for j in range(24):
+    for j in (range(24) if not dim else []):       # в AOD підписів на диску немає — година стоїть навпроти риски
         psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
         tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
         tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
@@ -82,6 +82,7 @@ for t,dim in (("n",False),("a",True)):
             dy=abs(y+0.5-MID); a=0 if dy<=WIN-FADE else (255 if dy>=WIN else round(255*(dy-WIN+FADE)/FADE))
             for x in range(W-SX0): px[x,y]=(0,0,0,a)
         image("mask_a",mk); lay(t,"mask_a",SX0,0)
+        ch=digits("hr_a",F("SemiBold",24),cL,30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)   # година — завжди навпроти риски
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
     image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+3)
