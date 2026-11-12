@@ -36,7 +36,9 @@ final class ProjectStore: ObservableObject {
         let theme = root.add("Theme")
         theme.set("type", "normal").set("name", "").set("bgColor", "#000000")
         let meta = ProjectMeta()
-        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: [:], meta: meta)
+        let folder = newFolder()
+        // id = ім'я теки, як у FaceProject.load: інакше після reload() id змінюється і прогрес встановлення губиться
+        let p = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: [:], meta: meta)
         // старт — великі години й хвилини з BigWatch на тих самих місцях
         let imgs = StarterDigits.png.compactMap { Data(base64Encoded: $0).flatMap(UIImage.init(data:)) }
             .map { AssetFactory.fromUIImage($0, maxSide: 10_000) }
@@ -58,7 +60,9 @@ final class ProjectStore: ObservableObject {
         let (root, files) = try FaceProject.unpack(data)
         var meta = ProjectMeta()
         meta.sourceKey = FacePreviews.dataKey(data)
-        let p = FaceProject(id: UUID().uuidString, folder: newFolder(), root: root, files: files, meta: meta)
+        let folder = newFolder()
+        // id = ім'я теки, як у FaceProject.load: інакше після reload() id змінюється і прогрес встановлення губиться
+        let p = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
         if (root.string("name") ?? "").isEmpty { root.set("name", name) }
         if asCopy {
             root.set("id", Self.newFaceID())
