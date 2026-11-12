@@ -8,7 +8,7 @@ LANGV=os.environ.get("LANGV","ua")
 AOD_PLAIN=os.environ.get("AOD_PLAIN")=="1"   # AOD: звичайні цифри контуром, без гліча
 DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"glitch-"+LANGV))
 OUT=os.path.join(DEST,"files")
-FACE_ID,FACE_NAME={"ua":("318470552","Глітч"),"ru":("318470553","Глитч"),"en":("318470554","Glitch"),"en12":("318470555","Glitch 12h")}[LANGV]
+FACE_ID={"ua":"318470552","ru":"318470553","en":"318470554","en12":"318470555"}[LANGV]; FACE_NAME="GLITCH"   # назва однакова, ідентифікатор у кожної мови свій
 TXT={"ua":dict(km="км",ms="м/с",w=["Погода","Батарея","Відстань","Мін / макс","Дощ","Вітер"]),
      "ru":dict(km="км",ms="м/с",w=["Погода","Батарея","Расстояние","Мин / макс","Дождь","Ветер"]),
      "en":dict(km="km",ms="m/s",w=["Weather","Battery","Distance","Min / max","Rain","Wind"])}
@@ -242,9 +242,13 @@ centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
-xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME)+'','    <Resources>']
-xml+=["        "+r for r in res]+['    </Resources>','    <Theme type="normal" name="Глітч" bgColor="#000000">']
-xml+=["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']
-xml+=["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
+# три стилі: у кожного свій типовий віджет слота й свій AOD (пара за назвою, як в офіційних)
+SN={"ua":("Батарея","Погода","Відстань"),"ru":("Заряд","Погода","Расстояние")}.get(LANGV,("Battery","Weather","Distance"))
+def T(typ,name,lines): return ['    <Theme type="%s" name="%s" bgColor="#000000">'%(typ,name)]+["        "+l for l in lines]+['    </Theme>']
+xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'    <Resources>']+["        "+r for r in res]+['    </Resources>']
+for (key,ak),nm in zip((("bat","a_bat"),("wx","a_wx"),("dist","a_dist")),SN):
+    xml+=T("normal",nm,[l.replace('@slot_bat"','@slot_%s"'%key) for l in theme["n"]])
+    xml+=T("AOD",nm,theme["a"]+theme[ak]+theme["a_bt"])
+xml+=['</Watchface>']
 open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n")
 print("ok", len(res), "resources")

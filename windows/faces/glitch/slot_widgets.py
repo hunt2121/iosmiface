@@ -7,8 +7,8 @@ sys.path.insert(0, HERE)
 import weather_icons as WI
 
 SLOT_Y = 102                     # середина цифр значення на екрані
-WH = 76                          # висота віджета — уся смуга між датою й годинами, щоб легше вибирати (усі елементи мають бути всередині, інакше браслет їх обрізає)
-WX, WY = 0, SLOT_Y - 38          # лівий верхній кут віджета на екрані
+WH = 96                          # висота віджета (рамка вибору) — більша за смугу між датою й годинами, щоб легше влучати; усі елементи мають бути всередині, інакше браслет їх обрізає
+WX, WY = 0, SLOT_Y - WH // 2     # лівий верхній кут віджета на екрані (рамка — симетрично довкола значення)
 HV = 40                          # висота картинок цифр, одиниць і значків; середина цифр — HV/2
 FV = ImageFont.truetype(FD + "Inter-Bold.otf", 28 * K)
 FU = ImageFont.truetype(FD + "Inter-Bold.otf", 18 * K)
@@ -123,6 +123,7 @@ def plain_img(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
     return image(name, down(im))
 
 YV = SLOT_Y - HV / 2             # верх рядка значень на екрані
+WNAME = {"ua": ("Батарея", "Погода", "Відстань"), "ru": ("Заряд", "Погода", "Расстояние")}.get(LANGV, ("Battery", "Weather", "Distance"))   # назви в меню вибору (як в офіційних)
 
 # 1. Погода: «14°» + значок погоди
 deg = deg_img("u_deg")            # для AOD (там число з unitIcon)
@@ -131,24 +132,28 @@ ICS = [WI.centered_icon(p) for _, p in WI.ICONS]
 padI = lambda im: (lambda o: (o.paste(im, (2, 0)), o)[1])(Image.new("RGBA", (im.width + 2, im.height), (0, 0, 0, 0)))
 array("wx_icons", [padI(i) for i in ICS]); values("wx", "weatherCurrentWeather", "wx_icons", range(len(ICS)))
 number("wx_t", "weatherCurrentTemperature", "dig_val", 3, "left", False, SPV)
-widget("w_weather", "Weather", [row("r_weather", ["wx_t", "f_deg", "v_wx"])])
+widget("w_weather", WNAME[1], [row("r_weather", ["wx_t", "f_deg", "v_wx"])])
 
 # 2. Батарея — як була
-widget("w_battery", "Battery", BATT_ITEMS)
+widget("w_battery", WNAME[0], BATT_ITEMS)
 
 # 3. Відстань: «5.43 км» + маршрут
 plain_img("f_km", TXT[LANGV]["km"], i_route)
 number("dist", "healthStepKiloMeter", "dig_val", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
-widget("w_distance", "Distance", [row("r_distance", ["dist", "f_km"])])
+widget("w_distance", WNAME[2], [row("r_distance", ["dist", "f_km"])])
 
 # для AOD: правий край «°» (як було)
 tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
-res.append('<Slot name="slot_top" type="widget">')
-for w in sorted(widgets, key=lambda w: w != "w_battery"): res.append('    <Item ref="@%s"/>' % w)   # батарея — перша (типова)
-res.append('</Slot>')
-lay("n", "slot_top", WX, WY)
+# Три стилі циферблата — у кожного свій слот (типовий віджет перший) і свій AOD з тим самим віджетом сірим.
+theme.update({"a_bat": [], "a_wx": [], "a_dist": [], "a_bt": []})
+BASE = ["w_battery", "w_weather", "w_distance"]
+for key, first in (("bat", "w_battery"), ("wx", "w_weather"), ("dist", "w_distance")):
+    res.append('<Slot name="slot_%s" type="widget">' % key)
+    for w in [first] + [x for x in BASE if x != first]: res.append('    <Item ref="@%s"/>' % w)
+    res.append('</Slot>')
+lay("n", "slot_bat", WX, WY)     # у стилях «Погода» / «Відстань» тут підставляється slot_wx / slot_dist
 
 # Блютуз «немає зв'язку» — поверх слота: чорна плашка, більша за будь-який віджет слота на 1 px з кожного боку
 # (межі виміряно на крайніх значеннях: −12°, 12.34 км, 100% …), значок — рівно по центру. Є зв'язок — порожньо.
@@ -174,7 +179,30 @@ tw2 = math.ceil(FV.getlength("°") / K) + 2
 dga = Image.new("RGBA", (tw2 * K, HV * K), (0, 0, 0, 0)); dga.paste(Image.new("RGBA", dga.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw2, "left")); image("f_deg_a", down(dga))
 number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "left", False, SPV)
 r = row("r_weather_a", ["wx_t_a", "f_deg_a", "v_wx_a"])        # той самий рядок, що й на звичайному екрані — значок і текст на тих самих місцях
-lay("a", r[0], r[1], r[2])
+lay("a_wx", r[0], r[1], r[2])
 array("bt_cover_a", [bt_cover(((G2, 0),), G2), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover_a", "systemStatusBluetooth", "bt_cover_a", [0, 1])
-lay("a", "v_bt_cover_a", BX0, BY0)
+lay("a_bt", "v_bt_cover_a", BX0, BY0)
+
+# AOD «Батарея»: та сама батарея, сіра (елементи batt_a / bat_a з make.py), на тому ж місці, що у віджеті
+for ref, x, y in BATT_ITEMS: lay("a_bat", ref[:-1] + "a", x, y)
+
+# AOD «Відстань»: «5.43 км» + маршрут, сірим, той самий рядок, що й на звичайному екрані
+def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
+    font = font or FU
+    tw = math.ceil(font.getlength(text) / K) + 2 if text else 0
+    im_icon = icon_mask(icon) if icon else None
+    iw = im_icon.width // K + 3 if im_icon else 0
+    w = (gap_text if text else 0) + tw + (gap_icon if icon else 0) + iw
+    im = Image.new("RGBA", (w * K, HV * K), (0, 0, 0, 0))
+    if text:
+        m = text_mask(text, font, tw, "left", bottom=(font is FU)); mm = Image.new("L", im.size, 0); mm.paste(m, (gap_text * K, 0))
+        im.paste(Image.new("RGBA", im.size, G2 + (255,)), (0, 0), mm)
+    if im_icon:
+        x = ((gap_text if text else 0) + tw + gap_icon) * K; y = int(HV * K / 2 - im_icon.height / 2)
+        im.paste(Image.new("RGBA", im_icon.size, G2 + (255,)), (x, y), im_icon)
+    return image(name, down(im))
+plain_img_gray("f_km_a", TXT[LANGV]["km"], i_route)
+number("dist_a", "healthStepKiloMeter", "dig_val_a", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
+r = row("r_distance_a", ["dist_a", "f_km_a"])
+lay("a_dist", r[0], r[1], r[2])
