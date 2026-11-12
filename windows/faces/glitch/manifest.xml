@@ -276,28 +276,28 @@
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
         <Layout ref="@timeMinute_n" x="6" y="241"/>
-        <Layout ref="@v_week_n" x="39" y="35"/>
-        <Layout ref="@us_n" x="94" y="35"/>
-        <Layout ref="@day_n" x="104" y="35"/>
-        <Layout ref="@dot_n" x="132" y="35"/>
-        <Layout ref="@mon_n" x="139" y="35"/>
-        <Layout ref="@v_batt_n" x="69" y="84"/>
-        <Layout ref="@bat_n" x="106" y="86"/>
+        <Layout ref="@v_week_n" x="42" y="35"/>
+        <Layout ref="@us_n" x="98" y="35"/>
+        <Layout ref="@day_n" x="108" y="35"/>
+        <Layout ref="@dot_n" x="136" y="35"/>
+        <Layout ref="@mon_n" x="142" y="35"/>
+        <Layout ref="@v_batt_n" x="69" y="85"/>
+        <Layout ref="@bat_n" x="106" y="87"/>
         <Layout ref="@v_bt_n" x="20" y="82"/>
-        <Layout ref="@sec" x="78" y="362"/>
+        <Layout ref="@sec" x="78" y="363"/>
         <Layout ref="@steps_n" x="106" y="432"/>
         <Layout ref="@pulse_n" x="106" y="467"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
         <Layout ref="@timeMinute_a" x="6" y="241"/>
-        <Layout ref="@v_week_a" x="39" y="35"/>
-        <Layout ref="@us_a" x="94" y="35"/>
-        <Layout ref="@day_a" x="104" y="35"/>
-        <Layout ref="@dot_a" x="132" y="35"/>
-        <Layout ref="@mon_a" x="139" y="35"/>
-        <Layout ref="@v_batt_a" x="69" y="84"/>
-        <Layout ref="@bat_a" x="106" y="86"/>
+        <Layout ref="@v_week_a" x="42" y="35"/>
+        <Layout ref="@us_a" x="98" y="35"/>
+        <Layout ref="@day_a" x="108" y="35"/>
+        <Layout ref="@dot_a" x="136" y="35"/>
+        <Layout ref="@mon_a" x="142" y="35"/>
+        <Layout ref="@v_batt_a" x="69" y="85"/>
+        <Layout ref="@bat_a" x="106" y="87"/>
         <Layout ref="@v_bt_a" x="20" y="82"/>
         <Layout ref="@steps_a" x="106" y="418"/>
     </Theme>

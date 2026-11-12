@@ -106,7 +106,7 @@ for t,col in (("n",CYN),("a",G2)):
     image("us_"+t,text_img("_",f,col,w=wu,h=SH))
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
-    total=ww+2*cw+dw+2*cw; x=106-total/2-3; y=50-SH/2
+    total=ww+2*cw+dw+2*cw; x=106-total/2+0.5; y=50-SH/2
     lay(t,"v_week_"+t,x,y); lay(t,"us_"+t,x+ww-wu,y); x+=ww
     number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
@@ -166,7 +166,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
     array("bt_"+t,[bt_frame(cols,PNK if t=="n" else G2),empty])     # 0 — зв'язку немає: значок; 1 — є: порожньо
     values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
-    Y=101
+    Y=102   # посередині між низом дати і верхом годин
     if BSTYLE=="ORIG":                 # як на мокапі: значок, праворуч «85%»; група по центру для двох цифр
         f=SEMI(TS); pct=image("pct_"+t,text_img("%",f,tc,h=SH)); ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
         number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"left",False,0,"pct_"+t)
@@ -187,7 +187,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
-number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,390-28)
+number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,391-28)
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
 def icon_steps(cols):
