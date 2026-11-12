@@ -57,17 +57,9 @@ for t,dim in (("n",False),("a",True)):
         # шкала з підписами годин їде під нерухомою рискою: щогодини зсувається на одну поділку (24 кадри),
         # поточна година — навпроти риски; хвилини показують великі цифри
         array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24))
-        # риска як була — довга, з розривом там, де стоїть підпис поточної години
+        # коротка риска — точно та, що була у face-111 (від 116 px до стрілки)
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
-        # розрив під підписом — плавне згасання FL px, до нуля впритул до цифр (GL, GR — 2 px від краю підпису)
-        GL,GR,FL=123,146,9      # починає гаснути за 5 px до цифр (114 і 155, цифри 119…150), до нуля — під ними
-        al=im.getchannel("A"); px=al.load()
-        for X in range(W*K):
-            x=X/K; f=1.0 if x<GL-FL or x>GR+FL else (max(0,(GL-x)/FL) if x<136 else max(0,(x-GR)/FL))
-            if f<1:
-                for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
-        im.putalpha(al)
+        d.line([116*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
         lay(t,"v_scale_n",SX0,0)     # шкала з підписами — над рискою
     else:
