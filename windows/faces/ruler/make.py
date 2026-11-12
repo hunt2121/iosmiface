@@ -16,9 +16,18 @@ def array(n,ims):
     res.append('<ImageArray name="%s" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">'%n)
     for i,im in enumerate(ims): res.append('    <Image src="%s"/>'%save(im,"%s/%d.png"%(n,i)))
     res.append('</ImageArray>')
-def number(n,src,arr,digits,align="left",lz=True,space=0):
+def number(n,src,arr,digits,align="left",lz=True,space=0,unit=None):
     arr="d_"+arr        # набори цифр — з префіксом d_, щоб назви не збігалися з числами
-    res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="0" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="%d"/>'%(n,src,arr,digits,align,"true" if lz else "false",space))
+    res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="0" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="%d"%s/>'%(n,src,arr,digits,align,"true" if lz else "false",space,' unitIcon="@%s"'%unit if unit else ""))
+def soles_icon(col,gap,boxh,top):
+    """значок кроків — дві підошви з каблуком; рівно 22 px заввишки (на піксель вище й нижче цифр),
+    у картинці висотою як цифри, зліва відступ gap (браслет ставить значок одразу після останньої цифри)"""
+    k=16; im=Image.new("RGBA",(19*k,22*k),(0,0,0,0)); d=ImageDraw.Draw(im)
+    E=lambda cx,cy,rx,ry: d.ellipse([(cx-rx)*k,(cy-ry)*k,(cx+rx)*k,(cy+ry)*k],fill=col)
+    for cx,t0 in ((5,7.6),(13.8,0.4)): E(cx,t0+4.6,3.4,4.6); E(cx,t0+12.1,2.6,1.9)
+    c=im.crop(im.getbbox()); w=round(c.width*22/c.height)
+    ic=c.convert("RGBa").resize((w,22),Image.LANCZOS).convert("RGBA")
+    out=Image.new("RGBA",(gap+w,boxh),(0,0,0,0)); out.alpha_composite(ic,(gap,top)); return out
 def values(n,src,arr,ps):
     res.append('<DataItemImageValues name="v_%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(n,src,arr))
     for p in ps: res.append('    <Param value="%d"/>'%p)
@@ -100,7 +109,9 @@ for t,dim in (("n",False),("a",True)):
     cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
     x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
-    cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,61,440-17-10)   # кроки від низу екрана — як дата від верху (80 px)
+    cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
+    image("stic_"+t,soles_icon((115,115,115) if dim else OR,4,34,6))   # підошви праворуч, 4 px від цифр
+    number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,60,440-17-10)   # кроки з підошвами — разом по центру осі x=61   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
