@@ -201,7 +201,7 @@
         <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
     </Resources>
     <Theme type="normal" name="BAND 01" bgColor="#000000">
-        <Layout ref="@title" x="60" y="34"/>
+        <Layout ref="@title" x="59" y="34"/>
         <Layout ref="@v_st" x="0" y="54"/>
         <Layout ref="@bolt" x="58" y="92"/>
         <Layout ref="@g3" x="82" y="91"/>

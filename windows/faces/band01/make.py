@@ -75,15 +75,22 @@ def text_img(s,f,col):
 def picon(g,col=WH):
     S=8; im=pix.render(g,S,col); return im.convert("RGBa").resize((round(im.width/S),round(im.height/S)),Image.LANCZOS).convert("RGBA")
 def floor_c(x): return math.floor(x)
+def ink_x(im,box_w,box_x=0):
+    """x для im, щоб ВИДИМІ пікселі (альфа ≥ 64, крайні стовпці — за їх прозорістю) стояли по центру box; пів пікселя — ліворуч"""
+    a=im.getchannel("A"); cols=[max(a.getpixel((x,y)) for y in range(im.height)) for x in range(im.width)]
+    idx=[i for i,v in enumerate(cols) if v>=64]; l=idx[0]+1-cols[idx[0]]/255; r=idx[-1]+cols[idx[-1]]/255
+    want=box_x+box_w/2-(l+r)/2; f=math.floor(want)
+    return f if want-f<=0.6 else f+1   # ≈пів пікселя (0,4–0,6) — теж ліворуч
 
 # ── шапка: назва і рядок статусу (перемикається за Bluetooth)
-tit=image("title",text_img("BAND·01",F("Black",22),WH)); TX=floor_c((W-tit.width)/2); TY=round(42.5-tit.height/2)
+tit=image("title",text_img("BAND·01",F("Black",22),WH)); TX=ink_x(tit,W); TY=round(42.5-tit.height/2)
 fs=F("Bold",12,False)
 ok=text_img(ST_OK,fs,DIM); lost=text_img(ST_LOST,fs,WH); rune=picon(pix.BT_RUNE)
 SH=rune.height; STW=W
 def st_frame(parts):
-    im=Image.new("RGBA",(STW,SH),(0,0,0,0)); tw=sum(p.width for p in parts)+6*(len(parts)-1); x=floor_c((STW-tw)/2)
-    for p in parts: im.alpha_composite(p,(x,(SH-p.height)//2)); x+=p.width+6
+    tw=sum(p.width for p in parts)+6*(len(parts)-1); row=Image.new("RGBA",(tw,SH),(0,0,0,0)); x=0
+    for p in parts: row.alpha_composite(p,(x,(SH-p.height)//2)); x+=p.width+6
+    im=Image.new("RGBA",(STW,SH),(0,0,0,0)); im.alpha_composite(row,(ink_x(row,STW),0))
     return im
 array("st",[st_frame([rune,lost]),st_frame([ok])]); values("v_st","systemStatusBluetooth","st",[0,1])
 array("st_a",[st_frame([rune,lost]),Image.new("RGBA",(STW,SH),(0,0,0,0))]); values("v_st_a","systemStatusBluetooth","st_a",[0,1])   # кадри масиву — однакового розміру
