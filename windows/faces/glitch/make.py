@@ -44,7 +44,7 @@ def digit_set(f,col,h=24):
     cw=max(f.getlength(str(i),features=["tnum"]) for i in range(10))/K
     cw=math.ceil(cw); return [text_img(str(i),f,col,w=cw,h=h) for i in range(10)],cw
 SH=30   # висота дрібних написів
-TS=15.5*1.3   # розмір дрібного тексту
+TS=15.5*1.3+1.5   # розмір дрібного тексту
 Q=K*1.3       # значки на 30% більші
 def small(col,tag):
     f=SEMI(TS); ds,cw=digit_set(f,col,SH); array("dig_"+tag,ds); return cw
@@ -106,7 +106,7 @@ for t,col in (("n",CYN),("a",G2)):
     image("us_"+t,text_img("_",f,col,w=wu,h=SH))
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
-    total=ww+2*cw+dw+2*cw; x=106-total/2+0.5; y=50-SH/2
+    total=ww+2*cw+dw+2*cw; x=106-total/2-0.5; y=50-SH/2
     lay(t,"v_week_"+t,x,y); lay(t,"us_"+t,x+ww-wu,y); x+=ww
     number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
@@ -186,7 +186,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-9,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
 
 # ── секунди (лише звичайний екран)
-fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
+fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
 number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,392-28)
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
