@@ -5,7 +5,8 @@ import os, random, math, shutil
 HERE=os.path.dirname(os.path.abspath(__file__))
 # мова: ua (типово), ru, en, en12 (12-годинний час з AM/PM і датою місяць.день); результат — у теці faces/glitch[-мова]
 LANGV=os.environ.get("LANGV","ua")
-DEST=HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"glitch-"+LANGV)
+AOD_PLAIN=os.environ.get("AOD_PLAIN")=="1"   # AOD: звичайні цифри контуром, без гліча
+DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"glitch-"+LANGV))
 OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470552","Глітч"),"ru":("318470553","Глитч"),"en":("318470554","Glitch"),"en12":("318470555","Glitch 12h")}[LANGV]
 TXT={"ua":dict(km="км",ms="м/с",w=["Погода","Батарея","Відстань","Мін / макс","Дощ","Вітер"]),
@@ -76,10 +77,11 @@ def big_set(tag,cy,strips,mode):
         else:   # AOD: сіра кайма зсуву + тонка обвідка цифри, без заливки
             from PIL import ImageChops, ImageFilter
             main=mask(0)
-            for col,dx in ((GL,-4),(GR,4)): im.paste(Image.new("RGBA",im.size,col+(255,)),(0,0),ImageChops.subtract(mask(dx),main))
+            if not AOD_PLAIN:
+                for col,dx in ((GL,-4),(GR,4)): im.paste(Image.new("RGBA",im.size,col+(255,)),(0,0),ImageChops.subtract(mask(dx),main))
             edge=ImageChops.subtract(main,main.filter(ImageFilter.MinFilter(13)))
             im.paste(Image.new("RGBA",im.size,G1+(255,)),(0,0),edge)
-        for (y,h,dx) in strips:           # ті самі «зламані» смуги, що й на мокапі (на весь рядок)
+        for (y,h,dx) in ([] if (mode!="normal" and AOD_PLAIN) else strips):           # ті самі «зламані» смуги, що й на мокапі (на весь рядок)
             yy=int(y*K-top); hh=h*K
             if yy+hh<=0 or yy>=CH: continue
             st=im.crop((0,max(0,yy),cw,min(CH,yy+hh))); im.paste(st,(dx*K,max(0,yy)))
