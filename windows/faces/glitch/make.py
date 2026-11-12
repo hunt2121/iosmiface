@@ -187,7 +187,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
-number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,391-28)
+number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,392-28)
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
 def icon_steps(cols):
