@@ -369,45 +369,10 @@
         <Widget name="w_distance" widgetName="Distance" groupType="general" w="212" h="76">
             <Item ref="@r_distance" x="0" y="18"/>
         </Widget>
-        <Image name="f_slash" src="f_slash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <Image name="f_deg_mm" src="f_deg_mm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="tmin" source="weatherTodayTemperatureMin" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
-        <DataItemImageNumber name="tmax" source="weatherTodayTemperatureMax" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
-        <Widget name="r_minmax" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
-            <Item ref="@tmin" x="0" y="0"/>
-            <Item ref="@f_deg" x="0" y="0"/>
-            <Item ref="@f_slash" x="0" y="0"/>
-            <Item ref="@tmax" x="0" y="0"/>
-            <Item ref="@f_deg_mm" x="0" y="0"/>
-        </Widget>
-        <Widget name="w_minmax" widgetName="Weather" groupType="general" w="212" h="76">
-            <Item ref="@r_minmax" x="0" y="18"/>
-        </Widget>
-        <Image name="f_rain" src="f_rain.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="rain" source="weatherCurrentChanceOfRain" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
-        <Widget name="r_rain" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
-            <Item ref="@rain" x="0" y="0"/>
-            <Item ref="@f_rain" x="0" y="0"/>
-        </Widget>
-        <Widget name="w_rain" widgetName="Weather" groupType="general" w="212" h="76">
-            <Item ref="@r_rain" x="0" y="18"/>
-        </Widget>
-        <Image name="f_wind" src="f_wind.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="wind" source="weatherCurrentWindSpeed" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7"/>
-        <Widget name="r_wind" widgetName="number" groupType="general" w="212" h="40" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="0">
-            <Item ref="@wind" x="0" y="0"/>
-            <Item ref="@f_wind" x="0" y="0"/>
-        </Widget>
-        <Widget name="w_wind" widgetName="Weather" groupType="general" w="212" h="76">
-            <Item ref="@r_wind" x="0" y="18"/>
-        </Widget>
         <Slot name="slot_top" type="widget">
-            <Item ref="@w_weather"/>
             <Item ref="@w_battery"/>
+            <Item ref="@w_weather"/>
             <Item ref="@w_distance"/>
-            <Item ref="@w_minmax"/>
-            <Item ref="@w_rain"/>
-            <Item ref="@w_wind"/>
         </Slot>
         <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="bt_cover/0.png"/>

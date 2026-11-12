@@ -1,5 +1,5 @@
 # Слот на місці батареї (виконується з make.py, у його просторі імен).
-# Порядок віджетів: погода, батарея, відстань, мін/макс сьогодні, дощ, вітер. Перший — типовий.
+# Порядок віджетів: батарея, погода, відстань. Перший — типовий.
 # Значення — білі жирні цифри з рожево-блакитним зсувом; одиниці — менші, по нижньому краю цифр;
 # значки — контур із тим самим зсувом, на 1 px вищі й нижчі за цифри.
 import sys
@@ -141,29 +141,12 @@ plain_img("f_km", TXT[LANGV]["km"], i_route)
 number("dist", "healthStepKiloMeter", "dig_val", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
 widget("w_distance", "Distance", [row("r_distance", ["dist", "f_km"])])
 
-# 4. Мін / макс сьогодні: «9°/16°» + стрілки
-slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("f_slash", down(slash))
-plain_img("f_deg_mm", "°", i_minmax, font=FV, gap_text=0)
-number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "left", False, SPV)
-number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV)
-widget("w_minmax", "Weather", [row("r_minmax", ["tmin", "f_deg", "f_slash", "tmax", "f_deg_mm"])])
-
-# 5. Ймовірність дощу: «30%» + парасолька
-plain_img("f_rain", "%", i_umbrella)
-number("rain", "weatherCurrentChanceOfRain", "dig_val", 3, "left", False, SPV)
-widget("w_rain", "Weather", [row("r_rain", ["rain", "f_rain"])])
-
-# 6. Вітер: «5 м/с» + вітер
-plain_img("f_wind", TXT[LANGV]["ms"], i_wind)
-number("wind", "weatherCurrentWindSpeed", "dig_val", 3, "left", False, SPV)
-widget("w_wind", "Weather", [row("r_wind", ["wind", "f_wind"])])
-
 # для AOD: правий край «°» (як було)
 tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 res.append('<Slot name="slot_top" type="widget">')
-for w in widgets: res.append('    <Item ref="@%s"/>' % w)
+for w in sorted(widgets, key=lambda w: w != "w_battery"): res.append('    <Item ref="@%s"/>' % w)   # батарея — перша (типова)
 res.append('</Slot>')
 lay("n", "slot_top", WX, WY)
 
