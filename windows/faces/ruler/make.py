@@ -35,13 +35,12 @@ def digits(n,f,col,h):
 MID=260; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
 def strip(Hh,dim):
     im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im); f=F("SemiBold",24)
-    c=Hh                        # посередині кадру — H:00, навпроти риски
+    c=Hh+0.5                    # посередині кадру — H:30; риска ходить між H:00 і H+1:00
     for h10 in range(int((c-5)*6),int((c+5)*6)+2):
         h=h10/6; y=MID+(h-c)*PXH
         if not -10<y<H+10: continue
         big=h10%6==0; lc=(110,110,110) if dim else ((255,255,255) if big else DT)
-        if not (h10==Hh*6 and not dim):   # поділку поточної години не малюємо — там риска (шкала лежить над нею)
-            d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
+        d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=lc,width=(3 if big else 1)*K)
         if big: d.text(((136-SX0)*K,y*K),"%02d"%((h10//6)%24),font=f,fill=(90,90,90) if dim else LG,anchor="mm")
     return down(im)
 PY0,PH=MID-40,80               # область кадрів риски
@@ -52,24 +51,26 @@ def pointer(m,dim):
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
     if t=="n":
-        # шкала їде щохвилини (60 кадрів: поділки повторюються щогодини), риска стоїть посередині;
-        # поточна година — біля риски (підписи на шкалі не можуть їхати разом із хвилинами — браслет не дає «хвилину доби»)
-        # шкала з підписами годин їде під нерухомою рискою: щогодини зсувається на одну поділку (24 кадри),
-        # поточна година — навпроти риски; хвилини показують великі цифри
-        array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24))
-        # довга риска з розривом під підписом поточної години: плавне згасання 9 px, розрив відцентровано
-        # за видимими пікселями цифр (центр — піксель 135, напр. «09» займає 121…149)
-        im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
-        GL,GR,FL,FR=124,147,9,12   # нуль — 124…147; зліва гасне 9 px (з 115), справа довше — 12 px (з 159), бо на око правий кінець коротший
-        al=im.getchannel("A"); px=al.load()
-        for X in range(W*K):
-            x=(X+0.5)/K; f=1.0 if x<GL-FL or x>GR+FR else (max(0,(GL-x)/FL) if x<135.5 else max(0,(x-GR)/FR))
-            if f<1:
-                for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
-        im.putalpha(al)
-        image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
-        lay(t,"v_scale_n",SX0,0)     # шкала з підписами — над рискою
+        # шкала з підписами зсувається раз на годину (H:30 посередині), коротка риска повзе щохвилини від H:00 до H+1:00.
+        # Підписи H і H+1 стоять там, де риска починає й закінчує годину. Коли риска підходить до цифр, у ній плавно
+        # з'являється розріз під цифрами (як підкладка: цифри над рискою), а відійшовши — так само плавно зникає.
+        array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24)); lay(t,"v_scale_n",SX0,0)
+        GL,GR,FL,FR=124,147,9,12      # розріз під цифрами (центр — піксель 135), згасання зліва 9 px, справа 12 px
+        def ptr(m):
+            im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH
+            d.line([116*K,y*K,196*K,y*K],fill=OR,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=OR)
+            dy=min(abs(y-(40-PXH/2)),abs(y-(40+PXH/2)))     # відстань до найближчого підпису (H або H+1)
+            g=max(0.0,min(1.0,(14-dy)/5))                     # 1 — риска на цифрах (|dy|≤9), 0 — далі за 14 px
+            if g>0:
+                al=im.getchannel("A"); px=al.load()
+                for X in range(W*K):
+                    x=(X+0.5)/K; fx=0.0 if x<135.5 else (1.0 if x>GR+FR else max(0,(x-GR)/FR))   # ліворуч від цифр риска коротка — хвостик зникає повністю
+                    f=1-g*(1-fx)
+                    if f<1:
+                        for Y in range(PH*K): px[X,Y]=round(px[X,Y]*f)
+                im.putalpha(al)
+            return down(im)
+        array("ptr_n",[ptr(m) for m in range(60)]); values("ptr_n","timeMinute","ptr_n",range(60)); lay(t,"v_ptr_n",0,PY0)
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
