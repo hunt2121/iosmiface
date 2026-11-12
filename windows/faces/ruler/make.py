@@ -3,14 +3,14 @@
 from PIL import Image, ImageDraw, ImageFont
 import os, math, shutil
 HERE=os.path.dirname(os.path.abspath(__file__))
-DTOP_=60   # дата — по центру екрана, верх за 60 px від краю; кроки — по центру, низ за 60 px від краю
+DTOP_=45   # дата — по центру екрана, верх за 45 px від краю; кроки — по центру, низ за 45 px від краю
 LANGV=os.environ.get("LANGV","ua")      # ua / ru / en / en12 (англійська, 12 год з AM/PM)
 DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"ruler-"+LANGV))
 OUT=os.path.join(DEST,"files")
 FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
 H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
-DTOP=DTOP_; DCX=105.5; DLGAP=7; DAYDX=0; STX=105; STDY=20; BDY=1   # BDY — блок хвилини/ХВ/секунди посередині між датою й кроками   # верх дати; проміжок між рядками дати; поправка числа по осі
+DTOP=DTOP_; DCX=105.5; DLGAP=7; DAYDX=0; STX=105; STDY=35; BDY=1   # BDY — блок хвилини/ХВ/секунди посередині між датою й кроками   # верх дати; проміжок між рядками дати; поправка числа по осі
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
