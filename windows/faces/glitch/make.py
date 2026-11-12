@@ -97,15 +97,17 @@ WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]   # dateWeek: 0 — не
 for t,col in (("n",CYN),("a",G2)):
     f=SEMI(TS); cw=small(col,"c"+t)
     ww=math.ceil(max(f.getlength("// %s_"%w) for w in WEEK)/K)+1
-    # ПН і НД — притиснуті до числа; ВТ, СР, ЧТ, ПТ, СБ — ще на 1 px праворуч (картинки на 1 px ширші, лівий край спільний)
+    # «//» на сталому місці: день тижня від лівого краю (ВТ, СР, ЧТ, ПТ, СБ — на 1 px правіше), «_» — окремо, впритул до числа
+    wu=math.ceil(f.getlength("_")/K); ww0=math.ceil(max(f.getlength("// %s"%w) for w in WEEK)/K)+1
     def wimg(w):
-        im=text_img("// %s_"%w,f,col,w=ww,align="right",h=SH); out=Image.new("RGBA",(ww+1,im.height),(0,0,0,0))
+        im=text_img("// %s"%w,f,col,w=ww0,align="left",h=SH); out=Image.new("RGBA",(ww0+1,im.height),(0,0,0,0))
         out.paste(im,(0 if w in ("ПН","НД") else 1,0)); return out
     array("week_"+t,[wimg(w) for w in WEEK])
+    image("us_"+t,text_img("_",f,col,w=wu,h=SH))
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
     total=ww+2*cw+dw+2*cw; x=106-total/2-3; y=50-SH/2
-    lay(t,"v_week_"+t,x,y); x+=ww
+    lay(t,"v_week_"+t,x,y); lay(t,"us_"+t,x+ww-wu,y); x+=ww
     number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
     number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
