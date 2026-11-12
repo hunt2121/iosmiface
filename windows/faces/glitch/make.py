@@ -244,7 +244,7 @@ names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 def T(typ,name,lines): return ['    <Theme type="%s" name="%s" bgColor="#000000">'%(typ,name)]+["        "+l for l in lines]+['    </Theme>']
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME),'    <Resources>']+["        "+r for r in res]+['    </Resources>']
-xml+=T("normal",FACE_NAME,theme["n"])+T("AOD",FACE_NAME,theme["a"]+theme["a_bat"]+theme["a_bt"])   # один стиль; віджет — лише слотом; AOD — батарея сірим
+xml+=T("normal",FACE_NAME,theme["n"])+T("AOD",FACE_NAME,theme["a"]+theme["a_slot"]+theme["a_bt"])   # один стиль; віджет — лише слотом; в AOD — свій сірий слот
 xml+=['</Watchface>']
 open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n")
 print("ok", len(res), "resources")

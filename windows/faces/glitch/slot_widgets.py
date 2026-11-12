@@ -147,7 +147,7 @@ tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 # Один стиль: усе вибирається лише слотом (батарея — перша, типова). AOD показує батарею сірим.
-theme.update({"a_bat": [], "a_wx": [], "a_dist": [], "a_bt": []})
+theme.update({"a_slot": [], "a_bt": []})
 res.append('<Slot name="slot_top" type="widget">')
 for w in ["w_battery", "w_weather", "w_distance"]: res.append('    <Item ref="@%s"/>' % w)
 res.append('</Slot>')
@@ -177,13 +177,13 @@ tw2 = math.ceil(FV.getlength("°") / K) + 2
 dga = Image.new("RGBA", (tw2 * K, HV * K), (0, 0, 0, 0)); dga.paste(Image.new("RGBA", dga.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw2, "left")); image("f_deg_a", down(dga))
 number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "left", False, SPV)
 r = row("r_weather_a", ["wx_t_a", "f_deg_a", "v_wx_a"])        # той самий рядок, що й на звичайному екрані — значок і текст на тих самих місцях
-lay("a_wx", r[0], r[1], r[2])
+R_WX_A = r
 array("bt_cover_a", [bt_cover(((G2, 0),), G2), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover_a", "systemStatusBluetooth", "bt_cover_a", [0, 1])
 lay("a_bt", "v_bt_cover_a", BX0, BY0)
 
 # AOD «Батарея»: та сама батарея, сіра (елементи batt_a / bat_a з make.py), на тому ж місці, що у віджеті
-for ref, x, y in BATT_ITEMS: lay("a_bat", ref[:-1] + "a", x, y)
+BATT_ITEMS_A = [(ref[:-1] + "a", x, y) for ref, x, y in BATT_ITEMS]
 
 # AOD «Відстань»: «5.43 км» + маршрут, сірим, той самий рядок, що й на звичайному екрані
 def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
@@ -203,4 +203,11 @@ def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None
 plain_img_gray("f_km_a", TXT[LANGV]["km"], i_route)
 number("dist_a", "healthStepKiloMeter", "dig_val_a", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
 r = row("r_distance_a", ["dist_a", "f_km_a"])
-lay("a_dist", r[0], r[1], r[2])
+# AOD: окремий сірий слот з тими самими віджетами в тому ж порядку — перевіряємо, чи браслет показує в AOD вибране на основному екрані
+widget("w_battery_a", WNAME[0], BATT_ITEMS_A)
+widget("w_weather_a", WNAME[1], [R_WX_A])
+widget("w_distance_a", WNAME[2], [r])
+res.append('<Slot name="slot_top_a" type="widget">')
+for w in ["w_battery_a", "w_weather_a", "w_distance_a"]: res.append('    <Item ref="@%s"/>' % w)
+res.append('</Slot>')
+lay("a_slot", "slot_top_a", WX, WY)
