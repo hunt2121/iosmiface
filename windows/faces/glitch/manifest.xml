@@ -228,7 +228,7 @@
             <Image src="dig_sec/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="sec" source="timeSecond" ref="@dig_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Image name="lab_steps_n" src="lab_steps_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="ico_steps_n" src="ico_steps_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="dig_ssteps_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_ssteps_n/0.png"/>
             <Image src="dig_ssteps_n/1.png"/>
@@ -241,8 +241,8 @@
             <Image src="dig_ssteps_n/8.png"/>
             <Image src="dig_ssteps_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_ssteps_n" totalDigits="5" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Image name="lab_pulse_n" src="lab_pulse_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_ssteps_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_n"/>
+        <Image name="ico_pulse_n" src="ico_pulse_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="dig_spulse_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_spulse_n/0.png"/>
             <Image src="dig_spulse_n/1.png"/>
@@ -255,8 +255,8 @@
             <Image src="dig_spulse_n/8.png"/>
             <Image src="dig_spulse_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="pulse_n" source="healthHeartRate" ref="@dig_spulse_n" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <Image name="lab_steps_a" src="lab_steps_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="pulse_n" source="healthHeartRate" ref="@dig_spulse_n" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_pulse_n"/>
+        <Image name="ico_steps_a" src="ico_steps_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="dig_ssteps_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="dig_ssteps_a/0.png"/>
             <Image src="dig_ssteps_a/1.png"/>
@@ -269,7 +269,7 @@
             <Image src="dig_ssteps_a/8.png"/>
             <Image src="dig_ssteps_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
     </Resources>
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
@@ -282,10 +282,8 @@
         <Layout ref="@bat_n" x="107" y="89"/>
         <Layout ref="@bt_n" x="21" y="86"/>
         <Layout ref="@sec" x="84" y="368"/>
-        <Layout ref="@lab_steps_n" x="54" y="428"/>
-        <Layout ref="@steps_n" x="114" y="428"/>
-        <Layout ref="@lab_pulse_n" x="64" y="454"/>
-        <Layout ref="@pulse_n" x="126" y="454"/>
+        <Layout ref="@steps_n" x="106" y="428"/>
+        <Layout ref="@pulse_n" x="106" y="454"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
@@ -297,7 +295,6 @@
         <Layout ref="@batt_a" x="63" y="91"/>
         <Layout ref="@bat_a" x="107" y="89"/>
         <Layout ref="@bt_a" x="21" y="86"/>
-        <Layout ref="@lab_steps_a" x="54" y="421"/>
-        <Layout ref="@steps_a" x="114" y="421"/>
+        <Layout ref="@steps_a" x="106" y="421"/>
     </Theme>
 </Watchface>

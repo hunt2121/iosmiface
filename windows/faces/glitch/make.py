@@ -134,15 +134,30 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),CYN,CYN),("a",((G2,0),),G2,G2
 fs=BOLD(33); ds,cw=digit_set(fs,PNK,44); array("dig_sec",ds)
 number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw,390-22)
 
-# ── кроки й пульс
-def labeled(t,name,label,src,digits,col,cy,n_typ):
-    f=SEMI(15.5); lab=image("lab_"+name,text_img(label,f,col,h=SH)); cw=small(col,"s"+name)
-    number(name,src,"dig_s"+name,digits,"left",False)
-    total=lab.width+n_typ*cw; x=106-total/2
-    lay(t,"lab_"+name,x,cy-SH/2); lay(t,name,x+lab.width,cy-SH/2)
-labeled("n","steps_n","КРОКИ ","healthStepCount",5,CYN,440,4)
-labeled("n","pulse_n","ПУЛЬС ","healthHeartRate",3,PNK,466,2)
-labeled("a","steps_a","КРОКИ ","healthStepCount",5,G2,433.3,4)
+# ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
+def icon_steps(cols):
+    im=Image.new("RGBA",(26*K,SH*K),(0,0,0,0)); d=ImageDraw.Draw(im); cy=SH/2
+    for col,dx in cols:
+        for fx,fy,s in ((12,cy+2.5,1),(19,cy-2.5,1)):   # два сліди: підошва + п'ята
+            x=fx+dx
+            d.ellipse([(x-3)*K,(fy-6.5)*K,(x+3)*K,(fy+2.5)*K],fill=col)
+            d.ellipse([(x-2.3)*K,(fy+3.5)*K,(x+2.3)*K,(fy+7)*K],fill=col)
+    return down(im)
+def icon_heart(cols):
+    im=Image.new("RGBA",(26*K,SH*K),(0,0,0,0)); d=ImageDraw.Draw(im); cy=SH/2
+    for col,dx in cols:
+        x=16+dx; r=4.2
+        d.ellipse([(x-8.4)*K,(cy-6.5)*K,(x)*K,(cy+1.9)*K],fill=col); d.ellipse([(x)*K,(cy-6.5)*K,(x+8.4)*K,(cy+1.9)*K],fill=col)
+        d.polygon([((x-8.1)*K,(cy-1.2)*K),((x+8.1)*K,(cy-1.2)*K),(x*K,(cy+7.5)*K)],fill=col)
+    return down(im)
+def centered(t,name,src,digits,col,cy,icon):
+    image("ico_"+name,icon); small(col,"s"+name)
+    number(name,src,"dig_s"+name,digits,"center",False,0,"ico_"+name)
+    lay(t,name,106,cy-SH/2)            # для align=center x — середина рядка
+GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
+centered("n","steps_n","healthStepCount",5,CYN,440,icon_steps(GLC))
+centered("n","pulse_n","healthHeartRate",3,PNK,466,icon_heart(GLP))
+centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
 
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470552" name="Глітч">','    <Resources>']
 xml+=["        "+r for r in res]+['    </Resources>','    <Theme type="normal" name="Глітч" bgColor="#000000">']
