@@ -123,7 +123,7 @@ def plain_img(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
     return image(name, down(im))
 
 YV = SLOT_Y - HV / 2             # верх рядка значень на екрані
-WNAME = {"ua": ("Батарея", "Погода", "Відстань"), "ru": ("Заряд", "Погода", "Расстояние")}.get(LANGV, ("Battery", "Weather", "Distance"))   # назви в меню вибору (як в офіційних)
+WNAME = {"ua": ("Батарея", "Погода", "Відстань", "Нічого"), "ru": ("Заряд", "Погода", "Расстояние", "Ничего")}.get(LANGV, ("Battery", "Weather", "Distance", "None"))   # назви в меню вибору (як в офіційних)
 
 # 1. Погода: «14°» + значок погоди
 deg = deg_img("u_deg")            # для AOD (там число з unitIcon)
@@ -148,8 +148,11 @@ XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 # Один стиль: усе вибирається лише слотом (батарея — перша, типова). AOD показує батарею сірим.
 theme.update({"a_slot": [], "a_bt": []})
+# «Нічого» — порожній віджет (одна прозора крапка, бо віджет без елементів може не прийнятися)
+image("f_none", Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
+widget("w_none", WNAME[3], [("f_none", WX + 106, WY + WH // 2)])
 res.append('<Slot name="slot_top" type="widget">')
-for w in ["w_battery", "w_weather", "w_distance"]: res.append('    <Item ref="@%s"/>' % w)
+for w in ["w_battery", "w_weather", "w_distance", "w_none"]: res.append('    <Item ref="@%s"/>' % w)
 res.append('</Slot>')
 lay("n", "slot_top", WX, WY)
 

@@ -369,10 +369,15 @@
         <Widget name="w_distance" widgetName="Distance" groupType="general" w="212" h="96">
             <Item ref="@r_distance" x="0" y="28"/>
         </Widget>
+        <Image name="f_none" src="f_none.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Widget name="w_none" widgetName="None" groupType="general" w="212" h="96">
+            <Item ref="@f_none" x="106" y="48"/>
+        </Widget>
         <Slot name="slot_top" type="widget">
             <Item ref="@w_battery"/>
             <Item ref="@w_weather"/>
             <Item ref="@w_distance"/>
+            <Item ref="@w_none"/>
         </Slot>
         <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="bt_cover/0.png"/>
