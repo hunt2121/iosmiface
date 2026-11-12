@@ -156,17 +156,9 @@ namespace BandFace.Creator
             };
             var sp = new StackPanel { Width = big ? 170 : 150 };
             sp.Children.Add(capsule);
-            sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 10, 0, 0) });
+            sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, big ? 14 : 10, 0, 0) });
             sp.Children.Add(new TextBlock { Text = p.Meta.Modified.ToLocalTime().ToString("g"), FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextAlignment = TextAlignment.Center });
-            if (big)
-            {
-                // кнопка під превʼю — те саме, що «Встановити на пристрій» у меню картки
-                var inst = new Button { Content = S.Get(installedIds.Contains(p.Root.Str("id") ?? "") ? "reinstallShort" : "installShort"), Style = (Style)FindResource("Btn"), Height = 34, Width = iw + 6, Margin = new Thickness(0, 12, 0, 0) };
-                inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
-                inst.MouseLeftButtonUp += (s, e) => e.Handled = true;
-                sp.Children.Add(inst);
-            }
-            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 14, 14), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
+            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = big ? new Thickness(0) : new Thickness(0, 0, 14, 14), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
             card.MouseLeftButtonUp += (s, e) => OpenProject(p);
             var menu = new ContextMenu();
             Ui.MenuAdd(menu, S.Get("open"), "\uE8E5", () => OpenProject(p));
@@ -197,7 +189,14 @@ namespace BandFace.Creator
                 }
                 catch (Exception) { }
             }), DispatcherPriority.Background);
-            return card;
+            if (!big) return card;
+            // нова схема: кнопка встановлення — окремо, одразу під карткою на всю її ширину
+            var inst = new Button { Content = S.Get(installedIds.Contains(p.Root.Str("id") ?? "") ? "reinstallShort" : "installShort"), Style = (Style)FindResource("Btn"), Height = 36, Margin = new Thickness(0, 8, 0, 0) };
+            inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
+            var wrap = new StackPanel { Margin = new Thickness(0, 0, 14, 14) };
+            wrap.Children.Add(card);
+            wrap.Children.Add(inst);
+            return wrap;
         }
 
         void New_Click(object sender, RoutedEventArgs e) => OpenProject(store.Create(S.Get("newFaceName"), DeviceProfile.Band10));
