@@ -162,8 +162,8 @@ def centered(t,name,src,digits,col,cy,icon):
     number(name,src,"dig_s"+name,digits,"center",False,0,"ico_"+name)
     lay(t,name,106,cy-SH/2)            # для align=center x — середина рядка
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
-centered("n","steps_n","healthStepCount",5,CYN,436,icon_steps(GLC))
-centered("n","pulse_n","healthHeartRate",3,PNK,472,icon_heart(GLP))
+centered("n","steps_n","healthStepCount",5,CYN,448,icon_steps(GLC))
+centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP))
 centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)))
 
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470552" name="Глітч">','    <Resources>']

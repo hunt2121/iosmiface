@@ -282,8 +282,8 @@
         <Layout ref="@bat_n" x="107" y="86"/>
         <Layout ref="@bt_n" x="6" y="82"/>
         <Layout ref="@sec" x="78" y="362"/>
-        <Layout ref="@steps_n" x="106" y="421"/>
-        <Layout ref="@pulse_n" x="106" y="457"/>
+        <Layout ref="@steps_n" x="106" y="433"/>
+        <Layout ref="@pulse_n" x="106" y="467"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>
