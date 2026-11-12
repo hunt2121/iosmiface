@@ -213,6 +213,7 @@ namespace BandFace.Creator
                 var meta = ReadMeta(folder);
                 var files = ReadFiles(folder);
                 var p = new FaceProject(Path.GetFileName(folder), folder, root, files, meta);
+                AodDim.MarkFromOrder(p);   // шари вище за приглушення (з .bin або старих проєктів) лишаються над ним
                 p.MarkSaved();
                 return p;
             }

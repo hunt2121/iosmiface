@@ -11,7 +11,7 @@ FACE_ID={"ua":"318470570","ru":"318470571","en":"318470572","en12":"318470573"}[
 SA=os.environ.get("SA_FRAMES","/tmp/claude-0/-home-claude/db6005de-023b-57f2-8d4f-7e2b4fccd61e/scratchpad/sa_out2")
 H12=LANGV=="en12"
 W,H=212,520; K=4
-WH=(255,255,255); DIM=(150,150,155); GHOST=(50,50,50)
+WH=(255,255,255); DIM=(150,150,155); GHOST=(40,40,40)
 FD="/usr/share/fonts/opentype/inter/"
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
 TXT={"ua":("СТИКУВАННЯ · У НОРМІ","ЗВ'ЯЗОК ВТРАЧЕНО",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
