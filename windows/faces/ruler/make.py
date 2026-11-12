@@ -3,12 +3,13 @@
 from PIL import Image, ImageDraw, ImageFont
 import os, math, shutil
 HERE=os.path.dirname(os.path.abspath(__file__))
-LANGV=os.environ.get("LANGV","ua")      # ua / ru / en
+LANGV=os.environ.get("LANGV","ua")      # ua / ru / en / en12 (англійська, 12 год з AM/PM)
 DEST=os.environ.get("FACE_DEST") or (HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"ruler-"+LANGV))
 OUT=os.path.join(DEST,"files")
-FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler")}[LANGV]
-MINW={"ua":"ХВ","ru":"МИН","en":"MIN"}[LANGV]
-DATE_DX={"ua":0,"ru":1,"en":-1}[LANGV]   # поправка, щоб дата стояла по центру осі x=61 (виміряно на всіх днях тижня)
+FACE_ID,FACE_NAME={"ua":("318470560","Лінійка"),"ru":("318470561","Линейка"),"en":("318470562","Ruler"),"en12":("318470563","Ruler 12h")}[LANGV]
+H12=LANGV=="en12"; AMPM_DX=0
+MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
+DATE_DX={"ua":0,"ru":1,"en":-1,"en12":-1}[LANGV]   # поправка, щоб дата стояла по центру осі x=61 (виміряно на всіх днях тижня)
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
 OR=(255,95,31); WH=(255,255,255); GY=(150,150,155); LG=(170,170,175); DT=(90,90,95)
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
@@ -64,7 +65,7 @@ def pointer(m,dim):
     im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH; c=(115,115,115) if dim else OR
     d.line([18*K,y*K,196*K,y*K],fill=c,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=c)
     return down(im)
-WEEK={"ua":["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"ru":["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"en":["SUN","MON","TUE","WED","THU","FRI","SAT"]}[LANGV]   # dateWeek: 0 — неділя
+WEEK={"ua":["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"ru":["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"en":["SUN","MON","TUE","WED","THU","FRI","SAT"],"en12":["SUN","MON","TUE","WED","THU","FRI","SAT"]}[LANGV]   # dateWeek: 0 — неділя
 for t,dim in (("n",False),("a",True)):
     if not dim:
         # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
@@ -80,7 +81,7 @@ for t,dim in (("n",False),("a",True)):
             d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
         for j in range(24):
             psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
-            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
+            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),("%d"%((j+11)%12+1)) if H12 else "%02d"%j,font=fl,fill=cL,anchor="mm")
             tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
             im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
         image("dial_"+t,down(im))
@@ -97,7 +98,9 @@ for t,dim in (("n",False),("a",True)):
             al=min(1.0,(8-abs(i))/3)                    # три крайні поділки з кожного боку плавно гаснуть
             d.line([(p0[0]*K,p0[1]*K),(p1[0]*K,p1[1]*K)],fill=(80,80,80,round(255*al)),width=K)
         image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-HA)
-        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
+        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30)
+        if H12: number("hr_a","timeHour12H","hr_a",2,"center",False); lay(t,"hr_a",136,MID-15)   # 12 год: без нуля попереду, по центру
+        else: number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
     cP=(115,115,115) if dim else OR
     # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
     im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
@@ -107,7 +110,15 @@ for t,dim in (("n",False),("a",True)):
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
     image("xv_"+t,text_img(MINW,F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2-(0.5 if LANGV=="ru" else 0),MID+15-12+3)
     if t=="n":
-        fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
+        fs=F("Medium",28)
+        if H12:   # 12 год: замість секунд — AM/PM того самого розміру й на тому самому місці (лише на звичайному екрані)
+            AW=60
+            def vis_center(x):   # картинка AW×36, видима середина напису — рівно в пікселі 30 (на осі x=61)
+                im=text_img(x,fs,GY,w=AW,h=36); a=im.getchannel("A").point(lambda v:255 if v>40 else 0); b=a.getbbox()
+                dx=30-(b[0]+b[2]-1)/2; dx=math.floor(dx) if dx!=int(dx) else int(dx)   # пів пікселя — ліворуч
+                out=Image.new("RGBA",im.size,(0,0,0,0)); out.alpha_composite(im,(int(dx),0)) if dx>=0 else out.alpha_composite(im.crop((-int(dx),0,im.width,im.height)),(0,0)); return out
+            array("ampm",[vis_center(x) for x in ("AM","PM")]); values("ampm","miscIsPM","ampm",[0,1]); lay("n","v_ampm",61-30,MID+48-18+10)
+        else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
     ww=math.ceil(max(fd.getlength(w+" ") for w in WEEK)/K)+1
