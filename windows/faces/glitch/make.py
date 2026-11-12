@@ -97,7 +97,11 @@ WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]   # dateWeek: 0 — не
 for t,col in (("n",CYN),("a",G2)):
     f=SEMI(TS); cw=small(col,"c"+t)
     ww=math.ceil(max(f.getlength("// %s_"%w) for w in WEEK)/K)+1
-    array("week_"+t,[text_img("// %s_"%w,f,col,w=ww,align="right",h=SH) for w in WEEK])
+    # ПН і НД — притиснуті до числа; ВТ, СР, ЧТ, ПТ, СБ — ще на 1 px праворуч (картинки на 1 px ширші, лівий край спільний)
+    def wimg(w):
+        im=text_img("// %s_"%w,f,col,w=ww,align="right",h=SH); out=Image.new("RGBA",(ww+1,im.height),(0,0,0,0))
+        out.paste(im,(0 if w in ("ПН","НД") else 1,0)); return out
+    array("week_"+t,[wimg(w) for w in WEEK])
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
     total=ww+2*cw+dw+2*cw; x=106-total/2-3; y=50-SH/2
