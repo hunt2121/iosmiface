@@ -154,10 +154,10 @@
         <Layout ref="@ptr_n" x="0" y="248"/>
         <Layout ref="@min_n" x="15" y="178"/>
         <Layout ref="@xv_n" x="46" y="266"/>
-        <Layout ref="@sec" x="43" y="300"/>
+        <Layout ref="@sec" x="42" y="300"/>
         <Layout ref="@v_wk_n" x="16" y="73"/>
         <Layout ref="@day_n" x="66" y="73"/>
-        <Layout ref="@st_n" x="60" y="413"/>
+        <Layout ref="@st_n" x="61" y="413"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@ruler_a" x="0" y="170"/>
@@ -167,6 +167,6 @@
         <Layout ref="@xv_a" x="46" y="266"/>
         <Layout ref="@v_wk_a" x="16" y="73"/>
         <Layout ref="@day_a" x="66" y="73"/>
-        <Layout ref="@st_a" x="60" y="413"/>
+        <Layout ref="@st_a" x="61" y="413"/>
     </Theme>
 </Watchface>
