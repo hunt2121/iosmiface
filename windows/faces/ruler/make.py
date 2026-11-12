@@ -44,7 +44,7 @@ def strip(Hh,dim):
     return down(im)
 PY0,PH=MID-40,80               # область кадрів риски
 def pointer(m,dim):
-    im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH; c=(140,70,30) if dim else OR
+    im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH; c=(120,120,120) if dim else OR
     d.line([18*K,y*K,196*K,y*K],fill=c,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=c)
     return down(im)
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
@@ -58,12 +58,12 @@ for t,dim in (("n",False),("a",True)):
         for i in range(-6,7):
             y=60+i*PXH/6; big=i%6==0
             d.line([((160 if big else 176))*K,y*K,194*K,y*K],fill=(80,80,80),width=(3 if big else 1)*K)
-        d.line([18*K,60*K,196*K,60*K],fill=(140,70,30),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(140,70,30))
+        d.line([18*K,60*K,196*K,60*K],fill=(130,130,130),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(130,130,130))
         image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
         ch=digits("hr_a",F("SemiBold",24),(120,120,120),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(170,170,170) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40)
-    image("xv_"+t,text_img("ХВ",F("Bold",18,False),(140,70,30) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+13-12)
+    image("xv_"+t,text_img("ХВ",F("Bold",18,False),(120,120,120) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+13-12)
     if t=="n":
         fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18)
     # дата «ЧТ 12»
@@ -73,7 +73,7 @@ for t,dim in (("n",False),("a",True)):
     cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"left",False)
     x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
-    cst=digits("st_"+t,fd,(140,70,30) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,60,440-17)
+    cst=digits("st_"+t,fd,(120,120,120) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,60,440-17)
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
      '    <Theme type="normal" name="Лінійка" bgColor="#0E0E10">']+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
 open(os.path.join(HERE,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
