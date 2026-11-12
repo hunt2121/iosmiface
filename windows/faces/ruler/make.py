@@ -49,8 +49,18 @@ def pointer(m,dim):
     return down(im)
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
-    array("strip_"+t,[strip(h,dim) for h in range(24)]); values("strip_"+t,"timeHour","strip_"+t,range(24)); lay(t,"v_strip_"+t,SX0,0)
-    array("ptr_"+t,[pointer(m,dim) for m in range(60)]); values("ptr_"+t,"timeMinute","ptr_"+t,range(60)); lay(t,"v_ptr_"+t,0,PY0)
+    if t=="n":
+        array("strip_"+t,[strip(h,dim) for h in range(24)]); values("strip_"+t,"timeHour","strip_"+t,range(24)); lay(t,"v_strip_"+t,SX0,0)
+        array("ptr_"+t,[pointer(m,dim) for m in range(60)]); values("ptr_"+t,"timeMinute","ptr_"+t,range(60)); lay(t,"v_ptr_"+t,0,PY0)
+    else:
+        # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
+        im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+        for i in range(-6,7):
+            y=60+i*PXH/6; big=i%6==0
+            d.line([((160 if big else 176))*K,y*K,194*K,y*K],fill=(80,80,80),width=(3 if big else 1)*K)
+        d.line([18*K,60*K,196*K,60*K],fill=(140,70,30),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(140,70,30))
+        image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
+        ch=digits("hr_a",F("SemiBold",24),(120,120,120),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(170,170,170) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40)
     image("xv_"+t,text_img("ХВ",F("Bold",18,False),(140,70,30) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+13-12)

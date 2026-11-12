@@ -248,182 +248,20 @@
             <Image src="st_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="st_n" source="healthStepCount" ref="@st_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="strip_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="strip_a/0.png"/>
-            <Image src="strip_a/1.png"/>
-            <Image src="strip_a/2.png"/>
-            <Image src="strip_a/3.png"/>
-            <Image src="strip_a/4.png"/>
-            <Image src="strip_a/5.png"/>
-            <Image src="strip_a/6.png"/>
-            <Image src="strip_a/7.png"/>
-            <Image src="strip_a/8.png"/>
-            <Image src="strip_a/9.png"/>
-            <Image src="strip_a/10.png"/>
-            <Image src="strip_a/11.png"/>
-            <Image src="strip_a/12.png"/>
-            <Image src="strip_a/13.png"/>
-            <Image src="strip_a/14.png"/>
-            <Image src="strip_a/15.png"/>
-            <Image src="strip_a/16.png"/>
-            <Image src="strip_a/17.png"/>
-            <Image src="strip_a/18.png"/>
-            <Image src="strip_a/19.png"/>
-            <Image src="strip_a/20.png"/>
-            <Image src="strip_a/21.png"/>
-            <Image src="strip_a/22.png"/>
-            <Image src="strip_a/23.png"/>
+        <Image name="ruler_a" src="ruler_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="hr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="hr_a/0.png"/>
+            <Image src="hr_a/1.png"/>
+            <Image src="hr_a/2.png"/>
+            <Image src="hr_a/3.png"/>
+            <Image src="hr_a/4.png"/>
+            <Image src="hr_a/5.png"/>
+            <Image src="hr_a/6.png"/>
+            <Image src="hr_a/7.png"/>
+            <Image src="hr_a/8.png"/>
+            <Image src="hr_a/9.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_strip_a" source="timeHour" ref="@strip_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-            <Param value="7"/>
-            <Param value="8"/>
-            <Param value="9"/>
-            <Param value="10"/>
-            <Param value="11"/>
-            <Param value="12"/>
-            <Param value="13"/>
-            <Param value="14"/>
-            <Param value="15"/>
-            <Param value="16"/>
-            <Param value="17"/>
-            <Param value="18"/>
-            <Param value="19"/>
-            <Param value="20"/>
-            <Param value="21"/>
-            <Param value="22"/>
-            <Param value="23"/>
-        </DataItemImageValues>
-        <ImageArray name="ptr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="ptr_a/0.png"/>
-            <Image src="ptr_a/1.png"/>
-            <Image src="ptr_a/2.png"/>
-            <Image src="ptr_a/3.png"/>
-            <Image src="ptr_a/4.png"/>
-            <Image src="ptr_a/5.png"/>
-            <Image src="ptr_a/6.png"/>
-            <Image src="ptr_a/7.png"/>
-            <Image src="ptr_a/8.png"/>
-            <Image src="ptr_a/9.png"/>
-            <Image src="ptr_a/10.png"/>
-            <Image src="ptr_a/11.png"/>
-            <Image src="ptr_a/12.png"/>
-            <Image src="ptr_a/13.png"/>
-            <Image src="ptr_a/14.png"/>
-            <Image src="ptr_a/15.png"/>
-            <Image src="ptr_a/16.png"/>
-            <Image src="ptr_a/17.png"/>
-            <Image src="ptr_a/18.png"/>
-            <Image src="ptr_a/19.png"/>
-            <Image src="ptr_a/20.png"/>
-            <Image src="ptr_a/21.png"/>
-            <Image src="ptr_a/22.png"/>
-            <Image src="ptr_a/23.png"/>
-            <Image src="ptr_a/24.png"/>
-            <Image src="ptr_a/25.png"/>
-            <Image src="ptr_a/26.png"/>
-            <Image src="ptr_a/27.png"/>
-            <Image src="ptr_a/28.png"/>
-            <Image src="ptr_a/29.png"/>
-            <Image src="ptr_a/30.png"/>
-            <Image src="ptr_a/31.png"/>
-            <Image src="ptr_a/32.png"/>
-            <Image src="ptr_a/33.png"/>
-            <Image src="ptr_a/34.png"/>
-            <Image src="ptr_a/35.png"/>
-            <Image src="ptr_a/36.png"/>
-            <Image src="ptr_a/37.png"/>
-            <Image src="ptr_a/38.png"/>
-            <Image src="ptr_a/39.png"/>
-            <Image src="ptr_a/40.png"/>
-            <Image src="ptr_a/41.png"/>
-            <Image src="ptr_a/42.png"/>
-            <Image src="ptr_a/43.png"/>
-            <Image src="ptr_a/44.png"/>
-            <Image src="ptr_a/45.png"/>
-            <Image src="ptr_a/46.png"/>
-            <Image src="ptr_a/47.png"/>
-            <Image src="ptr_a/48.png"/>
-            <Image src="ptr_a/49.png"/>
-            <Image src="ptr_a/50.png"/>
-            <Image src="ptr_a/51.png"/>
-            <Image src="ptr_a/52.png"/>
-            <Image src="ptr_a/53.png"/>
-            <Image src="ptr_a/54.png"/>
-            <Image src="ptr_a/55.png"/>
-            <Image src="ptr_a/56.png"/>
-            <Image src="ptr_a/57.png"/>
-            <Image src="ptr_a/58.png"/>
-            <Image src="ptr_a/59.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_ptr_a" source="timeMinute" ref="@ptr_a" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-            <Param value="7"/>
-            <Param value="8"/>
-            <Param value="9"/>
-            <Param value="10"/>
-            <Param value="11"/>
-            <Param value="12"/>
-            <Param value="13"/>
-            <Param value="14"/>
-            <Param value="15"/>
-            <Param value="16"/>
-            <Param value="17"/>
-            <Param value="18"/>
-            <Param value="19"/>
-            <Param value="20"/>
-            <Param value="21"/>
-            <Param value="22"/>
-            <Param value="23"/>
-            <Param value="24"/>
-            <Param value="25"/>
-            <Param value="26"/>
-            <Param value="27"/>
-            <Param value="28"/>
-            <Param value="29"/>
-            <Param value="30"/>
-            <Param value="31"/>
-            <Param value="32"/>
-            <Param value="33"/>
-            <Param value="34"/>
-            <Param value="35"/>
-            <Param value="36"/>
-            <Param value="37"/>
-            <Param value="38"/>
-            <Param value="39"/>
-            <Param value="40"/>
-            <Param value="41"/>
-            <Param value="42"/>
-            <Param value="43"/>
-            <Param value="44"/>
-            <Param value="45"/>
-            <Param value="46"/>
-            <Param value="47"/>
-            <Param value="48"/>
-            <Param value="49"/>
-            <Param value="50"/>
-            <Param value="51"/>
-            <Param value="52"/>
-            <Param value="53"/>
-            <Param value="54"/>
-            <Param value="55"/>
-            <Param value="56"/>
-            <Param value="57"/>
-            <Param value="58"/>
-            <Param value="59"/>
-        </DataItemImageValues>
+        <DataItemImageNumber name="hr_a" source="timeHour" ref="@hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="min_a/0.png"/>
             <Image src="min_a/1.png"/>
@@ -494,8 +332,8 @@
         <Layout ref="@st_n" x="60" y="423"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
-        <Layout ref="@v_strip_a" x="110" y="0"/>
-        <Layout ref="@v_ptr_a" x="0" y="220"/>
+        <Layout ref="@ruler_a" x="0" y="200"/>
+        <Layout ref="@hr_a" x="120" y="223"/>
         <Layout ref="@min_a" x="15" y="176"/>
         <Layout ref="@xv_a" x="48" y="261"/>
         <Layout ref="@v_wk_a" x="16" y="73"/>
