@@ -134,12 +134,15 @@ for t,dim in (("n",False),("a",True)):
     cd=digits("day_"+t,fd,col,34); number("day_"+t,"dateDay","day_"+t,2,"center",False)
     db=Image.open(os.path.join(OUT,"d_day_%s"%t,"1.png")).getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
     lay(t,"day_"+t,DCX+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
+    if t=="n":   # стиль 2 (як раніше): дата на осі x=61, верх за 80 px від краю
+        ST2={"v_wk_n":(26,80-wb[1]),"day_n":(61,80+(wb[3]-wb[1])+DLGAP-db[1])}
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")
     if SI=="right":
         image("stic_"+t,soles_icon((115,115,115) if dim else OR,5,34,6))   # підошви праворуч, 5 px від цифр
-        number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,STX,440-17-10+STDY)   # кроки з підошвами — разом по центру осі x=61
+        number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,STX,440-17-10+STDY)
+        if t=="n": ST2["st_n"]=(60,440-17-10)   # стиль 2: кроки на осі x=61, низ за 80 px від краю   # кроки з підошвами — разом по центру осі x=61
     else:
         ic=soles_icon((115,115,115) if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
         # блок «значок + число» від низу екрана — 80 px, як дата від верху; значок над або під числом
@@ -150,6 +153,17 @@ for t,dim in (("n",False),("a",True)):
         lay(t,"stic_"+t,math.floor(61.5-ic.width/2),iy)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
+# Два стилі: головний (перший) — дата й кроки на лівій осі x=61, 80 px від країв (як раніше);
+# другий — дата й кроки по центру екрана, 45 px від країв. Вибираються на браслеті як стилі циферблата.
+import re as _re
+theme["n2"]=[]
+for l in theme["n"]:
+    r=_re.search(r'ref="@([^"]+)"',l).group(1)
+    theme["n2"].append('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r][0]),round(ST2[r][1])) if r in ST2 else l)
+# AOD — під головний стиль (дата й кроки на лівій осі)
+theme["a"]=[('<Layout ref="@%s" x="%d" y="%d"/>'%(r,round(ST2[r[:-1]+"n"][0]),round(ST2[r[:-1]+"n"][1])) if (r[:-1]+"n") in ST2 and r.endswith("_a") else l)
+            for l in theme["a"] for r in [_re.search(r'ref="@([^"]+)"',l).group(1)]]
+STYLE2={"ua":"Лінійка 2","ru":"Линейка 2","en":"Ruler 2","en12":"Ruler 12h 2"}[LANGV]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME)+'','    <Resources>']+["        "+r for r in res]+['    </Resources>',
-     '    <Theme type="normal" name="%s" bgColor="#000000">'%FACE_NAME]+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
+     '    <Theme type="normal" name="%s" bgColor="#000000">'%FACE_NAME]+["        "+l for l in theme["n2"]]+['    </Theme>','    <Theme type="normal" name="%s" bgColor="#000000">'%STYLE2]+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
 os.makedirs(DEST,exist_ok=True); open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))
