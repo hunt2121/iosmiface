@@ -17,6 +17,7 @@ def array(n,ims):
     for i,im in enumerate(ims): res.append('    <Image src="%s"/>'%save(im,"%s/%d.png"%(n,i)))
     res.append('</ImageArray>')
 def number(n,src,arr,digits,align="left",lz=True,space=0):
+    arr="d_"+arr        # набори цифр — з префіксом d_, щоб назви не збігалися з числами
     res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="0" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="%d"/>'%(n,src,arr,digits,align,"true" if lz else "false",space))
 def values(n,src,arr,ps):
     res.append('<DataItemImageValues name="v_%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(n,src,arr))
@@ -29,7 +30,7 @@ def text_img(s,f,col,w=None,h=40,align="center"):
     ImageDraw.Draw(im).text((x,h*K/2-cc),s,font=f,fill=col,features=["tnum"]); return down(im)
 def digits(n,f,col,h):
     cw=math.ceil(max(f.getlength(str(i),features=["tnum"]) for i in range(10))/K)
-    array(n,[text_img(str(i),f,col,w=cw,h=h) for i in range(10)]); return cw
+    array("d_"+n,[text_img(str(i),f,col,w=cw,h=h) for i in range(10)]); return cw
 
 MID=260; PXH=64; SX0=110      # центр шкали, пікселів на годину, лівий край смуги шкали
 def strip(Hh,dim):
@@ -74,6 +75,8 @@ for t,dim in (("n",False),("a",True)):
     x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34); number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,60,440-17)
+names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
+assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
      '    <Theme type="normal" name="Лінійка" bgColor="#0E0E10">']+["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']+["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
 open(os.path.join(HERE,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n"); print("ok",len(res))

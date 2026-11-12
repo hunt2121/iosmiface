@@ -177,33 +177,33 @@
             <Param value="58"/>
             <Param value="59"/>
         </DataItemImageValues>
-        <ImageArray name="min_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="min_n/0.png"/>
-            <Image src="min_n/1.png"/>
-            <Image src="min_n/2.png"/>
-            <Image src="min_n/3.png"/>
-            <Image src="min_n/4.png"/>
-            <Image src="min_n/5.png"/>
-            <Image src="min_n/6.png"/>
-            <Image src="min_n/7.png"/>
-            <Image src="min_n/8.png"/>
-            <Image src="min_n/9.png"/>
+        <ImageArray name="d_min_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_min_n/0.png"/>
+            <Image src="d_min_n/1.png"/>
+            <Image src="d_min_n/2.png"/>
+            <Image src="d_min_n/3.png"/>
+            <Image src="d_min_n/4.png"/>
+            <Image src="d_min_n/5.png"/>
+            <Image src="d_min_n/6.png"/>
+            <Image src="d_min_n/7.png"/>
+            <Image src="d_min_n/8.png"/>
+            <Image src="d_min_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="min_n" source="timeMinute" ref="@min_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="min_n" source="timeMinute" ref="@d_min_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="xv_n" src="xv_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="sec/0.png"/>
-            <Image src="sec/1.png"/>
-            <Image src="sec/2.png"/>
-            <Image src="sec/3.png"/>
-            <Image src="sec/4.png"/>
-            <Image src="sec/5.png"/>
-            <Image src="sec/6.png"/>
-            <Image src="sec/7.png"/>
-            <Image src="sec/8.png"/>
-            <Image src="sec/9.png"/>
+        <ImageArray name="d_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_sec/0.png"/>
+            <Image src="d_sec/1.png"/>
+            <Image src="d_sec/2.png"/>
+            <Image src="d_sec/3.png"/>
+            <Image src="d_sec/4.png"/>
+            <Image src="d_sec/5.png"/>
+            <Image src="d_sec/6.png"/>
+            <Image src="d_sec/7.png"/>
+            <Image src="d_sec/8.png"/>
+            <Image src="d_sec/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="sec" source="timeSecond" ref="@sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="sec" source="timeSecond" ref="@d_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="wk_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="wk_n/0.png"/>
             <Image src="wk_n/1.png"/>
@@ -222,59 +222,59 @@
             <Param value="5"/>
             <Param value="6"/>
         </DataItemImageValues>
-        <ImageArray name="day_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="day_n/0.png"/>
-            <Image src="day_n/1.png"/>
-            <Image src="day_n/2.png"/>
-            <Image src="day_n/3.png"/>
-            <Image src="day_n/4.png"/>
-            <Image src="day_n/5.png"/>
-            <Image src="day_n/6.png"/>
-            <Image src="day_n/7.png"/>
-            <Image src="day_n/8.png"/>
-            <Image src="day_n/9.png"/>
+        <ImageArray name="d_day_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_day_n/0.png"/>
+            <Image src="d_day_n/1.png"/>
+            <Image src="d_day_n/2.png"/>
+            <Image src="d_day_n/3.png"/>
+            <Image src="d_day_n/4.png"/>
+            <Image src="d_day_n/5.png"/>
+            <Image src="d_day_n/6.png"/>
+            <Image src="d_day_n/7.png"/>
+            <Image src="d_day_n/8.png"/>
+            <Image src="d_day_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="day_n" source="dateDay" ref="@day_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="st_n/0.png"/>
-            <Image src="st_n/1.png"/>
-            <Image src="st_n/2.png"/>
-            <Image src="st_n/3.png"/>
-            <Image src="st_n/4.png"/>
-            <Image src="st_n/5.png"/>
-            <Image src="st_n/6.png"/>
-            <Image src="st_n/7.png"/>
-            <Image src="st_n/8.png"/>
-            <Image src="st_n/9.png"/>
+        <DataItemImageNumber name="day_n" source="dateDay" ref="@d_day_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_st_n/0.png"/>
+            <Image src="d_st_n/1.png"/>
+            <Image src="d_st_n/2.png"/>
+            <Image src="d_st_n/3.png"/>
+            <Image src="d_st_n/4.png"/>
+            <Image src="d_st_n/5.png"/>
+            <Image src="d_st_n/6.png"/>
+            <Image src="d_st_n/7.png"/>
+            <Image src="d_st_n/8.png"/>
+            <Image src="d_st_n/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="st_n" source="healthStepCount" ref="@st_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="st_n" source="healthStepCount" ref="@d_st_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="ruler_a" src="ruler_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <ImageArray name="hr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="hr_a/0.png"/>
-            <Image src="hr_a/1.png"/>
-            <Image src="hr_a/2.png"/>
-            <Image src="hr_a/3.png"/>
-            <Image src="hr_a/4.png"/>
-            <Image src="hr_a/5.png"/>
-            <Image src="hr_a/6.png"/>
-            <Image src="hr_a/7.png"/>
-            <Image src="hr_a/8.png"/>
-            <Image src="hr_a/9.png"/>
+        <ImageArray name="d_hr_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_hr_a/0.png"/>
+            <Image src="d_hr_a/1.png"/>
+            <Image src="d_hr_a/2.png"/>
+            <Image src="d_hr_a/3.png"/>
+            <Image src="d_hr_a/4.png"/>
+            <Image src="d_hr_a/5.png"/>
+            <Image src="d_hr_a/6.png"/>
+            <Image src="d_hr_a/7.png"/>
+            <Image src="d_hr_a/8.png"/>
+            <Image src="d_hr_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="hr_a" source="timeHour" ref="@hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="min_a/0.png"/>
-            <Image src="min_a/1.png"/>
-            <Image src="min_a/2.png"/>
-            <Image src="min_a/3.png"/>
-            <Image src="min_a/4.png"/>
-            <Image src="min_a/5.png"/>
-            <Image src="min_a/6.png"/>
-            <Image src="min_a/7.png"/>
-            <Image src="min_a/8.png"/>
-            <Image src="min_a/9.png"/>
+        <DataItemImageNumber name="hr_a" source="timeHour" ref="@d_hr_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="d_min_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_min_a/0.png"/>
+            <Image src="d_min_a/1.png"/>
+            <Image src="d_min_a/2.png"/>
+            <Image src="d_min_a/3.png"/>
+            <Image src="d_min_a/4.png"/>
+            <Image src="d_min_a/5.png"/>
+            <Image src="d_min_a/6.png"/>
+            <Image src="d_min_a/7.png"/>
+            <Image src="d_min_a/8.png"/>
+            <Image src="d_min_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="min_a" source="timeMinute" ref="@min_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="min_a" source="timeMinute" ref="@d_min_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <Image name="xv_a" src="xv_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="wk_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="wk_a/0.png"/>
@@ -294,32 +294,32 @@
             <Param value="5"/>
             <Param value="6"/>
         </DataItemImageValues>
-        <ImageArray name="day_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="day_a/0.png"/>
-            <Image src="day_a/1.png"/>
-            <Image src="day_a/2.png"/>
-            <Image src="day_a/3.png"/>
-            <Image src="day_a/4.png"/>
-            <Image src="day_a/5.png"/>
-            <Image src="day_a/6.png"/>
-            <Image src="day_a/7.png"/>
-            <Image src="day_a/8.png"/>
-            <Image src="day_a/9.png"/>
+        <ImageArray name="d_day_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_day_a/0.png"/>
+            <Image src="d_day_a/1.png"/>
+            <Image src="d_day_a/2.png"/>
+            <Image src="d_day_a/3.png"/>
+            <Image src="d_day_a/4.png"/>
+            <Image src="d_day_a/5.png"/>
+            <Image src="d_day_a/6.png"/>
+            <Image src="d_day_a/7.png"/>
+            <Image src="d_day_a/8.png"/>
+            <Image src="d_day_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="day_a" source="dateDay" ref="@day_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
-        <ImageArray name="st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="st_a/0.png"/>
-            <Image src="st_a/1.png"/>
-            <Image src="st_a/2.png"/>
-            <Image src="st_a/3.png"/>
-            <Image src="st_a/4.png"/>
-            <Image src="st_a/5.png"/>
-            <Image src="st_a/6.png"/>
-            <Image src="st_a/7.png"/>
-            <Image src="st_a/8.png"/>
-            <Image src="st_a/9.png"/>
+        <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="d_st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_st_a/0.png"/>
+            <Image src="d_st_a/1.png"/>
+            <Image src="d_st_a/2.png"/>
+            <Image src="d_st_a/3.png"/>
+            <Image src="d_st_a/4.png"/>
+            <Image src="d_st_a/5.png"/>
+            <Image src="d_st_a/6.png"/>
+            <Image src="d_st_a/7.png"/>
+            <Image src="d_st_a/8.png"/>
+            <Image src="d_st_a/9.png"/>
         </ImageArray>
-        <DataItemImageNumber name="st_a" source="healthStepCount" ref="@st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
     </Resources>
     <Theme type="normal" name="Лінійка" bgColor="#0E0E10">
         <Layout ref="@v_strip_n" x="110" y="0"/>
