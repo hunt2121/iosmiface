@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Watchface id="318470555" name="Glitch 12h">
+    <Resources>
+        <ImageArray name="big_n_hour" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="big_n_hour/0.png"/>
+            <Image src="big_n_hour/1.png"/>
+            <Image src="big_n_hour/2.png"/>
+            <Image src="big_n_hour/3.png"/>
+            <Image src="big_n_hour/4.png"/>
+            <Image src="big_n_hour/5.png"/>
+            <Image src="big_n_hour/6.png"/>
+            <Image src="big_n_hour/7.png"/>
+            <Image src="big_n_hour/8.png"/>
+            <Image src="big_n_hour/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="timeHour12H_n" source="timeHour12H" ref="@big_n_hour" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
+        <ImageArray name="big_n_minute" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="big_n_minute/0.png"/>
+            <Image src="big_n_minute/1.png"/>
+            <Image src="big_n_minute/2.png"/>
+            <Image src="big_n_minute/3.png"/>
+            <Image src="big_n_minute/4.png"/>
+            <Image src="big_n_minute/5.png"/>
+            <Image src="big_n_minute/6.png"/>
+            <Image src="big_n_minute/7.png"/>
+            <Image src="big_n_minute/8.png"/>
+            <Image src="big_n_minute/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="timeMinute_n" source="timeMinute" ref="@big_n_minute" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
+        <ImageArray name="big_a_hour" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="big_a_hour/0.png"/>
+            <Image src="big_a_hour/1.png"/>
+            <Image src="big_a_hour/2.png"/>
+            <Image src="big_a_hour/3.png"/>
+            <Image src="big_a_hour/4.png"/>
+            <Image src="big_a_hour/5.png"/>
+            <Image src="big_a_hour/6.png"/>
+            <Image src="big_a_hour/7.png"/>
+            <Image src="big_a_hour/8.png"/>
+            <Image src="big_a_hour/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="timeHour12H_a" source="timeHour12H" ref="@big_a_hour" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
+        <ImageArray name="big_a_minute" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="big_a_minute/0.png"/>
+            <Image src="big_a_minute/1.png"/>
+            <Image src="big_a_minute/2.png"/>
+            <Image src="big_a_minute/3.png"/>
+            <Image src="big_a_minute/4.png"/>
+            <Image src="big_a_minute/5.png"/>
+            <Image src="big_a_minute/6.png"/>
+            <Image src="big_a_minute/7.png"/>
+            <Image src="big_a_minute/8.png"/>
+            <Image src="big_a_minute/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="timeMinute_a" source="timeMinute" ref="@big_a_minute" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-28"/>
+        <ImageArray name="dig_cn" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_cn/0.png"/>
+            <Image src="dig_cn/1.png"/>
+            <Image src="dig_cn/2.png"/>
+            <Image src="dig_cn/3.png"/>
+            <Image src="dig_cn/4.png"/>
+            <Image src="dig_cn/5.png"/>
+            <Image src="dig_cn/6.png"/>
+            <Image src="dig_cn/7.png"/>
+            <Image src="dig_cn/8.png"/>
+            <Image src="dig_cn/9.png"/>
+        </ImageArray>
+        <ImageArray name="week_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="week_n/0.png"/>
+            <Image src="week_n/1.png"/>
+            <Image src="week_n/2.png"/>
+            <Image src="week_n/3.png"/>
+            <Image src="week_n/4.png"/>
+            <Image src="week_n/5.png"/>
+            <Image src="week_n/6.png"/>
+        </ImageArray>
+        <Image name="us_n" src="us_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageValues name="v_week_n" source="dateWeek" ref="@week_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+        </DataItemImageValues>
+        <Image name="dot_n" src="dot_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="day_n" source="dateMonth" ref="@dig_cn" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="mon_n" source="dateDay" ref="@dig_cn" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="dig_ca" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_ca/0.png"/>
+            <Image src="dig_ca/1.png"/>
+            <Image src="dig_ca/2.png"/>
+            <Image src="dig_ca/3.png"/>
+            <Image src="dig_ca/4.png"/>
+            <Image src="dig_ca/5.png"/>
+            <Image src="dig_ca/6.png"/>
+            <Image src="dig_ca/7.png"/>
+            <Image src="dig_ca/8.png"/>
+            <Image src="dig_ca/9.png"/>
+        </ImageArray>
+        <ImageArray name="week_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="week_a/0.png"/>
+            <Image src="week_a/1.png"/>
+            <Image src="week_a/2.png"/>
+            <Image src="week_a/3.png"/>
+            <Image src="week_a/4.png"/>
+            <Image src="week_a/5.png"/>
+            <Image src="week_a/6.png"/>
+        </ImageArray>
+        <Image name="us_a" src="us_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageValues name="v_week_a" source="dateWeek" ref="@week_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+        </DataItemImageValues>
+        <Image name="dot_a" src="dot_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="day_a" source="dateMonth" ref="@dig_ca" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemImageNumber name="mon_a" source="dateDay" ref="@dig_ca" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="batt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="batt_n/0.png"/>
+            <Image src="batt_n/1.png"/>
+            <Image src="batt_n/2.png"/>
+            <Image src="batt_n/3.png"/>
+            <Image src="batt_n/4.png"/>
+            <Image src="batt_n/5.png"/>
+            <Image src="batt_n/6.png"/>
+            <Image src="batt_n/7.png"/>
+            <Image src="batt_n/8.png"/>
+            <Image src="batt_n/9.png"/>
+            <Image src="batt_n/10.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_batt_n" source="systemStatusBattery" ref="@batt_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="10"/>
+            <Param value="20"/>
+            <Param value="30"/>
+            <Param value="40"/>
+            <Param value="50"/>
+            <Param value="60"/>
+            <Param value="70"/>
+            <Param value="80"/>
+            <Param value="90"/>
+            <Param value="100"/>
+        </DataItemImageValues>
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_n/0.png"/>
+            <Image src="bt_n/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_n" source="systemStatusBluetooth" ref="@bt_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <Image name="pct_n" src="pct_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="dig_bn" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_bn/0.png"/>
+            <Image src="dig_bn/1.png"/>
+            <Image src="dig_bn/2.png"/>
+            <Image src="dig_bn/3.png"/>
+            <Image src="dig_bn/4.png"/>
+            <Image src="dig_bn/5.png"/>
+            <Image src="dig_bn/6.png"/>
+            <Image src="dig_bn/7.png"/>
+            <Image src="dig_bn/8.png"/>
+            <Image src="dig_bn/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="bat_n" source="systemStatusBattery" ref="@dig_bn" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_n"/>
+        <ImageArray name="batt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="batt_a/0.png"/>
+            <Image src="batt_a/1.png"/>
+            <Image src="batt_a/2.png"/>
+            <Image src="batt_a/3.png"/>
+            <Image src="batt_a/4.png"/>
+            <Image src="batt_a/5.png"/>
+            <Image src="batt_a/6.png"/>
+            <Image src="batt_a/7.png"/>
+            <Image src="batt_a/8.png"/>
+            <Image src="batt_a/9.png"/>
+            <Image src="batt_a/10.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_batt_a" source="systemStatusBattery" ref="@batt_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="10"/>
+            <Param value="20"/>
+            <Param value="30"/>
+            <Param value="40"/>
+            <Param value="50"/>
+            <Param value="60"/>
+            <Param value="70"/>
+            <Param value="80"/>
+            <Param value="90"/>
+            <Param value="100"/>
+        </DataItemImageValues>
+        <ImageArray name="bt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_a/0.png"/>
+            <Image src="bt_a/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_a" source="systemStatusBluetooth" ref="@bt_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <Image name="pct_a" src="pct_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="dig_ba" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_ba/0.png"/>
+            <Image src="dig_ba/1.png"/>
+            <Image src="dig_ba/2.png"/>
+            <Image src="dig_ba/3.png"/>
+            <Image src="dig_ba/4.png"/>
+            <Image src="dig_ba/5.png"/>
+            <Image src="dig_ba/6.png"/>
+            <Image src="dig_ba/7.png"/>
+            <Image src="dig_ba/8.png"/>
+            <Image src="dig_ba/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="bat_a" source="systemStatusBattery" ref="@dig_ba" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@pct_a"/>
+        <ImageArray name="dig_sec" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_sec/0.png"/>
+            <Image src="dig_sec/1.png"/>
+            <Image src="dig_sec/2.png"/>
+            <Image src="dig_sec/3.png"/>
+            <Image src="dig_sec/4.png"/>
+            <Image src="dig_sec/5.png"/>
+            <Image src="dig_sec/6.png"/>
+            <Image src="dig_sec/7.png"/>
+            <Image src="dig_sec/8.png"/>
+            <Image src="dig_sec/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="sec" source="timeSecond" ref="@dig_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="ampm_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ampm_n/0.png"/>
+            <Image src="ampm_n/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ampm_n" source="miscIsPM" ref="@ampm_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="ampm_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ampm_a/0.png"/>
+            <Image src="ampm_a/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ampm_a" source="miscIsPM" ref="@ampm_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <Image name="ico_steps_n" src="ico_steps_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="dig_ssteps_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_ssteps_n/0.png"/>
+            <Image src="dig_ssteps_n/1.png"/>
+            <Image src="dig_ssteps_n/2.png"/>
+            <Image src="dig_ssteps_n/3.png"/>
+            <Image src="dig_ssteps_n/4.png"/>
+            <Image src="dig_ssteps_n/5.png"/>
+            <Image src="dig_ssteps_n/6.png"/>
+            <Image src="dig_ssteps_n/7.png"/>
+            <Image src="dig_ssteps_n/8.png"/>
+            <Image src="dig_ssteps_n/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="steps_n" source="healthStepCount" ref="@dig_ssteps_n" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_n"/>
+        <Image name="ico_pulse_n" src="ico_pulse_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="dig_spulse_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_spulse_n/0.png"/>
+            <Image src="dig_spulse_n/1.png"/>
+            <Image src="dig_spulse_n/2.png"/>
+            <Image src="dig_spulse_n/3.png"/>
+            <Image src="dig_spulse_n/4.png"/>
+            <Image src="dig_spulse_n/5.png"/>
+            <Image src="dig_spulse_n/6.png"/>
+            <Image src="dig_spulse_n/7.png"/>
+            <Image src="dig_spulse_n/8.png"/>
+            <Image src="dig_spulse_n/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="pulse_n" source="healthHeartRate" ref="@dig_spulse_n" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_pulse_n"/>
+        <Image name="ico_steps_a" src="ico_steps_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="dig_ssteps_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_ssteps_a/0.png"/>
+            <Image src="dig_ssteps_a/1.png"/>
+            <Image src="dig_ssteps_a/2.png"/>
+            <Image src="dig_ssteps_a/3.png"/>
+            <Image src="dig_ssteps_a/4.png"/>
+            <Image src="dig_ssteps_a/5.png"/>
+            <Image src="dig_ssteps_a/6.png"/>
+            <Image src="dig_ssteps_a/7.png"/>
+            <Image src="dig_ssteps_a/8.png"/>
+            <Image src="dig_ssteps_a/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
+        <ImageArray name="dig_val" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_val/0.png"/>
+            <Image src="dig_val/1.png"/>
+            <Image src="dig_val/2.png"/>
+            <Image src="dig_val/3.png"/>
+            <Image src="dig_val/4.png"/>
+            <Image src="dig_val/5.png"/>
+            <Image src="dig_val/6.png"/>
+            <Image src="dig_val/7.png"/>
+            <Image src="dig_val/8.png"/>
+            <Image src="dig_val/9.png"/>
+            <Image src="dig_val/10.png"/>
+            <Image src="dig_val/11.png"/>
+        </ImageArray>
+        <Image name="u_deg" src="u_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="wx_icons" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wx_icons/0.png"/>
+            <Image src="wx_icons/1.png"/>
+            <Image src="wx_icons/2.png"/>
+            <Image src="wx_icons/3.png"/>
+            <Image src="wx_icons/4.png"/>
+            <Image src="wx_icons/5.png"/>
+            <Image src="wx_icons/6.png"/>
+            <Image src="wx_icons/7.png"/>
+            <Image src="wx_icons/8.png"/>
+            <Image src="wx_icons/9.png"/>
+            <Image src="wx_icons/10.png"/>
+            <Image src="wx_icons/11.png"/>
+            <Image src="wx_icons/12.png"/>
+            <Image src="wx_icons/13.png"/>
+            <Image src="wx_icons/14.png"/>
+            <Image src="wx_icons/15.png"/>
+            <Image src="wx_icons/16.png"/>
+            <Image src="wx_icons/17.png"/>
+            <Image src="wx_icons/18.png"/>
+            <Image src="wx_icons/19.png"/>
+            <Image src="wx_icons/20.png"/>
+            <Image src="wx_icons/21.png"/>
+            <Image src="wx_icons/22.png"/>
+            <Image src="wx_icons/23.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wx" source="weatherCurrentWeather" ref="@wx_icons" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+            <Param value="7"/>
+            <Param value="8"/>
+            <Param value="9"/>
+            <Param value="10"/>
+            <Param value="11"/>
+            <Param value="12"/>
+            <Param value="13"/>
+            <Param value="14"/>
+            <Param value="15"/>
+            <Param value="16"/>
+            <Param value="17"/>
+            <Param value="18"/>
+            <Param value="19"/>
+            <Param value="20"/>
+            <Param value="21"/>
+            <Param value="22"/>
+            <Param value="23"/>
+        </DataItemImageValues>
+        <DataItemImageNumber name="wx_t" source="weatherCurrentTemperature" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
+        <Widget name="w_weather" widgetName="Weather" groupType="general" w="212" h="44">
+            <Item ref="@wx_t" x="114" y="2"/>
+            <Item ref="@v_wx" x="112" y="-1"/>
+        </Widget>
+        <Widget name="w_battery" widgetName="Battery" groupType="general" w="212" h="44">
+            <Item ref="@v_batt_n" x="69" y="5"/>
+            <Item ref="@bat_n" x="106" y="7"/>
+        </Widget>
+        <Image name="u_km" src="u_km.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="dist" source="healthStepKiloMeter" ref="@dig_val" totalDigits="5" decimalDigits="2" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7" unitIcon="@u_km"/>
+        <Widget name="w_distance" widgetName="Distance" groupType="general" w="212" h="44">
+            <Item ref="@dist" x="106" y="2"/>
+        </Widget>
+        <Image name="u_slash" src="u_slash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="u_deg_mm" src="u_deg_mm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="tmin" source="weatherTodayTemperatureMin" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
+        <DataItemImageNumber name="tmax" source="weatherTodayTemperatureMax" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg_mm"/>
+        <Widget name="w_minmax" widgetName="Min / max" groupType="general" w="212" h="44">
+            <Item ref="@tmin" x="73" y="2"/>
+            <Item ref="@u_slash" x="73" y="2"/>
+            <Item ref="@tmax" x="85" y="2"/>
+        </Widget>
+        <Image name="u_rain" src="u_rain.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="rain" source="weatherCurrentChanceOfRain" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_rain"/>
+        <Widget name="w_rain" widgetName="Rain" groupType="general" w="212" h="44">
+            <Item ref="@rain" x="106" y="2"/>
+        </Widget>
+        <Image name="u_wind" src="u_wind.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="wind" source="weatherCurrentWindSpeed" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_wind"/>
+        <Widget name="w_wind" widgetName="Wind" groupType="general" w="212" h="44">
+            <Item ref="@wind" x="106" y="2"/>
+        </Widget>
+        <Slot name="slot_top" type="widget">
+            <Item ref="@w_weather"/>
+            <Item ref="@w_battery"/>
+            <Item ref="@w_distance"/>
+            <Item ref="@w_minmax"/>
+            <Item ref="@w_rain"/>
+            <Item ref="@w_wind"/>
+        </Slot>
+        <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_cover/0.png"/>
+            <Image src="bt_cover/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_cover" source="systemStatusBluetooth" ref="@bt_cover" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+    </Resources>
+    <Theme type="normal" name="Глітч" bgColor="#000000">
+        <Layout ref="@timeHour12H_n" x="6" y="133"/>
+        <Layout ref="@timeMinute_n" x="6" y="241"/>
+        <Layout ref="@v_week_n" x="29" y="35"/>
+        <Layout ref="@us_n" x="105" y="35"/>
+        <Layout ref="@day_n" x="116" y="35"/>
+        <Layout ref="@dot_n" x="146" y="35"/>
+        <Layout ref="@mon_n" x="154" y="35"/>
+        <Layout ref="@sec" x="78" y="364"/>
+        <Layout ref="@v_ampm_n" x="138" y="386"/>
+        <Layout ref="@steps_n" x="106" y="432"/>
+        <Layout ref="@pulse_n" x="104" y="467"/>
+        <Layout ref="@slot_top" x="0" y="80"/>
+        <Layout ref="@v_bt_cover" x="5" y="84"/>
+    </Theme>
+    <Theme type="AOD" name="AOD" bgColor="#000000">
+        <Layout ref="@timeHour12H_a" x="6" y="133"/>
+        <Layout ref="@timeMinute_a" x="6" y="241"/>
+        <Layout ref="@v_week_a" x="29" y="35"/>
+        <Layout ref="@us_a" x="105" y="35"/>
+        <Layout ref="@day_a" x="116" y="35"/>
+        <Layout ref="@dot_a" x="146" y="35"/>
+        <Layout ref="@mon_a" x="154" y="35"/>
+        <Layout ref="@v_batt_a" x="69" y="85"/>
+        <Layout ref="@bat_a" x="106" y="87"/>
+        <Layout ref="@v_bt_a" x="20" y="82"/>
+        <Layout ref="@v_ampm_a" x="94" y="377"/>
+        <Layout ref="@steps_a" x="107" y="418"/>
+    </Theme>
+</Watchface>

@@ -98,15 +98,15 @@ array("wx_icons", ICS); values("wx", "weatherCurrentWeather", "wx_icons", range(
 number("wx_t", "weatherCurrentTemperature", "dig_val", 3, "right", False, SPV, "u_deg")
 tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2          # правий край «°» (блок на 2 px ліворуч)
-widget("w_weather", "Погода", [("wx_t", XR, YV), ("v_wx", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)])
+widget("w_weather", TXT[LANGV]["w"][0], [("wx_t", XR, YV), ("v_wx", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)])
 
 # 2. Батарея — як була
-widget("w_battery", "Батарея", BATT_ITEMS)
+widget("w_battery", TXT[LANGV]["w"][1], BATT_ITEMS)
 
 # 3. Відстань: «5.43 км» + маршрут
-unit_img("u_km", "км", i_route)
+unit_img("u_km", TXT[LANGV]["km"], i_route)
 number("dist", "healthStepKiloMeter", "dig_val", 5, "center", False, SPV, "u_km", dec=2, doff=-(CWV + SPV - 8))
-widget("w_distance", "Відстань", [("dist", 106, YV)])
+widget("w_distance", TXT[LANGV]["w"][2], [("dist", 106, YV)])
 
 # 4. Мін / макс сьогодні: «9°/16°» + стрілки
 slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("u_slash", down(slash))
@@ -115,17 +115,17 @@ number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "right", False, SPV, 
 number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV, "u_deg_mm")
 mm_w = (CWV + deg.width) + 12 + (2 * CWV + SPV + deg.width + 8 + 30)   # «9°/16°↑↓»
 SX = round(106 - mm_w / 2 + CWV + deg.width)                     # лівий край «/»
-widget("w_minmax", "Мін / макс", [("tmin", SX, YV), ("u_slash", SX, YV), ("tmax", SX + 12, YV)])
+widget("w_minmax", TXT[LANGV]["w"][3], [("tmin", SX, YV), ("u_slash", SX, YV), ("tmax", SX + 12, YV)])
 
 # 5. Ймовірність дощу: «30%» + парасолька
 unit_img("u_rain", "%", i_umbrella)
 number("rain", "weatherCurrentChanceOfRain", "dig_val", 3, "center", False, SPV, "u_rain")
-widget("w_rain", "Дощ", [("rain", 106, YV)])
+widget("w_rain", TXT[LANGV]["w"][4], [("rain", 106, YV)])
 
 # 6. Вітер: «5 м/с» + вітер
-unit_img("u_wind", "м/с", i_wind)
+unit_img("u_wind", TXT[LANGV]["ms"], i_wind)
 number("wind", "weatherCurrentWindSpeed", "dig_val", 3, "center", False, SPV, "u_wind")
-widget("w_wind", "Вітер", [("wind", 106, YV)])
+widget("w_wind", TXT[LANGV]["w"][5], [("wind", 106, YV)])
 
 res.append('<Slot name="slot_top" type="widget">')
 for w in widgets: res.append('    <Item ref="@%s"/>' % w)

@@ -2,7 +2,16 @@
 # Запуск: python3 make.py  → files/*.png і manifest.xml поруч. Збирає .bin застосунок BandFace (--build-face=).
 from PIL import Image, ImageDraw, ImageFont
 import os, random, math, shutil
-HERE=os.path.dirname(os.path.abspath(__file__)); OUT=os.path.join(HERE,"files")
+HERE=os.path.dirname(os.path.abspath(__file__))
+# мова: ua (типово), ru, en, en12 (12-годинний час з AM/PM і датою місяць.день); результат — у теці faces/glitch[-мова]
+LANGV=os.environ.get("LANGV","ua")
+DEST=HERE if LANGV=="ua" else os.path.join(os.path.dirname(HERE),"glitch-"+LANGV)
+OUT=os.path.join(DEST,"files")
+FACE_ID,FACE_NAME={"ua":("318470552","Глітч"),"ru":("318470553","Глитч"),"en":("318470554","Glitch"),"en12":("318470555","Glitch 12h")}[LANGV]
+TXT={"ua":dict(km="км",ms="м/с",w=["Погода","Батарея","Відстань","Мін / макс","Дощ","Вітер"]),
+     "ru":dict(km="км",ms="м/с",w=["Погода","Батарея","Расстояние","Мин / макс","Дождь","Ветер"]),
+     "en":dict(km="km",ms="m/s",w=["Weather","Battery","Distance","Min / max","Rain","Wind"])}
+TXT["en12"]=TXT["en"]
 FD="/usr/share/fonts/opentype/inter/"
 K=4                                   # малюємо в 4 рази більше, потім зменшуємо
 W,H=212,520
@@ -90,10 +99,12 @@ def place_big(t,src,arr,cy,cw,ch,pad):
 for t,mode in (("n","normal"),("a","aod")):
     for src,cy in (("timeHour",192),("timeMinute",300)):
         cw,ch,pad=big_set("%s_%s"%(t,src[4:].lower()),cy,strips[cy],mode)
-        place_big(t,src,"big_%s_%s"%(t,src[4:].lower()),cy,cw,ch,pad)
+        place_big(t,"timeHour12H" if (src=="timeHour" and LANGV=="en12") else src,"big_%s_%s"%(t,src[4:].lower()),cy,cw,ch,pad)
 
 # ── дата «// ЧТ_12.11»
-WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]   # dateWeek: 0 — неділя
+WEEK={"ua":["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"],"ru":["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"],
+      "en":["SUN","MON","TUE","WED","THU","FRI","SAT"],"en12":["SUN","MON","TUE","WED","THU","FRI","SAT"]}[LANGV]   # dateWeek: 0 — неділя
+WIDE=("ПН","НД") if LANGV=="ua" else tuple(WEEK)   # ці — без зсуву на 1 px
 for t,col in (("n",CYN),("a",G2)):
     f=SEMI(TS); cw=small(col,"c"+t)
     ww=math.ceil(max(f.getlength("// %s_"%w) for w in WEEK)/K)+1
@@ -101,16 +112,17 @@ for t,col in (("n",CYN),("a",G2)):
     wu=math.ceil(f.getlength("_")/K); ww0=math.ceil(max(f.getlength("// %s"%w) for w in WEEK)/K)+1
     def wimg(w):
         im=text_img("// %s"%w,f,col,w=ww0,align="left",h=SH); out=Image.new("RGBA",(ww0+1,im.height),(0,0,0,0))
-        out.paste(im,(0 if w in ("ПН","НД") else 1,0)); return out
+        out.paste(im,(0 if w in WIDE else 1,0)); return out
     array("week_"+t,[wimg(w) for w in WEEK])
     image("us_"+t,text_img("_",f,col,w=wu,h=SH))
     values("week_"+t,"dateWeek","week_"+t,range(7))
     dot=image("dot_"+t,text_img(".",f,col,h=SH)); dw=dot.width
     total=ww+2*cw+dw+2*cw; x=106-total/2+0.1; y=50-SH/2
     lay(t,"v_week_"+t,x,y); lay(t,"us_"+t,x+ww-wu,y); x+=ww
-    number("day_"+t,"dateDay","dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
+    first,second=("dateMonth","dateDay") if LANGV=="en12" else ("dateDay","dateMonth")   # en12: місяць.день
+    number("day_"+t,first,"dig_c"+t,2); lay(t,"day_"+t,x,y); x+=2*cw
     lay(t,"dot_"+t,x,y); x+=dw
-    number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
+    number("mon_"+t,second,"dig_c"+t,2); lay(t,"mon_"+t,x,y)
 
 # ── батарея й блютуз (Y=101): батарея з «85%» — по центру, блютуз ліворуч на сталому місці
 BSTYLE=os.environ.get("BATT","BIG")
@@ -191,6 +203,11 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
 number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw+1,392-28)
+if LANGV=="en12":   # AM/PM: праворуч від секунд (низ по низу цифр); в AOD — на місці секунд
+    for t,col in (("n",PNK),("a",G2)):
+        f=SEMI(TS); array("ampm_"+t,[text_img(x,f,col,h=SH) for x in ("AM","PM")]); values("ampm_"+t,"miscIsPM","ampm_"+t,[0,1])
+    bb=fs.getbbox("0"); capS=(bb[3]-bb[1])/K; capT=(SEMI(TS).getbbox("0")[3]-SEMI(TS).getbbox("0")[1])/K
+    lay("n","v_ampm_n",106+cw+3,392+capS/2-capT/2-SH/2); lay("a","v_ampm_a",106-12,392-SH/2)
 
 # ── кроки й пульс: число + значок праворуч (значок — частина числа, тож браслет центрує весь рядок)
 def icon_steps(cols):
@@ -220,9 +237,9 @@ centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
-xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470552" name="Глітч">','    <Resources>']
+xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="%s" name="%s">'%(FACE_ID,FACE_NAME)+'','    <Resources>']
 xml+=["        "+r for r in res]+['    </Resources>','    <Theme type="normal" name="Глітч" bgColor="#000000">']
 xml+=["        "+l for l in theme["n"]]+['    </Theme>','    <Theme type="AOD" name="AOD" bgColor="#000000">']
 xml+=["        "+l for l in theme["a"]]+['    </Theme>','</Watchface>']
-open(os.path.join(HERE,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n")
+open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml)+"\n")
 print("ok", len(res), "resources")
