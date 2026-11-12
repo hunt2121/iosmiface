@@ -89,50 +89,78 @@ def deg_img(name, extra=None):
     return image(name, pad_left(down(im)))
 
 widgets = []
-def widget(name, title, items):
-    res.append('<Widget name="%s" widgetName="%s" groupType="general" w="%d" h="%d">' % (name, title, W, WH))
+def widget(name, key, items):
+    """віджет слота; key — службова назва, як в офіційних циферблатах (Weather, Battery, Distance):
+    за нею браслет показує назву в меню й, схоже, вирішує, які дані віджету потрібні"""
+    res.append('<Widget name="%s" widgetName="%s" groupType="general" w="%d" h="%d">' % (name, key, W, WH))
     for ref, x, y in items:
-        assert 0 <= round(y - WY) and 0 <= round(x - WX) or ref in ("wx_t", "tmin", "dist", "rain", "wind", "bat_n"), (name, ref, x - WX, y - WY)   # не за межами віджета
+        assert 0 <= round(y - WY) and 0 <= round(x - WX) or ref == "bat_n", (name, ref, x - WX, y - WY)   # не за межами віджета
         res.append('    <Item ref="@%s" x="%d" y="%d"/>' % (ref, round(x - WX), round(y - WY)))
     res.append('</Widget>'); widgets.append(name)
 
-YV = SLOT_Y - HV / 2             # верх картинок значень на екрані
+def row(name, refs, gap=0):
+    """рядок по центру: браслет сам ставить елементи один за одним і центрує їх (flex, як в офіційних циферблатах),
+    тож число з будь-якою кількістю цифр і значок завжди разом і по центру"""
+    res.append('<Widget name="%s" widgetName="number" groupType="general" w="%d" h="%d" flex_direction="row" justify_content="center" align_content="center" align_items="center" gap="%d">' % (name, W, HV, gap))
+    for r in refs: res.append('    <Item ref="@%s" x="0" y="0"/>' % r)
+    res.append('</Widget>')
+    return (name, WX, YV)
 
-# 1. Погода: «14°» — правий край «°» сталий, значок погоди одразу праворуч (число росте ліворуч)
-deg = deg_img("u_deg")
+def plain_img(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None):
+    """одиниця й/або значок як окрема картинка рядка (без від'ємного space — нічого не налазить)"""
+    font = font or FU
+    tw = math.ceil(font.getlength(text) / K) + 2 if text else 0
+    im_icon = icon_mask(icon) if icon else None
+    iw = im_icon.width // K + 3 if im_icon else 0
+    w = (gap_text if text else 0) + tw + (gap_icon if icon else 0) + iw
+    im = Image.new("RGBA", (w * K, HV * K), (0, 0, 0, 0))
+    if text:
+        m = text_mask(text, font, tw, "left", bottom=(font is FU)); mm = Image.new("L", im.size, 0); mm.paste(m, (gap_text * K, 0)); glitch_paint(im, mm)
+    if im_icon:
+        x = ((gap_text if text else 0) + tw + gap_icon) * K; y = int(HV * K / 2 - im_icon.height / 2)
+        for col, dx in ((PNK, -1.3), (CYN, 1.3)):
+            im.paste(Image.new("RGBA", im_icon.size, col + (255,)), (x + int(dx * K), y), im_icon)
+    return image(name, down(im))
+
+YV = SLOT_Y - HV / 2             # верх рядка значень на екрані
+
+# 1. Погода: «14°» + значок погоди
+deg = deg_img("u_deg")            # для AOD (там число з unitIcon)
+plain_img("f_deg", "°", font=FV, gap_text=0)
 ICS = [WI.centered_icon(p) for _, p in WI.ICONS]
-array("wx_icons", ICS); values("wx", "weatherCurrentWeather", "wx_icons", range(len(ICS)))
-number("wx_t", "weatherCurrentTemperature", "dig_val", 3, "right", False, SPV, "u_deg")
-tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
-XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2          # правий край «°» (блок на 2 px ліворуч)
-widget("w_weather", TXT[LANGV]["w"][0], [("wx_t", XR - SPV, YV), ("v_wx", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)])
+padI = lambda im: (lambda o: (o.paste(im, (2, 0)), o)[1])(Image.new("RGBA", (im.width + 2, im.height), (0, 0, 0, 0)))
+array("wx_icons", [padI(i) for i in ICS]); values("wx", "weatherCurrentWeather", "wx_icons", range(len(ICS)))
+number("wx_t", "weatherCurrentTemperature", "dig_val", 3, "left", False, SPV)
+widget("w_weather", "Weather", [row("r_weather", ["wx_t", "f_deg", "v_wx"])])
 
 # 2. Батарея — як була
-widget("w_battery", TXT[LANGV]["w"][1], BATT_ITEMS)
+widget("w_battery", "Battery", BATT_ITEMS)
 
 # 3. Відстань: «5.43 км» + маршрут
-unit_img("u_km", TXT[LANGV]["km"], i_route)
-number("dist", "healthStepKiloMeter", "dig_val", 5, "center", False, SPV, "u_km", dec=2, doff=-(CWV + SPV - 8))
-widget("w_distance", TXT[LANGV]["w"][2], [("dist", 106 - SPV // 2, YV)])
+plain_img("f_km", TXT[LANGV]["km"], i_route)
+number("dist", "healthStepKiloMeter", "dig_val", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
+widget("w_distance", "Distance", [row("r_distance", ["dist", "f_km"])])
 
 # 4. Мін / макс сьогодні: «9°/16°» + стрілки
-slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("u_slash", down(slash))
-deg_img("u_deg_mm", i_minmax)
-number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "right", False, SPV, "u_deg")
-number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV, "u_deg_mm")
-mm_w = (CWV + deg.width) + 12 + (2 * CWV + SPV + deg.width + 8 + 30)   # «9°/16°↑↓»
-SX = round(106 - mm_w / 2 + CWV + deg.width)                     # лівий край «/»
-widget("w_minmax", TXT[LANGV]["w"][3], [("tmin", SX - SPV, YV), ("u_slash", SX, YV), ("tmax", SX + 12, YV)])
+slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("f_slash", down(slash))
+plain_img("f_deg_mm", "°", i_minmax, font=FV, gap_text=0)
+number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "left", False, SPV)
+number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV)
+widget("w_minmax", "Weather", [row("r_minmax", ["tmin", "f_deg", "f_slash", "tmax", "f_deg_mm"])])
 
 # 5. Ймовірність дощу: «30%» + парасолька
-unit_img("u_rain", "%", i_umbrella)
-number("rain", "weatherCurrentChanceOfRain", "dig_val", 3, "center", False, SPV, "u_rain")
-widget("w_rain", TXT[LANGV]["w"][4], [("rain", 106 - SPV // 2, YV)])
+plain_img("f_rain", "%", i_umbrella)
+number("rain", "weatherCurrentChanceOfRain", "dig_val", 3, "left", False, SPV)
+widget("w_rain", "Weather", [row("r_rain", ["rain", "f_rain"])])
 
 # 6. Вітер: «5 м/с» + вітер
-unit_img("u_wind", TXT[LANGV]["ms"], i_wind)
-number("wind", "weatherCurrentWindSpeed", "dig_val", 3, "center", False, SPV, "u_wind")
-widget("w_wind", TXT[LANGV]["w"][5], [("wind", 106 - SPV // 2, YV)])
+plain_img("f_wind", TXT[LANGV]["ms"], i_wind)
+number("wind", "weatherCurrentWindSpeed", "dig_val", 3, "left", False, SPV)
+widget("w_wind", "Weather", [row("r_wind", ["wind", "f_wind"])])
+
+# для AOD: правий край «°» (як було)
+tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
+XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2
 
 res.append('<Slot name="slot_top" type="widget">')
 for w in widgets: res.append('    <Item ref="@%s"/>' % w)
