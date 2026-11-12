@@ -110,8 +110,18 @@ for t,dim in (("n",False),("a",True)):
     x0=58-(ww+2*cd)/2; lay(t,"v_wk_"+t,x0,90-17); lay(t,"day_"+t,x0+ww,90-17)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
-    image("stic_"+t,soles_icon((115,115,115) if dim else OR,4,34,6))   # підошви праворуч, 4 px від цифр
-    number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,60,440-17-10)   # кроки з підошвами — разом по центру осі x=61   # кроки від низу екрана — як дата від верху (80 px)
+    SI=os.environ.get("STEPS_ICON","right")
+    if SI=="right":
+        image("stic_"+t,soles_icon((115,115,115) if dim else OR,4,34,6))   # підошви праворуч, 4 px від цифр
+        number("st_"+t,"healthStepCount","st_"+t,5,"center",False,unit="stic_"+t); lay(t,"st_"+t,60,440-17-10)   # кроки з підошвами — разом по центру осі x=61
+    else:
+        ic=soles_icon((115,115,115) if dim else OR,0,22,0); image("stic_"+t,ic); GAPV=7
+        # блок «значок + число» від низу екрана — 80 px, як дата від верху; значок над або під числом
+        ybot=439                                         # нижній видимий рядок блоку
+        if SI=="top": ny=ybot-19; iy=ny-GAPV-22
+        else: iy=ybot-21; ny=iy-GAPV-20
+        number("st_"+t,"healthStepCount","st_"+t,5,"center",False); lay(t,"st_"+t,61,ny-7)
+        lay(t,"stic_"+t,math.floor(61.5-ic.width/2),iy)   # кроки від низу екрана — як дата від верху (80 px)
 names=[r.split('name="')[1].split('"')[0] for r in res if ' name="' in r]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470560" name="Лінійка">','    <Resources>']+["        "+r for r in res]+['    </Resources>',
