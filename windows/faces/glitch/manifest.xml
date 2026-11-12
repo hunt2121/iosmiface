@@ -272,6 +272,115 @@
             <Image src="dig_ssteps_a/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="steps_a" source="healthStepCount" ref="@dig_ssteps_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0" unitIcon="@ico_steps_a"/>
+        <ImageArray name="dig_val" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="dig_val/0.png"/>
+            <Image src="dig_val/1.png"/>
+            <Image src="dig_val/2.png"/>
+            <Image src="dig_val/3.png"/>
+            <Image src="dig_val/4.png"/>
+            <Image src="dig_val/5.png"/>
+            <Image src="dig_val/6.png"/>
+            <Image src="dig_val/7.png"/>
+            <Image src="dig_val/8.png"/>
+            <Image src="dig_val/9.png"/>
+            <Image src="dig_val/10.png"/>
+            <Image src="dig_val/11.png"/>
+        </ImageArray>
+        <Image name="u_deg" src="u_deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="wx_icons" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wx_icons/0.png"/>
+            <Image src="wx_icons/1.png"/>
+            <Image src="wx_icons/2.png"/>
+            <Image src="wx_icons/3.png"/>
+            <Image src="wx_icons/4.png"/>
+            <Image src="wx_icons/5.png"/>
+            <Image src="wx_icons/6.png"/>
+            <Image src="wx_icons/7.png"/>
+            <Image src="wx_icons/8.png"/>
+            <Image src="wx_icons/9.png"/>
+            <Image src="wx_icons/10.png"/>
+            <Image src="wx_icons/11.png"/>
+            <Image src="wx_icons/12.png"/>
+            <Image src="wx_icons/13.png"/>
+            <Image src="wx_icons/14.png"/>
+            <Image src="wx_icons/15.png"/>
+            <Image src="wx_icons/16.png"/>
+            <Image src="wx_icons/17.png"/>
+            <Image src="wx_icons/18.png"/>
+            <Image src="wx_icons/19.png"/>
+            <Image src="wx_icons/20.png"/>
+            <Image src="wx_icons/21.png"/>
+            <Image src="wx_icons/22.png"/>
+            <Image src="wx_icons/23.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wx" source="weatherCurrentWeather" ref="@wx_icons" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+            <Param value="7"/>
+            <Param value="8"/>
+            <Param value="9"/>
+            <Param value="10"/>
+            <Param value="11"/>
+            <Param value="12"/>
+            <Param value="13"/>
+            <Param value="14"/>
+            <Param value="15"/>
+            <Param value="16"/>
+            <Param value="17"/>
+            <Param value="18"/>
+            <Param value="19"/>
+            <Param value="20"/>
+            <Param value="21"/>
+            <Param value="22"/>
+            <Param value="23"/>
+        </DataItemImageValues>
+        <DataItemImageNumber name="wx_t" source="weatherCurrentTemperature" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
+        <Widget name="w_weather" widgetName="Погода" groupType="general" w="212" h="44">
+            <Item ref="@wx_t" x="114" y="2"/>
+            <Item ref="@v_wx" x="112" y="-1"/>
+        </Widget>
+        <Widget name="w_battery" widgetName="Батарея" groupType="general" w="212" h="44">
+            <Item ref="@v_batt_n" x="69" y="5"/>
+            <Item ref="@bat_n" x="106" y="7"/>
+            <Item ref="@v_bt_n" x="20" y="2"/>
+        </Widget>
+        <Image name="u_km" src="u_km.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="dist" source="healthStepKiloMeter" ref="@dig_val" totalDigits="5" decimalDigits="2" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7" unitIcon="@u_km"/>
+        <Widget name="w_distance" widgetName="Відстань" groupType="general" w="212" h="44">
+            <Item ref="@dist" x="106" y="2"/>
+        </Widget>
+        <Image name="u_slash" src="u_slash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="u_deg_mm" src="u_deg_mm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="tmin" source="weatherTodayTemperatureMin" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
+        <DataItemImageNumber name="tmax" source="weatherTodayTemperatureMax" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg_mm"/>
+        <Widget name="w_minmax" widgetName="Мін / макс" groupType="general" w="212" h="44">
+            <Item ref="@tmin" x="73" y="2"/>
+            <Item ref="@u_slash" x="73" y="2"/>
+            <Item ref="@tmax" x="85" y="2"/>
+        </Widget>
+        <Image name="u_rain" src="u_rain.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="rain" source="weatherCurrentChanceOfRain" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_rain"/>
+        <Widget name="w_rain" widgetName="Дощ" groupType="general" w="212" h="44">
+            <Item ref="@rain" x="106" y="2"/>
+        </Widget>
+        <Image name="u_wind" src="u_wind.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="wind" source="weatherCurrentWindSpeed" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_wind"/>
+        <Widget name="w_wind" widgetName="Вітер" groupType="general" w="212" h="44">
+            <Item ref="@wind" x="106" y="2"/>
+        </Widget>
+        <Slot name="slot_top" type="widget">
+            <Item ref="@w_weather"/>
+            <Item ref="@w_battery"/>
+            <Item ref="@w_distance"/>
+            <Item ref="@w_minmax"/>
+            <Item ref="@w_rain"/>
+            <Item ref="@w_wind"/>
+        </Slot>
     </Resources>
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
@@ -281,12 +390,10 @@
         <Layout ref="@day_n" x="107" y="35"/>
         <Layout ref="@dot_n" x="137" y="35"/>
         <Layout ref="@mon_n" x="145" y="35"/>
-        <Layout ref="@v_batt_n" x="69" y="85"/>
-        <Layout ref="@bat_n" x="106" y="87"/>
-        <Layout ref="@v_bt_n" x="20" y="82"/>
         <Layout ref="@sec" x="78" y="364"/>
         <Layout ref="@steps_n" x="106" y="432"/>
         <Layout ref="@pulse_n" x="104" y="467"/>
+        <Layout ref="@slot_top" x="0" y="80"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>

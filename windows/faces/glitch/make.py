@@ -22,9 +22,9 @@ def array(name,imgs):
     res.append('<ImageArray name="%s" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">'%name)
     for i,im in enumerate(imgs): res.append('    <Image src="%s"/>'%save(im,"%s/%d.png"%(name,i)))
     res.append('</ImageArray>')
-def number(name,src,arr,digits,align="left",lz=True,space=0,unit=None):
-    res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="0" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="%d"%s/>'
-               %(name,src,arr,digits,align,"true" if lz else "false",space,' unitIcon="@%s"'%unit if unit else ""))
+def number(name,src,arr,digits,align="left",lz=True,space=0,unit=None,dec=0,doff=0):
+    res.append('<DataItemImageNumber name="%s" source="%s" ref="@%s" totalDigits="%d" decimalDigits="%d" align="%s" leadingZero="%s" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="%d" space="%d"%s/>'
+               %(name,src,arr,digits,dec,align,"true" if lz else "false",doff,space,' unitIcon="@%s"'%unit if unit else ""))
 def values(name,src,arr,params):
     name="v_"+name
     res.append('<DataItemImageValues name="%s" source="%s" ref="@%s" renderRule="alwaysShow" rotation="0">'%(name,src,arr))
@@ -183,7 +183,10 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     array("dig_b"+t,ds)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
     bx=106-BW/2; ty=-1.5 if BSTYLE=="B" else 0
-    lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-9,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
+    if t=="n":   # звичайний екран: батарея — один із віджетів слота, блютуз — окремо на сталому місці
+        BATT_ITEMS=[("v_batt_n",bx-3-1,Y-BH/2-2),("bat_n",106,Y-SH/2+ty),("v_bt_n",bx-24-15*1.3-9,Y-15*1.3)]
+    else:
+        lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-9,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
@@ -214,6 +217,7 @@ centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
 centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1),dx=-2)   # цифри на 2 px нижче, серце — на місці
 centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
 
+exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
 assert len(names)==len(set(names)), [n for n in names if names.count(n)>1]
 xml=['<?xml version="1.0" encoding="UTF-8"?>','<Watchface id="318470552" name="Глітч">','    <Resources>']

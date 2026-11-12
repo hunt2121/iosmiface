@@ -21,6 +21,7 @@ namespace BandFace
                 var p = FaceProject.Load(folder);
                 if (p == null) { File.WriteAllText(outBin + ".log", "cannot load " + folder); return 2; }
                 p.Meta.Edited = true;                     // превʼю для браслета малюються заново
+                WidgetSlots.RefreshPreviews(p);           // мініатюри й рамки віджетів слота, як при «Зберегти .bin»
                 var r = p.Compile();
                 File.WriteAllBytes(outBin, r.Item1);
                 File.WriteAllLines(outBin + ".log", r.Item2.DefaultIfEmpty("no warnings"));
