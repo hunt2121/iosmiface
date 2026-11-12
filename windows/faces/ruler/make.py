@@ -56,13 +56,14 @@ for t,dim in (("n",False),("a",True)):
     # AOD — те саме, сірим (стрілка теж рухається лише раз на хвилину — анімації немає).
     DEG=15; RL=float(os.environ.get("DIAL_R","250"))   # радіус підписів
     CX=136+RL; PV=round(RL+16); S=2*PV            # картинка диска S×S, вісь посередині; центр — праворуч за екраном
-    cB,cS,cL,cP=((115,115,115),(70,70,70),(115,115,115),(115,115,115)) if dim else ((255,255,255),DT,LG,OR)
+    cB,cS,cL,cP=((80,80,80),(80,80,80),(115,115,115),(115,115,115)) if dim else ((255,255,255),DT,LG,OR)
     im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
     def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
     for j10 in range(24*6):
         psi=270-DEG*j10/6; big=j10%6==0            # годинний кут: 270° — ліворуч (до риски)
         r0,r1=(CX-194),(CX-160 if big else CX-176)
-        if big or not dim: d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)   # в AOD — лише годинні поділки
+        if dim: r1=CX-176; big=False                # AOD — як раніше: лише дрібні поділки (і на місці годинних теж)
+        d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
     for j in range(24):
         psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
         tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
@@ -75,8 +76,8 @@ for t,dim in (("n",False),("a",True)):
     im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
     d.line([156*K,12*K,196*K,12*K],fill=cP,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=cP)
     image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
-    if dim:   # AOD — видно лише шматок шкали довкола риски (±1 год), далі шкала плавно гасне в чорне
-        WIN,FADE=72,24; mk=Image.new("RGBA",(W-SX0,H),(0,0,0,255)); px=mk.load()
+    if dim:   # AOD — як раніше: видно лише шматок шкали довкола риски (±60 px), краї ледь пом'якшено
+        WIN,FADE=60,6; mk=Image.new("RGBA",(W-SX0,H),(0,0,0,255)); px=mk.load()
         for y in range(H):
             dy=abs(y+0.5-MID); a=0 if dy<=WIN-FADE else (255 if dy>=WIN else round(255*(dy-WIN+FADE)/FADE))
             for x in range(W-SX0): px[x,y]=(0,0,0,a)
