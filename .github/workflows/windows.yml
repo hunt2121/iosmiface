@@ -58,7 +58,7 @@ jobs:
             $g.DrawString($list[$i] + " Bold", $lf, $white, $cx, $pad + $h + 8, $fmt)
           }
           $bmp.Save("fonts.png")
-          gh release create "fonts-${{ github.run_number }}" fonts.png --draft --title "Fonts ${{ github.run_number }}" --notes fonts
+          gh release create "fonts-${{ github.run_number }}" fonts.png -R ${{ github.repository }} --draft --title "Fonts ${{ github.run_number }}" --notes fonts
         env:
           GH_TOKEN: ${{ github.token }}
   build:
