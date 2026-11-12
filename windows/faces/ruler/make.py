@@ -40,7 +40,8 @@ def values(n,src,arr,ps,rr="alwaysShow"):
     res.append('<DataItemImageValues name="v_%s" source="%s" ref="@%s" renderRule="%s" rotation="0">'%(n,src,arr,rr))
     for p in ps: res.append('    <Param value="%d"/>'%p)
     res.append('</DataItemImageValues>')
-def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,round(x),round(y)))
+def rnd(v): return math.floor(v+0.5-1e-9)   # пів пікселя — ліворуч / вгору (не банківське округлення)
+def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,rnd(x),rnd(y)))
 def text_img(s,f,col,w=None,h=40,align="center"):
     b=f.getbbox("0ЧТ"); cc=(b[1]+b[3])/2; tw=f.getlength(s,features=["tnum"]); ww=(w*K) if w else math.ceil(tw)+2*K
     im=Image.new("RGBA",(int(ww),h*K),(0,0,0,0)); x={"center":(ww-tw)/2,"left":0,"right":ww-tw}[align]

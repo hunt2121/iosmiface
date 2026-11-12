@@ -232,7 +232,7 @@
         <Layout ref="@xv_n" x="40" y="277"/>
         <Layout ref="@sec" x="42" y="311"/>
         <Layout ref="@v_wk_n" x="71" y="40"/>
-        <Layout ref="@day_n" x="106" y="61"/>
+        <Layout ref="@day_n" x="105" y="61"/>
         <Layout ref="@v_bat_n" x="52" y="129"/>
         <Layout ref="@v_bt_n" x="52" y="129"/>
         <Layout ref="@st_n" x="105" y="448"/>
@@ -244,7 +244,7 @@
         <Layout ref="@min_a" x="15" y="189"/>
         <Layout ref="@xv_a" x="40" y="277"/>
         <Layout ref="@v_wk_a" x="71" y="40"/>
-        <Layout ref="@day_a" x="106" y="61"/>
+        <Layout ref="@day_a" x="105" y="61"/>
         <Layout ref="@v_bat_a" x="52" y="129"/>
         <Layout ref="@v_bt_a" x="52" y="129"/>
         <Layout ref="@st_a" x="105" y="448"/>
