@@ -7,6 +7,10 @@ on:
         description: "Створити чернетку релізу"
         type: boolean
         default: false
+      fontspec:
+        description: "Лише зразки шрифтів"
+        type: boolean
+        default: false
       shots:
         description: "Зняти скріншоти вкладок"
         type: boolean
@@ -18,7 +22,47 @@ permissions:
   contents: write
 
 jobs:
+  fontspec:
+    if: ${{ inputs.fontspec }}
+    runs-on: windows-latest
+    steps:
+      - name: Font specimen
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $names = "Consolas","Cascadia Mono","Courier New","Lucida Console","Segoe UI"
+          $inst = (New-Object System.Drawing.Text.InstalledFontCollection).Families | ForEach-Object { $_.Name }
+          Write-Output ("installed: " + (($names | Where-Object { $inst -contains $_ }) -join ", "))
+          $sc = 2; $w = 212*$sc; $h = 520*$sc; $pad = 20
+          $list = @($names | Where-Object { $inst -contains $_ })
+          $bmp = New-Object System.Drawing.Bitmap ((($w+$pad)*$list.Count)+$pad), ($h+2*$pad+40)
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.Clear([System.Drawing.Color]::FromArgb(44,44,46))
+          $g.TextRenderingHint = "AntiAliasGridFit"; $g.SmoothingMode = "AntiAlias"
+          $fmt = [System.Drawing.StringFormat]::GenericTypographic
+          $white = [System.Drawing.Brushes]::White
+          for ($i=0; $i -lt $list.Count; $i++) {
+            $x0 = $pad + $i*($w+$pad)
+            $g.FillRectangle([System.Drawing.Brushes]::Black, $x0, $pad, $w, $h)
+            $probe = New-Object System.Drawing.Font $list[$i], 100, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+            $mw = $g.MeasureString("00", $probe, 2000, $fmt).Width
+            $size = 100 * ($w*0.8) / $mw
+            $f = New-Object System.Drawing.Font $list[$i], $size, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+            $fs = New-Object System.Drawing.Font $list[$i], ($size*0.5), ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+            $cx = $x0 + $w/2
+            $fmt.Alignment = "Center"
+            $g.DrawString("09", $f, $white, $cx, $pad + 84*$sc, $fmt)
+            $g.DrawString("55", $f, $white, $cx, $pad + 208*$sc, $fmt)
+            $g.DrawString("42", $fs, $white, $cx, $pad + 340*$sc, $fmt)
+            $lf = New-Object System.Drawing.Font "Segoe UI", 22, ([System.Drawing.FontStyle]::Regular), ([System.Drawing.GraphicsUnit]::Pixel)
+            $g.DrawString($list[$i] + " Bold", $lf, $white, $cx, $pad + $h + 8, $fmt)
+          }
+          $bmp.Save("fonts.png")
+          gh release create "fonts-${{ github.run_number }}" fonts.png --draft --title "Fonts ${{ github.run_number }}" --notes fonts
+        env:
+          GH_TOKEN: ${{ github.token }}
   build:
+    if: ${{ !inputs.fontspec }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
