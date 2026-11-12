@@ -51,38 +51,38 @@ def pointer(m,dim):
     return down(im)
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
-    # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
-    # з урахуванням хвилин), тож шкала з підписами пливе під нерухомою рискою. Повний оберт за добу (15° на годину).
-    # AOD — те саме, сірим (стрілка теж рухається лише раз на хвилину — анімації немає).
-    DEG=15; RL=float(os.environ.get("DIAL_R","250"))   # радіус підписів
-    CX=136+RL; PV=round(RL+16); S=2*PV            # картинка диска S×S, вісь посередині; центр — праворуч за екраном
-    cB,cS,cL,cP=((80,80,80),(80,80,80),(115,115,115),(115,115,115)) if dim else ((255,255,255),DT,LG,OR)
-    im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
-    def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
-    for j10 in range(24*6):
-        psi=270-DEG*j10/6; big=j10%6==0            # годинний кут: 270° — ліворуч (до риски)
-        r0,r1=(CX-194),(CX-160 if big else CX-176)
-        if dim: r1=CX-176; big=False                # AOD — як раніше: лише дрібні поділки (і на місці годинних теж)
-        d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
-    for j in (range(24) if not dim else []):       # в AOD підписів на диску немає — година стоїть навпроти риски
-        psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
-        tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
-        tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
-        im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
-    image("dial_"+t,down(im))
-    res.append('<DataItemPointer name="v_dial_%s" source="timeHour" ref="@dial_%s" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="%d"/>'%(t,t,PV,PV,24*DEG))
-    lay(t,"v_dial_"+t,round(CX)-PV,MID-PV)        # y від'ємний: диск трохи більший за екран (у форматі координати знакові)
+    if not dim:
+        # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
+        # з урахуванням хвилин), тож шкала з підписами пливе під нерухомою рискою. Повний оберт за добу (15° на годину).
+        DEG=15; RL=float(os.environ.get("DIAL_R","250"))   # радіус підписів
+        CX=136+RL; PV=round(RL+16); S=2*PV            # картинка диска S×S, вісь посередині; центр — праворуч за екраном
+        cB,cS,cL=(255,255,255),DT,LG
+        im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
+        def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
+        for j10 in range(24*6):
+            psi=270-DEG*j10/6; big=j10%6==0            # годинний кут: 270° — ліворуч (до риски)
+            r0,r1=(CX-194),(CX-160 if big else CX-176)
+            d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
+        for j in range(24):
+            psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
+            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
+            tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
+            im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
+        image("dial_"+t,down(im))
+        res.append('<DataItemPointer name="v_dial_%s" source="timeHour" ref="@dial_%s" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="%d"/>'%(t,t,PV,PV,24*DEG))
+        lay(t,"v_dial_"+t,round(CX)-PV,MID-PV)        # y від'ємний: диск трохи більший за екран (у форматі координати знакові)
+    else:
+        # AOD — шкала нерухома, просто декорація: шматок ±60 px лише з дрібними поділками; година навпроти риски
+        im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+        for i in range(-6,7):
+            y=60+i*PXH/6; d.line([176*K,y*K,194*K,y*K],fill=(80,80,80),width=K)
+        image("ruler_a",down(im)); lay(t,"ruler_a",0,MID-60)
+        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)
+    cP=(115,115,115) if dim else OR
     # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
     im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
     d.line([156*K,12*K,196*K,12*K],fill=cP,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=cP)
     image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
-    if dim:   # AOD — як раніше: видно лише шматок шкали довкола риски (±60 px), краї ледь пом'якшено
-        WIN,FADE=60,6; mk=Image.new("RGBA",(W-SX0,H),(0,0,0,255)); px=mk.load()
-        for y in range(H):
-            dy=abs(y+0.5-MID); a=0 if dy<=WIN-FADE else (255 if dy>=WIN else round(255*(dy-WIN+FADE)/FADE))
-            for x in range(W-SX0): px[x,y]=(0,0,0,a)
-        image("mask_a",mk); lay(t,"mask_a",SX0,0)
-        ch=digits("hr_a",F("SemiBold",24),cL,30); number("hr_a","timeHour","hr_a",2); lay(t,"hr_a",136-ch,MID-15)   # година — завжди навпроти риски
     # хвилини, «ХВ», секунди
     fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
     image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+3)
