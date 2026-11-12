@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Watchface id="318470571" name="BAND 01">
+    <Resources>
+        <Image name="title" src="title.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="st" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="st/0.png"/>
+            <Image src="st/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_st" source="systemStatusBluetooth" ref="@st" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="st_a/0.png"/>
+            <Image src="st_a/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_st_a" source="systemStatusBluetooth" ref="@st_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="d26" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d26/0.png"/>
+            <Image src="d26/1.png"/>
+            <Image src="d26/2.png"/>
+            <Image src="d26/3.png"/>
+            <Image src="d26/4.png"/>
+            <Image src="d26/5.png"/>
+            <Image src="d26/6.png"/>
+            <Image src="d26/7.png"/>
+            <Image src="d26/8.png"/>
+            <Image src="d26/9.png"/>
+        </ImageArray>
+        <Image name="bolt" src="bolt.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="pct" src="pct.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="g3" src="g3.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="bat" source="systemStatusBattery" ref="@d26" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4" unitIcon="@pct"/>
+        <ImageArray name="d54" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d54/0.png"/>
+            <Image src="d54/1.png"/>
+            <Image src="d54/2.png"/>
+            <Image src="d54/3.png"/>
+            <Image src="d54/4.png"/>
+            <Image src="d54/5.png"/>
+            <Image src="d54/6.png"/>
+            <Image src="d54/7.png"/>
+            <Image src="d54/8.png"/>
+            <Image src="d54/9.png"/>
+        </ImageArray>
+        <Image name="colon" src="colon.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="g_clock" src="g_clock.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="hr" source="timeHour" ref="@d54" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="7"/>
+        <DataItemImageNumber name="mn" source="timeMinute" ref="@d54" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="7"/>
+        <Image name="heart" src="heart.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="deg" src="deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="wk" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk/0.png"/>
+            <Image src="wk/1.png"/>
+            <Image src="wk/2.png"/>
+            <Image src="wk/3.png"/>
+            <Image src="wk/4.png"/>
+            <Image src="wk/5.png"/>
+            <Image src="wk/6.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk" source="dateWeek" ref="@wk" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+        </DataItemImageValues>
+        <Image name="g_wk" src="g_wk.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="g_date" src="g_date.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="dash" src="dash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="dd1" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <DataItemImageNumber name="dd2" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <ImageArray name="astro" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="astro/0.png"/>
+            <Image src="astro/1.png"/>
+            <Image src="astro/2.png"/>
+            <Image src="astro/3.png"/>
+            <Image src="astro/4.png"/>
+            <Image src="astro/5.png"/>
+            <Image src="astro/6.png"/>
+            <Image src="astro/7.png"/>
+            <Image src="astro/8.png"/>
+            <Image src="astro/9.png"/>
+            <Image src="astro/10.png"/>
+            <Image src="astro/11.png"/>
+            <Image src="astro/12.png"/>
+            <Image src="astro/13.png"/>
+            <Image src="astro/14.png"/>
+            <Image src="astro/15.png"/>
+            <Image src="astro/16.png"/>
+            <Image src="astro/17.png"/>
+            <Image src="astro/18.png"/>
+            <Image src="astro/19.png"/>
+            <Image src="astro/20.png"/>
+            <Image src="astro/21.png"/>
+            <Image src="astro/22.png"/>
+            <Image src="astro/23.png"/>
+            <Image src="astro/24.png"/>
+            <Image src="astro/25.png"/>
+            <Image src="astro/26.png"/>
+            <Image src="astro/27.png"/>
+            <Image src="astro/28.png"/>
+            <Image src="astro/29.png"/>
+            <Image src="astro/30.png"/>
+            <Image src="astro/31.png"/>
+            <Image src="astro/32.png"/>
+            <Image src="astro/33.png"/>
+            <Image src="astro/34.png"/>
+            <Image src="astro/35.png"/>
+            <Image src="astro/36.png"/>
+            <Image src="astro/37.png"/>
+            <Image src="astro/38.png"/>
+            <Image src="astro/39.png"/>
+            <Image src="astro/40.png"/>
+            <Image src="astro/41.png"/>
+            <Image src="astro/42.png"/>
+            <Image src="astro/43.png"/>
+            <Image src="astro/44.png"/>
+            <Image src="astro/45.png"/>
+            <Image src="astro/46.png"/>
+            <Image src="astro/47.png"/>
+        </ImageArray>
+        <Sprite name="anim" ref="@astro" interval="83" repeatCount="0"/>
+        <Image name="g_hr" src="g_hr.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="hrt" source="healthHeartRate" ref="@d26" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <ImageArray name="wx" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wx/0.png"/>
+            <Image src="wx/1.png"/>
+            <Image src="wx/2.png"/>
+            <Image src="wx/3.png"/>
+            <Image src="wx/4.png"/>
+            <Image src="wx/5.png"/>
+            <Image src="wx/6.png"/>
+            <Image src="wx/7.png"/>
+            <Image src="wx/8.png"/>
+            <Image src="wx/9.png"/>
+            <Image src="wx/10.png"/>
+            <Image src="wx/11.png"/>
+            <Image src="wx/12.png"/>
+            <Image src="wx/13.png"/>
+            <Image src="wx/14.png"/>
+            <Image src="wx/15.png"/>
+            <Image src="wx/16.png"/>
+            <Image src="wx/17.png"/>
+            <Image src="wx/18.png"/>
+            <Image src="wx/19.png"/>
+            <Image src="wx/20.png"/>
+            <Image src="wx/21.png"/>
+            <Image src="wx/22.png"/>
+            <Image src="wx/23.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wx" source="weatherCurrentWeather" ref="@wx" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+            <Param value="7"/>
+            <Param value="8"/>
+            <Param value="9"/>
+            <Param value="10"/>
+            <Param value="11"/>
+            <Param value="12"/>
+            <Param value="13"/>
+            <Param value="14"/>
+            <Param value="15"/>
+            <Param value="16"/>
+            <Param value="17"/>
+            <Param value="18"/>
+            <Param value="19"/>
+            <Param value="20"/>
+            <Param value="21"/>
+            <Param value="22"/>
+            <Param value="23"/>
+        </DataItemImageValues>
+        <ImageArray name="d26m" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d26m/0.png"/>
+            <Image src="d26m/1.png"/>
+            <Image src="d26m/2.png"/>
+            <Image src="d26m/3.png"/>
+            <Image src="d26m/4.png"/>
+            <Image src="d26m/5.png"/>
+            <Image src="d26m/6.png"/>
+            <Image src="d26m/7.png"/>
+            <Image src="d26m/8.png"/>
+            <Image src="d26m/9.png"/>
+            <Image src="d26m/10.png"/>
+        </ImageArray>
+        <Image name="g_tp" src="g_tp.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="tmp" source="weatherCurrentTemperature" ref="@d26m" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4" unitIcon="@deg"/>
+        <Image name="soles" src="soles.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="g5" src="g5.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <DataItemImageNumber name="stp" source="healthStepCount" ref="@d26" totalDigits="5" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+    </Resources>
+    <Theme type="normal" name="BAND 01" bgColor="#000000">
+        <Layout ref="@title" x="60" y="34"/>
+        <Layout ref="@v_st" x="0" y="54"/>
+        <Layout ref="@bolt" x="58" y="92"/>
+        <Layout ref="@g3" x="82" y="91"/>
+        <Layout ref="@bat" x="154" y="91"/>
+        <Layout ref="@g_clock" x="25" y="136"/>
+        <Layout ref="@hr" x="25" y="136"/>
+        <Layout ref="@colon" x="103" y="136"/>
+        <Layout ref="@mn" x="116" y="136"/>
+        <Layout ref="@g_wk" x="25" y="219"/>
+        <Layout ref="@v_wk" x="25" y="219"/>
+        <Layout ref="@g_date" x="96" y="219"/>
+        <Layout ref="@dd1" x="96" y="219"/>
+        <Layout ref="@dash" x="134" y="219"/>
+        <Layout ref="@dd2" x="153" y="219"/>
+        <Layout ref="@anim" x="0" y="255"/>
+        <Layout ref="@heart" x="148" y="274"/>
+        <Layout ref="@g_hr" x="134" y="301"/>
+        <Layout ref="@hrt" x="187" y="301"/>
+        <Layout ref="@v_wx" x="140" y="356"/>
+        <Layout ref="@g_tp" x="134" y="389"/>
+        <Layout ref="@tmp" x="199" y="389"/>
+        <Layout ref="@soles" x="44" y="445"/>
+        <Layout ref="@g5" x="77" y="444"/>
+        <Layout ref="@stp" x="168" y="444"/>
+    </Theme>
+    <Theme type="AOD" name="BAND 01" bgColor="#000000">
+        <Layout ref="@hr" x="25" y="136"/>
+        <Layout ref="@colon" x="103" y="136"/>
+        <Layout ref="@mn" x="116" y="136"/>
+        <Layout ref="@v_wk" x="25" y="219"/>
+        <Layout ref="@dd1" x="96" y="219"/>
+        <Layout ref="@dash" x="134" y="219"/>
+        <Layout ref="@dd2" x="153" y="219"/>
+        <Layout ref="@soles" x="44" y="445"/>
+        <Layout ref="@stp" x="168" y="444"/>
+        <Layout ref="@dimmer" x="0" y="0"/>
+        <Layout ref="@v_st_a" x="0" y="54"/>
+    </Theme>
+</Watchface>
