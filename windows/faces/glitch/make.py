@@ -19,7 +19,7 @@ W,H=212,520
 CYN=(0,240,255); PNK=(255,0,90); WHT=(255,255,255)
 G1=(200,200,200); G2=(130,130,130); GL=(120,120,120); GR=(180,180,180)
 if os.environ.get("AOD_MONO","1")=="1":   # AOD одним кольором для всього (і для кайми гліча)
-    G1=G2=GL=GR=(150,150,150)
+    G1=G2=GL=GR=(115,115,115)   # приглушення на 55% від білого
 def font(name,size): return ImageFont.truetype(FD+name+".otf",round(size*K))
 BLACK=lambda s: font("InterDisplay-Black",s); BOLD=lambda s: font("InterDisplay-Bold",s); SEMI=lambda s: font("Inter-SemiBold",s)
 if os.path.isdir(OUT): shutil.rmtree(OUT)
