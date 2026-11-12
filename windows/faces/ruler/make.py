@@ -59,10 +59,11 @@ for t,dim in (("n",False),("a",True)):
         # риска як була — довга, з розривом там, де стоїть підпис поточної години
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
         d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
-        # розрив під підписом — з плавним згасанням: 100% → 0 на 98…120 і 0 → 100% на 152…174
+        # розрив під підписом — плавне згасання FL px, до нуля впритул до цифр (GL, GR — 2 px від краю підпису)
+        GL,GR,FL=117,152,9
         al=im.getchannel("A"); px=al.load()
         for X in range(W*K):
-            x=X/K; f=1.0 if x<98 or x>174 else (max(0,(120-x)/22) if x<136 else max(0,(x-152)/22))
+            x=X/K; f=1.0 if x<GL-FL or x>GR+FL else (max(0,(GL-x)/FL) if x<136 else max(0,(x-GR)/FL))
             if f<1:
                 for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
         im.putalpha(al)
