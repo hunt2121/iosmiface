@@ -52,23 +52,11 @@ WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
     if t=="n":
         # шкала з підписами зсувається раз на годину (H:30 посередині), коротка риска повзе щохвилини від H:00 до H+1:00.
-        # Підписи H і H+1 стоять там, де риска починає й закінчує годину. Коли риска підходить до цифр, у ній плавно
-        # з'являється розріз під цифрами (як підкладка: цифри над рискою), а відійшовши — так само плавно зникає.
+        # Риска починається праворуч від цифр (цифри — до 150 px), тож ніколи на них не наїжджає.
         array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24)); lay(t,"v_scale_n",SX0,0)
-        GL,GR,FL,FR=124,147,9,12      # розріз під цифрами (центр — піксель 135), згасання зліва 9 px, справа 12 px
         def ptr(m):
             im=Image.new("RGBA",(W*K,PH*K),(0,0,0,0)); d=ImageDraw.Draw(im); y=40+(m/60-0.5)*PXH
-            d.line([116*K,y*K,196*K,y*K],fill=OR,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=OR)
-            dy=min(abs(y-(40-PXH/2)),abs(y-(40+PXH/2)))     # відстань до найближчого підпису (H або H+1)
-            g=max(0.0,min(1.0,(14-dy)/5))                     # 1 — риска на цифрах (|dy|≤9), 0 — далі за 14 px
-            if g>0:
-                al=im.getchannel("A"); px=al.load()
-                for X in range(W*K):
-                    x=(X+0.5)/K; fx=0.0 if x<135.5 else (1.0 if x>GR+FR else max(0,(x-GR)/FR))   # ліворуч від цифр риска коротка — хвостик зникає повністю
-                    f=1-g*(1-fx)
-                    if f<1:
-                        for Y in range(PH*K): px[X,Y]=round(px[X,Y]*f)
-                im.putalpha(al)
+            d.line([156*K,y*K,196*K,y*K],fill=OR,width=2*K); d.polygon([(200*K,(y-8)*K),(188*K,y*K),(200*K,(y+8)*K)],fill=OR)
             return down(im)
         array("ptr_n",[ptr(m) for m in range(60)]); values("ptr_n","timeMinute","ptr_n",range(60)); lay(t,"v_ptr_n",0,PY0)
     else:
