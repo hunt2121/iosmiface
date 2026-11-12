@@ -340,6 +340,7 @@ namespace BandFace.Creator
             ["tapOpens"] = new[] { "Натискання відкриває", "Tapping opens", "Нажатие открывает" },
             ["tapNone"] = new[] { "Нічого", "Nothing", "Ничего" },
             ["position"] = new[] { "Позиція", "Position", "Позиция" },
+            ["aboveDim"] = new[] { "Над приглушенням AOD", "Above AOD dimming", "Над приглушением AOD" },
             ["width"] = new[] { "Ширина", "Width", "Ширина" },
             ["height"] = new[] { "Висота", "Height", "Высота" },
             ["alLeft"] = new[] { "Ліворуч", "Left", "Слева" },

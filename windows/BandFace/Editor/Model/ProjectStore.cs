@@ -118,6 +118,7 @@ namespace BandFace.Creator
             var root = u.Item1;
             var folder = NewFolder((root.Str("name") ?? "").Length > 0 ? root.Str("name") : name);
             var p = new FaceProject(Path.GetFileName(folder), folder, root, u.Item2, new ProjectMeta());
+            AodDim.MarkFromOrder(p);   // шари, що в циферблаті стоять над приглушенням AOD, — «над приглушенням»
             if ((root.Str("name") ?? "").Length == 0) root.Set("name", name);
             if (asCopy) root.Set("id", NewFaceId()).Set("name", (root.Str("name") ?? name) + S.Get("copySuffix"));
             p.Save();
@@ -150,6 +151,7 @@ namespace BandFace.Creator
             }
             var folder = NewFolder(root.Str("name") ?? Path.GetFileName(dir));
             var p = new FaceProject(Path.GetFileName(folder), folder, root, files, new ProjectMeta());
+            AodDim.MarkFromOrder(p);
             p.Save();
             Projects.Insert(0, p);
             return p;

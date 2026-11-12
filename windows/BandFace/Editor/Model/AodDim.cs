@@ -91,16 +91,50 @@ namespace BandFace.Creator
             KeepOnTop(p);
         }
 
-        /// <summary>Приглушення завжди найвище в AOD — нові та переміщені шари йдуть під нього</summary>
+        /// <summary>Позначка шару AOD «над приглушенням» (лише для редактора; компілятор читає в Layout тільки ref, x, y)</summary>
+        public const string AboveKey = "aboveDim";
+
+        public static bool IsAbove(XNode l) => l != null && l.Bool(AboveKey);
+
+        /// <summary>Підняти шар над приглушенням або повернути під нього</summary>
+        public static void SetAbove(FaceProject p, XNode l, bool on)
+        {
+            if (on) l.Set(AboveKey, true); else l.Remove(AboveKey);
+            KeepOnTop(p);
+        }
+
+        /// <summary>Порядок AOD: звичайні шари, потім приглушення, потім шари «над приглушенням» (фігура під числом — разом із числом)</summary>
         public static void KeepOnTop(FaceProject p)
         {
             var th = p.Theme(AodTheme);
-            var l = Find(p);
-            if (th == null || l == null) return;
-            var last = th.Kids.LastOrDefault(k => k.Tag == "Layout");
-            if (last == l) return;
-            th.Kids.Remove(l);
-            th.Kids.Add(l);
+            var dim = Find(p);
+            if (th == null || dim == null) return;
+            var lays = th.Kids.Where(k => !k.IsComment && k.Tag == "Layout" && k != dim).ToList();
+            var above = new System.Collections.Generic.List<XNode>();
+            for (int i = 0; i < lays.Count; i++)
+            {
+                var next = i + 1 < lays.Count ? lays[i + 1] : null;
+                if (IsAbove(lays[i]) || (NumberBadge.IsBadge(lays[i]) && IsAbove(next))) above.Add(lays[i]);
+            }
+            var tail = new System.Collections.Generic.List<XNode> { dim };
+            tail.AddRange(above);
+            var all = th.Kids.Where(k => !k.IsComment && k.Tag == "Layout").ToList();
+            if (all.Count >= tail.Count && all.Skip(all.Count - tail.Count).SequenceEqual(tail)) return;
+            th.Kids.RemoveAll(k => tail.Contains(k));
+            th.Kids.AddRange(tail);
+        }
+
+        /// <summary>Відкритий .bin / старий проєкт: шари, що стоять вище за приглушення, позначаються «над приглушенням»</summary>
+        public static void MarkFromOrder(FaceProject p)
+        {
+            var th = p.Theme(AodTheme);
+            var dim = Find(p);
+            if (th == null || dim == null) return;
+            var lays = th.Kids.Where(k => !k.IsComment && k.Tag == "Layout").ToList();
+            if (lays.Any(IsAbove)) return;
+            int i = lays.IndexOf(dim);
+            for (int k = i + 1; k < lays.Count; k++)
+                if (!NumberBadge.IsBadge(lays[k]) && AlphaOf(p, lays[k]) == 0) lays[k].Set(AboveKey, true);
         }
     }
 }

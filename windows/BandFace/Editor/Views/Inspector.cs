@@ -756,6 +756,8 @@ namespace BandFace.Creator
             A(S.Get("alVCenter"), () => null, () => (int)Math.Round((dev.Height - box.Height) / 2));
             A(S.Get("alBottom"), () => null, () => dev.Height - (int)Math.Round(box.Height));
             Add(al);
+            if (theme == AodDim.AodTheme && AodDim.Find(project) != null)   // AOD з приглушенням: шар можна підняти над чорним шаром — тоді він не тьмяніє
+                Add(Ui.Switch(S.Get("aboveDim"), AodDim.IsAbove(layout), v => project.Edit(p => AodDim.SetAbove(p, layout, v))));
             Add(Ui.Note(S.Get("nudgeHint")));
         }
     }
