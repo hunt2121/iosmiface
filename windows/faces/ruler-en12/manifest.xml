@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Watchface id="318470563" name="Ruler 12h">
+<Watchface id="318470563" name="VISUAL">
     <Resources>
         <Image name="dial_n" src="dial_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="266" pivotY="266" angleStart="0" angleRange="360"/>
