@@ -463,21 +463,6 @@
             <Item ref="@dist_a" x="0" y="0"/>
             <Item ref="@f_km_a" x="0" y="0"/>
         </Widget>
-        <Widget name="w_battery_a" widgetName="Батарея" groupType="general" w="212" h="96">
-            <Item ref="@v_batt_a" x="69" y="31"/>
-            <Item ref="@bat_a" x="106" y="33"/>
-        </Widget>
-        <Widget name="w_weather_a" widgetName="Погода" groupType="general" w="212" h="96">
-            <Item ref="@r_weather_a" x="0" y="28"/>
-        </Widget>
-        <Widget name="w_distance_a" widgetName="Відстань" groupType="general" w="212" h="96">
-            <Item ref="@r_distance_a" x="0" y="28"/>
-        </Widget>
-        <Slot name="slot_top_a" type="widget">
-            <Item ref="@w_battery_a"/>
-            <Item ref="@w_weather_a"/>
-            <Item ref="@w_distance_a"/>
-        </Slot>
     </Resources>
     <Theme type="normal" name="GLITCH" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
@@ -502,7 +487,8 @@
         <Layout ref="@dot_a" x="137" y="35"/>
         <Layout ref="@mon_a" x="145" y="35"/>
         <Layout ref="@steps_a" x="106" y="432"/>
-        <Layout ref="@slot_top_a" x="0" y="54"/>
+        <Layout ref="@v_batt_a" x="69" y="85"/>
+        <Layout ref="@bat_a" x="106" y="87"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
     </Theme>
 </Watchface>

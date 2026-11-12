@@ -203,11 +203,5 @@ def plain_img_gray(name, text=None, icon=None, gap_text=2, gap_icon=8, font=None
 plain_img_gray("f_km_a", TXT[LANGV]["km"], i_route)
 number("dist_a", "healthStepKiloMeter", "dig_val_a", 5, "left", False, SPV, dec=2, doff=-(CWV + SPV - 8))
 r = row("r_distance_a", ["dist_a", "f_km_a"])
-# AOD: окремий сірий слот з тими самими віджетами в тому ж порядку — перевіряємо, чи браслет показує в AOD вибране на основному екрані
-widget("w_battery_a", WNAME[0], BATT_ITEMS_A)
-widget("w_weather_a", WNAME[1], [R_WX_A])
-widget("w_distance_a", WNAME[2], [r])
-res.append('<Slot name="slot_top_a" type="widget">')
-for w in ["w_battery_a", "w_weather_a", "w_distance_a"]: res.append('    <Item ref="@%s"/>' % w)
-res.append('</Slot>')
-lay("a_slot", "slot_top_a", WX, WY)
+# AOD: Band 10 не дає вибирати віджет для AOD — там завжди батарея сірим
+for ref, x, y in BATT_ITEMS_A: lay("a_slot", ref, x, y)
