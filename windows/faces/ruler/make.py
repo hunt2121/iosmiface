@@ -51,44 +51,35 @@ def pointer(m,dim):
     return down(im)
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
-    if t=="n":
-        # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
-        # з урахуванням хвилин), тож шкала з підписами пливе під нерухомою рискою. Доба = 240° (10° на годину) —
-        # диск більший і шкала пряміша; опівночі диск стрибає на 240° назад, але там намальовано те саме (00 після 23).
-        DEG=15; RL=float(os.environ.get("DIAL_R","250"))   # радіус підписів 250, повний оберт за добу (15° на годину)
-        CX=136+RL; PV=round(RL+16); S=2*PV        # картинка диска S×S, вісь посередині; центр — праворуч за екраном
-        im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
-        def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
-        for j10 in range(-4*6,28*6+1) if DEG*24<360 else range(0,24*6):            # видно ±4 год довкола риски: підписи −4…28 (за модулем 24)
-            psi=270-DEG*j10/6; big=j10%6==0        # годинний кут: 270° — ліворуч (до риски)
-            r0,r1=(CX-194),(CX-160 if big else CX-176)
-            d.line([at(psi,r0),at(psi,r1)],fill=(255,255,255) if big else DT,width=(3 if big else 1)*K)
-        for j in (range(-4,29) if DEG*24<360 else range(24)):
-            psi=270-DEG*j; beta=270-psi            # підпис повернуто так, щоб біля риски він стояв рівно
-            tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%(j%24),font=fl,fill=LG,anchor="mm")
-            tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
-            im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
-        image("dial_n",down(im))
-        res.append('<DataItemPointer name="v_dial_n" source="timeHour" ref="@dial_n" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="%d"/>'%(PV,PV,24*DEG))
-        lay(t,"v_dial_n",round(CX)-PV,MID-PV)    # y від'ємний: диск більший за екран (у форматі координати знакові)
-        # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
-        im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([156*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
-        image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
-    else:
-        # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
-        im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        for i in range(-6,7):
-            y=60+i*PXH/6; big=i%6==0
-            d.line([((160 if big else 176))*K,y*K,194*K,y*K],fill=(80,80,80),width=(3 if big else 1)*K)
-        d.line([116*K,60*K,196*K,60*K],fill=(115,115,115),width=2*K); d.polygon([(200*K,52*K),(188*K,60*K),(200*K,68*K)],fill=(115,115,115))
-        image("ruler_a",down(im)); lay("a","ruler_a",0,MID-60)
-        ch=digits("hr_a",F("SemiBold",24),(115,115,115),30); number("hr_a","timeHour","hr_a",2); lay("a","hr_a",136-ch,MID-22-15)
+    # Шкала — край великого диска (барабана) на годинній стрілці. Стрілка на браслеті рухається плавно (година
+    # з урахуванням хвилин), тож шкала з підписами пливе під нерухомою рискою. Повний оберт за добу (15° на годину).
+    # AOD — те саме, сірим (стрілка теж рухається лише раз на хвилину — анімації немає).
+    DEG=15; RL=float(os.environ.get("DIAL_R","250"))   # радіус підписів
+    CX=136+RL; PV=round(RL+16); S=2*PV            # картинка диска S×S, вісь посередині; центр — праворуч за екраном
+    cB,cS,cL,cP=((115,115,115),(70,70,70),(115,115,115),(115,115,115)) if dim else ((255,255,255),DT,LG,OR)
+    im=Image.new("RGBA",(S*K,S*K),(0,0,0,0)); d=ImageDraw.Draw(im); fl=F("SemiBold",24)
+    def at(psi,r): return (PV+r*math.sin(math.radians(psi)))*K,(PV-r*math.cos(math.radians(psi)))*K
+    for j10 in range(24*6):
+        psi=270-DEG*j10/6; big=j10%6==0            # годинний кут: 270° — ліворуч (до риски)
+        r0,r1=(CX-194),(CX-160 if big else CX-176)
+        d.line([at(psi,r0),at(psi,r1)],fill=cB if big else cS,width=(3 if big else 1)*K)
+    for j in range(24):
+        psi=270-DEG*j; beta=270-psi                # підпис повернуто так, щоб біля риски він стояв рівно
+        tp=Image.new("RGBA",(60*K,40*K),(0,0,0,0)); ImageDraw.Draw(tp).text((30*K,20*K),"%02d"%j,font=fl,fill=cL,anchor="mm")
+        tp=tp.rotate(beta,resample=Image.BICUBIC,expand=True); x,y=at(psi,RL)
+        im.alpha_composite(tp,(round(x-tp.width/2),round(y-tp.height/2)))
+    image("dial_"+t,down(im))
+    res.append('<DataItemPointer name="v_dial_%s" source="timeHour" ref="@dial_%s" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="%d" pivotY="%d" angleStart="0" angleRange="%d"/>'%(t,t,PV,PV,24*DEG))
+    lay(t,"v_dial_"+t,round(CX)-PV,MID-PV)        # y від'ємний: диск трохи більший за екран (у форматі координати знакові)
+    # нерухома риска — коротка, праворуч від підписів, вістрям до поділок
+    im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+    d.line([156*K,12*K,196*K,12*K],fill=cP,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=cP)
+    image("ptr_"+t,down(im)); lay(t,"ptr_"+t,0,MID-12)
     # хвилини, «ХВ», секунди
-    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+1)
-    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+1)
+    fm=F("Bold",72); cw=digits("min_"+t,fm,(115,115,115) if dim else WH,80); number("min_"+t,"timeMinute","min_"+t,2); lay(t,"min_"+t,62-cw,MID-44-40+2)
+    image("xv_"+t,text_img("ХВ",F("Bold",21,False),(115,115,115) if dim else OR,h=24)); lay(t,"xv_"+t,62-Image.open(os.path.join(OUT,"xv_%s.png"%t)).width/2,MID+15-12+3)
     if t=="n":
-        fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18+11)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
+        fs=F("Medium",28); cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs,MID+48-18+10)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
     # дата «ЧТ 12»
     fd=F("SemiBold",26,False); col=(115,115,115) if dim else WH
     ww=math.ceil(max(fd.getlength(w+" ") for w in WEEK)/K)+1
