@@ -136,6 +136,35 @@ for t,dim in (("n",False),("a",True)):
     lay(t,"day_"+t,DCX+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
     if t=="n":   # стиль 2 (як раніше): дата на осі x=61, верх за 80 px від краю
         ST2={"v_wk_n":(26,80-wb[1]),"day_n":(61,80+(wb[3]-wb[1])+DLGAP-db[1])}
+    # Значки стану над хвилинами (30 px): блискавка — заряд нижче 20 %, блютуз — немає зв'язку.
+    # Блютуз — шаром поверх, під ним чорна підкладка (на 1 px більша за обидва значки), тож при обох показується він.
+    if t=="n" or dim:
+        cI=(115,115,115) if dim else OR; k=8
+        def crop_(im): return im.crop(im.getchannel("A").point(lambda v:255 if v>40 else 0).getbbox())
+        def bt_icon(h=30,lw=2.6):
+            w=round(h*0.64); im=Image.new("RGBA",(w*k,h*k),(0,0,0,0)); d=ImageDraw.Draw(im); L=round(lw*k)
+            tt,bb,cx=1.4*k,(h-1.4)*k,w/2*k; q=(bb-tt)/4; a=w*0.36*k
+            d.line([(cx-a,tt+q),(cx+a*0.92,tt+3*q),(cx,bb),(cx,tt),(cx+a*0.92,tt+q),(cx-a,tt+3*q)],fill=cI,width=L,joint="curve")
+            return crop_(im.convert("RGBa").resize((w,h),Image.LANCZOS).convert("RGBA"))
+        def bolt_icon(h=30):
+            w=round(h*0.62); im=Image.new("RGBA",(w*k,h*k),(0,0,0,0)); d=ImageDraw.Draw(im); s_=k*h/30
+            P=[(11.5,0),(0.8,17),(8.4,17),(6.2,30),(17.8,11.6),(10,11.6),(13.6,0)]
+            d.polygon([(x*s_+(w*k-18.6*s_)/2,y*s_) for x,y in P],fill=cI)
+            return crop_(im.convert("RGBa").resize((w,h),Image.LANCZOS).convert("RGBA"))
+        bi,li=bt_icon(),bolt_icon()
+        IW=max(bi.width,li.width)+2; IW+=1-IW%2; IH=max(bi.height,li.height)+2   # рамка: непарна ширина — центр рівно в пікселі
+        def framed(ic,plate):
+            fr=Image.new("RGBA",(IW,IH),(0,0,0,255) if plate else (0,0,0,0))
+            fr.alpha_composite(ic,((IW-ic.width)//2,(IH-ic.height)//2)); return fr
+        empty=Image.new("RGBA",(IW,IH),(0,0,0,0))
+        array("bat_"+t,[framed(li,False),empty]); values("bat_"+t,"systemStatusBattery","bat_"+t,[0,20])
+        array("bt_"+t,[framed(bi,True),empty]); values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
+        def icon_pos(cy): return 61-(IW-1)//2, int(cy-(IH-1)/2)        # пів пікселя — вгору
+        x2,y2=icon_pos(144.5)        # стиль 2: посередині між датою (низ 87) і хвилинами (верх 202)
+        lay(t,"v_bat_"+t,x2,y2); lay(t,"v_bt_"+t,x2,y2)
+        if t=="n":
+            x1,y1=icon_pos(162)      # стиль 1: посередині між датою (низ 122) і хвилинами (верх 202)
+            ST2["v_bat_n"]=(x1,y1); ST2["v_bt_n"]=(x1,y1)
     # кроки
     cst=digits("st_"+t,fd,(115,115,115) if dim else OR,34)
     SI=os.environ.get("STEPS_ICON","right")

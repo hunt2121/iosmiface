@@ -62,6 +62,22 @@
             <Image src="d_day_n/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="day_n" source="dateDay" ref="@d_day_n" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="bat_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bat_n/0.png"/>
+            <Image src="bat_n/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bat_n" source="systemStatusBattery" ref="@bat_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="20"/>
+        </DataItemImageValues>
+        <ImageArray name="bt_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_n/0.png"/>
+            <Image src="bt_n/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_n" source="systemStatusBluetooth" ref="@bt_n" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
         <ImageArray name="d_st_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_n/0.png"/>
             <Image src="d_st_n/1.png"/>
@@ -136,6 +152,22 @@
             <Image src="d_day_a/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="day_a" source="dateDay" ref="@d_day_a" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="bat_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bat_a/0.png"/>
+            <Image src="bat_a/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bat_a" source="systemStatusBattery" ref="@bat_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="20"/>
+        </DataItemImageValues>
+        <ImageArray name="bt_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_a/0.png"/>
+            <Image src="bt_a/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_a" source="systemStatusBluetooth" ref="@bt_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
         <ImageArray name="d_st_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_st_a/0.png"/>
             <Image src="d_st_a/1.png"/>
@@ -159,6 +191,8 @@
         <Layout ref="@sec" x="42" y="311"/>
         <Layout ref="@v_wk_n" x="26" y="75"/>
         <Layout ref="@day_n" x="61" y="96"/>
+        <Layout ref="@v_bat_n" x="52" y="146"/>
+        <Layout ref="@v_bt_n" x="52" y="146"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
     <Theme type="AOD" name="Style 1" bgColor="#000000">
@@ -169,6 +203,8 @@
         <Layout ref="@xv_a" x="40" y="277"/>
         <Layout ref="@v_wk_a" x="26" y="75"/>
         <Layout ref="@day_a" x="61" y="96"/>
+        <Layout ref="@v_bat_a" x="52" y="146"/>
+        <Layout ref="@v_bt_a" x="52" y="146"/>
         <Layout ref="@st_a" x="60" y="413"/>
     </Theme>
     <Theme type="normal" name="Style 2" bgColor="#000000">
@@ -179,6 +215,8 @@
         <Layout ref="@sec" x="42" y="311"/>
         <Layout ref="@v_wk_n" x="71" y="40"/>
         <Layout ref="@day_n" x="106" y="61"/>
+        <Layout ref="@v_bat_n" x="52" y="129"/>
+        <Layout ref="@v_bt_n" x="52" y="129"/>
         <Layout ref="@st_n" x="105" y="448"/>
     </Theme>
     <Theme type="AOD" name="Style 2" bgColor="#000000">
@@ -189,6 +227,8 @@
         <Layout ref="@xv_a" x="40" y="277"/>
         <Layout ref="@v_wk_a" x="71" y="40"/>
         <Layout ref="@day_a" x="106" y="61"/>
+        <Layout ref="@v_bat_a" x="52" y="129"/>
+        <Layout ref="@v_bt_a" x="52" y="129"/>
         <Layout ref="@st_a" x="105" y="448"/>
     </Theme>
 </Watchface>
