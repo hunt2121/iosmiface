@@ -7,6 +7,10 @@ on:
         description: "Створити чернетку релізу"
         type: boolean
         default: false
+      face:
+        description: "Зібрати циферблат із теки проєкту (напр. windows/faces/glitch)"
+        type: string
+        default: ""
       fontspec:
         description: "Лише зразки шрифтів"
         type: boolean
@@ -88,6 +92,24 @@ jobs:
           echo "--- out ---"
           ls -l out
           du -sk out
+      - name: Build watch face
+        if: ${{ inputs.face != '' && inputs.face != null }}
+        shell: pwsh
+        run: |
+          $dir = "$PWD\${{ inputs.face }}" -replace '/', '\'
+          $name = Split-Path $dir -Leaf
+          $out = "$PWD\$name.bin"
+          $p = Start-Process -FilePath "$PWD\windows\out\BandFace.exe" -ArgumentList "`"--build-face=$dir|$out`"" -PassThru
+          $p.WaitForExit(120000) | Out-Null
+          if (!$p.HasExited) { Stop-Process $p -Force; Write-Output "::error::timeout" }
+          Write-Output "exit $($p.ExitCode)"
+          if (Test-Path "$out.log") { Get-Content "$out.log" | ForEach-Object { Write-Output "::warning::$_" } }
+          if (!(Test-Path $out)) { Write-Output "::error::no bin"; exit 1 }
+          (Get-Item $out).Length
+          $files = @("$name.bin") + (Get-ChildItem "$name.bin.theme*.png" | ForEach-Object { $_.Name })
+          gh release create "face-$name-${{ github.run_number }}" @files --draft --title "Face $name ${{ github.run_number }}" --notes face
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Screenshots
         if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shot]') }}
         shell: pwsh
@@ -129,7 +151,7 @@ jobs:
           name: BandFace-windows
           path: BandFace-windows.zip
       - name: Release
-        if: ${{ inputs.release || github.ref == 'refs/heads/windows' }}
+        if: ${{ (inputs.face == '' || inputs.face == null) && (inputs.release || github.ref == 'refs/heads/windows') }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
