@@ -341,8 +341,8 @@
         </DataItemImageValues>
         <DataItemImageNumber name="wx_t" source="weatherCurrentTemperature" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
         <Widget name="w_weather" widgetName="Weather" groupType="general" w="212" h="76">
-            <Item ref="@wx_t" x="114" y="18"/>
-            <Item ref="@v_wx" x="112" y="15"/>
+            <Item ref="@wx_t" x="125" y="18"/>
+            <Item ref="@v_wx" x="116" y="15"/>
         </Widget>
         <Widget name="w_battery" widgetName="Battery" groupType="general" w="212" h="76">
             <Item ref="@v_batt_n" x="69" y="21"/>
@@ -351,26 +351,26 @@
         <Image name="u_km" src="u_km.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="dist" source="healthStepKiloMeter" ref="@dig_val" totalDigits="5" decimalDigits="2" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7" unitIcon="@u_km"/>
         <Widget name="w_distance" widgetName="Distance" groupType="general" w="212" h="76">
-            <Item ref="@dist" x="106" y="18"/>
+            <Item ref="@dist" x="110" y="18"/>
         </Widget>
         <Image name="u_slash" src="u_slash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="u_deg_mm" src="u_deg_mm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="tmin" source="weatherTodayTemperatureMin" ref="@dig_val" totalDigits="3" decimalDigits="0" align="right" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg"/>
         <DataItemImageNumber name="tmax" source="weatherTodayTemperatureMax" ref="@dig_val" totalDigits="3" decimalDigits="0" align="left" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_deg_mm"/>
         <Widget name="w_minmax" widgetName="Min / max" groupType="general" w="212" h="76">
-            <Item ref="@tmin" x="73" y="18"/>
+            <Item ref="@tmin" x="80" y="18"/>
             <Item ref="@u_slash" x="73" y="18"/>
             <Item ref="@tmax" x="85" y="18"/>
         </Widget>
         <Image name="u_rain" src="u_rain.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="rain" source="weatherCurrentChanceOfRain" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_rain"/>
         <Widget name="w_rain" widgetName="Rain" groupType="general" w="212" h="76">
-            <Item ref="@rain" x="106" y="18"/>
+            <Item ref="@rain" x="110" y="18"/>
         </Widget>
         <Image name="u_wind" src="u_wind.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="wind" source="weatherCurrentWindSpeed" ref="@dig_val" totalDigits="3" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="-7" unitIcon="@u_wind"/>
         <Widget name="w_wind" widgetName="Wind" groupType="general" w="212" h="76">
-            <Item ref="@wind" x="106" y="18"/>
+            <Item ref="@wind" x="110" y="18"/>
         </Widget>
         <Slot name="slot_top" type="widget">
             <Item ref="@w_weather"/>
@@ -488,8 +488,8 @@
         <Layout ref="@dot_a" x="146" y="35"/>
         <Layout ref="@mon_a" x="154" y="35"/>
         <Layout ref="@steps_a" x="107" y="418"/>
-        <Layout ref="@wx_t_a" x="114" y="82"/>
-        <Layout ref="@v_wx_a" x="112" y="79"/>
+        <Layout ref="@wx_t_a" x="125" y="82"/>
+        <Layout ref="@v_wx_a" x="116" y="79"/>
         <Layout ref="@v_bt_cover_a" x="5" y="84"/>
     </Theme>
 </Watchface>

@@ -68,7 +68,12 @@ def unit_img(name, text=None, icon=None, gap_icon=8):
         x = (1 + tw + gap_icon) * K; y = int(HV * K / 2 - im_icon.height / 2)
         for col, dx in ((PNK, -1.3), (CYN, 1.3)):
             im.paste(Image.new("RGBA", im_icon.size, col + (255,)), (x + int(dx * K), y), im_icon)
-    return image(name, down(im))
+    return image(name, pad_left(down(im)))
+
+def pad_left(im, p=None):
+    """браслет малює одиницю там, де стала б наступна цифра (з від'ємним space) — додаємо цей зсув зліва"""
+    p = -SPV if p is None else p
+    out = Image.new("RGBA", (im.width + p, im.height), (0, 0, 0, 0)); out.paste(im, (p, 0)); return out
 
 def deg_img(name, extra=None):
     """«°» шрифтом значень (вгорі, як у цифрах); extra — значок праворуч"""
@@ -81,7 +86,7 @@ def deg_img(name, extra=None):
         x = (tw + 8) * K; y = int(HV * K / 2 - im_icon.height / 2)
         for col, dx in ((PNK, -1.3), (CYN, 1.3)):
             im.paste(Image.new("RGBA", im_icon.size, col + (255,)), (x + int(dx * K), y), im_icon)
-    return image(name, down(im))
+    return image(name, pad_left(down(im)))
 
 widgets = []
 def widget(name, title, items):
@@ -100,7 +105,7 @@ array("wx_icons", ICS); values("wx", "weatherCurrentWeather", "wx_icons", range(
 number("wx_t", "weatherCurrentTemperature", "dig_val", 3, "right", False, SPV, "u_deg")
 tw14 = 2 * CWV + SPV + deg.width; IVIS = 29; GAP = 6
 XR = round(106 - (tw14 + GAP + IVIS) / 2 + tw14) - 2          # правий край «°» (блок на 2 px ліворуч)
-widget("w_weather", TXT[LANGV]["w"][0], [("wx_t", XR, YV), ("v_wx", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)])
+widget("w_weather", TXT[LANGV]["w"][0], [("wx_t", XR - SPV, YV), ("v_wx", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)])
 
 # 2. Батарея — як була
 widget("w_battery", TXT[LANGV]["w"][1], BATT_ITEMS)
@@ -108,7 +113,7 @@ widget("w_battery", TXT[LANGV]["w"][1], BATT_ITEMS)
 # 3. Відстань: «5.43 км» + маршрут
 unit_img("u_km", TXT[LANGV]["km"], i_route)
 number("dist", "healthStepKiloMeter", "dig_val", 5, "center", False, SPV, "u_km", dec=2, doff=-(CWV + SPV - 8))
-widget("w_distance", TXT[LANGV]["w"][2], [("dist", 106, YV)])
+widget("w_distance", TXT[LANGV]["w"][2], [("dist", 106 - SPV // 2, YV)])
 
 # 4. Мін / макс сьогодні: «9°/16°» + стрілки
 slash = Image.new("RGBA", (12 * K, HV * K), (0, 0, 0, 0)); glitch_paint(slash, text_mask("/", FV, 12)); image("u_slash", down(slash))
@@ -117,17 +122,17 @@ number("tmin", "weatherTodayTemperatureMin", "dig_val", 3, "right", False, SPV, 
 number("tmax", "weatherTodayTemperatureMax", "dig_val", 3, "left", False, SPV, "u_deg_mm")
 mm_w = (CWV + deg.width) + 12 + (2 * CWV + SPV + deg.width + 8 + 30)   # «9°/16°↑↓»
 SX = round(106 - mm_w / 2 + CWV + deg.width)                     # лівий край «/»
-widget("w_minmax", TXT[LANGV]["w"][3], [("tmin", SX, YV), ("u_slash", SX, YV), ("tmax", SX + 12, YV)])
+widget("w_minmax", TXT[LANGV]["w"][3], [("tmin", SX - SPV, YV), ("u_slash", SX, YV), ("tmax", SX + 12, YV)])
 
 # 5. Ймовірність дощу: «30%» + парасолька
 unit_img("u_rain", "%", i_umbrella)
 number("rain", "weatherCurrentChanceOfRain", "dig_val", 3, "center", False, SPV, "u_rain")
-widget("w_rain", TXT[LANGV]["w"][4], [("rain", 106, YV)])
+widget("w_rain", TXT[LANGV]["w"][4], [("rain", 106 - SPV // 2, YV)])
 
 # 6. Вітер: «5 м/с» + вітер
 unit_img("u_wind", TXT[LANGV]["ms"], i_wind)
 number("wind", "weatherCurrentWindSpeed", "dig_val", 3, "center", False, SPV, "u_wind")
-widget("w_wind", TXT[LANGV]["w"][5], [("wind", 106, YV)])
+widget("w_wind", TXT[LANGV]["w"][5], [("wind", 106 - SPV // 2, YV)])
 
 res.append('<Slot name="slot_top" type="widget">')
 for w in widgets: res.append('    <Item ref="@%s"/>' % w)
@@ -152,10 +157,10 @@ def gglyph(s, col, w=CWV):
     im = Image.new("RGBA", (w * K, HV * K), (0, 0, 0, 0)); im.paste(Image.new("RGBA", im.size, col + (255,)), (0, 0), text_mask(s, FV, w)); return down(im)
 array("dig_val_a", [gglyph(str(i), G2) for i in range(10)] + [gglyph("-", G2), gglyph(".", G2)])
 tw_ = math.ceil(FV.getlength("°") / K) + 4
-dg = Image.new("RGBA", (tw_ * K, HV * K), (0, 0, 0, 0)); dg.paste(Image.new("RGBA", dg.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw_, "left")); image("u_deg_a", down(dg))
+dg = Image.new("RGBA", (tw_ * K, HV * K), (0, 0, 0, 0)); dg.paste(Image.new("RGBA", dg.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw_, "left")); image("u_deg_a", pad_left(down(dg)))
 array("wx_icons_a", [WI.centered_icon(p, ((G2, 0),)) for _, p in WI.ICONS]); values("wx_a", "weatherCurrentWeather", "wx_icons_a", range(len(WI.ICONS)))
 number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "right", False, SPV, "u_deg_a")
-lay("a", "wx_t_a", XR, YV); lay("a", "v_wx_a", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)
+lay("a", "wx_t_a", XR - SPV, YV); lay("a", "v_wx_a", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)
 array("bt_cover_a", [bt_cover(((G2, 0),), G2), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover_a", "systemStatusBluetooth", "bt_cover_a", [0, 1])
 lay("a", "v_bt_cover_a", BX0, BY0)
