@@ -73,7 +73,8 @@ namespace BandFace
             bool demoDone = false, demoProgress = false;
             foreach (var a in Environment.GetCommandLineArgs().Skip(1))
             {
-                if (a == "--page=settings") NavSettings.IsChecked = true;
+                if (a.StartsWith("--build-face=")) { Environment.Exit(BuildFace.Run(a.Substring(13))); }
+                else if (a == "--page=settings") NavSettings.IsChecked = true;
                 else if (a == "--page=key") { NavSettings.IsChecked = true; ShowSettingsPage(PageKey); }
                 else if (a == "--page=log") { NavSettings.IsChecked = true; ShowSettingsPage(PageLog); }
                 else if (a == "--page=editor") NavEditor.IsChecked = true;
