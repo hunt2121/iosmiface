@@ -186,9 +186,12 @@ def gglyph(s, col, w=CWV):
 array("dig_val_a", [gglyph(str(i), G2) for i in range(10)] + [gglyph("-", G2), gglyph(".", G2)])
 tw_ = math.ceil(FV.getlength("°") / K) + 4
 dg = Image.new("RGBA", (tw_ * K, HV * K), (0, 0, 0, 0)); dg.paste(Image.new("RGBA", dg.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw_, "left")); image("u_deg_a", pad_left(down(dg)))
-array("wx_icons_a", [WI.centered_icon(p, ((G2, 0),)) for _, p in WI.ICONS]); values("wx_a", "weatherCurrentWeather", "wx_icons_a", range(len(WI.ICONS)))
-number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "right", False, SPV, "u_deg_a")
-lay("a", "wx_t_a", XR - SPV, YV); lay("a", "v_wx_a", XR + GAP + IVIS // 2 - WI.S // 2, SLOT_Y - 1 - WI.S // 2)
+array("wx_icons_a", [padI(WI.centered_icon(p, ((G2, 0),))) for _, p in WI.ICONS]); values("wx_a", "weatherCurrentWeather", "wx_icons_a", range(len(WI.ICONS)))
+tw2 = math.ceil(FV.getlength("°") / K) + 2
+dga = Image.new("RGBA", (tw2 * K, HV * K), (0, 0, 0, 0)); dga.paste(Image.new("RGBA", dga.size, G2 + (255,)), (0, 0), text_mask("°", FV, tw2, "left")); image("f_deg_a", down(dga))
+number("wx_t_a", "weatherCurrentTemperature", "dig_val_a", 3, "left", False, SPV)
+r = row("r_weather_a", ["wx_t_a", "f_deg_a", "v_wx_a"])        # той самий рядок, що й на звичайному екрані — значок і текст на тих самих місцях
+lay("a", r[0], r[1], r[2])
 array("bt_cover_a", [bt_cover(((G2, 0),), G2), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
 values("bt_cover_a", "systemStatusBluetooth", "bt_cover_a", [0, 1])
 lay("a", "v_bt_cover_a", BX0, BY0)
