@@ -204,8 +204,8 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
 fs=BOLD(33*1.3+1.5); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
 if LANGV!="en12":
     number("sec","timeSecond","dig_sec",2,"left",True); lay("n","sec",106-cw+1,392-28)
-else:   # 12-годинний: замість секунд — AM/PM тим самим шрифтом і на тому ж місці (в AOD — сірим)
-    for t,col in (("n",PNK),("a",G2)):
+else:   # 12-годинний: замість секунд — AM/PM тим самим шрифтом і на тому ж місці (в AOD — немає)
+    for t,col in (("n",PNK),):
         wa=math.ceil(max(fs.getlength(x) for x in ("AM","PM"))/K)+4      # однакова ширина — обидва по центру
         array("ampm_"+t,[text_img(x,fs,col,w=wa,h=56) for x in ("AM","PM")]); values("ampm_"+t,"miscIsPM","ampm_"+t,[0,1])
         lay(t,"v_ampm_"+t,106-wa/2,392-28)
@@ -233,7 +233,7 @@ def centered(t,name,src,digits,col,cy,icon,dx=0):
 GLC=((PNK,-1),(CYN,1)); GLP=((CYN,-1),(PNK,1))
 centered("n","steps_n","healthStepCount",5,CYN,447,icon_steps(GLC))
 centered("n","pulse_n","healthHeartRate",3,PNK,482,icon_heart(GLP,up=1),dx=-2)   # цифри на 2 px нижче, серце — на місці
-centered("a","steps_a","healthStepCount",5,G2,464 if LANGV=="en12" else 433.3,icon_steps(((G2,0),)),dx=1)
+centered("a","steps_a","healthStepCount",5,G2,433.3,icon_steps(((G2,0),)),dx=1)
 
 exec(open(os.path.join(HERE,"slot_widgets.py"),encoding="utf-8").read())
 names=[l.split('name="')[1].split('"')[0] for l in res if ' name="' in l]
