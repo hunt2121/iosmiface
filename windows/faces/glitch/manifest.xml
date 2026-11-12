@@ -347,7 +347,6 @@
         <Widget name="w_battery" widgetName="Батарея" groupType="general" w="212" h="44">
             <Item ref="@v_batt_n" x="69" y="5"/>
             <Item ref="@bat_n" x="106" y="7"/>
-            <Item ref="@v_bt_n" x="20" y="2"/>
         </Widget>
         <Image name="u_km" src="u_km.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="dist" source="healthStepKiloMeter" ref="@dig_val" totalDigits="5" decimalDigits="2" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="-8" space="-7" unitIcon="@u_km"/>
@@ -381,6 +380,14 @@
             <Item ref="@w_rain"/>
             <Item ref="@w_wind"/>
         </Slot>
+        <ImageArray name="bt_cover" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="bt_cover/0.png"/>
+            <Image src="bt_cover/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_bt_cover" source="systemStatusBluetooth" ref="@bt_cover" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
     </Resources>
     <Theme type="normal" name="Глітч" bgColor="#000000">
         <Layout ref="@timeHour_n" x="6" y="133"/>
@@ -394,6 +401,7 @@
         <Layout ref="@steps_n" x="106" y="432"/>
         <Layout ref="@pulse_n" x="104" y="467"/>
         <Layout ref="@slot_top" x="0" y="80"/>
+        <Layout ref="@v_bt_cover" x="5" y="84"/>
     </Theme>
     <Theme type="AOD" name="AOD" bgColor="#000000">
         <Layout ref="@timeHour_a" x="6" y="133"/>

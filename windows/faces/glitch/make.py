@@ -184,7 +184,7 @@ for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
     bx=106-BW/2; ty=-1.5 if BSTYLE=="B" else 0
     if t=="n":   # звичайний екран: батарея — один із віджетів слота, блютуз — окремо на сталому місці
-        BATT_ITEMS=[("v_batt_n",bx-3-1,Y-BH/2-2),("bat_n",106,Y-SH/2+ty),("v_bt_n",bx-24-15*1.3-9,Y-15*1.3)]
+        BATT_ITEMS=[("v_batt_n",bx-3-1,Y-BH/2-2),("bat_n",106,Y-SH/2+ty)]
     else:
         lay(t,"v_batt_"+t,bx-3-1,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3-9,Y-15*1.3)   # корпус і блютуз трохи лівіше, відсоток — на місці
 

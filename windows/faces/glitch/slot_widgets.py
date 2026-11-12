@@ -131,3 +131,16 @@ res.append('<Slot name="slot_top" type="widget">')
 for w in widgets: res.append('    <Item ref="@%s"/>' % w)
 res.append('</Slot>')
 lay("n", "slot_top", WX, WY)
+
+# Блютуз «немає зв'язку» — поверх слота: чорна плашка, більша за будь-який віджет слота на 1 px з кожного боку
+# (межі виміряно на крайніх значеннях: −12°, 12.34 км, 100% …), значок — рівно по центру. Є зв'язок — порожньо.
+BX0, BY0, BX1, BY1 = 5, 84, 207, 120
+def bt_cover(cols, slash):
+    w, h = BX1 - BX0, BY1 - BY0
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 255))
+    ic = bt_frame(cols, slash)
+    im.alpha_composite(ic, (round(106 - BX0 - ic.width / 2), round(SLOT_Y - BY0 - ic.height / 2)))
+    return im
+array("bt_cover", [bt_cover(((PNK, -1.5), (CYN, 1.5)), PNK), Image.new("RGBA", (BX1 - BX0, BY1 - BY0), (0, 0, 0, 0))])
+values("bt_cover", "systemStatusBluetooth", "bt_cover", [0, 1])
+lay("n", "v_bt_cover", BX0, BY0)
