@@ -58,8 +58,14 @@ for t,dim in (("n",False),("a",True)):
         array("scale_n",[strip(h,False) for h in range(24)]); values("scale_n","timeHour","scale_n",range(24)); lay(t,"v_scale_n",SX0,0)
         # риска як була — довга, з розривом там, де стоїть підпис поточної години
         im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
-        d.line([18*K,12*K,118*K,12*K],fill=OR,width=2*K); d.line([154*K,12*K,196*K,12*K],fill=OR,width=2*K)
-        d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        # розрив під підписом — з плавним згасанням: 100% → 0 на 98…120 і 0 → 100% на 152…174
+        al=im.getchannel("A"); px=al.load()
+        for X in range(W*K):
+            x=X/K; f=1.0 if x<98 or x>174 else (max(0,(120-x)/22) if x<136 else max(0,(x-152)/22))
+            if f<1:
+                for Y in range(24*K): px[X,Y]=round(px[X,Y]*f)
+        im.putalpha(al)
         image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
