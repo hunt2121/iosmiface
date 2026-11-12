@@ -107,18 +107,22 @@ for t,col in (("n",CYN),("a",G2)):
     number("mon_"+t,"dateMonth","dig_c"+t,2); lay(t,"mon_"+t,x,y)
 
 # ── батарея й блютуз (Y=101): батарея з «85%» — по центру, блютуз ліворуч на сталому місці
-BW,BH=66,30          # корпус батареї (у ньому — відсоток)
+BW,BH=50,22          # корпус батареї (у ньому — відсоток)
+BSTYLE=os.environ.get("BATT","A")   # A — лише контур, B — смужка під цифрами, C — тьмяна заливка
 def batt_frame(level,cols,fill):
-    # цілі пікселі в масштабі K: проміжки між контуром і заливкою однакові з усіх боків
+    # цілі пікселі в масштабі K; подвійний контур рожевий/блакитний, як в інших значків
     Z=K; im=Image.new("RGBA",((BW+10)*Z,(BH+4)*Z),(0,0,0,0)); d=ImageDraw.Draw(im)
-    top,bot=2*Z,(2+BH)*Z; ow=2*Z; g=2*Z
+    top,bot=2*Z,(2+BH)*Z; ow=2*Z; ox=3
+    if BSTYLE=="C" and level>0:
+        l=ox*Z+ow+Z; full=BW*Z-2*ow-2*Z
+        d.rectangle([l,top+ow+Z,l+round(full*level)-1,bot-ow-Z-1],fill=fill)
     for col,dx in cols:
-        l=round((3+dx)*Z); r=l+BW*Z
-        d.rounded_rectangle([l,top,r-1,bot-1],radius=6*Z,outline=col,width=ow)
-        d.rounded_rectangle([r+Z,(2+BH/2-5)*Z,r+5*Z-1,(2+BH/2+5)*Z-1],radius=Z,fill=col)
-    if level>0:
-        l=3*Z+ow+g; full=BW*Z-2*ow-2*g
-        d.rounded_rectangle([l,top+ow+g,l+max(3*Z,round(full*level))-1,bot-ow-g-1],radius=3*Z,fill=fill)
+        l=round((ox+dx)*Z); r=l+BW*Z
+        d.rounded_rectangle([l,top,r-1,bot-1],radius=3*Z,outline=col,width=ow)
+        d.rectangle([r+Z,(2+BH/2-3)*Z,r+4*Z-1,(2+BH/2+3)*Z-1],fill=col)
+    if BSTYLE=="B" and level>0:
+        l=(ox+4)*Z; full=(BW-8)*Z
+        d.rectangle([l,bot-ow-int(3.5*Z),l+round(full*level)-1,bot-ow-int(1.5*Z)-1],fill=cols[-1][0])
     return down(im)
 def bt_frame(cols,slash):
     im=Image.new("RGBA",(int(30*Q),int(30*Q)),(0,0,0,0)); d=ImageDraw.Draw(im); x,y=15,15
@@ -128,17 +132,18 @@ def bt_frame(cols,slash):
     d.line([((x-12)*Q,(y-12)*Q),((x+12)*Q,(y+12)*Q)],fill=slash,width=int(3*Q))
     return down(im)
 # батарея по центру, відсоток — усередині корпусу (по центру, хоч 5%, хоч 100%); блютуз — ліворуч на сталому місці
-for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,78,92),WHT),("a",((G2,0),),(45,45,45),G1)):
+for t,cols,fill,tc in (("n",((PNK,-1.5),(CYN,1.5)),(0,70,82),CYN),("a",((G2,0),),(45,45,45),G2)):
     array("batt_"+t,[batt_frame(l/10,cols,fill) for l in range(11)])
     values("batt_"+t,"systemStatusBattery","batt_"+t,[l*10 for l in range(11)])
     empty=Image.new("RGBA",(round(30*1.3),round(30*1.3)),(0,0,0,0))
     array("bt_"+t,[bt_frame(cols,PNK if t=="n" else G2),empty])     # 0 — зв'язку немає: значок; 1 — є: порожньо
     values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
-    f=SEMI(17); pct=image("pct_"+t,text_img("%",f,tc,h=SH))
+    f=SEMI(12.5); pct=image("pct_"+t,text_img("%",f,tc,h=SH))
     ds,cw=digit_set(f,tc,SH); array("dig_b"+t,ds)
     number("bat_"+t,"systemStatusBattery","dig_b"+t,3,"center",False,0,"pct_"+t)
-    Y=101; bx=106-BW/2               # лівий край корпусу
-    lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2); lay(t,"v_bt_"+t,bx-26-15*1.3,Y-15*1.3)
+    Y=101; bx=106-BW/2               # лівий край корпусу; відсоток — по центру корпусу
+    ty=-1.5 if BSTYLE=="B" else 0
+    lay(t,"v_batt_"+t,bx-3,Y-BH/2-2); lay(t,"bat_"+t,106,Y-SH/2+ty); lay(t,"v_bt_"+t,bx-24-15*1.3,Y-15*1.3)
 
 # ── секунди (лише звичайний екран)
 fs=BOLD(33*1.3); ds,cw=digit_set(fs,PNK,56); array("dig_sec",ds)
