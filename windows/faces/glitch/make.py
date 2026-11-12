@@ -250,7 +250,7 @@ open(os.path.join(DEST,"manifest.xml"),"w",encoding="utf-8").write("\n".join(xml
 print("ok", len(res), "resources")
 
 # ── стискання картинок: indexed8 (до 256 кольорів) там, де це менше за RGBA32
-if not os.environ.get("NO_COMPRESS"):
+if os.environ.get("COMPRESS"):   # вимкнено: на браслеті indexed8 вийшов БІЛЬШИМ (348 КБ проти 326 КБ)
     import importlib.util
     _sp=importlib.util.spec_from_file_location("compress",os.path.join(os.path.dirname(HERE),"compress.py")); _c=importlib.util.module_from_spec(_sp); _sp.loader.exec_module(_c)
     b,a=_c.run(DEST); print("compress: %d → %d bytes (estimate)"%(b,a))
