@@ -51,8 +51,21 @@ def pointer(m,dim):
 WEEK=["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]
 for t,dim in (("n",False),("a",True)):
     if t=="n":
-        array("strip_"+t,[strip(h,dim) for h in range(24)]); values("strip_"+t,"timeHour","strip_"+t,range(24)); lay(t,"v_strip_"+t,SX0,0)
-        array("ptr_"+t,[pointer(m,dim) for m in range(60)]); values("ptr_"+t,"timeMinute","ptr_"+t,range(60)); lay(t,"v_ptr_"+t,0,PY0)
+        # шкала їде щохвилини (60 кадрів: поділки повторюються щогодини), риска стоїть посередині;
+        # поточна година — біля риски (підписи на шкалі не можуть їхати разом із хвилинами — браслет не дає «хвилину доби»)
+        def ticks(m):
+            im=Image.new("RGBA",((W-SX0)*K,H*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+            for j in range(-60,61):
+                y=MID+(j-m/10)*PXH/6            # j — десятихвилинні поділки від H:00
+                if not -5<y<H+5: continue
+                big=j%6==0
+                d.line([((160 if big else 176)-SX0)*K,y*K,(194-SX0)*K,y*K],fill=(255,255,255) if big else DT,width=(3 if big else 1)*K)
+            return down(im)
+        array("ticks_n",[ticks(m) for m in range(60)]); values("ticks_n","timeMinute","ticks_n",range(60)); lay(t,"v_ticks_n",SX0,0)
+        im=Image.new("RGBA",(W*K,24*K),(0,0,0,0)); d=ImageDraw.Draw(im)
+        d.line([18*K,12*K,196*K,12*K],fill=OR,width=2*K); d.polygon([(200*K,4*K),(188*K,12*K),(200*K,20*K)],fill=OR)
+        image("ptr_n",down(im)); lay(t,"ptr_n",0,MID-12)
+        ch=digits("hr_n",F("SemiBold",24),LG,30); number("hr_n","timeHour","hr_n",2); lay(t,"hr_n",136-ch,MID-22-15)
     else:
         # AOD — без руху: нерухомий відрізок шкали з рискою посередині й поточна година біля неї
         im=Image.new("RGBA",(W*K,120*K),(0,0,0,0)); d=ImageDraw.Draw(im)

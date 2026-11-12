@@ -1,121 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Watchface id="318470560" name="Лінійка">
     <Resources>
-        <ImageArray name="strip_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="strip_n/0.png"/>
-            <Image src="strip_n/1.png"/>
-            <Image src="strip_n/2.png"/>
-            <Image src="strip_n/3.png"/>
-            <Image src="strip_n/4.png"/>
-            <Image src="strip_n/5.png"/>
-            <Image src="strip_n/6.png"/>
-            <Image src="strip_n/7.png"/>
-            <Image src="strip_n/8.png"/>
-            <Image src="strip_n/9.png"/>
-            <Image src="strip_n/10.png"/>
-            <Image src="strip_n/11.png"/>
-            <Image src="strip_n/12.png"/>
-            <Image src="strip_n/13.png"/>
-            <Image src="strip_n/14.png"/>
-            <Image src="strip_n/15.png"/>
-            <Image src="strip_n/16.png"/>
-            <Image src="strip_n/17.png"/>
-            <Image src="strip_n/18.png"/>
-            <Image src="strip_n/19.png"/>
-            <Image src="strip_n/20.png"/>
-            <Image src="strip_n/21.png"/>
-            <Image src="strip_n/22.png"/>
-            <Image src="strip_n/23.png"/>
+        <ImageArray name="ticks_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ticks_n/0.png"/>
+            <Image src="ticks_n/1.png"/>
+            <Image src="ticks_n/2.png"/>
+            <Image src="ticks_n/3.png"/>
+            <Image src="ticks_n/4.png"/>
+            <Image src="ticks_n/5.png"/>
+            <Image src="ticks_n/6.png"/>
+            <Image src="ticks_n/7.png"/>
+            <Image src="ticks_n/8.png"/>
+            <Image src="ticks_n/9.png"/>
+            <Image src="ticks_n/10.png"/>
+            <Image src="ticks_n/11.png"/>
+            <Image src="ticks_n/12.png"/>
+            <Image src="ticks_n/13.png"/>
+            <Image src="ticks_n/14.png"/>
+            <Image src="ticks_n/15.png"/>
+            <Image src="ticks_n/16.png"/>
+            <Image src="ticks_n/17.png"/>
+            <Image src="ticks_n/18.png"/>
+            <Image src="ticks_n/19.png"/>
+            <Image src="ticks_n/20.png"/>
+            <Image src="ticks_n/21.png"/>
+            <Image src="ticks_n/22.png"/>
+            <Image src="ticks_n/23.png"/>
+            <Image src="ticks_n/24.png"/>
+            <Image src="ticks_n/25.png"/>
+            <Image src="ticks_n/26.png"/>
+            <Image src="ticks_n/27.png"/>
+            <Image src="ticks_n/28.png"/>
+            <Image src="ticks_n/29.png"/>
+            <Image src="ticks_n/30.png"/>
+            <Image src="ticks_n/31.png"/>
+            <Image src="ticks_n/32.png"/>
+            <Image src="ticks_n/33.png"/>
+            <Image src="ticks_n/34.png"/>
+            <Image src="ticks_n/35.png"/>
+            <Image src="ticks_n/36.png"/>
+            <Image src="ticks_n/37.png"/>
+            <Image src="ticks_n/38.png"/>
+            <Image src="ticks_n/39.png"/>
+            <Image src="ticks_n/40.png"/>
+            <Image src="ticks_n/41.png"/>
+            <Image src="ticks_n/42.png"/>
+            <Image src="ticks_n/43.png"/>
+            <Image src="ticks_n/44.png"/>
+            <Image src="ticks_n/45.png"/>
+            <Image src="ticks_n/46.png"/>
+            <Image src="ticks_n/47.png"/>
+            <Image src="ticks_n/48.png"/>
+            <Image src="ticks_n/49.png"/>
+            <Image src="ticks_n/50.png"/>
+            <Image src="ticks_n/51.png"/>
+            <Image src="ticks_n/52.png"/>
+            <Image src="ticks_n/53.png"/>
+            <Image src="ticks_n/54.png"/>
+            <Image src="ticks_n/55.png"/>
+            <Image src="ticks_n/56.png"/>
+            <Image src="ticks_n/57.png"/>
+            <Image src="ticks_n/58.png"/>
+            <Image src="ticks_n/59.png"/>
         </ImageArray>
-        <DataItemImageValues name="v_strip_n" source="timeHour" ref="@strip_n" renderRule="alwaysShow" rotation="0">
-            <Param value="0"/>
-            <Param value="1"/>
-            <Param value="2"/>
-            <Param value="3"/>
-            <Param value="4"/>
-            <Param value="5"/>
-            <Param value="6"/>
-            <Param value="7"/>
-            <Param value="8"/>
-            <Param value="9"/>
-            <Param value="10"/>
-            <Param value="11"/>
-            <Param value="12"/>
-            <Param value="13"/>
-            <Param value="14"/>
-            <Param value="15"/>
-            <Param value="16"/>
-            <Param value="17"/>
-            <Param value="18"/>
-            <Param value="19"/>
-            <Param value="20"/>
-            <Param value="21"/>
-            <Param value="22"/>
-            <Param value="23"/>
-        </DataItemImageValues>
-        <ImageArray name="ptr_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
-            <Image src="ptr_n/0.png"/>
-            <Image src="ptr_n/1.png"/>
-            <Image src="ptr_n/2.png"/>
-            <Image src="ptr_n/3.png"/>
-            <Image src="ptr_n/4.png"/>
-            <Image src="ptr_n/5.png"/>
-            <Image src="ptr_n/6.png"/>
-            <Image src="ptr_n/7.png"/>
-            <Image src="ptr_n/8.png"/>
-            <Image src="ptr_n/9.png"/>
-            <Image src="ptr_n/10.png"/>
-            <Image src="ptr_n/11.png"/>
-            <Image src="ptr_n/12.png"/>
-            <Image src="ptr_n/13.png"/>
-            <Image src="ptr_n/14.png"/>
-            <Image src="ptr_n/15.png"/>
-            <Image src="ptr_n/16.png"/>
-            <Image src="ptr_n/17.png"/>
-            <Image src="ptr_n/18.png"/>
-            <Image src="ptr_n/19.png"/>
-            <Image src="ptr_n/20.png"/>
-            <Image src="ptr_n/21.png"/>
-            <Image src="ptr_n/22.png"/>
-            <Image src="ptr_n/23.png"/>
-            <Image src="ptr_n/24.png"/>
-            <Image src="ptr_n/25.png"/>
-            <Image src="ptr_n/26.png"/>
-            <Image src="ptr_n/27.png"/>
-            <Image src="ptr_n/28.png"/>
-            <Image src="ptr_n/29.png"/>
-            <Image src="ptr_n/30.png"/>
-            <Image src="ptr_n/31.png"/>
-            <Image src="ptr_n/32.png"/>
-            <Image src="ptr_n/33.png"/>
-            <Image src="ptr_n/34.png"/>
-            <Image src="ptr_n/35.png"/>
-            <Image src="ptr_n/36.png"/>
-            <Image src="ptr_n/37.png"/>
-            <Image src="ptr_n/38.png"/>
-            <Image src="ptr_n/39.png"/>
-            <Image src="ptr_n/40.png"/>
-            <Image src="ptr_n/41.png"/>
-            <Image src="ptr_n/42.png"/>
-            <Image src="ptr_n/43.png"/>
-            <Image src="ptr_n/44.png"/>
-            <Image src="ptr_n/45.png"/>
-            <Image src="ptr_n/46.png"/>
-            <Image src="ptr_n/47.png"/>
-            <Image src="ptr_n/48.png"/>
-            <Image src="ptr_n/49.png"/>
-            <Image src="ptr_n/50.png"/>
-            <Image src="ptr_n/51.png"/>
-            <Image src="ptr_n/52.png"/>
-            <Image src="ptr_n/53.png"/>
-            <Image src="ptr_n/54.png"/>
-            <Image src="ptr_n/55.png"/>
-            <Image src="ptr_n/56.png"/>
-            <Image src="ptr_n/57.png"/>
-            <Image src="ptr_n/58.png"/>
-            <Image src="ptr_n/59.png"/>
-        </ImageArray>
-        <DataItemImageValues name="v_ptr_n" source="timeMinute" ref="@ptr_n" renderRule="alwaysShow" rotation="0">
+        <DataItemImageValues name="v_ticks_n" source="timeMinute" ref="@ticks_n" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
             <Param value="1"/>
             <Param value="2"/>
@@ -177,6 +125,20 @@
             <Param value="58"/>
             <Param value="59"/>
         </DataItemImageValues>
+        <Image name="ptr_n" src="ptr_n.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="d_hr_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="d_hr_n/0.png"/>
+            <Image src="d_hr_n/1.png"/>
+            <Image src="d_hr_n/2.png"/>
+            <Image src="d_hr_n/3.png"/>
+            <Image src="d_hr_n/4.png"/>
+            <Image src="d_hr_n/5.png"/>
+            <Image src="d_hr_n/6.png"/>
+            <Image src="d_hr_n/7.png"/>
+            <Image src="d_hr_n/8.png"/>
+            <Image src="d_hr_n/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="hr_n" source="timeHour" ref="@d_hr_n" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
         <ImageArray name="d_min_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="d_min_n/0.png"/>
             <Image src="d_min_n/1.png"/>
@@ -322,8 +284,9 @@
         <DataItemImageNumber name="st_a" source="healthStepCount" ref="@d_st_a" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
     </Resources>
     <Theme type="normal" name="Лінійка" bgColor="#0E0E10">
-        <Layout ref="@v_strip_n" x="110" y="0"/>
-        <Layout ref="@v_ptr_n" x="0" y="220"/>
+        <Layout ref="@v_ticks_n" x="110" y="0"/>
+        <Layout ref="@ptr_n" x="0" y="248"/>
+        <Layout ref="@hr_n" x="120" y="223"/>
         <Layout ref="@min_n" x="15" y="176"/>
         <Layout ref="@xv_n" x="48" y="261"/>
         <Layout ref="@sec" x="43" y="290"/>
