@@ -73,8 +73,8 @@
         <Image name="g_wk" src="g_wk.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="g_date" src="g_date.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="dash" src="dash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="dd1" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
-        <DataItemImageNumber name="dd2" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <DataItemImageNumber name="dd1" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
+        <DataItemImageNumber name="dd2" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <ImageArray name="astro" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="astro/0.png"/>
             <Image src="astro/1.png"/>

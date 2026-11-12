@@ -188,7 +188,7 @@ image("g_wk",ghost(nwk,h)); lay("n","g_wk",Lc,y1); lay("n","v_wk",Lc,y1)
 DW=cells_w(5,h); xd=Rc-DW
 image("g_date",ghost(5,h)); lay("n","g_date",xd,y1)
 image("dash",cell('-',h))
-first,second=("dateMonth","dateDay") if H12 or LANGV=="en" else ("dateDay","dateMonth")
+first,second=("dateMonth","dateDay") if H12 else ("dateDay","dateMonth")   # місяць-день лише в EN 12h
 number("dd1",first,"d26",2,"left",True,sp); number("dd2",second,"d26",2,"left",True,sp)
 lay("n","dd1",xd,y1); lay("n","dash",xd+2*(wI+sp),y1); lay("n","dd2",xd+3*(wI+sp),y1)
 # анімація: обриси астронавта від лівого краю годинника, по центру висоти блоку; далі — центр між краєм екрана й колонкою, +5 px
