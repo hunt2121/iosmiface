@@ -14,9 +14,10 @@ W,H=212,520; K=4
 WH=(255,255,255); DIM=(150,150,155); GHOST=(40,40,40)
 FD="/usr/share/fonts/opentype/inter/"
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
-TXT={"ua":("СТИКУВАННЯ · У НОРМІ","ЗВ'ЯЗОК ВТРАЧЕНО",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
-     "ru":("СТЫКОВКА · В НОРМЕ","СВЯЗЬ ПОТЕРЯНА",["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
-     "en":("DOCKING · NOMINAL","CONNECTION LOST",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
+# зв'язок є — короткий напис 20 pt; втрачено — лише значок блютуз (порожній напис)
+TXT={"ua":("НА ЗВ'ЯЗКУ!","",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
+     "ru":("НА СВЯЗИ!","",["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
+     "en":("IN TOUCH!","",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
 TXT["en12"]=TXT["en"]
 ST_OK,ST_LOST,WEEK=TXT[LANGV]    # dateWeek: 0 — неділя
 ST_OK=os.environ.get("ST_OK_TXT",ST_OK); ST_LOST=os.environ.get("ST_LOST_TXT",ST_LOST)   # для макетів
@@ -87,7 +88,7 @@ def ink_x(im,box_w,box_x=0):
 
 # ── шапка: назва і рядок статусу (перемикається за Bluetooth)
 tit=image("title",text_img("BAND·01",F("Black",22),WH)); TX=ink_x(tit,W); TY=round(42.5-tit.height/2)
-ST_PT=float(os.environ.get("ST_PT","12")); fs=F("Bold",ST_PT,False)   # рядок статусу
+ST_PT=float(os.environ.get("ST_PT","20")); fs=F("Bold",ST_PT,False)   # рядок статусу
 ok=text_img(ST_OK,fs,DIM); rune=picon(pix.BT_RUNE)
 LOSTP=[rune]+([text_img(ST_LOST,fs,WH)] if ST_LOST else [])   # порожній напис — лише значок
 SH=rune.height; STW=W
