@@ -99,7 +99,7 @@ def st_frame(parts):
     return im
 array("st",[st_frame(LOSTP),st_frame([ok])]); values("v_st","systemStatusBluetooth","st",[0,1])
 array("st_a",[st_frame(LOSTP),Image.new("RGBA",(STW,SH),(0,0,0,0))]); values("v_st_a","systemStatusBluetooth","st_a",[0,1])   # кадри масиву — однакового розміру
-STY=round(67.5-SH/2)+2   # +2: рівні відступи 18 px BAND·01 → напис → заряд
+STY=round(67.5-SH/2)+3   # рівні відступи BAND·01 → напис → заряд → годинник (16/16/16)
 lay("n","title",TX,TY); lay("n","v_st",0,STY)
 
 # ── заряд: блискавка · 6 · три клітинки · 5 · % — по центру
@@ -108,7 +108,7 @@ bolt=image("bolt",picon(pix.BOLT))
 pc=D7.ring_pct(400); sc=(14/2.4)/pc.info['ring']; pc=pc.resize((round(pc.width*sc*K),round(pc.height*sc*K)),Image.LANCZOS); pc=pc.crop(pc.getbbox())
 pc=tint(pc.resize((round(pc.width/K),round(pc.height/K)),Image.LANCZOS),WH)
 image("pct",pc)   # «%» — окрема нерухома картинка, не одиниця числа: число вирівнюється рівно по клітинках
-tot=bolt.width+6+cells_w(3,h)+5+pc.width; x0=floor_c((W-tot)/2); BY=92   # +1: заряд → годинник 18 px
+tot=bolt.width+6+cells_w(3,h)+5+pc.width; x0=floor_c((W-tot)/2); BY=94   # заряд → годинник 16 px
 lay("n","bolt",x0,round(BY+13-bolt.height/2))
 image("g3",ghost(3,h)); lay("n","g3",x0+bolt.width+6,BY)
 xb=x0+bolt.width+6+cells_w(3,h)   # правий край клітинок заряду

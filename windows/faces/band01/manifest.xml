@@ -185,11 +185,11 @@
     </Resources>
     <Theme type="normal" name="BAND 01" bgColor="#000000">
         <Layout ref="@title" x="59" y="40"/>
-        <Layout ref="@v_st" x="0" y="66"/>
-        <Layout ref="@bolt" x="58" y="103"/>
-        <Layout ref="@g3" x="82" y="102"/>
-        <Layout ref="@bat" x="135" y="102"/>
-        <Layout ref="@pct" x="140" y="114"/>
+        <Layout ref="@v_st" x="0" y="67"/>
+        <Layout ref="@bolt" x="58" y="105"/>
+        <Layout ref="@g3" x="82" y="104"/>
+        <Layout ref="@bat" x="135" y="104"/>
+        <Layout ref="@pct" x="140" y="116"/>
         <Layout ref="@g_clock" x="25" y="146"/>
         <Layout ref="@hr" x="25" y="146"/>
         <Layout ref="@colon" x="103" y="146"/>
@@ -223,6 +223,6 @@
         <Layout ref="@soles" x="44" y="455"/>
         <Layout ref="@stp" x="168" y="454"/>
         <Layout ref="@dimmer" x="0" y="0"/>
-        <Layout ref="@v_st_a" x="0" y="66"/>
+        <Layout ref="@v_st_a" x="0" y="67"/>
     </Theme>
 </Watchface>
