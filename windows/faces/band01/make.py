@@ -15,9 +15,9 @@ WH=(255,255,255); DIM=(150,150,155); GHOST=(40,40,40)
 FD="/usr/share/fonts/opentype/inter/"
 F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Inter-")+w+".otf",round(s*K))
 # зв'язок є — короткий напис 20 pt; втрачено — лише значок блютуз (порожній напис)
-TXT={"ua":("НА ЗВ'ЯЗКУ!","",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
-     "ru":("НА СВЯЗИ!","",["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
-     "en":("CONNECTED!","",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
+TXT={"ua":("НА ЗВ'ЯЗКУ","",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
+     "ru":("НА СВЯЗИ","",["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
+     "en":("CONNECTED","",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
 TXT["en12"]=TXT["en"]
 ST_OK,ST_LOST,WEEK=TXT[LANGV]    # dateWeek: 0 — неділя
 ST_OK=os.environ.get("ST_OK_TXT",ST_OK); ST_LOST=os.environ.get("ST_LOST_TXT",ST_LOST)   # для макетів
