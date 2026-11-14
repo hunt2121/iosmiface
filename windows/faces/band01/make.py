@@ -19,6 +19,7 @@ TXT={"ua":("СТИКУВАННЯ · У НОРМІ","ЗВ'ЯЗОК ВТРАЧЕН
      "en":("DOCKING · NOMINAL","CONNECTION LOST",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
 TXT["en12"]=TXT["en"]
 ST_OK,ST_LOST,WEEK=TXT[LANGV]    # dateWeek: 0 — неділя
+ST_OK=os.environ.get("ST_OK_TXT",ST_OK); ST_LOST=os.environ.get("ST_LOST_TXT",ST_LOST)   # для макетів
 
 if os.path.isdir(OUT): shutil.rmtree(OUT)
 os.makedirs(OUT); res=[]; theme={"n":[],"a":[]}
@@ -87,15 +88,16 @@ def ink_x(im,box_w,box_x=0):
 # ── шапка: назва і рядок статусу (перемикається за Bluetooth)
 tit=image("title",text_img("BAND·01",F("Black",22),WH)); TX=ink_x(tit,W); TY=round(42.5-tit.height/2)
 ST_PT=float(os.environ.get("ST_PT","12")); fs=F("Bold",ST_PT,False)   # рядок статусу
-ok=text_img(ST_OK,fs,DIM); lost=text_img(ST_LOST,fs,WH); rune=picon(pix.BT_RUNE)
+ok=text_img(ST_OK,fs,DIM); rune=picon(pix.BT_RUNE)
+LOSTP=[rune]+([text_img(ST_LOST,fs,WH)] if ST_LOST else [])   # порожній напис — лише значок
 SH=rune.height; STW=W
 def st_frame(parts):
     tw=sum(p.width for p in parts)+6*(len(parts)-1); row=Image.new("RGBA",(tw,SH),(0,0,0,0)); x=0
     for p in parts: row.alpha_composite(p,(x,(SH-p.height)//2)); x+=p.width+6
     im=Image.new("RGBA",(STW,SH),(0,0,0,0)); im.alpha_composite(row,(ink_x(row,STW),0))
     return im
-array("st",[st_frame([rune,lost]),st_frame([ok])]); values("v_st","systemStatusBluetooth","st",[0,1])
-array("st_a",[st_frame([rune,lost]),Image.new("RGBA",(STW,SH),(0,0,0,0))]); values("v_st_a","systemStatusBluetooth","st_a",[0,1])   # кадри масиву — однакового розміру
+array("st",[st_frame(LOSTP),st_frame([ok])]); values("v_st","systemStatusBluetooth","st",[0,1])
+array("st_a",[st_frame(LOSTP),Image.new("RGBA",(STW,SH),(0,0,0,0))]); values("v_st_a","systemStatusBluetooth","st_a",[0,1])   # кадри масиву — однакового розміру
 STY=round(67.5-SH/2)+2   # +2: рівні відступи 18 px BAND·01 → напис → заряд
 lay("n","title",TX,TY); lay("n","v_st",0,STY)
 
