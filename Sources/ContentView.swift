@@ -28,6 +28,8 @@ struct ContentView: View {
     @State private var installingID: String?
     /// Встановлення з вкладки «Редактор» — прогрес під карткою циферблата
     @StateObject private var editorInstall = EditorInstallStatus()
+    /// Покупки платних циферблатів (App Store)
+    @StateObject private var purchases = StorePurchases()
     @State private var syncing = false
     @State private var lastSync = Date.distantPast
     /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
@@ -114,7 +116,8 @@ struct ContentView: View {
                       deviceName: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Пристрій не підключено"),
                       deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo,
                       onEdit: { editCopy($0) },
-                      onVariant: { item, key in chooseVariant(item, key) })
+                      onVariant: { item, key in chooseVariant(item, key) },
+                      categories: storeCatalog?.categories.map { ($0.key, StoreVariants.text($0.name, variant: nil)) } ?? [])
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -137,6 +140,9 @@ struct ContentView: View {
             if newTab == .store || newTab == .editor { Task { await syncDeviceFaces() } }
         }
         .onChange(of: activeFaceID) { editorInstall.activeID = $0 }
+        // магазин: інший браслет — інші варіанти; куплене — без ціни на кнопці
+        .onChange(of: ble.connectedName) { _ in applyCatalog(); Task { await loadStorePreviews() } }
+        .onChange(of: purchases.owned) { _ in applyCatalog() }
         .onChange(of: ble.connectedID) { if $0 == nil { editorInstall.activeID = nil; editorInstall.onBand = [] } }
         .onChange(of: ble.servicesReady) { ready in
             if ready && (tab == .store || tab == .editor) { Task { await syncDeviceFaces() } }
@@ -396,15 +402,20 @@ struct ContentView: View {
     /// Циферблати з каталогу — вибраними варіантами, з уже завантаженими превʼю
     private func applyCatalog() {
         guard let c = storeCatalog else { return }
-        storeFaces = StoreCatalog.faces(c, installed: InstalledFaces.parse(installedRaw), overrides: variantOverrides)
+        storeFaces = StoreCatalog.faces(c, installed: InstalledFaces.parse(installedRaw), overrides: variantOverrides,
+                                        band: connectedBand, prices: purchases.prices, owned: purchases.owned)
     }
 
-    /// Превʼю вибраних варіантів (з диска або сервера), потім картки оновлюються
+    /// Модель підключеного Smart Band (10, 11); невідома — 10
+    private var connectedBand: Int {
+        if let n = ble.connectedName, let r = n.range(of: #"Band\s*(\d+)"#, options: .regularExpression),
+           let model = Int(n[r].filter(\.isNumber)) { return model }
+        return 10
+    }
+
+    /// На головній — основне превʼю й анімація вибраних варіантів (інші стилі й кольори — на сторінці циферблата)
     private func loadStorePreviews() async {
-        guard let c = storeCatalog else { return }
-        var chosen: [String: String] = [:]
-        for f in storeFaces { if let k = f.variantKey { chosen[f.storeKey] = k } }
-        if await StorePreviewCache.shared.load(c, variants: chosen) { applyCatalog() }
+        if await StorePreviewCache.shared.loadGrid(storeFaces) { applyCatalog() }
     }
 
     private func refreshCatalog() async {
@@ -413,6 +424,12 @@ struct ContentView: View {
             storeCatalog = try await StoreServer.fetchCatalog()
             applyCatalog()
             await loadStorePreviews()
+            // ціни й покупки платних циферблатів
+            let ids = Set(storeCatalog?.faces.compactMap(\.price) ?? [])
+            if !ids.isEmpty {
+                await purchases.load(ids)
+                applyCatalog()
+            }
         } catch {
             // без мережі лишається збережений каталог
         }
@@ -497,14 +514,21 @@ struct ContentView: View {
             return
         }
         guard let variant = item.remote else { return }
-        // файл з сервера завантажується лише зараз
-        busy = true
-        installingID = item.id
-        progress = 0
-        progressText = String(localized: "Завантаження циферблата…")
         Task { @MainActor in
             do {
-                let face = try await StoreServer.download(variant)
+                // платний: наявна покупка або нова (вікно App Store); скасовано — нічого не робимо
+                var transaction: String?
+                if let product = item.price {
+                    guard let t = try await purchases.transaction(for: product) else { return }
+                    transaction = t
+                    applyCatalog()
+                }
+                // файл з сервера завантажується лише зараз
+                busy = true
+                installingID = item.id
+                progress = 0
+                progressText = String(localized: "Завантаження циферблата…")
+                let face = try await StoreServer.download(variant, transaction: transaction)
                 busy = false
                 install(face, store: item)
             } catch {
@@ -973,7 +997,15 @@ struct ContentView: View {
         Task { @MainActor in
             do {
                 guard let v = item.remote else { return }
-                let face = try await StoreServer.download(v)
+                var transaction: String?
+                if let product = item.price {
+                    guard item.owned, let t = try await purchases.transaction(for: product) else {
+                        storeAlert = String(localized: "Спершу купіть циферблат")
+                        return
+                    }
+                    transaction = t
+                }
+                let face = try await StoreServer.download(v, transaction: transaction)
                 let p = try editorStore.importBin(Data(face.data), name: item.name, asCopy: true)
                 tab = .editor
                 // спершу вкладка, потім редактор поверх неї
