@@ -52,7 +52,9 @@ final class StorePurchases: ObservableObject {
         if let result = await Transaction.latest(for: productID), case .verified(let t) = result, t.revocationDate == nil {
             return String(t.id)
         }
-        guard let product = products[productID] ?? (try? await Product.products(for: [productID]))?.first else {
+        var found = products[productID]
+        if found == nil { found = (try? await Product.products(for: [productID]))?.first }
+        guard let product = found else {
             throw StoreError(String(localized: "Покупки доступні в BandFace з App Store"))
         }
         products[productID] = product
