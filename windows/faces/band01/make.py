@@ -86,7 +86,7 @@ def ink_x(im,box_w,box_x=0):
 
 # ── шапка: назва і рядок статусу (перемикається за Bluetooth)
 tit=image("title",text_img("BAND·01",F("Black",22),WH)); TX=ink_x(tit,W); TY=round(42.5-tit.height/2)
-fs=F("Bold",12,False)
+ST_PT=float(os.environ.get("ST_PT","12")); fs=F("Bold",ST_PT,False)   # рядок статусу
 ok=text_img(ST_OK,fs,DIM); lost=text_img(ST_LOST,fs,WH); rune=picon(pix.BT_RUNE)
 SH=rune.height; STW=W
 def st_frame(parts):
