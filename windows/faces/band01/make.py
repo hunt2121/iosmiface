@@ -36,7 +36,9 @@ def values(n,src,arr,ps):
     for p in ps: res.append('    <Param value="%d"/>'%p)
     res.append('</DataItemImageValues>')
 def rnd(v): return math.floor(v+0.5-1e-9)   # пів пікселя — ліворуч / вгору (а не банківське округлення)
-def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,rnd(x),rnd(y)))
+DY=10   # увесь циферблат на 10 px нижче: відступи зверху/знизу 44/40 замість 34/50
+DYX={"dimmer":0,"title":DY-4}   # приглушення — на весь екран; BAND·01 — на 4 px вище за решту
+def lay(t,n,x,y): theme[t].append('<Layout ref="@%s" x="%d" y="%d"/>'%(n,rnd(x),rnd(y)+DYX.get(n,DY)))
 def tint(L,col):
     im=Image.new("RGBA",L.size,col+(0,)); im.putalpha(L); return im
 
