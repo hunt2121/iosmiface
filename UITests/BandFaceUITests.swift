@@ -47,13 +47,16 @@ final class BandFaceUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
-    func testStoreAndEditorUkrainian() {
+    func testStoreAndEditorUkrainian() throws {
         let app = launch("uk", "uk_UA")
         settle(); shot("faces")
         app.tabBars.buttons["Магазин"].tap()
-        _ = app.staticTexts["BigWatch"].waitForExistence(timeout: 5)
-        usleep(1_500_000); shot("store")   // превʼю малюються у фоні
-        app.staticTexts["BigWatch"].firstMatch.tap()
+        // каталог і превʼю — з сервера магазину
+        let card = app.staticTexts["BigWatch"].firstMatch
+        let found = card.waitForExistence(timeout: 15)
+        usleep(1_500_000); shot("store")
+        try XCTSkipUnless(found, "У каталозі сервера немає BigWatch — сторінку й редактор не перевірено")
+        card.tap()
         settle(); shot("store-detail")
         app.swipeUp()
         settle(); shot("store-detail-bottom")

@@ -220,7 +220,7 @@ extension StoreCatalog {
                     ?? StoreVariants.choose(e.variants), let v = e.variants[key] else { return nil }
             var item = StoreFace(id: v.faceId, name: StoreVariants.text(e.name, variant: v),
                                  kind: StoreKinds.label(e.kind), version: e.version,
-                                 about: StoreVariants.text(e.about, variant: v), price: e.price, face: nil, preview: nil)
+                                 about: StoreVariants.text(e.about, variant: v), price: e.price, preview: nil)
             item.key = e.id
             item.size = v.size
             item.remote = v

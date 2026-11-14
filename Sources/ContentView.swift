@@ -20,9 +20,9 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
     // Магазин
-    /// Каталог з сервера (або останній збережений); без адреси сервера — вбудовані циферблати
+    /// Каталог з сервера (або останній збережений, поки немає мережі)
     @State private var storeCatalog: RemoteCatalog? = StoreServer.cachedCatalog()
-    @State private var storeFaces: [StoreFace] = StoreServer.cachedCatalog() == nil ? StoreCatalog.cached : []
+    @State private var storeFaces: [StoreFace] = []
     /// Варіанти, вибрані вручну на сторінці циферблата: «запис=варіант», через кому
     @AppStorage("storeVariants") private var variantRaw = ""
     @State private var installingID: String?
@@ -168,16 +168,6 @@ struct ContentView: View {
             applyCatalog()
             await loadStorePreviews()
             await refreshCatalog()
-        }
-        // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
-        .task {
-            // лише ті, яких ще немає в кеші
-            let missing = storeFaces.filter { f in f.face.map { FacePreviews.cached(for: Data($0.data)) == nil } ?? false }
-            guard !missing.isEmpty else { return }
-            let shots = await StoreCatalog.renderPreviews(for: missing)
-            for (id, s) in shots {
-                if let i = storeFaces.firstIndex(where: { $0.id == id }) { storeFaces[i].apply(s) }
-            }
         }
         .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
                                                       set: { if !$0 { storeAlert = nil } })) {
@@ -424,8 +414,7 @@ struct ContentView: View {
             applyCatalog()
             await loadStorePreviews()
         } catch {
-            // без мережі й без збереженого каталогу — хоча б вбудовані
-            if storeCatalog == nil && storeFaces.isEmpty { storeFaces = StoreCatalog.cached }
+            // без мережі лишається збережений каталог
         }
     }
 
@@ -505,10 +494,6 @@ struct ContentView: View {
         if let n = ble.connectedName, let r = n.range(of: #"Band\s*(\d+)"#, options: .regularExpression),
            let model = Int(n[r].filter(\.isNumber)), !item.bands.contains(model) {
             storeAlert = String(localized: "Цей циферблат не підтримує ваш пристрій")
-            return
-        }
-        if let face = item.face {
-            install(face, store: item)
             return
         }
         guard let variant = item.remote else { return }
@@ -987,10 +972,8 @@ struct ContentView: View {
     private func editCopy(_ item: StoreFace) {
         Task { @MainActor in
             do {
-                let face: FaceFile
-                if let f = item.face { face = f }
-                else if let v = item.remote { face = try await StoreServer.download(v) }
-                else { return }
+                guard let v = item.remote else { return }
+                let face = try await StoreServer.download(v)
                 let p = try editorStore.importBin(Data(face.data), name: item.name, asCopy: true)
                 tab = .editor
                 // спершу вкладка, потім редактор поверх неї

@@ -129,7 +129,8 @@ targets:
     platform: iOS
     sources:
       - path: FaceEditor/Tests
-      - path: Sources/Faces
+      # Циферблати для тестів (у застосунок не потрапляють)
+      - path: FaceEditor/Tests/Fixtures
         buildPhase: resources
     dependencies:
       - target: BandFace

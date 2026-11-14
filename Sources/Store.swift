@@ -15,8 +15,8 @@ struct StoreVariantOption: Equatable {
     let label: String
 }
 
-/// Циферблат у магазині: вбудований (файл у застосунку) або з сервера — вибраним варіантом
-/// (мова й формат часу), файл якого завантажується лише під час встановлення.
+/// Циферблат у магазині з сервера — вибраним варіантом (мова й формат часу).
+/// Файл варіанта завантажується лише під час встановлення.
 struct StoreFace: Identifiable {
     let id: String          // ID циферблата на браслеті (вибраного варіанта)
     let name: String
@@ -24,15 +24,13 @@ struct StoreFace: Identifiable {
     let version: Int        // версія в каталозі; більша за встановлену — з'являється «Оновити»
     let about: String
     let price: String?      // nil — безкоштовний
-    /// Файл вбудованого циферблата; для циферблата з сервера — nil (завантажується під час встановлення)
-    let face: FaceFile?
     var preview: UIImage?
     var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
     var previews: [FacePreview] = []   // зображення на сторінці: основний екран і «Завжди на екрані»
     /// Анімація основного екрана (GIF), спільна для картки й сторінки
     var animation: Data?
-    /// Запис магазину (з сервера — його ID; вбудований — ID циферблата): незмінний при зміні варіанта
+    /// ID запису магазину: незмінний при зміні варіанта
     var key = ""
     /// Розмір файла варіанта з сервера
     var size = 0
@@ -46,7 +44,7 @@ struct StoreFace: Identifiable {
     var storeKey: String { key.isEmpty ? id : key }
     var ids: Set<String> { allIDs.isEmpty ? [id] : allIDs }
     var isFree: Bool { price == nil }
-    var sizeKB: Int { (face?.size ?? size) / 1024 }
+    var sizeKB: Int { size / 1024 }
     var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
 }
@@ -61,78 +59,8 @@ extension FaceFile {
     }
 }
 
-enum StoreCatalog {
-    private struct Entry {
-        let resource: String
-        let name: String
-        let kind: String
-        let version: Int
-        let about: String
-        let added: String   // дата додавання в магазин, «рррр-мм-дд»
-    }
-
-    private static let entries = [
-        Entry(resource: "BigWatch_UA", name: "BigWatch", kind: "Цифровий", version: 1,
-              about: "Великий цифровий час на весь екран. Знизу дата та кількість кроків.",
-              added: "2026-10-31"),
-        Entry(resource: "WhatTime_UA", name: "WhatTime", kind: "Гумор", version: 1,
-              about: "Цифровий час, дата та кроки на тлі відомого коміксу.",
-              added: "2026-10-31")
-    ]
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    /// Каталог читається з файлів один раз за запуск.
-    static let cached: [StoreFace] = load()
-
-    private static func load() -> [StoreFace] {
-        entries.compactMap { e in
-            guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
-                  let data = try? Data(contentsOf: url),
-                  let face = try? FaceFile(data: data) else { return nil }
-            var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
-                                 about: e.about, price: nil, face: face, preview: nil)
-            item.added = dayFormatter.date(from: e.added)
-            // намальовані з ресурсів превʼю, якщо вже є в кеші; інакше поки вбудоване (оновить renderPreviews)
-            if let shots = FacePreviews.cached(for: Data(face.data)) {
-                item.apply(shots)
-            } else {
-                let image = face.previewImage()
-                item.preview = image
-                item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
-            }
-            return item
-        }
-    }
-
-    /// Малює превʼю циферблатів магазину, яких ще немає в кеші (у фоні, по одному)
-    static func renderPreviews(for faces: [StoreFace]) async -> [String: FacePreviews.Shots] {
-        let input = faces.compactMap { f in f.face.map { (f.id, Data($0.data)) } }
-        return await Task.detached(priority: .utility) {
-            var out: [String: FacePreviews.Shots] = [:]
-            for (id, data) in input {
-                if let s = FacePreviews.get(for: data) { out[id] = s }
-            }
-            return out
-        }.value
-    }
-}
-
-extension StoreFace {
-    /// Превʼю з ресурсів циферблата — ті самі об'єкти для картки, сторінки й меню «Встановлено»
-    mutating func apply(_ s: FacePreviews.Shots) {
-        preview = s.main
-        animation = s.gif
-        previews = [FacePreview(title: String(localized: "Звичайний"), image: s.main)]
-        if let aod = s.alwaysOn { previews.append(FacePreview(title: String(localized: "Завжди на екрані"), image: aod)) }
-    }
-}
+/// Каталог магазину — з сервера (StoreRemote.swift)
+enum StoreCatalog {}
 
 /// Записи про встановлені циферблати: «ID=версія», через кому.
 enum InstalledFaces {
