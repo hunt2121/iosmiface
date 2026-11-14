@@ -9,24 +9,44 @@ struct FacePreview: Identifiable {
     let image: UIImage?
 }
 
-/// Циферблат у магазині. Поки каталог локальний: файли лежать у застосунку.
+/// Варіант циферблата для перемикача на сторінці («Англійська · 12 год»)
+struct StoreVariantOption: Equatable {
+    let key: String
+    let label: String
+}
+
+/// Циферблат у магазині: вбудований (файл у застосунку) або з сервера — вибраним варіантом
+/// (мова й формат часу), файл якого завантажується лише під час встановлення.
 struct StoreFace: Identifiable {
-    let id: String          // ID циферблата з файла
+    let id: String          // ID циферблата на браслеті (вибраного варіанта)
     let name: String
     let kind: String        // «Цифровий», «Гумор» — для фільтра
     let version: Int        // версія в каталозі; більша за встановлену — з'являється «Оновити»
     let about: String
     let price: String?      // nil — безкоштовний
-    let face: FaceFile
+    /// Файл вбудованого циферблата; для циферблата з сервера — nil (завантажується під час встановлення)
+    let face: FaceFile?
     var preview: UIImage?
     var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
     var previews: [FacePreview] = []   // зображення на сторінці: основний екран і «Завжди на екрані»
     /// Анімація основного екрана (GIF), спільна для картки й сторінки
     var animation: Data?
+    /// Запис магазину (з сервера — його ID; вбудований — ID циферблата): незмінний при зміні варіанта
+    var key = ""
+    /// Розмір файла варіанта з сервера
+    var size = 0
+    /// Варіант із сервера: звідки завантажити файл і превʼю
+    var remote: RemoteCatalog.Variant?
+    /// ID усіх варіантів запису на браслеті
+    var allIDs: Set<String> = []
+    var variantKey: String?
+    var variantOptions: [StoreVariantOption] = []
 
+    var storeKey: String { key.isEmpty ? id : key }
+    var ids: Set<String> { allIDs.isEmpty ? [id] : allIDs }
     var isFree: Bool { price == nil }
-    var sizeKB: Int { face.size / 1024 }
+    var sizeKB: Int { (face?.size ?? size) / 1024 }
     var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
     var meta: String { "\(kind) · \(sizeKB) KB" }
 }
@@ -93,7 +113,7 @@ enum StoreCatalog {
 
     /// Малює превʼю циферблатів магазину, яких ще немає в кеші (у фоні, по одному)
     static func renderPreviews(for faces: [StoreFace]) async -> [String: FacePreviews.Shots] {
-        let input = faces.map { ($0.id, Data($0.face.data)) }
+        let input = faces.compactMap { f in f.face.map { (f.id, Data($0.data)) } }
         return await Task.detached(priority: .utility) {
             var out: [String: FacePreviews.Shots] = [:]
             for (id, data) in input {
@@ -203,6 +223,8 @@ struct StoreView: View, Equatable {
     var deviceInfo = BandInfo()
     /// «Змінити в редакторі»: копія циферблата відкривається на вкладці «Редактор»
     var onEdit: (StoreFace) -> Void = { _ in }
+    /// Інший варіант циферблата (мова, формат часу) — ключ варіанта
+    var onVariant: (StoreFace, String) -> Void = { _, _ in }
 
     @State private var path: [String] = []
     @State private var filter = "all"
@@ -253,7 +275,7 @@ struct StoreView: View, Equatable {
                     } else {
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(items) { item in
-                                NavigationLink(value: item.id) {
+                                NavigationLink(value: item.storeKey) {
                                     card(item)
                                 }
                                 .buttonStyle(.plain)
@@ -274,7 +296,7 @@ struct StoreView: View, Equatable {
             // Під заголовком — поточне сортування («Спочатку нові», «А–Я»…), з iOS 26
             .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? StoreSort.date.direction(reversed: false)))
             .navigationDestination(for: String.self) { id in
-                if let item = faces.first(where: { $0.id == id }) {
+                if let item = faces.first(where: { $0.storeKey == id }) {
                     StoreDetailView(item: item,
                                     state: state(item),
                                     installedVersion: installed[item.id],
@@ -285,7 +307,8 @@ struct StoreView: View, Equatable {
                                     isActive: item.id == activeID,
                                     onSelect: { await onActivate(item) },
                                     onDelete: { await onDelete(item) },
-                                    onEdit: { onEdit(item) })
+                                    onEdit: { onEdit(item) },
+                                    onVariant: { onVariant(item, $0) })
                 }
             }
             .modifier(StoreToolbar(filter: $filter, filters: filterOptions,
@@ -293,7 +316,7 @@ struct StoreView: View, Equatable {
                                    onRefresh: { Task { await onRefresh() } },
                                    menuFaces: faces.filter { installed[$0.id] != nil },
                                    activeID: activeID,
-                                   onOpen: { path.append($0.id) },
+                                   onOpen: { path.append($0.storeKey) },
                                    onSelect: { face in menuAction { await onBandAction(face.id, face.name, false) } },
                                    onDeleteRequest: { menuDelete = $0 },
                                    onPickFile: onPickFile,
@@ -448,6 +471,8 @@ struct StoreDetailView: View {
     var onDelete: () async -> String? = { nil }
     /// «Змінити в редакторі»
     var onEdit: () -> Void = {}
+    /// Інший варіант (мова, формат часу)
+    var onVariant: (String) -> Void = { _ in }
 
     private enum Work { case select, delete }
     @State private var working: Work?
@@ -470,6 +495,25 @@ struct StoreDetailView: View {
                 .padding(.horizontal, 8)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
+
+                // Кілька варіантів (мови, 12/24 год) — вибір; за замовчуванням підібрано під телефон
+                if item.variantOptions.count > 1 {
+                    HStack {
+                        Text("Мова циферблата")
+                        Spacer()
+                        Picker("Мова циферблата", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
+                            ForEach(item.variantOptions, id: \.key) { Text($0.label).tag($0.key) }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .disabled(state == .installing)
+                    }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 6)
+                    .frame(height: 52)
+                    .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(Color(.secondarySystemGroupedBackground)))
+                }
 
                 actions
 

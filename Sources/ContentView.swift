@@ -20,7 +20,11 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
     // Магазин
-    @State private var storeFaces: [StoreFace] = StoreCatalog.cached
+    /// Каталог з сервера (або останній збережений); без адреси сервера — вбудовані циферблати
+    @State private var storeCatalog: RemoteCatalog? = StoreServer.cachedCatalog()
+    @State private var storeFaces: [StoreFace] = StoreServer.cachedCatalog() == nil ? StoreCatalog.cached : []
+    /// Варіанти, вибрані вручну на сторінці циферблата: «запис=варіант», через кому
+    @AppStorage("storeVariants") private var variantRaw = ""
     @State private var installingID: String?
     /// Встановлення з вкладки «Редактор» — прогрес під карткою циферблата
     @StateObject private var editorInstall = EditorInstallStatus()
@@ -91,7 +95,10 @@ struct ContentView: View {
                       progress: progress,
                       progressText: progressText,
                       onInstall: { storeInstall($0) },
-                      onRefresh: { await syncDeviceFaces(force: true) },
+                      onRefresh: {
+                          await refreshCatalog()
+                          await syncDeviceFaces(force: true)
+                      },
                       activeID: activeFaceID,
                       onActivate: { await bandFaceAction($0, delete: false) },
                       onDelete: { await bandFaceAction($0, delete: true) },
@@ -106,7 +113,8 @@ struct ContentView: View {
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
                       deviceName: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Пристрій не підключено"),
                       deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo,
-                      onEdit: { editCopy($0) })
+                      onEdit: { editCopy($0) },
+                      onVariant: { item, key in chooseVariant(item, key) })
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -155,10 +163,16 @@ struct ContentView: View {
         } message: { _ in
             Text("Що зробити з цим циферблатом?")
         }
+        // Каталог з сервера: спершу збережений, потім свіжий
+        .task {
+            applyCatalog()
+            await loadStorePreviews()
+            await refreshCatalog()
+        }
         // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
         .task {
             // лише ті, яких ще немає в кеші
-            let missing = storeFaces.filter { FacePreviews.cached(for: Data($0.face.data)) == nil }
+            let missing = storeFaces.filter { f in f.face.map { FacePreviews.cached(for: Data($0.data)) == nil } ?? false }
             guard !missing.isEmpty else { return }
             let shots = await StoreCatalog.renderPreviews(for: missing)
             for (id, s) in shots {
@@ -343,7 +357,7 @@ struct ContentView: View {
         activeFaceID = list.first(where: \.isActive)?.id ?? (standardMissing ? BandFace.standardID : nil)
         let ids = Set(list.map(\.id))
         editorInstall.onBand = ids
-        let storeIDs = Set(storeFaces.map(\.id))
+        let storeIDs = Set(storeFaces.flatMap(\.ids))
         otherFaces = list.filter { !storeIDs.contains($0.id) }.map { f in
             // Стандартний циферблат Smart Band 10 вбудований: назви браслет не передає, видалити його не можна.
             // Решту видаляти можна (прапорцю з браслета не довіряємо — Band 10 його не надсилає)
@@ -361,13 +375,67 @@ struct ContentView: View {
         }
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
-            if ids.contains(f.id) {
-                if map[f.id] == nil { map[f.id] = f.version }
-            } else {
-                map[f.id] = nil
+            // усі варіанти запису: на браслеті може бути інший, ніж вибраний зараз
+            for id in f.ids {
+                if ids.contains(id) {
+                    if map[id] == nil { map[id] = f.version }
+                } else {
+                    map[id] = nil
+                }
             }
         }
         installedRaw = InstalledFaces.encode(map)
+        // варіант, що вже на браслеті, стає вибраним (оновлення — тією самою мовою)
+        if storeCatalog != nil {
+            applyCatalog()
+            Task { await loadStorePreviews() }
+        }
+    }
+
+    // MARK: - Каталог з сервера
+
+    private var variantOverrides: [String: String] {
+        var map: [String: String] = [:]
+        for part in variantRaw.split(separator: ",") {
+            let pair = part.split(separator: "=")
+            if pair.count == 2 { map[String(pair[0])] = String(pair[1]) }
+        }
+        return map
+    }
+
+    /// Циферблати з каталогу — вибраними варіантами, з уже завантаженими превʼю
+    private func applyCatalog() {
+        guard let c = storeCatalog else { return }
+        storeFaces = StoreCatalog.faces(c, installed: InstalledFaces.parse(installedRaw), overrides: variantOverrides)
+    }
+
+    /// Превʼю вибраних варіантів (з диска або сервера), потім картки оновлюються
+    private func loadStorePreviews() async {
+        guard let c = storeCatalog else { return }
+        var chosen: [String: String] = [:]
+        for f in storeFaces { if let k = f.variantKey { chosen[f.storeKey] = k } }
+        if await StorePreviewCache.shared.load(c, variants: chosen) { applyCatalog() }
+    }
+
+    private func refreshCatalog() async {
+        guard StoreServer.base != nil else { return }
+        do {
+            storeCatalog = try await StoreServer.fetchCatalog()
+            applyCatalog()
+            await loadStorePreviews()
+        } catch {
+            // без мережі й без збереженого каталогу — хоча б вбудовані
+            if storeCatalog == nil && storeFaces.isEmpty { storeFaces = StoreCatalog.cached }
+        }
+    }
+
+    /// Інший варіант на сторінці циферблата (мова, формат часу)
+    private func chooseVariant(_ item: StoreFace, _ key: String) {
+        var map = variantOverrides
+        map[item.storeKey] = key
+        variantRaw = map.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        applyCatalog()
+        Task { await loadStorePreviews() }
     }
 
     /// Увімкнути або видалити циферблат магазину на пристрої (сторінка циферблата).
@@ -439,7 +507,28 @@ struct ContentView: View {
             storeAlert = String(localized: "Цей циферблат не підтримує ваш пристрій")
             return
         }
-        install(item.face, store: item)
+        if let face = item.face {
+            install(face, store: item)
+            return
+        }
+        guard let variant = item.remote else { return }
+        // файл з сервера завантажується лише зараз
+        busy = true
+        installingID = item.id
+        progress = 0
+        progressText = String(localized: "Завантаження циферблата…")
+        Task { @MainActor in
+            do {
+                let face = try await StoreServer.download(variant)
+                busy = false
+                install(face, store: item)
+            } catch {
+                busy = false
+                installingID = nil
+                ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
+                storeAlert = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Розділи
@@ -896,16 +985,20 @@ struct ContentView: View {
 
     /// Копія циферблата з магазину відкривається в редакторі (з власним ID — оригінал не зміниться)
     private func editCopy(_ item: StoreFace) {
-        do {
-            let p = try editorStore.importBin(Data(item.face.data), name: item.name, asCopy: true)
-            tab = .editor
-            Task { @MainActor in
+        Task { @MainActor in
+            do {
+                let face: FaceFile
+                if let f = item.face { face = f }
+                else if let v = item.remote { face = try await StoreServer.download(v) }
+                else { return }
+                let p = try editorStore.importBin(Data(face.data), name: item.name, asCopy: true)
+                tab = .editor
                 // спершу вкладка, потім редактор поверх неї
                 try? await Task.sleep(nanoseconds: 350_000_000)
                 editorProject = p
+            } catch {
+                storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
             }
-        } catch {
-            storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
         }
     }
 
