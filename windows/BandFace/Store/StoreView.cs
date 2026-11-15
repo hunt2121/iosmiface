@@ -317,6 +317,9 @@ namespace BandFace.Store
             left.VerticalAlignment = VerticalAlignment.Top;
             cols.Children.Add(left);
             var right = RightColumn(e, v);
+            // права колонка не ширша за 400 px — як на першому знімку; у широкому вікні праворуч лишається поле
+            right.MaxWidth = 400;
+            right.HorizontalAlignment = HorizontalAlignment.Left;
             Grid.SetColumn(right, 2);
             cols.Children.Add(right);
             sp.Children.Add(cols);
