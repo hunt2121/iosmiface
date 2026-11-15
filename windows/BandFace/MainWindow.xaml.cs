@@ -223,7 +223,10 @@ namespace BandFace
             using (var dc = dv.RenderOpen())
             {
                 dc.DrawRectangle((Brush)FindResource("Bg"), null, new Rect(0, 0, w, h));
-                dc.DrawRectangle(new VisualBrush(root), null, new Rect(0, 0, w, h));
+                // 1:1 з вікном: без Viewbox пензель розтягує те, що намальовано, на весь знімок —
+                // якщо праворуч порожньо, усе збільшується й обрізається правим краєм
+                dc.DrawRectangle(new VisualBrush(root) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, w, h), Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, new Rect(0, 0, w, h));
             }
             var bmp = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
             bmp.Render(dv);
