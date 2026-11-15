@@ -2577,6 +2577,29 @@
         }
       }
     },
+    "Ще": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще"
+          }
+        }
+      }
+    },
     "Циферблати": {
       "extractionState": "manual",
       "localizations": {

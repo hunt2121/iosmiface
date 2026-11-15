@@ -116,7 +116,7 @@ struct ContentView: View {
                 .tag(Tab.editor)
 
             settingsTab
-                .tabItem { Label("Налаштування", image: "TabSettings") }
+                .tabItem { Label("Ще", image: "TabSettings") }
                 // Ключа немає — на іконці червоний знак «!»
                 .badge(keyValid ? nil : Text("!"))
                 .tag(Tab.settings)
