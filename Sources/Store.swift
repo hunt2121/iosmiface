@@ -636,8 +636,8 @@ struct StoreDetailView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    // за шириною назв, по центру — не на всю картку
-                    .fixedSize()
+                    // не на всю картку: близько 110 pt на стиль, по центру
+                    .frame(maxWidth: CGFloat(item.styles.count) * 110)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
                 }
