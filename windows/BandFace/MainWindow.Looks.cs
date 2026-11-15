@@ -110,6 +110,9 @@ namespace BandFace
                     var name = _lookStyles[i].Item1.Length > 0 ? _lookStyles[i].Item1 : S.Get("storeStyleN", i + 1);
                     var t = new ToggleButton { Style = (Style)FindResource("Chip"), Content = name, IsChecked = i == _lookStyle, Height = 30, FontSize = 13, ToolTip = name,
                         Margin = new Thickness(0, 0, _lookStyles.Count > 2 && i % 2 == 0 ? 6 : 0, 6) };
+                    // без рамки: сіра підкладка, вибраний — кольором акценту
+                    t.SetResourceReference(Control.BackgroundProperty, "ChipBg");
+                    t.BorderBrush = Brushes.Transparent;
                     t.Click += (s, e) => { _lookStyle = idx; BuildLooks(); ShowLook(); };
                     list.Children.Add(t);
                 }

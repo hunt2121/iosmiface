@@ -335,17 +335,20 @@ namespace BandFace.Store
             bool looks = v.Styles.Count > 1 || v.Colors.Count > 1;
             if (v.Styles.Count > 1)
             {
-                // перемикач стилів, як «Дизайн» у бічному меню
+                // перемикач стилів: сіра доріжка, вибраний — кольором акценту
                 var seg = new UniformGrid { Columns = v.Styles.Count };
                 for (int i = 0; i < v.Styles.Count; i++)
                 {
                     int idx = i;
                     var t = new ToggleButton { Style = StyleOf("Chip"), Margin = new Thickness(0), Height = 26, IsChecked = i == _style, FontSize = 13,
                         Content = string.IsNullOrEmpty(v.Styles[i].Name) ? S.Get("storeStyleN", i + 1) : v.Styles[i].Name };
+                    // без власних рамок: лише доріжка й вибраний стиль кольором акценту (подвійне обведення виглядало дивно)
+                    t.Background = Brushes.Transparent;
+                    t.BorderBrush = Brushes.Transparent;
                     t.Click += (s, ev) => { _style = idx; RenderPage(); };
                     seg.Children.Add(t);
                 }
-                sp.Children.Add(new Border { Background = BrushOf("Card"), BorderBrush = BrushOf("CardBorder"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(3),
+                sp.Children.Add(new Border { Background = BrushOf("ChipBg"), CornerRadius = new CornerRadius(6), Padding = new Thickness(3),
                     Width = Math.Min(340, 110 * v.Styles.Count), Margin = new Thickness(0, 16, 0, 0), Child = seg, HorizontalAlignment = HorizontalAlignment.Center });
             }
             if (v.Colors.Count > 1)
