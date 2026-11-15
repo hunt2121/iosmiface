@@ -680,10 +680,12 @@ struct ContentView: View {
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
         VStack(spacing: 16) {
             if looks.styles.count > 1 {
-                // свій перемикач: системний на білій картці налаштувань малює зайве світле обведення
-                LookSegment(names: looks.styles.indices.map { i in
-                    looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name
-                }, selection: $lookStyle)
+                Picker("Стиль", selection: $lookStyle) {
+                    ForEach(looks.styles.indices, id: \.self) { i in
+                        Text(looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name).tag(i)
+                    }
+                }
+                .pickerStyle(.segmented)
                 .frame(maxWidth: CGFloat(looks.styles.count) * 110)
                 .frame(maxWidth: .infinity)
             }
@@ -1396,37 +1398,3 @@ final class ProgressThrottle {
     }
 }
 
-/// Перемикач стилів у картці встановлення: як системний (сіра доріжка, біла капсула вибраного), без обведення
-struct LookSegment: View {
-    let names: [String]
-    @Binding var selection: Int
-
-    private static let thumb = Color(UIColor { $0.userInterfaceStyle == .dark ? .systemGray3 : .white })
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(names.indices, id: \.self) { i in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { selection = i }
-                } label: {
-                    Text(names[i])
-                        .font(.footnote.weight(i == selection ? .semibold : .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 28)
-                        .background {
-                            if i == selection {
-                                Capsule().fill(Self.thumb).shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(i == selection ? .isSelected : [])
-            }
-        }
-        .padding(2)
-        .background(Capsule().fill(Color(.tertiarySystemFill)))
-    }
-}
