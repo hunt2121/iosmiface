@@ -216,7 +216,7 @@ struct ContentView: View {
                 bandSection
                 installSection
             }
-            .navigationTitle("Циферблати")
+            .navigationTitle("Головна")
         }
     }
 
