@@ -702,7 +702,7 @@ struct StoreDetailView: View {
             VStack(spacing: 0) {
                 infoRow("Категорії", item.kinds.isEmpty ? "—" : item.kinds.joined(separator: ", "))
                 Divider().padding(.leading, 16)
-                infoRow("Сумісність", item.bands.map { "Smart Band \($0)" }.joined(separator: ", "))
+                infoRow("Сумісність", "Xiaomi Smart Band " + item.bands.map(String.init).joined(separator: " · "))
                 if item.styles.count > 1 || item.colors.count > 1 {
                     Divider().padding(.leading, 16)
                     infoRow("Стилі й кольори", StoreText.looks(styles: item.styles.count, colors: item.colors.count))
