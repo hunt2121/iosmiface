@@ -237,7 +237,7 @@ namespace BandFace
 
         void ApplyTexts()
         {
-            NavFacesText.Text = S.Get("home"); TitleFaces.Text = S.Get("faces");
+            NavFacesText.Text = TitleFaces.Text = S.Get("home");
             NavStoreText.Text = S.Get("store");
             NavEditorText.Text = S.Get("editor");
             NavSettingsText.Text = S.Get("more"); TitleSettings.Text = S.Get("settings");
