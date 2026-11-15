@@ -175,8 +175,9 @@ namespace BandFace.Store
             sort.Click += (s, e) => { menu.PlacementTarget = sort; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true; };
             DockPanel.SetDock(sort, Dock.Right);
             bar.Children.Add(sort);
-            // «Усі», «Безкоштовні», «Платні» — такі самі категорії, як категорії циферблатів (лише не з сервера)
-            var chips = new WrapPanel { Margin = new Thickness(0, 0, 16, 0) };
+            // «Усі», «Безкоштовні», «Платні» — такі самі категорії, як категорії циферблатів (лише не з сервера).
+            // Один рядок: що не вміщається — у меню кнопки «Ще»
+            var chips = new CategoryRow { Margin = new Thickness(0, 0, 16, 0) };
             var filters = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("all", S.Get("storeAll")) };
             if (_catalog.Faces.Any(f => f.Price != null))
             {
@@ -192,6 +193,26 @@ namespace BandFace.Store
                 chip.Content = FilterIcons.TryGetValue(key, out var icon) ? IconLabel(chip, icon, f.Value) : (object)f.Value;
                 chip.Click += (s, e) => { _filter = key; RenderList(); };
                 chips.Children.Add(chip);
+            }
+            // «Ще ⌄» і та сама кнопка з назвою вибраної категорії, якщо вона потрапила в меню
+            var selected = filters.FirstOrDefault(x => x.Key == _filter);
+            chips.Selected = filters.FindIndex(x => x.Key == _filter);
+            foreach (var label in new[] { S.Get("storeMore"), selected.Value ?? S.Get("storeMore") })
+            {
+                var more = new ToggleButton { Style = StyleOf("CatTile"), Content = label + "  \ue70d", Margin = new Thickness(0, 0, 8, 8),
+                    FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets"), IsChecked = chips.Children.Count > filters.Count };
+                more.Click += (s, e) =>
+                {
+                    more.IsChecked = chips.Children.IndexOf(more) > filters.Count;   // клік не перемикає підсвічення
+                    var menu = new ContextMenu();
+                    for (int i = chips.Shown; i < filters.Count; i++)
+                    {
+                        var key = filters[i].Key;
+                        Creator.Ui.MenuAdd(menu, filters[i].Value, _filter == key ? "\ue73e" : null, () => { _filter = key; RenderList(); });
+                    }
+                    menu.PlacementTarget = more; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true;
+                };
+                chips.Children.Add(more);
             }
             bar.Children.Add(chips);
             sp.Children.Add(bar);
@@ -803,5 +824,63 @@ namespace BandFace.Store
 
         Style StyleOf(string key) => (Style)FindResource(key);
         Brush BrushOf(string key) => (Brush)FindResource(key);
+    }
+
+    /// <summary>Категорії магазину одним рядком: плитки, що не вміщаються, ховаються в меню кнопки «Ще».
+    /// Діти: плитки категорій, потім кнопка «Ще» і кнопка з назвою вибраної категорії (коли вибрана в меню)</summary>
+    public class CategoryRow : Panel
+    {
+        /// <summary>Номер вибраної категорії</summary>
+        public int Selected = -1;
+        /// <summary>Скільки плиток видно; решта — у меню</summary>
+        public int Shown { get; private set; }
+        UIElement _more;
+
+        int Tiles => Children.Count - 2;
+
+        protected override Size MeasureOverride(Size available)
+        {
+            var inf = new Size(double.PositiveInfinity, double.PositiveInfinity);
+            double height = 0;
+            foreach (UIElement c in Children) { c.Measure(inf); height = Math.Max(height, c.DesiredSize.Height); }
+            int n = Tiles;
+            double all = 0;
+            for (int i = 0; i < n; i++) all += Children[i].DesiredSize.Width;
+            if (n <= 0 || double.IsInfinity(available.Width) || all <= available.Width)
+            {
+                Shown = Math.Max(0, n); _more = null;
+                return new Size(Math.Max(0, all), height);
+            }
+            // найбільше плиток, що вміщаються разом із кнопкою; вибрана в меню — кнопка з її назвою
+            for (int k = n - 1; k >= 0; k--)
+            {
+                var more = Selected >= k ? Children[n + 1] : Children[n];
+                double w = more.DesiredSize.Width;
+                for (int i = 0; i < k; i++) w += Children[i].DesiredSize.Width;
+                if (w <= available.Width || k == 0)
+                {
+                    Shown = k; _more = more;
+                    return new Size(Math.Min(w, available.Width), height);
+                }
+            }
+            return new Size(0, height);
+        }
+
+        protected override Size ArrangeOverride(Size final)
+        {
+            double x = 0;
+            int n = Tiles;
+            for (int i = 0; i < Children.Count; i++)
+            {
+                var c = Children[i];
+                bool show = i < n ? i < Shown : c == _more;
+                // сховані (у меню) — Hidden: місце не займають, не малюються й не натискаються
+                var v = show ? Visibility.Visible : Visibility.Hidden;
+                if (c.Visibility != v) c.Visibility = v;
+                if (show) { c.Arrange(new Rect(x, 0, c.DesiredSize.Width, c.DesiredSize.Height)); x += c.DesiredSize.Width; }
+                else c.Arrange(new Rect(0, 0, 0, 0));
+            }
+            return final;
+        }
     }
 }

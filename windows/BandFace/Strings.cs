@@ -120,6 +120,7 @@ namespace BandFace
             ["lookHintColor"] = new[] { "Колір вибирається на браслеті", "The color is chosen on the band", "Цвет выбирается на браслете" },
             // Магазин
             ["storeAll"] = new[] { "Усі", "All", "Все" },
+            ["storeMore"] = new[] { "Ще", "More", "Ещё" },
             ["storeFree"] = new[] { "Безкоштовні", "Free", "Бесплатные" },
             ["storePaid"] = new[] { "Платні", "Paid", "Платные" },
             ["storeSortNew"] = new[] { "Спочатку нові", "Newest first", "Сначала новые" },
