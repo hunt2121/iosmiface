@@ -138,8 +138,135 @@ namespace BandFace.Creator
             EmptyCard.Visibility = store.Projects.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>Вага готового .bin за ключем мініатюри (рахується у фоні разом з нею)</summary>
+        readonly Dictionary<string, int> sizes = new Dictionary<string, int>();
+
+        /// <summary>Новий дизайн — картка як у магазині: капсула, назва й кольори праворуч, «вага · дата», стилі, кнопка всередині</summary>
+        FrameworkElement StoreCard(FaceProject p)
+        {
+            const double iw = 96, ih = 236;
+            var img = new Image { Stretch = Stretch.UniformToFill };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            var inner = new Grid { Width = iw, Height = ih, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, iw, ih), iw / 2, iw / 2) };
+            inner.Children.Add(img);
+            var capsule = new Border
+            {
+                Width = iw + 6, Height = ih + 6, CornerRadius = new CornerRadius((iw + 6) / 2), Padding = new Thickness(3), Child = inner, HorizontalAlignment = HorizontalAlignment.Center,
+                Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
+            };
+            var sp = new StackPanel();
+            sp.Children.Add(capsule);
+
+            // назва, праворуч кружечки кольорів
+            var nameRow = new DockPanel { Margin = new Thickness(0, 14, 0, 0) };
+            var colors = ColorVariants.Colors(p);
+            if (colors.Count > 1)
+            {
+                var dots = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+                for (int i = 0; i < Math.Min(4, colors.Count); i++)
+                {
+                    Color c;
+                    try { c = (Color)ColorConverter.ConvertFromString(colors[i]); } catch (Exception) { c = Colors.Gray; }
+                    var dot = new System.Windows.Shapes.Ellipse { Width = 16, Height = 16, Fill = new SolidColorBrush(c), Stroke = (Brush)FindResource("Card"), StrokeThickness = 1.5, Margin = new Thickness(i == 0 ? 0 : -5, 0, 0, 0) };
+                    Panel.SetZIndex(dot, 10 - i);
+                    dots.Children.Add(dot);
+                }
+                if (colors.Count > 4) dots.Children.Add(new TextBlock { Text = "+" + (colors.Count - 4), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = (Brush)FindResource("Sub"), Margin = new Thickness(6, 0, 0, 0) });
+                DockPanel.SetDock(dots, Dock.Right);
+                nameRow.Children.Add(dots);
+            }
+            nameRow.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 15, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
+            sp.Children.Add(nameRow);
+
+            // «вага · дата», праворуч кількість стилів
+            var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks + "#" + ih;
+            var metaRow = new DockPanel { Margin = new Thickness(0, 3, 0, 0) };
+            int styles = StyleCount(p);
+            if (styles > 1)
+            {
+                var st = new TextBlock { Text = BandFace.S.Get(styles % 10 >= 2 && styles % 10 <= 4 && (styles % 100 < 12 || styles % 100 > 14) ? "storeStyle2" : styles % 10 == 1 && styles % 100 != 11 ? "storeStyle1" : "storeStyle5", styles),
+                    FontSize = 12, Foreground = (Brush)FindResource("Sub") };
+                DockPanel.SetDock(st, Dock.Right);
+                metaRow.Children.Add(st);
+            }
+            var date = p.Meta.Modified.ToLocalTime().ToString("d");
+            var meta = new TextBlock { FontSize = 12, Foreground = (Brush)FindResource("Sub"), TextTrimming = TextTrimming.CharacterEllipsis,
+                Text = sizes.TryGetValue(key, out var n0) ? SizeText(n0) + " · " + date : date };
+            metaRow.Children.Add(meta);
+            sp.Children.Add(metaRow);
+
+            // кнопка встановлення — у картці на всю ширину
+            var inst = new Button { Content = S.Get(installedIds.Contains(p.Root.Str("id") ?? "") ? "reinstallShort" : "installShort"), Style = (Style)FindResource("Btn"), Height = 32, Margin = new Thickness(0, 12, 0, 0) };
+            inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
+            sp.Children.Add(inst);
+
+            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName, Width = 222 };
+            card.MouseLeftButtonUp += (s, e) => { if (!(e.OriginalSource is DependencyObject o && InButton(o))) OpenProject(p); };
+            card.ContextMenu = CardMenu(p);
+
+            // мініатюра й вага — коли картки вже на екрані
+            if (thumbs.TryGetValue(key, out var t0)) img.Source = t0;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (img.Source == null)
+                    {
+                        double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+                        var src = new FaceRenderer(p).Render(0, Math.Max(328, ih * dpi * 1.5) / p.Meta.Device.Height).Image;
+                        thumbs[key] = src;
+                        img.Source = src;
+                    }
+                    if (!sizes.ContainsKey(key))
+                    {
+                        sizes[key] = p.Compile().Item1.Length;
+                        meta.Text = SizeText(sizes[key]) + " · " + date;
+                    }
+                }
+                catch (Exception) { }
+            }), DispatcherPriority.Background);
+            return card;
+        }
+
+        static bool InButton(DependencyObject o)
+        {
+            for (; o != null; o = o is Visual ? VisualTreeHelper.GetParent(o) : LogicalTreeHelper.GetParent(o))
+                if (o is System.Windows.Controls.Primitives.ButtonBase) return true;
+            return false;
+        }
+
+        static string SizeText(int bytes) => bytes >= 1024 * 1024 ? (bytes / 1048576.0).ToString("0.0") + " MB" : Math.Max(1, bytes / 1024) + " KB";
+
+        /// <summary>Стилі: звичайні теми (у старих файлах без типів тем друга тема — AOD)</summary>
+        static int StyleCount(FaceProject p)
+        {
+            var themes = p.Themes;
+            if (themes.Count == 2 && themes.All(t => !t.Has("type"))) return 1;
+            return Math.Max(1, themes.Count(t => t.Str("type") != "AOD"));
+        }
+
+        ContextMenu CardMenu(FaceProject p)
+        {
+            var menu = new ContextMenu();
+            Ui.MenuAdd(menu, S.Get("open"), "\uE8E5", () => OpenProject(p));
+            Ui.MenuAdd(menu, S.Get("installBand"), "\uE896", () => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); });
+            Ui.MenuAdd(menu, S.Get("duplicate"), "\uE8C8", () => { store.Duplicate(p); RefreshProjects(); });
+            Ui.MenuAdd(menu, S.Get("saveBin"), "\uE74E", () => Actions.ExportBin(Owner, p));
+            Ui.MenuAdd(menu, S.Get("showInFolder"), "\uE838", () => { try { Process.Start("explorer.exe", "\"" + p.Folder + "\""); } catch (Exception) { } });
+            menu.Items.Add(new Separator());
+            Ui.MenuAdd(menu, S.Get("deleteFace"), "\uE74D", () =>
+            {
+                var ask = ProjectStore.IsExternal(p) ? S.Get("removeFaceAsk", p.DisplayName, p.Folder) : S.Get("deleteFaceAsk", p.DisplayName);
+                if (MessageBox.Show(Owner, ask, "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+                store.Delete(p);
+                RefreshProjects();
+            }, danger: true);
+            return menu;
+        }
+
         FrameworkElement Card(FaceProject p)
         {
+            if (AppDesign.New) return StoreCard(p);
             // капсула така сама, як на вкладці «Циферблати»: 102×242, сіре обведення 3 px, вміст 96×236 обрізано по капсулі,
             // картинка масштабується якісно (без змазування)
             // новий дизайн — екран 144×354, як на головній; старий — 96×236
@@ -232,6 +359,13 @@ namespace BandFace.Creator
                 return;
             }
             OpenFile(path);
+        }
+
+        /// <summary>Копія готового циферблата (з магазину) — новий проєкт, відкритий у редакторі; оригінал не змінюється</summary>
+        public void OpenCopy(byte[] data, string name)
+        {
+            try { OpenProject(store.ImportBin(data, name, asCopy: true)); }
+            catch (Exception ex) { MessageBox.Show(Owner, S.Get("openFail", name, ex.Message), "BandFace", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         public void OpenFile(string path)

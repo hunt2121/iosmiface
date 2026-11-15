@@ -127,11 +127,13 @@ jobs:
           $bin = "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
           Shot "f4-light-face" "--face=$bin";
           Shot "1-light-faces" "--page=faces"; Shot "2-light-editor-list" "--page=editor"; Shot "3-light-editor" "--demo"
+          Shot "s4-light-store" "--page=store"; Shot "s5-light-store-face" "--store-face=visual"
           Shot "4-light-settings" "--page=settings"; Shot "5-light-key" "--page=key"; Shot "6-light-fonts" "--page=fonts"
           Shot "a1-light-arc" "--demo=arc"; Shot "a2-light-line" "--demo=line"; Shot "a3-light-digits" "--demo=digits"
           Shot "a4-light-xml" "--demo=xml"; Shot "a5-light-images" "--demo=images"; Shot "a6-light-gallery" "--demo=gallery"; Shot "a7-light-gallery2" "--demo=gallery2"
           Set-ItemProperty $k AppsUseLightTheme 0 -Type DWord
           Shot "7-dark-faces" "--page=faces"; Shot "8-dark-editor" "--demo"; Shot "9-dark-settings" "--page=settings"
+          Shot "s1-dark-store" "--page=store"; Shot "s2-dark-store-face" "--store-face=visual"; Shot "s3-dark-editor-list" "--page=editor"
           $bin = "$PWD\windows\FaceKit.Tests\Faces\BigWatch_UA.bin"
           Shot "f1-dark-face" "--face=$bin"; Shot "f2-dark-done" "--face=$bin --demo-done"; Shot "f3-dark-progress" "--face=$bin --demo-progress"
           Shot "f5-dark-old" "--design=old --face=$bin"; Shot "f6-dark-editor-list" "--demo-installed=266233369 --editor-list=$bin"; Shot "f7-dark-editor-list-old" "--design=old --editor-list=$bin"
@@ -142,6 +144,13 @@ jobs:
           if ($shots) { gh release create "shots-${{ github.run_number }}" @shots --draft --title "Shots ${{ github.run_number }}" --notes shots }
         env:
           GH_TOKEN: ${{ github.token }}
+      # знімки екрана ще й артефактом — їх можна забрати без входу в чернетки релізів
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.shots || contains(github.event.head_commit.message, '[shot]') }}
+        with:
+          name: shots-${{ github.run_number }}
+          path: "*.png"
+          if-no-files-found: ignore
       - name: Package
         shell: pwsh
         working-directory: windows
