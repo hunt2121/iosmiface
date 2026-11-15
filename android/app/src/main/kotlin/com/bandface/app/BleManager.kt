@@ -60,11 +60,14 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         }
     }
 
-    fun bonded(): List<FoundDevice> =
+    /** Спарені пристрої. Без дозволу «Пристрої поблизу» (Android 12+) — порожньо, а не падіння застосунку:
+     *  при першому запуску дозволу ще немає, список оновиться після «Шукати пристрій». */
+    fun bonded(): List<FoundDevice> = runCatching {
         adapter?.bondedDevices?.map { FoundDevice(it.name ?: it.address, it.address) } ?: emptyList()
+    }.getOrDefault(emptyList())
 
     fun startScan() {
-        adapter?.bluetoothLeScanner?.startScan(scanCallback)
+        runCatching { adapter?.bluetoothLeScanner?.startScan(scanCallback) }.onFailure { log("scan: ${it.message}") }
         main.postDelayed({ stopScan() }, 10_000)
     }
 
