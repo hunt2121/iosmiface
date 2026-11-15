@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Watchface id="318470583" name="ORBIT">
+    <Resources>
+        <Image name="dial" src="dial.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="h_hour" src="h_hour.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="h_min" src="h_min.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="h_sec" src="h_sec.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="h_min_a" src="h_min_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="cap" src="cap.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="cap_a" src="cap_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="day" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="day/0.png"/>
+            <Image src="day/1.png"/>
+            <Image src="day/2.png"/>
+            <Image src="day/3.png"/>
+            <Image src="day/4.png"/>
+            <Image src="day/5.png"/>
+            <Image src="day/6.png"/>
+            <Image src="day/7.png"/>
+            <Image src="day/8.png"/>
+            <Image src="day/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="v_day" source="dateDay" ref="@day" totalDigits="2" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="wk" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk/0.png"/>
+            <Image src="wk/1.png"/>
+            <Image src="wk/2.png"/>
+            <Image src="wk/3.png"/>
+            <Image src="wk/4.png"/>
+            <Image src="wk/5.png"/>
+            <Image src="wk/6.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk" source="dateWeek" ref="@wk" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+        </DataItemImageValues>
+        <ImageArray name="wk_a" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="wk_a/0.png"/>
+            <Image src="wk_a/1.png"/>
+            <Image src="wk_a/2.png"/>
+            <Image src="wk_a/3.png"/>
+            <Image src="wk_a/4.png"/>
+            <Image src="wk_a/5.png"/>
+            <Image src="wk_a/6.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_wk_a" source="dateWeek" ref="@wk_a" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+        </DataItemImageValues>
+        <ImageArray name="mon" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="mon/0.png"/>
+            <Image src="mon/1.png"/>
+            <Image src="mon/2.png"/>
+            <Image src="mon/3.png"/>
+            <Image src="mon/4.png"/>
+            <Image src="mon/5.png"/>
+            <Image src="mon/6.png"/>
+            <Image src="mon/7.png"/>
+            <Image src="mon/8.png"/>
+            <Image src="mon/9.png"/>
+            <Image src="mon/10.png"/>
+            <Image src="mon/11.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_mon" source="dateMonth" ref="@mon" renderRule="alwaysShow" rotation="0">
+            <Param value="1"/>
+            <Param value="2"/>
+            <Param value="3"/>
+            <Param value="4"/>
+            <Param value="5"/>
+            <Param value="6"/>
+            <Param value="7"/>
+            <Param value="8"/>
+            <Param value="9"/>
+            <Param value="10"/>
+            <Param value="11"/>
+            <Param value="12"/>
+        </DataItemImageValues>
+        <ImageArray name="ring" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ring/0.png"/>
+            <Image src="ring/1.png"/>
+            <Image src="ring/2.png"/>
+            <Image src="ring/3.png"/>
+            <Image src="ring/4.png"/>
+            <Image src="ring/5.png"/>
+            <Image src="ring/6.png"/>
+            <Image src="ring/7.png"/>
+            <Image src="ring/8.png"/>
+            <Image src="ring/9.png"/>
+            <Image src="ring/10.png"/>
+            <Image src="ring/11.png"/>
+            <Image src="ring/12.png"/>
+            <Image src="ring/13.png"/>
+            <Image src="ring/14.png"/>
+            <Image src="ring/15.png"/>
+            <Image src="ring/16.png"/>
+            <Image src="ring/17.png"/>
+            <Image src="ring/18.png"/>
+            <Image src="ring/19.png"/>
+            <Image src="ring/20.png"/>
+            <Image src="ring/21.png"/>
+            <Image src="ring/22.png"/>
+            <Image src="ring/23.png"/>
+            <Image src="ring/24.png"/>
+            <Image src="ring/25.png"/>
+            <Image src="ring/26.png"/>
+            <Image src="ring/27.png"/>
+            <Image src="ring/28.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ring" source="healthStepProgress" ref="@ring" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="4"/>
+            <Param value="7"/>
+            <Param value="11"/>
+            <Param value="14"/>
+            <Param value="18"/>
+            <Param value="21"/>
+            <Param value="25"/>
+            <Param value="29"/>
+            <Param value="32"/>
+            <Param value="36"/>
+            <Param value="39"/>
+            <Param value="43"/>
+            <Param value="46"/>
+            <Param value="50"/>
+            <Param value="54"/>
+            <Param value="57"/>
+            <Param value="61"/>
+            <Param value="64"/>
+            <Param value="68"/>
+            <Param value="71"/>
+            <Param value="75"/>
+            <Param value="79"/>
+            <Param value="82"/>
+            <Param value="86"/>
+            <Param value="89"/>
+            <Param value="93"/>
+            <Param value="96"/>
+            <Param value="100"/>
+        </DataItemImageValues>
+        <Image name="feet" src="feet.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <Image name="feet_a" src="feet_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="stp" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="stp/0.png"/>
+            <Image src="stp/1.png"/>
+            <Image src="stp/2.png"/>
+            <Image src="stp/3.png"/>
+            <Image src="stp/4.png"/>
+            <Image src="stp/5.png"/>
+            <Image src="stp/6.png"/>
+            <Image src="stp/7.png"/>
+            <Image src="stp/8.png"/>
+            <Image src="stp/9.png"/>
+        </ImageArray>
+        <DataItemImageNumber name="v_stp" source="healthStepCount" ref="@stp" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <DataItemPointer name="v_hour" source="timeHour" ref="@h_hour" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="6" pivotY="54" angleStart="0" angleRange="720"/>
+        <DataItemPointer name="v_min" source="timeMinute" ref="@h_min" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="60" pivotX="4" pivotY="76" angleStart="0" angleRange="360"/>
+        <DataItemPointer name="v_sec" source="timeSecond" ref="@h_sec" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="60" pivotX="3" pivotY="86" angleStart="0" angleRange="360"/>
+        <DataItemPointer name="v_min_a" source="timeMinute" ref="@h_min_a" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="60" pivotX="4" pivotY="76" angleStart="0" angleRange="360"/>
+        <Image name="dimmer" src="dimmer.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+    </Resources>
+    <Theme type="normal" name="ORBIT" bgColor="#000000">
+        <Layout ref="@dial" x="0" y="0"/>
+        <Layout ref="@v_day" x="106" y="214"/>
+        <Layout ref="@v_wk" x="29" y="290"/>
+        <Layout ref="@v_mon" x="41" y="317"/>
+        <Layout ref="@v_ring" x="33" y="355"/>
+        <Layout ref="@feet" x="95" y="483"/>
+        <Layout ref="@v_stp" x="106" y="405"/>
+        <Layout ref="@v_hour" x="99" y="53"/>
+        <Layout ref="@v_min" x="101" y="31"/>
+        <Layout ref="@v_sec" x="103" y="21"/>
+        <Layout ref="@cap" x="98" y="100"/>
+    </Theme>
+    <Theme type="AOD" name="ORBIT" bgColor="#000000">
+        <Layout ref="@v_day" x="106" y="214"/>
+        <Layout ref="@v_wk_a" x="29" y="290"/>
+        <Layout ref="@v_mon" x="41" y="317"/>
+        <Layout ref="@feet_a" x="95" y="483"/>
+        <Layout ref="@v_stp" x="106" y="405"/>
+        <Layout ref="@dial" x="0" y="0"/>
+        <Layout ref="@v_hour" x="99" y="53"/>
+        <Layout ref="@v_min_a" x="101" y="31"/>
+        <Layout ref="@cap_a" x="98" y="100"/>
+        <Layout ref="@dimmer" x="0" y="0"/>
+    </Theme>
+</Watchface>
