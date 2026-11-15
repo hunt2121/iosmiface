@@ -15,11 +15,12 @@
 
 ---
 
-BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files to a **Xiaomi Smart Band 10** over Bluetooth LE — no computer, no Android phone, no third-party servers.
+BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files to a **Xiaomi Smart Band 10** over Bluetooth LE — no computer, no Android phone, no Mi Fitness cloud.
 
 ## Features
 
 - **One-tap install.** Pick a watch face file, tap *Install* — the band receives the file and switches to the new face by itself.
+- **Watch face store.** Browse faces with previews and animations, install with one tap. A face can come in several variants (language, 12/24-hour time); the one matching your iPhone's language and time format is picked automatically, and you can switch it on the face's page.
 - **Preview before installing.** The app shows the face's preview image, name, ID and size.
 - **Auth key found automatically.** Choose the *Mi Fitness* folder in the Files app once; the key is re-read on every launch.
 - **Remembers your band** and reconnects automatically.
@@ -27,7 +28,7 @@ BandFace is a small SwiftUI app that uploads `.face` / `.bin` watch face files t
 - **Reliable transfer.** Every part of the file is acknowledged by the band; lost parts are resent.
 - **Log** with an optional detailed mode (timestamps, raw protocol frames) — handy for bug reports.
 - **Localized:** English, Ukrainian, Russian. Light and dark themes.
-- **Private:** no network access, no analytics. The key is stored in the iOS Keychain.
+- **Private:** no accounts, no analytics. The only network access is the store: its catalog, previews and the face you install are downloaded from the store server — nothing about you or your band is sent. Installing from a file works fully offline. The key is stored in the iOS Keychain and never leaves the phone.
 
 ## Requirements
 

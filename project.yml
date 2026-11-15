@@ -29,6 +29,9 @@ targets:
         CFBundleLocalizations: [uk, en, ru]
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        # Адреса сервера магазину (Cloudflare Worker, наприклад https://bandface-store.<піддомен>.workers.dev).
+        # Порожня — у магазині лише вбудовані циферблати
+        BandFaceStoreURL: "https://bandface-store.bfapp.workers.dev"
         NSBluetoothAlwaysUsageDescription: "Bluetooth потрібен, щоб знайти пристрій Xiaomi та встановити циферблат."
         # «Зберегти зображення» для знімка циферблата
         NSPhotoLibraryAddUsageDescription: "Щоб зберегти знімок циферблата у Фото."
@@ -126,7 +129,8 @@ targets:
     platform: iOS
     sources:
       - path: FaceEditor/Tests
-      - path: Sources/Faces
+      # Циферблати для тестів (у застосунок не потрапляють)
+      - path: FaceEditor/Tests/Fixtures
         buildPhase: resources
     dependencies:
       - target: BandFace

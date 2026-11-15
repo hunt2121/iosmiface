@@ -20,10 +20,16 @@ struct ContentView: View {
     @State private var settingsPath: [SettingsRoute] = []
     @AppStorage("appTheme") private var appTheme = "system"
     // Магазин
-    @State private var storeFaces: [StoreFace] = StoreCatalog.cached
+    /// Каталог з сервера (або останній збережений, поки немає мережі)
+    @State private var storeCatalog: RemoteCatalog? = StoreServer.cachedCatalog()
+    @State private var storeFaces: [StoreFace] = []
+    /// Варіанти, вибрані вручну на сторінці циферблата: «запис=варіант», через кому
+    @AppStorage("storeVariants") private var variantRaw = ""
     @State private var installingID: String?
     /// Встановлення з вкладки «Редактор» — прогрес під карткою циферблата
     @StateObject private var editorInstall = EditorInstallStatus()
+    /// Покупки платних циферблатів (App Store)
+    @StateObject private var purchases = StorePurchases()
     @State private var syncing = false
     @State private var lastSync = Date.distantPast
     /// ID циферблата, який зараз на екрані браслета (з останньої перевірки)
@@ -46,6 +52,12 @@ struct ContentView: View {
     @State private var filePreview: UIImage?
     /// Анімоване превʼю вибраного файла (GIF), якщо циферблат анімований
     @State private var fileAnimation: Data?
+    /// Стилі й кольори вибраного файла (nil — вибирати нічого) і вибране для превʼю
+    @State private var fileLooks: FacePreviews.Looks?
+    @State private var lookStyle = 0
+    @State private var lookColor = 0
+    /// Превʼю вибраного стилю й кольору; nil — основний вигляд (картинка й анімація файла)
+    @State private var lookImage: UIImage?
     // Редактор циферблатів
     @StateObject private var editorStore = ProjectStore()
     /// Циферблат, відкритий у редакторі
@@ -91,7 +103,10 @@ struct ContentView: View {
                       progress: progress,
                       progressText: progressText,
                       onInstall: { storeInstall($0) },
-                      onRefresh: { await syncDeviceFaces(force: true) },
+                      onRefresh: {
+                          await refreshCatalog()
+                          await syncDeviceFaces(force: true)
+                      },
                       activeID: activeFaceID,
                       onActivate: { await bandFaceAction($0, delete: false) },
                       onDelete: { await bandFaceAction($0, delete: true) },
@@ -106,7 +121,9 @@ struct ContentView: View {
                       onBandAction: { id, name, delete in await bandFaceAction(id: id, name: name, delete: delete) },
                       deviceName: ble.connectedName.map { Self.shortBandModel($0) } ?? String(localized: "Пристрій не підключено"),
                       deviceInfo: ble.connectedName == nil ? BandInfo() : bandInfo,
-                      onEdit: { editCopy($0) })
+                      onEdit: { editCopy($0) },
+                      onVariant: { item, key in chooseVariant(item, key) },
+                      categories: storeCatalog?.categories.map { ($0.key, StoreVariants.text($0.name, variant: nil)) } ?? [])
                 .equatable()
                 .tabItem { Label("Магазин", image: "TabStore") }
                 .tag(Tab.store)
@@ -129,6 +146,9 @@ struct ContentView: View {
             if newTab == .store || newTab == .editor { Task { await syncDeviceFaces() } }
         }
         .onChange(of: activeFaceID) { editorInstall.activeID = $0 }
+        // магазин: інший браслет — інші варіанти; куплене — без ціни на кнопці
+        .onChange(of: ble.connectedName) { _ in applyCatalog(); Task { await loadStorePreviews() } }
+        .onChange(of: purchases.owned) { _ in applyCatalog() }
         .onChange(of: ble.connectedID) { if $0 == nil { editorInstall.activeID = nil; editorInstall.onBand = [] } }
         .onChange(of: ble.servicesReady) { ready in
             if ready && (tab == .store || tab == .editor) { Task { await syncDeviceFaces() } }
@@ -155,15 +175,11 @@ struct ContentView: View {
         } message: { _ in
             Text("Що зробити з цим циферблатом?")
         }
-        // Превʼю магазину, намальовані з ресурсів циферблатів (замість зменшених вбудованих)
+        // Каталог з сервера: спершу збережений, потім свіжий
         .task {
-            // лише ті, яких ще немає в кеші
-            let missing = storeFaces.filter { FacePreviews.cached(for: Data($0.face.data)) == nil }
-            guard !missing.isEmpty else { return }
-            let shots = await StoreCatalog.renderPreviews(for: missing)
-            for (id, s) in shots {
-                if let i = storeFaces.firstIndex(where: { $0.id == id }) { storeFaces[i].apply(s) }
-            }
+            applyCatalog()
+            await loadStorePreviews()
+            await refreshCatalog()
         }
         .alert(storeAlert ?? "", isPresented: Binding(get: { storeAlert != nil },
                                                       set: { if !$0 { storeAlert = nil } })) {
@@ -343,7 +359,7 @@ struct ContentView: View {
         activeFaceID = list.first(where: \.isActive)?.id ?? (standardMissing ? BandFace.standardID : nil)
         let ids = Set(list.map(\.id))
         editorInstall.onBand = ids
-        let storeIDs = Set(storeFaces.map(\.id))
+        let storeIDs = Set(storeFaces.flatMap(\.ids))
         otherFaces = list.filter { !storeIDs.contains($0.id) }.map { f in
             // Стандартний циферблат Smart Band 10 вбудований: назви браслет не передає, видалити його не можна.
             // Решту видаляти можна (прапорцю з браслета не довіряємо — Band 10 його не надсилає)
@@ -361,13 +377,77 @@ struct ContentView: View {
         }
         var map = InstalledFaces.parse(installedRaw)
         for f in storeFaces {
-            if ids.contains(f.id) {
-                if map[f.id] == nil { map[f.id] = f.version }
-            } else {
-                map[f.id] = nil
+            // усі варіанти запису: на браслеті може бути інший, ніж вибраний зараз
+            for id in f.ids {
+                if ids.contains(id) {
+                    if map[id] == nil { map[id] = f.version }
+                } else {
+                    map[id] = nil
+                }
             }
         }
         installedRaw = InstalledFaces.encode(map)
+        // варіант, що вже на браслеті, стає вибраним (оновлення — тією самою мовою)
+        if storeCatalog != nil {
+            applyCatalog()
+            Task { await loadStorePreviews() }
+        }
+    }
+
+    // MARK: - Каталог з сервера
+
+    private var variantOverrides: [String: String] {
+        var map: [String: String] = [:]
+        for part in variantRaw.split(separator: ",") {
+            let pair = part.split(separator: "=")
+            if pair.count == 2 { map[String(pair[0])] = String(pair[1]) }
+        }
+        return map
+    }
+
+    /// Циферблати з каталогу — вибраними варіантами, з уже завантаженими превʼю
+    private func applyCatalog() {
+        guard let c = storeCatalog else { return }
+        storeFaces = StoreCatalog.faces(c, installed: InstalledFaces.parse(installedRaw), overrides: variantOverrides,
+                                        band: connectedBand, prices: purchases.prices, owned: purchases.owned)
+    }
+
+    /// Модель підключеного Smart Band (10, 11); невідома — 10
+    private var connectedBand: Int {
+        if let n = ble.connectedName, let r = n.range(of: #"Band\s*(\d+)"#, options: .regularExpression),
+           let model = Int(n[r].filter(\.isNumber)) { return model }
+        return 10
+    }
+
+    /// На головній — основне превʼю й анімація вибраних варіантів (інші стилі й кольори — на сторінці циферблата)
+    private func loadStorePreviews() async {
+        if await StorePreviewCache.shared.loadGrid(storeFaces) { applyCatalog() }
+    }
+
+    private func refreshCatalog() async {
+        guard StoreServer.base != nil else { return }
+        do {
+            storeCatalog = try await StoreServer.fetchCatalog()
+            applyCatalog()
+            await loadStorePreviews()
+            // ціни й покупки платних циферблатів
+            let ids = Set(storeCatalog?.faces.compactMap(\.price) ?? [])
+            if !ids.isEmpty {
+                await purchases.load(ids)
+                applyCatalog()
+            }
+        } catch {
+            // без мережі лишається збережений каталог
+        }
+    }
+
+    /// Інший варіант на сторінці циферблата (мова, формат часу)
+    private func chooseVariant(_ item: StoreFace, _ key: String) {
+        var map = variantOverrides
+        map[item.storeKey] = key
+        variantRaw = map.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        applyCatalog()
+        Task { await loadStorePreviews() }
     }
 
     /// Увімкнути або видалити циферблат магазину на пристрої (сторінка циферблата).
@@ -439,7 +519,31 @@ struct ContentView: View {
             storeAlert = String(localized: "Цей циферблат не підтримує ваш пристрій")
             return
         }
-        install(item.face, store: item)
+        guard let variant = item.remote else { return }
+        Task { @MainActor in
+            do {
+                // платний: наявна покупка або нова (вікно App Store); скасовано — нічого не робимо
+                var transaction: String?
+                if let product = item.price {
+                    guard let t = try await purchases.transaction(for: product) else { return }
+                    transaction = t
+                    applyCatalog()
+                }
+                // файл з сервера завантажується лише зараз
+                busy = true
+                installingID = item.id
+                progress = 0
+                progressText = String(localized: "Завантаження циферблата…")
+                let face = try await StoreServer.download(variant, transaction: transaction)
+                busy = false
+                install(face, store: item)
+            } catch {
+                busy = false
+                installingID = nil
+                ble.addLog(String(localized: "Помилка: \(error.localizedDescription)"))
+                storeAlert = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Розділи
@@ -525,8 +629,11 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
+            // стилі й кольори файла — в тому самому рядку під капсулою, без роздільника, як на сторінці циферблата в магазині
+            VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 18) {
-                FaceCapsule(image: filePreview, animation: fileAnimation)
+                // вибрано не основний стиль чи колір — його превʼю (без анімації)
+                FaceCapsule(image: lookImage ?? filePreview, animation: lookImage == nil ? fileAnimation : nil)
                 // Права колонка має фіксовані «слоти»: інформація, кнопки, прогрес.
                 // Їхня висота не змінюється, тож нічого не стрибає.
                 VStack(alignment: .leading, spacing: 8) {
@@ -561,7 +668,69 @@ struct ContentView: View {
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
             }
-            .padding(.vertical, 8)
+            if let looks = fileLooks {
+                looksRow(looks)
+            }
+            }
+            .padding(.top, 8)
+            // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули
+            .padding(.bottom, fileLooks == nil ? 8 : 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
+        }
+    }
+
+    /// Перемикач стилів, кружечки кольорів і підпис — як на сторінці циферблата в магазині
+    private func looksRow(_ looks: FacePreviews.Looks) -> some View {
+        VStack(spacing: 16) {
+            if looks.styles.count > 1 {
+                Picker("Стиль", selection: $lookStyle) {
+                    ForEach(looks.styles.indices, id: \.self) { i in
+                        Text(looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name).tag(i)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: CGFloat(looks.styles.count) * 110)
+                .frame(maxWidth: .infinity)
+            }
+            if looks.colors.count > 1 {
+                HStack(spacing: 12) {
+                    ForEach(looks.colors.indices, id: \.self) { i in
+                        Button { lookColor = i } label: {
+                            Circle().fill(Color(hex: looks.colors[i]))
+                                .frame(width: 30, height: 30)
+                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
+                                .padding(3)
+                                .overlay(Circle().strokeBorder(i == lookColor ? Color(hex: looks.colors[i]) : .clear, lineWidth: 2.5))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(verbatim: looks.colors[i]))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            // той самий підпис, що на сторінці циферблата в магазині
+            Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
+                .font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                .padding(.top, -4)
+                .frame(maxWidth: .infinity)
+        }
+        .onChange(of: lookStyle) { _ in renderLook() }
+        .onChange(of: lookColor) { _ in renderLook() }
+    }
+
+    /// Превʼю вибраного стилю й кольору; основний (перший стиль, перший колір) — картинка й анімація файла
+    private func renderLook() {
+        guard let looks = fileLooks, let file = face else { lookImage = nil; return }
+        let style = min(lookStyle, looks.styles.count - 1), color = lookColor
+        guard style > 0 || color > 0 else { lookImage = nil; return }
+        let data = Data(file.data), theme = looks.styles[style].theme
+        Task { @MainActor in
+            let img = await Task.detached(priority: .userInitiated) { FacePreviews.look(for: data, theme: theme, color: color) }.value
+            // за цей час могли вибрати інший файл чи інший вигляд
+            guard face?.data == file.data, lookStyle == style, lookColor == color else { return }
+            lookImage = img
         }
     }
 
@@ -707,6 +876,8 @@ struct ContentView: View {
             } catch {
                 face = nil
                 filePreview = nil
+                fileLooks = nil
+                lookImage = nil
                 fileAnimation = nil
                 fileName = nil
                 show(error is BandError ? error.localizedDescription
@@ -884,6 +1055,15 @@ struct ContentView: View {
     /// Превʼю вибраного файла з його ресурсів; поки малюється — вбудоване
     private func renderFilePreview(_ file: FaceFile) {
         let data = Data(file.data)
+        fileLooks = nil
+        lookStyle = 0
+        lookColor = 0
+        lookImage = nil
+        Task { @MainActor in
+            let looks = await Task.detached(priority: .userInitiated) { FacePreviews.looks(for: data) }.value
+            guard face?.data == file.data else { return }
+            fileLooks = looks
+        }
         Task { @MainActor in
             // один виклик: картинка й анімація з того самого кешу, що й у магазині
             let shots = await Task.detached(priority: .userInitiated) { FacePreviews.get(for: data) }.value
@@ -896,16 +1076,26 @@ struct ContentView: View {
 
     /// Копія циферблата з магазину відкривається в редакторі (з власним ID — оригінал не зміниться)
     private func editCopy(_ item: StoreFace) {
-        do {
-            let p = try editorStore.importBin(Data(item.face.data), name: item.name, asCopy: true)
-            tab = .editor
-            Task { @MainActor in
+        Task { @MainActor in
+            do {
+                guard let v = item.remote else { return }
+                var transaction: String?
+                if let product = item.price {
+                    guard item.owned, let t = try await purchases.transaction(for: product) else {
+                        storeAlert = String(localized: "Спершу купіть циферблат")
+                        return
+                    }
+                    transaction = t
+                }
+                let face = try await StoreServer.download(v, transaction: transaction)
+                let p = try editorStore.importBin(Data(face.data), name: item.name, asCopy: true)
+                tab = .editor
                 // спершу вкладка, потім редактор поверх неї
                 try? await Task.sleep(nanoseconds: 350_000_000)
                 editorProject = p
+            } catch {
+                storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
             }
-        } catch {
-            storeAlert = String(localized: "Не вдалося відкрити: \(error.localizedDescription)")
         }
     }
 
@@ -1206,3 +1396,4 @@ final class ProgressThrottle {
         return percent != lastPercent || stage != lastStage || value >= 1
     }
 }
+

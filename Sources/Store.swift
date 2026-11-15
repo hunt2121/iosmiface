@@ -9,26 +9,63 @@ struct FacePreview: Identifiable {
     let image: UIImage?
 }
 
-/// Циферблат у магазині. Поки каталог локальний: файли лежать у застосунку.
+/// Варіант циферблата для перемикача на сторінці («Англійська · 12 год»)
+struct StoreVariantOption: Equatable {
+    let key: String
+    let label: String
+}
+
+/// Циферблат у магазині з сервера — вибраним варіантом (пристрій, мова, формат часу).
+/// Файл варіанта завантажується лише під час встановлення.
 struct StoreFace: Identifiable {
-    let id: String          // ID циферблата з файла
+    let id: String          // ID циферблата на браслеті (вибраного варіанта)
     let name: String
-    let kind: String        // «Цифровий», «Гумор» — для фільтра
-    let version: Int        // версія в каталозі; більша за встановлену — з'являється «Оновити»
+    let kinds: [String]     // назви категорій мовою інтерфейсу
+    let version: String     // «1.1»; вища за встановлену — з'являється «Оновити»
     let about: String
-    let price: String?      // nil — безкоштовний
-    let face: FaceFile
+    let price: String?      // nil — безкоштовний; інакше ID покупки App Store
     var preview: UIImage?
     var added: Date?          // коли з'явився в магазині (для сортування за датою)
     var bands: [Int] = [10]   // підтримувані моделі Smart Band
     var previews: [FacePreview] = []   // зображення на сторінці: основний екран і «Завжди на екрані»
     /// Анімація основного екрана (GIF), спільна для картки й сторінки
     var animation: Data?
+    /// ID запису магазину: незмінний при зміні варіанта
+    var key = ""
+    /// Розмір файла варіанта з сервера
+    var size = 0
+    /// Варіант із сервера: звідки завантажити файл і превʼю
+    var remote: RemoteCatalog.Variant?
+    /// ID усіх варіантів запису на браслеті
+    var allIDs: Set<String> = []
+    var variantKey: String?
+    var variantOptions: [StoreVariantOption] = []
+    /// Ключі категорій (для фільтра)
+    var kindKeys: [String] = []
+    /// Коли опубліковано поточну версію
+    var updated: Date?
+    /// Кольори циферблата («#RRGGBB») і стилі з превʼю для кожного кольору
+    var colors: [String] = []
+    var styles: [StoreStyle] = []
+    /// «Що нового» в поточній версії (мовою телефона)
+    var whatsNew = ""
+    /// Ціна з App Store («39,99 ₴»); nil — товару немає (застосунок не з App Store)
+    var priceText: String?
+    /// Платний і вже куплений
+    var owned = false
 
+    var storeKey: String { key.isEmpty ? id : key }
+    var ids: Set<String> { allIDs.isEmpty ? [id] : allIDs }
     var isFree: Bool { price == nil }
-    var sizeKB: Int { face.size / 1024 }
-    var bandsText: String { bands.map { "Band \($0)" }.joined(separator: ", ") }
-    var meta: String { "\(kind) · \(sizeKB) KB" }
+    /// Платний і ще не куплений: на кнопці — ціна
+    var needsPurchase: Bool { price != nil && !owned }
+    var sizeText: String { ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file) }
+    /// «Band 10 · 11»
+    var bandsText: String { "Band " + bands.map(String.init).joined(separator: " · ") }
+    /// «1,2 MB · v1.1»
+    var meta: String { "\(sizeText) · v\(version)" }
+    /// Що показати на кнопці замість «Встановити»
+    var buyText: String? { needsPurchase ? (priceText ?? String(localized: "Платний")) : nil }
 }
 
 extension FaceFile {
@@ -41,92 +78,23 @@ extension FaceFile {
     }
 }
 
-enum StoreCatalog {
-    private struct Entry {
-        let resource: String
-        let name: String
-        let kind: String
-        let version: Int
-        let about: String
-        let added: String   // дата додавання в магазин, «рррр-мм-дд»
-    }
-
-    private static let entries = [
-        Entry(resource: "BigWatch_UA", name: "BigWatch", kind: "Цифровий", version: 1,
-              about: "Великий цифровий час на весь екран. Знизу дата та кількість кроків.",
-              added: "2026-10-31"),
-        Entry(resource: "WhatTime_UA", name: "WhatTime", kind: "Гумор", version: 1,
-              about: "Цифровий час, дата та кроки на тлі відомого коміксу.",
-              added: "2026-10-31")
-    ]
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    /// Каталог читається з файлів один раз за запуск.
-    static let cached: [StoreFace] = load()
-
-    private static func load() -> [StoreFace] {
-        entries.compactMap { e in
-            guard let url = Bundle.main.url(forResource: e.resource, withExtension: "bin"),
-                  let data = try? Data(contentsOf: url),
-                  let face = try? FaceFile(data: data) else { return nil }
-            var item = StoreFace(id: face.id, name: e.name, kind: e.kind, version: e.version,
-                                 about: e.about, price: nil, face: face, preview: nil)
-            item.added = dayFormatter.date(from: e.added)
-            // намальовані з ресурсів превʼю, якщо вже є в кеші; інакше поки вбудоване (оновить renderPreviews)
-            if let shots = FacePreviews.cached(for: Data(face.data)) {
-                item.apply(shots)
-            } else {
-                let image = face.previewImage()
-                item.preview = image
-                item.previews = [FacePreview(title: String(localized: "Звичайний"), image: image)]
-            }
-            return item
-        }
-    }
-
-    /// Малює превʼю циферблатів магазину, яких ще немає в кеші (у фоні, по одному)
-    static func renderPreviews(for faces: [StoreFace]) async -> [String: FacePreviews.Shots] {
-        let input = faces.map { ($0.id, Data($0.face.data)) }
-        return await Task.detached(priority: .utility) {
-            var out: [String: FacePreviews.Shots] = [:]
-            for (id, data) in input {
-                if let s = FacePreviews.get(for: data) { out[id] = s }
-            }
-            return out
-        }.value
-    }
-}
-
-extension StoreFace {
-    /// Превʼю з ресурсів циферблата — ті самі об'єкти для картки, сторінки й меню «Встановлено»
-    mutating func apply(_ s: FacePreviews.Shots) {
-        preview = s.main
-        animation = s.gif
-        previews = [FacePreview(title: String(localized: "Звичайний"), image: s.main)]
-        if let aod = s.alwaysOn { previews.append(FacePreview(title: String(localized: "Завжди на екрані"), image: aod)) }
-    }
-}
+/// Каталог магазину — з сервера (StoreRemote.swift)
+enum StoreCatalog {}
 
 /// Записи про встановлені циферблати: «ID=версія», через кому.
 enum InstalledFaces {
-    static func parse(_ raw: String) -> [String: Int] {
-        var map: [String: Int] = [:]
+    /// «ID=версія» через кому; старі записи — ціле число або без версії
+    static func parse(_ raw: String) -> [String: String] {
+        var map: [String: String] = [:]
         for part in raw.split(separator: ",") {
             let pair = part.split(separator: "=")
-            if pair.count == 2, let v = Int(pair[1]) { map[String(pair[0])] = v }
-            else if pair.count == 1 { map[String(pair[0])] = 1 } // старий запис без версії
+            if pair.count == 2 { map[String(pair[0])] = String(pair[1]) }
+            else if pair.count == 1 { map[String(pair[0])] = "1" }
         }
         return map
     }
 
-    static func encode(_ map: [String: Int]) -> String {
+    static func encode(_ map: [String: String]) -> String {
         map.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
     }
 }
@@ -180,7 +148,7 @@ struct StoreView: View, Equatable {
     }
 
     let faces: [StoreFace]
-    let installed: [String: Int]
+    let installed: [String: String]
     let installingID: String?
     let busy: Bool
     let progress: Double
@@ -203,6 +171,10 @@ struct StoreView: View, Equatable {
     var deviceInfo = BandInfo()
     /// «Змінити в редакторі»: копія циферблата відкривається на вкладці «Редактор»
     var onEdit: (StoreFace) -> Void = { _ in }
+    /// Інший варіант циферблата (мова, формат часу) — ключ варіанта
+    var onVariant: (StoreFace, String) -> Void = { _, _ in }
+    /// Категорії каталогу (ключ, назва) — у порядку з сервера
+    var categories: [(String, String)] = []
 
     @State private var path: [String] = []
     @State private var filter = "all"
@@ -216,11 +188,6 @@ struct StoreView: View, Equatable {
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
-    private var kinds: [String] {
-        var seen: [String] = []
-        for f in faces where !seen.contains(f.kind) { seen.append(f.kind) }
-        return seen
-    }
 
     private var shown: [StoreFace] {
         let filtered = faces.filter { f in
@@ -228,7 +195,7 @@ struct StoreView: View, Equatable {
             case "all": return true
             case "paid": return !f.isFree
             case "free": return f.isFree
-            default: return f.kind == filter
+            default: return f.kindKeys.contains(filter)
             }
         }
         return (StoreSort(rawValue: sortKey) ?? .date).sorted(filtered, reversed: sortReversed)
@@ -236,7 +203,7 @@ struct StoreView: View, Equatable {
 
     private func state(_ f: StoreFace) -> StoreAction {
         if busy && installingID == f.id { return .installing }
-        if let v = installed[f.id] { return v < f.version ? .update : .installed }
+        if let v = installed[f.id] { return StoreVersions.older(v, than: f.version) ? .update : .installed }
         return .install
     }
 
@@ -253,7 +220,7 @@ struct StoreView: View, Equatable {
                     } else {
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(items) { item in
-                                NavigationLink(value: item.id) {
+                                NavigationLink(value: item.storeKey) {
                                     card(item)
                                 }
                                 .buttonStyle(.plain)
@@ -274,7 +241,7 @@ struct StoreView: View, Equatable {
             // Під заголовком — поточне сортування («Спочатку нові», «А–Я»…), з iOS 26
             .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? StoreSort.date.direction(reversed: false)))
             .navigationDestination(for: String.self) { id in
-                if let item = faces.first(where: { $0.id == id }) {
+                if let item = faces.first(where: { $0.storeKey == id }) {
                     StoreDetailView(item: item,
                                     state: state(item),
                                     installedVersion: installed[item.id],
@@ -285,7 +252,8 @@ struct StoreView: View, Equatable {
                                     isActive: item.id == activeID,
                                     onSelect: { await onActivate(item) },
                                     onDelete: { await onDelete(item) },
-                                    onEdit: { onEdit(item) })
+                                    onEdit: { onEdit(item) },
+                                    onVariant: { onVariant(item, $0) })
                 }
             }
             .modifier(StoreToolbar(filter: $filter, filters: filterOptions,
@@ -293,7 +261,7 @@ struct StoreView: View, Equatable {
                                    onRefresh: { Task { await onRefresh() } },
                                    menuFaces: faces.filter { installed[$0.id] != nil },
                                    activeID: activeID,
-                                   onOpen: { path.append($0.id) },
+                                   onOpen: { path.append($0.storeKey) },
                                    onSelect: { face in menuAction { await onBandAction(face.id, face.name, false) } },
                                    onDeleteRequest: { menuDelete = $0 },
                                    onPickFile: onPickFile,
@@ -317,7 +285,7 @@ struct StoreView: View, Equatable {
     /// Пункти фільтра: (ідентифікатор, назва)
     private var filterOptions: [(String, String)] {
         [("all", String(localized: "Усі")), ("paid", String(localized: "Платні")),
-         ("free", String(localized: "Безкоштовні"))] + kinds.map { ($0, $0) }
+         ("free", String(localized: "Безкоштовні"))] + categories.filter { c in faces.contains { $0.kindKeys.contains(c.0) } }
     }
 
     /// Дія з меню (вибрати, видалити); помилку показуємо окремим вікном
@@ -333,18 +301,29 @@ struct StoreView: View, Equatable {
                 .frame(maxWidth: .infinity)
                 .frame(height: 266)
 
-            VStack(alignment: .leading, spacing: 0) {
-                Text(item.name)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                subtitleView(item)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                // кольори циферблата — кружечки праворуч від назви
+                HStack(spacing: 6) {
+                    Text(item.name)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    ColorDots(colors: item.colors)
+                }
+                .frame(height: 20)
+                // розмір і версія — завжди; кількість стилів — праворуч
+                HStack(spacing: 4) {
+                    Text(verbatim: infoText(item))
+                    Spacer(minLength: 0)
+                    if item.styles.count > 1 { Text(verbatim: StoreText.styles(item.styles.count)) }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
             .padding(.horizontal, 2)
 
-            FaceActionButton(state: state(item), price: item.price, busy: busy,
+            FaceActionButton(state: state(item), price: item.buyText, busy: busy,
                              progress: progress, progressText: progressText) {
                 onInstall(item)
             }
@@ -355,18 +334,10 @@ struct StoreView: View, Equatable {
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
-    @ViewBuilder private func subtitleView(_ item: StoreFace) -> some View {
-        if item.isFree, !(installed[item.id].map { $0 < item.version } ?? false) {
-            (Text("Безкоштовно").fontWeight(.semibold).foregroundColor(Color.okGreen)
-             + Text(verbatim: " · \(item.sizeKB) KB"))
-        } else {
-            Text(subtitle(item))
-        }
-    }
-
-    private func subtitle(_ item: StoreFace) -> String {
-        if let v = installed[item.id], v < item.version {
-            return String(localized: "Оновлення \(v).0 → \(item.version).0")
+    /// «1,2 MB · v1.1», для оновлення — «1,2 MB · v1.0 → 1.1»
+    private func infoText(_ item: StoreFace) -> String {
+        if let v = installed[item.id], StoreVersions.older(v, than: item.version) {
+            return "\(item.sizeText) · v\(v) → \(item.version)"
         }
         return item.meta
     }
@@ -436,7 +407,7 @@ struct FaceActionButton: View {
 struct StoreDetailView: View {
     let item: StoreFace
     let state: StoreAction
-    let installedVersion: Int?
+    let installedVersion: String?
     let busy: Bool
     let progress: Double
     let progressText: String
@@ -448,9 +419,16 @@ struct StoreDetailView: View {
     var onDelete: () async -> String? = { nil }
     /// «Змінити в редакторі»
     var onEdit: () -> Void = {}
+    /// Інший варіант (мова, формат часу)
+    var onVariant: (String) -> Void = { _ in }
 
     private enum Work { case select, delete }
     @State private var working: Work?
+    /// Вибрані стиль і колір (лише перегляд: на браслеті вибираються після встановлення)
+    @State private var style = 0
+    @State private var color = 0
+    /// Перемальовує превʼю, коли вибраний стиль чи колір завантажився
+    @State private var loadedLook = 0
     @State private var askDelete = false
     @State private var error: String?
 
@@ -460,16 +438,35 @@ struct StoreDetailView: View {
                 previews
 
                 HStack(spacing: 0) {
-                    infoColumn("Розмір", "\(item.sizeKB) KB")
+                    infoColumn("Версія", item.version)
+                    Divider().frame(height: 34)
+                    infoColumn("Розмір", item.sizeText)
                     Divider().frame(height: 34)
                     infoColumn("Пристрої", item.bandsText)
-                    Divider().frame(height: 34)
-                    infoColumn("Категорія", item.kind)
                 }
                 .padding(.vertical, 16)
                 .padding(.horizontal, 8)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
+
+                // Кілька варіантів (мови, 12/24 год) — вибір; за замовчуванням підібрано під телефон
+                if item.variantOptions.count > 1 {
+                    HStack {
+                        Text("Мова циферблата")
+                        Spacer()
+                        Picker("Мова циферблата", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
+                            ForEach(item.variantOptions, id: \.key) { Text($0.label).tag($0.key) }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .disabled(state == .installing)
+                    }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 6)
+                    .frame(height: 52)
+                    .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(Color(.secondarySystemGroupedBackground)))
+                }
 
                 actions
 
@@ -480,10 +477,24 @@ struct StoreDetailView: View {
                         .padding(.horizontal, 4)
                 }
 
+                // «Що нового» — тим, у кого стара версія
+                if state == .update && !item.whatsNew.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Що нового у версії \(item.version)").font(.headline)
+                        Text(item.whatsNew).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(Color(.secondarySystemGroupedBackground)))
+                }
+
                 Text(item.about)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
+
+                information
 
                 editRow
 
@@ -531,7 +542,7 @@ struct StoreDetailView: View {
                 }
             }
         } else {
-            FaceActionButton(state: state, price: item.price, busy: busy,
+            FaceActionButton(state: state, price: item.buyText, busy: busy,
                              progress: progress, progressText: progressText, height: 52) {
                 onInstall(item)
             }
@@ -594,21 +605,107 @@ struct StoreDetailView: View {
         }
     }
 
+    /// Є що вибирати: кілька стилів або кольорів
+    private var hasLooks: Bool { item.styles.count > 1 || item.colors.count > 1 }
+
+    /// Превʼю вибраного стилю й кольору; на головній завантажено лише основне — решта тут, усі одразу після відкриття
     private var previews: some View {
-        HStack(alignment: .top, spacing: 28) {
-            ForEach(Array(item.previews.enumerated()), id: \.element.id) { i, p in
+        let look = item.look(style: style, color: color)
+        let cache = StorePreviewCache.shared
+        let main = style == 0 && color == 0 ? (item.preview ?? cache.image(look?.main)) : cache.image(look?.main)
+        let gif = color == 0 ? (style == 0 ? item.animation : nil) ?? cache.gif(item.styles.indices.contains(style) ? item.styles[style].anim : nil) : nil
+        return VStack(spacing: 18) {
+            HStack(alignment: .top, spacing: 28) {
                 VStack(spacing: 10) {
-                    FaceCapsule(image: p.image, animation: i == 0 ? item.animation : nil)
-                    Text(p.title)
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(.secondary)
+                    FaceCapsule(image: main, animation: gif)
+                    Text("Звичайний").font(.footnote.weight(.medium)).foregroundStyle(.secondary)
                 }
+                if look?.aod != nil || (item.styles.isEmpty && item.previews.count > 1) {
+                    VStack(spacing: 10) {
+                        FaceCapsule(image: cache.image(look?.aod) ?? (item.previews.count > 1 ? item.previews[1].image : nil))
+                        Text("Завжди на екрані").font(.footnote.weight(.medium)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            // перемальовуються лише превʼю, коли довантажились; перемикачі не створюються заново посеред анімації
+            .id(loadedLook)
+            // перемикач стилів, кольори й підпис — з однаковими відступами між собою;
+            // без вибору стилю й кольору блоку немає зовсім (інакше під превʼю зайвий відступ)
+            if hasLooks {
+            VStack(spacing: 16) {
+                if item.styles.count > 1 {
+                    Picker("Стиль", selection: $style) {
+                        ForEach(item.styles.indices, id: \.self) { i in
+                            Text(item.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : item.styles[i].name).tag(i)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    // не на всю картку: близько 110 pt на стиль, по центру
+                    .frame(maxWidth: CGFloat(item.styles.count) * 110)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16)
+                }
+                if item.colors.count > 1 {
+                    HStack(spacing: 12) {
+                        ForEach(item.colors.indices, id: \.self) { i in
+                            Button { color = i } label: {
+                                Circle().fill(Color(hex: item.colors[i]))
+                                    .frame(width: 30, height: 30)
+                                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
+                                    .padding(3)
+                                    .overlay(Circle().strokeBorder(i == color ? Color(hex: item.colors[i]) : .clear, lineWidth: 2.5))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text(verbatim: item.colors[i]))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                if hasLooks {
+                    Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                        .padding(.top, -4)
+                }
+            }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
+        // знизу від букв останнього рядка до краю картки — стільки ж, скільки зверху до превʼю:
+        // рамка рядка тексту нижче букв на висоту виносних елементів шрифту
+        .padding(.top, 22)
+        .padding(.bottom, 22 + UIFont.preferredFont(forTextStyle: hasLooks ? .caption1 : .footnote).descender)
         .background(RoundedRectangle(cornerRadius: 30, style: .continuous)
             .fill(Color(.secondarySystemGroupedBackground)))
+        .task(id: "\(item.variantKey ?? "")/\(style)/\(color)") {
+            let look = item.look(style: style, color: color)
+            let anim = color == 0 && item.styles.indices.contains(style) ? item.styles[style].anim : nil
+            if await StorePreviewCache.shared.load(png: [look?.main, look?.aod].compactMap { $0 }, gif: [anim].compactMap { $0 }) {
+                loadedLook += 1
+            }
+        }
+        // одразу після відкриття сторінки — усі стилі й кольори, щоб перемикання не чекало завантаження
+        .task(id: item.variantKey ?? "") {
+            var png: [String] = [], gif: [String] = []
+            for s in item.styles.indices {
+                if let a = item.styles[s].anim { gif.append(a) }
+                for c in item.styles[s].previews.indices {
+                    guard let look = item.look(style: s, color: c) else { continue }
+                    png.append(look.main)
+                    if let a = look.aod { png.append(a) }
+                }
+            }
+            if await StorePreviewCache.shared.load(png: png, gif: gif) {
+                loadedLook += 1
+            }
+        }
+    }
+
+    /// «Інформація»: плитки сумісності, вигляду, мови й дати, під ними категорії
+    private var information: some View {
+        StoreInfoTiles(item: item)
     }
 
     private func infoColumn(_ title: LocalizedStringKey, _ value: String) -> some View {

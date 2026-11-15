@@ -123,6 +123,68 @@ enum FacePreviews {
         return Shots(main: main, alwaysOn: aod, gif: gif)
     }
 
+    // MARK: Стилі й кольори файла
+
+    /// Що можна переглянути у файлі: стилі (звичайні теми, по порядку) і кольори; nil — вибирати нічого
+    struct Looks {
+        /// Назви стилів (порожня — без назви) і номери їхніх тем у файлі
+        let styles: [(name: String, theme: Int)]
+        /// «#RRGGBB»; колір 0 — основний
+        let colors: [String]
+    }
+
+    private static var looksProject: (key: String, project: FaceProject, renderer: FaceRenderer)?
+
+    private static func lookProject(_ data: Data) -> (FaceProject, FaceRenderer)? {
+        let k = key(data)
+        if let c = looksProject, c.key == k { return (c.project, c.renderer) }
+        guard let unpacked = try? FaceProject.unpack(data) else { return nil }
+        let (root, files) = unpacked
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("looks-\(UUID().uuidString)")
+        let project = FaceProject(id: tmp.lastPathComponent, folder: tmp, root: root, files: files, meta: ProjectMeta())
+        let renderer = FaceRenderer(project)
+        looksProject = (k, project, renderer)
+        return (project, renderer)
+    }
+
+    /// Стилі й кольори вибраного файла (не з головного потоку)
+    static func looks(for data: Data) -> Looks? {
+        queue.sync { () -> Looks? in
+            guard let project = lookProject(data)?.0 else { return nil }
+            let themes = project.themes
+            var styles: [(String, Int)] = []
+            // старі файли без типів тем: друга тема — AOD
+            if themes.count == 2, themes.allSatisfy({ !$0.has("type") }) {
+                styles = [(themes[0].string("name") ?? "", 0)]
+            } else {
+                for (i, t) in themes.enumerated() where t.string("type") != "AOD" && !project.layouts(i).isEmpty {
+                    styles.append((t.string("name") ?? "", i))
+                }
+            }
+            let colors = ColorVariants.colors(project)
+            guard styles.count > 1 || colors.count > 1 else { return nil }
+            return Looks(styles: styles.map { (name: $0.0, theme: $0.1) }, colors: colors)
+        }
+    }
+
+    private static let lookImages = NSCache<NSString, UIImage>()
+
+    /// Основний екран вибраного стилю (номер теми) у вибраному кольорі — під капсулу (не з головного потоку)
+    static func look(for data: Data, theme: Int, color: Int) -> UIImage? {
+        let k = "\(key(data))-\(theme)-\(color)" as NSString
+        if let i = lookImages.object(forKey: k) { return i }
+        return queue.sync { () -> UIImage? in
+            guard let renderer = lookProject(data)?.1 else { return nil }
+            renderer.colorVariant = color
+            defer { renderer.colorVariant = 0 }
+            guard let px = pixels(renderer, theme) else { return nil }
+            let (idx, pal) = GIFEncoder.indexed(px.rgba)
+            guard let img = UIImage(data: Data(PNG.encodeIndexed(px.w, px.h, idx, palette: pal)), scale: 1) else { return nil }
+            lookImages.setObject(img, forKey: k)
+            return img
+        }
+    }
+
     /// Кадр теми у RGBA рівно під капсулу
     private static func pixels(_ r: FaceRenderer, _ theme: Int) -> (rgba: [UInt8], w: Int, h: Int)? {
         guard let cg = r.render(theme: theme, scale: scale).0.cgImage else { return nil }
