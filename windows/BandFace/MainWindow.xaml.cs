@@ -237,7 +237,7 @@ namespace BandFace
 
         void ApplyTexts()
         {
-            NavFacesText.Text = TitleFaces.Text = S.Get("faces");
+            NavFacesText.Text = S.Get("home"); TitleFaces.Text = S.Get("faces");
             NavStoreText.Text = S.Get("store");
             NavEditorText.Text = S.Get("editor");
             NavSettingsText.Text = TitleSettings.Text = S.Get("settings");
@@ -365,7 +365,7 @@ namespace BandFace
             Shade.Visibility = _flyout ? Visibility.Visible : Visibility.Collapsed;
             Sidebar.Effect = _flyout ? new DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Direction = 0, Opacity = 0.25 } : null;
             // у вузькій смузі назва вкладки — підказкою
-            NavFaces.ToolTip = wide ? null : S.Get("faces");
+            NavFaces.ToolTip = wide ? null : S.Get("home");
             NavEditor.ToolTip = wide ? null : S.Get("editor");
             NavSettings.ToolTip = wide ? null : S.Get("settings");
         }
