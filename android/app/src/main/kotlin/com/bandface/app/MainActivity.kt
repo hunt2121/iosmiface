@@ -97,8 +97,67 @@ class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        CrashLog.install(this)
         super.onCreate(savedInstanceState)
+        // застосунок упав минулого разу — спершу показуємо текст помилки (без Compose, щоб показався навіть якщо падає саме він)
+        val crash = CrashLog.take(this)
+        if (crash != null) { CrashLog.show(this, crash) { setContent { App(vm) } }; return }
         setContent { App(vm) }
+    }
+}
+
+/** Падіння застосунку: текст помилки зберігається у файл і показується при наступному запуску — його можна скопіювати й надіслати */
+object CrashLog {
+    private fun file(ctx: android.content.Context) = java.io.File(ctx.filesDir, "crash.txt")
+
+    fun install(ctx: android.content.Context) {
+        val app = ctx.applicationContext
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        if (previous is Handler) return
+        Thread.setDefaultUncaughtExceptionHandler(Handler(app, previous))
+    }
+
+    private class Handler(val app: android.content.Context, val previous: Thread.UncaughtExceptionHandler?) : Thread.UncaughtExceptionHandler {
+        override fun uncaughtException(t: Thread, e: Throwable) {
+            runCatching {
+                val info = app.packageManager.getPackageInfo(app.packageName, 0)
+                val text = "BandFace ${info.versionName} · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) · " +
+                    "${Build.MANUFACTURER} ${Build.MODEL}\n\n" + android.util.Log.getStackTraceString(e)
+                file(app).writeText(text)
+            }
+            previous?.uncaughtException(t, e)
+        }
+    }
+
+    fun take(ctx: android.content.Context): String? {
+        val f = file(ctx)
+        if (!f.exists()) return null
+        return runCatching { f.readText() }.getOrNull().also { f.delete() }
+    }
+
+    fun show(activity: ComponentActivity, text: String, onContinue: () -> Unit) {
+        val pad = (16 * activity.resources.displayMetrics.density).toInt()
+        val title = android.widget.TextView(activity).apply {
+            setText(R.string.crash_title); textSize = 20f; setPadding(0, 0, 0, pad)
+        }
+        val body = android.widget.TextView(activity).apply {
+            setText(text); textSize = 12f; setTextIsSelectable(true); typeface = android.graphics.Typeface.MONOSPACE
+        }
+        val copy = android.widget.Button(activity).apply {
+            setText(R.string.crash_copy)
+            setOnClickListener {
+                val cm = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("BandFace crash", text))
+                setText(R.string.crash_copied)
+            }
+        }
+        val go = android.widget.Button(activity).apply { setText(R.string.crash_continue); setOnClickListener { onContinue() } }
+        val column = android.widget.LinearLayout(activity).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(pad, pad * 3, pad, pad * 3)
+            addView(title); addView(copy); addView(go); addView(body)
+        }
+        activity.setContentView(android.widget.ScrollView(activity).apply { addView(column) })
     }
 }
 

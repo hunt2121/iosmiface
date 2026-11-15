@@ -48,4 +48,8 @@
     <string name="face_label">Циферблат · %1$s</string>
     <string name="format_hint">Формат: .bin або .face</string>
     <string name="pick_hint">Натисніть «Вибрати файл»</string>
+    <string name="crash_title">BandFace закрився з помилкою</string>
+    <string name="crash_copy">Копіювати текст помилки</string>
+    <string name="crash_copied">Скопійовано — надішліть розробнику</string>
+    <string name="crash_continue">Відкрити застосунок</string>
 </resources>
