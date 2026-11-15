@@ -350,11 +350,13 @@ namespace BandFace.Store
                     seg.Children.Add(t);
                 }
                 sp.Children.Add(new Border { Background = BrushOf("ChipBg"), CornerRadius = new CornerRadius(6), Padding = new Thickness(3),
-                    Width = Math.Min(340, 110 * v.Styles.Count), Margin = new Thickness(0, 16, 0, 0), Child = seg, HorizontalAlignment = HorizontalAlignment.Center });
+                    Width = Math.Min(340, 110 * v.Styles.Count), Margin = new Thickness(0, LookGap - LabelInkBelow, 0, 0), Child = seg, HorizontalAlignment = HorizontalAlignment.Center });
             }
             if (v.Colors.Count > 1)
             {
-                var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 16, 0, 0) };
+                // одразу під підписами — той самий проміжок, що й над ними; під перемикачем стилів — звичайні 16
+                var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, v.Styles.Count > 1 ? 16 : LookGap - LabelInkBelow, 0, 0) };
                 for (int i = 0; i < v.Colors.Count; i++)
                 {
                     int idx = i;
@@ -372,11 +374,35 @@ namespace BandFace.Store
             return new Border { Style = StyleOf("CardBox"), Padding = new Thickness(0, 22, 0, 20), Margin = new Thickness(0), Child = sp };
         }
 
+        /// <summary>Проміжок між капсулою, підписом під нею й перемикачем стилів — однаковий на око</summary>
+        const double LookGap = 14;
+
+        /// <summary>Порожнє місце над великими літерами в рядку тексту (px)</summary>
+        static double InkAbove(TextBlock t)
+        {
+            var tf = new Typeface(t.FontFamily, t.FontStyle, t.FontWeight, t.FontStretch);
+            return (t.FontFamily.Baseline - tf.CapsHeight) * t.FontSize;
+        }
+
+        /// <summary>Порожнє місце під базовою лінією підпису «Звичайний» (12 px, той самий шрифт)</summary>
+        double LabelInkBelow
+        {
+            get
+            {
+                var ff = new TextBlock().FontFamily;
+                var family = FontFamily ?? ff;
+                return (family.LineSpacing - family.Baseline) * 12;
+            }
+        }
+
         FrameworkElement Shot(string path, string title)
         {
             var sp = new StackPanel();
             sp.Children.Add(Capsule(path, 144, 354, false));
-            sp.Children.Add(new TextBlock { Text = title, FontSize = 12, Foreground = BrushOf("Sub"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 9, 0, 0) });
+            // від низу капсули до верху великих літер — LookGap (порожнє місце над літерами в рядку шрифту віднімається)
+            var t = new TextBlock { Text = title, FontSize = 12, Foreground = BrushOf("Sub"), HorizontalAlignment = HorizontalAlignment.Center };
+            t.Margin = new Thickness(0, Math.Max(0, LookGap - InkAbove(t)), 0, 0);
+            sp.Children.Add(t);
             return sp;
         }
 
