@@ -312,14 +312,12 @@ namespace BandFace.Store
             var cols = new Grid();
             cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(356) });   // дві капсули 150 + 22 між ними + поля
             cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
-            cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // права колонка займає все місце, але не ширша за 400 px; у широкому вікні праворуч лишається поле
+            cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 400 });
             var left = PreviewCard(e, v);
             left.VerticalAlignment = VerticalAlignment.Top;
             cols.Children.Add(left);
             var right = RightColumn(e, v);
-            // права колонка не ширша за 400 px — як на першому знімку; у широкому вікні праворуч лишається поле
-            right.MaxWidth = 400;
-            right.HorizontalAlignment = HorizontalAlignment.Left;
             Grid.SetColumn(right, 2);
             cols.Children.Add(right);
             sp.Children.Add(cols);
