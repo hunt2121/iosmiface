@@ -129,7 +129,10 @@ namespace BandFace.Store
             path.SetBinding(System.Windows.Shapes.Shape.FillProperty, new System.Windows.Data.Binding("Foreground") { Source = owner });
             var sp = new StackPanel { Orientation = Orientation.Horizontal };
             sp.Children.Add(path);
-            sp.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+            // колір тексту — теж від плитки: інакше загальний стиль TextBlock дає чорний на синій вибраній плитці
+            var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
+            label.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding("Foreground") { Source = owner });
+            sp.Children.Add(label);
             return sp;
         }
 
