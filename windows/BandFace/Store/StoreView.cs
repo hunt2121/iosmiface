@@ -327,13 +327,16 @@ namespace BandFace.Store
         FrameworkElement PreviewCard(StoreEntry e, StoreVariant v)
         {
             var look = StoreVariants.Look(v, _style, _color);
-            var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+            var sp = new StackPanel();
             var shots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             shots.Children.Add(Shot(look?.Main, S.Get("storeNormal")));
             if (look?.Aod != null) { var a = Shot(look.Aod, S.Get("storeAod")); a.Margin = new Thickness(22, 0, 0, 0); shots.Children.Add(a); }
             sp.Children.Add(shots);
 
             bool looks = v.Styles.Count > 1 || v.Colors.Count > 1;
+            // як на головній iOS: превʼю й налаштування стилю/кольору розділяє тонка лінія
+            if (looks)
+                sp.Children.Add(new Border { Height = 1, Background = BrushOf("CardBorder"), Margin = new Thickness(16, LookGap - LabelInkBelow, 16, 0) });
             if (v.Styles.Count > 1)
             {
                 // перемикач стилів: сіра доріжка, вибраний — кольором акценту
@@ -350,13 +353,12 @@ namespace BandFace.Store
                     seg.Children.Add(t);
                 }
                 sp.Children.Add(new Border { Background = BrushOf("ChipBg"), CornerRadius = new CornerRadius(6), Padding = new Thickness(3),
-                    Width = Math.Min(340, 110 * v.Styles.Count), Margin = new Thickness(0, LookGap - LabelInkBelow, 0, 0), Child = seg, HorizontalAlignment = HorizontalAlignment.Center });
+                    Width = Math.Min(340, 110 * v.Styles.Count), Margin = new Thickness(0, 16, 0, 0), Child = seg, HorizontalAlignment = HorizontalAlignment.Center });
             }
             if (v.Colors.Count > 1)
             {
-                // одразу під підписами — той самий проміжок, що й над ними; під перемикачем стилів — звичайні 16
                 var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, v.Styles.Count > 1 ? 16 : LookGap - LabelInkBelow, 0, 0) };
+                    Margin = new Thickness(0, 16, 0, 0) };
                 for (int i = 0; i < v.Colors.Count; i++)
                 {
                     int idx = i;
