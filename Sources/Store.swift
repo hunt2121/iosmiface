@@ -606,7 +606,7 @@ struct StoreDetailView: View {
         }
     }
 
-    /// Превʼю вибраного стилю й кольору; на головній завантажено лише основне — решта тут, коли вибирають
+    /// Превʼю вибраного стилю й кольору; на головній завантажено лише основне — решта тут, усі одразу після відкриття
     private var previews: some View {
         let look = item.look(style: style, color: color)
         let cache = StorePreviewCache.shared
@@ -664,6 +664,21 @@ struct StoreDetailView: View {
             let look = item.look(style: style, color: color)
             let anim = color == 0 && item.styles.indices.contains(style) ? item.styles[style].anim : nil
             if await StorePreviewCache.shared.load(png: [look?.main, look?.aod].compactMap { $0 }, gif: [anim].compactMap { $0 }) {
+                loadedLook += 1
+            }
+        }
+        // одразу після відкриття сторінки — усі стилі й кольори, щоб перемикання не чекало завантаження
+        .task(id: item.variantKey ?? "") {
+            var png: [String] = [], gif: [String] = []
+            for s in item.styles.indices {
+                if let a = item.styles[s].anim { gif.append(a) }
+                for c in item.styles[s].previews.indices {
+                    guard let look = item.look(style: s, color: c) else { continue }
+                    png.append(look.main)
+                    if let a = look.aod { png.append(a) }
+                }
+            }
+            if await StorePreviewCache.shared.load(png: png, gif: gif) {
                 loadedLook += 1
             }
         }
