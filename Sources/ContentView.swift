@@ -629,6 +629,8 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
+            // стилі й кольори файла — в тому самому рядку під капсулою, без роздільника, як на сторінці циферблата в магазині
+            VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 18) {
                 // вибрано не основний стиль чи колір — його превʼю (без анімації)
                 FaceCapsule(image: lookImage ?? filePreview, animation: lookImage == nil ? fileAnimation : nil)
@@ -666,15 +668,13 @@ struct ContentView: View {
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
             }
-            .padding(.vertical, 8)
-            // роздільник під цим рядком — на всю ширину вмісту картки (від капсули), а не від тексту
-            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
-            // стилі й кольори — без роздільника, однією карткою з капсулою
-            .listRowSeparator(fileLooks == nil ? .automatic : .hidden, edges: .bottom)
-            // стилі й кольори файла — нижче в тій самій картці
             if let looks = fileLooks {
                 looksRow(looks)
             }
+            }
+            .padding(.top, 8)
+            // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули
+            .padding(.bottom, fileLooks == nil ? 8 : 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         }
     }
 
@@ -718,11 +718,6 @@ struct ContentView: View {
                 .padding(.top, -4)
                 .frame(maxWidth: .infinity)
         }
-        // як на сторінці циферблата в магазині: без роздільника, від капсули до стилів — системний відступ рядка
-        // (той самий, що 16 між стилями, кольорами й підписом, на око);
-        // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули (системний відступ + 8)
-        .padding(.top, -8)
-        .padding(.bottom, 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         .onChange(of: lookStyle) { _ in renderLook() }
         .onChange(of: lookColor) { _ in renderLook() }
     }
