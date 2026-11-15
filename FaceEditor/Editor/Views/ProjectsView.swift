@@ -219,9 +219,10 @@ struct ProjectsView: View {
         }
     }
 
-    /// «1,2 MB · 15.11.2026»; поки вага рахується — лише дата
+    /// «1,2 MB · 15.11.26» (рік двома цифрами — вміщається у вузьку картку поруч зі стилями);
+    /// поки вага рахується — лише дата
     private func meta(_ p: FaceProject) -> String {
-        let date = p.meta.modified.formatted(date: .numeric, time: .omitted)
+        let date = p.meta.modified.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year(.twoDigits))
         guard let n = sizes[FacePreviews.key(p)] else { return date }
         return ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file) + " · " + date
     }
