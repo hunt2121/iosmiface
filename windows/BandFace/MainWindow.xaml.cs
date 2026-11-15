@@ -46,6 +46,7 @@ namespace BandFace
             VersionText.Text = "v" + _version;
             VersionValue.Text = "BandFace " + _version;
             ApplyTexts();
+            InitStore();
             UpdateSidebar();
             FillSettings();
             RefreshBand();
@@ -78,6 +79,8 @@ namespace BandFace
                 else if (a == "--page=key") { NavSettings.IsChecked = true; ShowSettingsPage(PageKey); }
                 else if (a == "--page=log") { NavSettings.IsChecked = true; ShowSettingsPage(PageLog); }
                 else if (a == "--page=editor") NavEditor.IsChecked = true;
+                else if (a == "--page=store") NavStore.IsChecked = true;
+                else if (a.StartsWith("--store-face=")) { var id = a.Substring(13); NavStore.IsChecked = true; ContentRendered += async (s, e) => { await Task.Delay(1500); StoreTab.OpenById(id); }; }
                 else if (a == "--page=fonts") { NavEditor.IsChecked = true; EditorTab.ShowFonts(); }
                 else if (a == "--demo") { NavEditor.IsChecked = true; EditorTab.Demo(); }
                 else if (a.StartsWith("--demo=")) { var m = a.Substring(7); NavEditor.IsChecked = true; ContentRendered += (s, e) => _shotWindow = EditorTab.Demo(m); }
@@ -235,8 +238,6 @@ namespace BandFace
         {
             NavFacesText.Text = TitleFaces.Text = S.Get("faces");
             NavStoreText.Text = S.Get("store");
-            StoreChipText.Text = S.Get("soon");
-            NavStore.ToolTip = S.Get("store") + " · " + S.Get("soon").ToLowerInvariant();
             NavEditorText.Text = S.Get("editor");
             NavSettingsText.Text = TitleSettings.Text = S.Get("settings");
             MenuBtn.ToolTip = S.Get("menu");
@@ -296,6 +297,13 @@ namespace BandFace
             EditorTab.Visibility = editor ? Visibility.Visible : Visibility.Collapsed;
             if (editor) _ = RefreshActiveFaceAsync(false);
             if (NavFaces.IsChecked == true) ShowPage(PageFaces);
+            if (NavStore.IsChecked == true)
+            {
+                ShowPage(StoreTab);
+                StoreTab.Refresh();
+                // які циферблати на браслеті й котрий на екрані — для «Встановлено», «Оновити», «На екрані»
+                _ = RefreshActiveFaceAsync(false);
+            }
             if (NavSettings.IsChecked == true) ShowPage(PageSettings);
             CloseFlyout();
             UpdateSidebar();
@@ -304,8 +312,8 @@ namespace BandFace
 
         void ShowPage(FrameworkElement page)
         {
-            foreach (var p in new FrameworkElement[] { PageFaces, PageSettings, PageKey, PageLog })
-                p.Visibility = p == page ? Visibility.Visible : Visibility.Collapsed;
+            foreach (var p in new FrameworkElement[] { PageFaces, PageSettings, PageKey, PageLog, StoreTab })
+                if (p != null) p.Visibility = p == page ? Visibility.Visible : Visibility.Collapsed;
         }
 
         void ShowSettingsPage(FrameworkElement page)
@@ -336,7 +344,7 @@ namespace BandFace
             ContentHost.Margin = new Thickness(_compact ? SideNarrow - 14 : SideWide, 0, 0, 0);
             SidebarPanel.Margin = new Thickness(10, 8, wide ? 10 : 8, 8);
             var textVis = wide ? Visibility.Visible : Visibility.Collapsed;
-            foreach (var t in new FrameworkElement[] { NavFacesText, NavStoreText, StoreChip, NavEditorText, NavSettingsText })
+            foreach (var t in new FrameworkElement[] { NavFacesText, NavStoreText, NavEditorText, NavSettingsText })
                 t.Visibility = textVis;
             // однакові відступи на всіх вкладках: значки й ☰ в одній вертикалі, не стрибають при переході в редактор
             foreach (var n in new Control[] { NavFaces, NavStore, NavEditor, NavSettings })
@@ -435,6 +443,7 @@ namespace BandFace
             ScanBtn.Content = S.Get(_scanning ? "stopScan" : "scan");
             Spin(_connecting);
             RefreshButtons();
+            StoreTab?.BandChanged();
         }
 
         /// <summary>Індикатор підключення: дуга, що обертається.</summary>
@@ -966,7 +975,7 @@ namespace BandFace
         void Message_Click(object sender, MouseButtonEventArgs e) { if (AppDesign.New) HideMessage(); }
 
         /// <summary>Як у редакторі: циферблат увімкнений на браслеті — зелене обведення капсули</summary>
-        void SetActiveId(string id) { _activeId = id; RefreshCapsuleBorder(); }
+        void SetActiveId(string id) { _activeId = id; RefreshCapsuleBorder(); StoreTab?.BandChanged(); }
 
         void RefreshCapsuleBorder()
         {

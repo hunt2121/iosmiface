@@ -379,8 +379,8 @@
               <TextBlock x:Name="NavFacesText" Style="{StaticResource NavText}"/>
             </StackPanel>
           </RadioButton>
-          <!-- Магазин: поки сірий і неактивний -->
-          <RadioButton x:Name="NavStore" Style="{StaticResource Nav}" GroupName="nav" IsEnabled="False" ToolTipService.ShowOnDisabled="True">
+          <!-- Магазин (позначка «Незабаром» прихована з появою магазину) -->
+          <RadioButton x:Name="NavStore" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
               <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE719;"/>
               <TextBlock x:Name="NavStoreText" Style="{StaticResource NavText}"/>
