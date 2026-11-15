@@ -695,37 +695,9 @@ struct StoreDetailView: View {
         }
     }
 
-    /// «Інформація», як в App Store: категорії, сумісність, стилі й кольори, дата
+    /// «Інформація»: плитки сумісності, вигляду, мови й дати, під ними категорії
     private var information: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Інформація").font(.title3.weight(.bold)).padding(.horizontal, 4)
-            VStack(spacing: 0) {
-                infoRow("Категорії", item.kinds.isEmpty ? "—" : item.kinds.joined(separator: ", "))
-                Divider().padding(.leading, 16)
-                infoRow("Сумісність", "Xiaomi Smart Band " + item.bands.map(String.init).joined(separator: " · "))
-                if item.styles.count > 1 || item.colors.count > 1 {
-                    Divider().padding(.leading, 16)
-                    infoRow("Стилі й кольори", StoreText.looks(styles: item.styles.count, colors: item.colors.count))
-                }
-                if let d = item.updated ?? item.added {
-                    Divider().padding(.leading, 16)
-                    infoRow("Оновлено", d.formatted(date: .numeric, time: .omitted))
-                }
-            }
-            .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground)))
-        }
-    }
-
-    private func infoRow(_ title: LocalizedStringKey, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
-            Text(title).foregroundStyle(.secondary)
-            Spacer(minLength: 8)
-            Text(value).multilineTextAlignment(.trailing)
-        }
-        .font(.subheadline)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        StoreInfoTiles(item: item)
     }
 
     private func infoColumn(_ title: LocalizedStringKey, _ value: String) -> some View {
