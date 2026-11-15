@@ -22,6 +22,8 @@ struct ProjectsView: View {
     /// незмінені проєкти показуються одразу, без чорних капсул
     @State private var thumbs: [String: UIImage] = [:]
     @State private var gifs: [String: Data] = [:]
+    /// Вага готового .bin за ключем превʼю (рахується у фоні разом з мініатюрою)
+    @State private var sizes: [String: Int] = [:]
     @State private var askDelete: FaceProject?
 
     // як сітка магазину BandFace
@@ -161,15 +163,25 @@ struct ProjectsView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 266)
 
+                // як картка магазину: назва й кольори праворуч; нижче «вага · дата» і кількість стилів
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(p.displayName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(p.meta.modified.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(p.displayName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        ProjectColorDots(colors: ColorVariants.colors(p))
+                    }
+                    HStack(spacing: 6) {
+                        Text(meta(p))
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        let n = Self.styleCount(p)
+                        if n > 1 { Text(Self.styles(n)).lineLimit(1) }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 2)
 
@@ -192,6 +204,9 @@ struct ProjectsView: View {
             if gifs[k] == nil, let g = await Task.detached(priority: .utility, operation: { FacePreviews.projectGIF(p) }).value {
                 gifs[k] = g
             }
+            if sizes[k] == nil, let n = await Task.detached(priority: .utility, operation: { (try? p.compile())?.0.count }).value {
+                sizes[k] = n
+            }
         }
         .contextMenu {
             if install != nil {
@@ -201,6 +216,31 @@ struct ProjectsView: View {
             Button { export(p) } label: { Label("Зберегти .bin", systemImage: "square.and.arrow.up") }
             Button { store.duplicate(p) } label: { Label("Копія", systemImage: "plus.square.on.square") }
             Button(role: .destructive) { askDelete = p } label: { Label("Видалити", systemImage: "trash") }
+        }
+    }
+
+    /// «1,2 MB · 15.11.2026»; поки вага рахується — лише дата
+    private func meta(_ p: FaceProject) -> String {
+        let date = p.meta.modified.formatted(date: .numeric, time: .omitted)
+        guard let n = sizes[FacePreviews.key(p)] else { return date }
+        return ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file) + " · " + date
+    }
+
+    /// Стилі: звичайні теми (у старих файлах без типів тем друга тема — AOD)
+    static func styleCount(_ p: FaceProject) -> Int {
+        let themes = p.themes
+        if themes.count == 2, themes.allSatisfy({ !$0.has("type") }) { return 1 }
+        return max(themes.filter { $0.string("type") != "AOD" }.count, 1)
+    }
+
+    /// «2 стилі», «5 стилів» мовою інтерфейсу
+    static func styles(_ n: Int) -> String {
+        let a = n % 10, b = n % 100
+        let few = (2...4).contains(a) && !(12...14).contains(b), one = a == 1 && b != 11
+        switch Bundle.main.preferredLocalizations.first ?? "en" {
+        case "uk": return "\(n) " + (one ? "стиль" : few ? "стилі" : "стилів")
+        case "ru": return "\(n) " + (one ? "стиль" : few ? "стиля" : "стилей")
+        default: return n == 1 ? "1 style" : "\(n) styles"
         }
     }
 
@@ -316,5 +356,36 @@ struct ProjectInstallButton: View {
             .buttonStyle(.plain)
             .disabled(status.current != nil)
         }
+    }
+}
+
+/// Кольори циферблата на картці, як у магазині BandFace: до 4 кружечків 15 pt внахлест, далі «+N»
+struct ProjectColorDots: View {
+    let colors: [String]
+
+    var body: some View {
+        if colors.count > 1 {
+            HStack(spacing: -5) {
+                ForEach(Array(colors.prefix(4).enumerated()), id: \.offset) { i, c in
+                    Circle().fill(Self.color(c))
+                        .frame(width: 15, height: 15)
+                        .overlay(Circle().strokeBorder(Color(.secondarySystemGroupedBackground), lineWidth: 1.5))
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                        .zIndex(Double(10 - i))
+                }
+                if colors.count > 4 {
+                    Text(verbatim: "+\(colors.count - 4)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 8)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
+    static func color(_ hex: String) -> Color {
+        let v = UInt32(hex.dropFirst(), radix: 16) ?? 0
+        return Color(red: Double(v >> 16 & 0xFF) / 255, green: Double(v >> 8 & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
     }
 }
