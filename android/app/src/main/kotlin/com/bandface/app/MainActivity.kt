@@ -290,6 +290,8 @@ fun FacesTab(vm: MainViewModel) {
                     }
                     Tonal(stringResource(R.string.disconnect), enabled = !vm.busy) { vm.disconnect() }
                 }
+                // результат перевірки ключем після підключення: «Ключ підходить · заряд 80 %» або чому ні
+                vm.bandInfo?.let { Text(it, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             } else {
                 Text(stringResource(R.string.not_connected), fontSize = 18.sp)
                 Tonal(stringResource(R.string.scan), enabled = !vm.busy) { permLauncher.launch(permissions) }
@@ -301,6 +303,17 @@ fun FacesTab(vm: MainViewModel) {
                         Column(Modifier.padding(14.dp)) {
                             Text(d.name, fontSize = 16.sp)
                             Text(d.address, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                // браслет не відповів — найчастіше його тримає Mi Fitness: пояснення й кнопка до її налаштувань
+                if (vm.bandBusy) {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    Text(stringResource(R.string.busy_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Tonal(stringResource(R.string.open_mifitness), modifier = Modifier.fillMaxWidth()) {
+                        runCatching {
+                            ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.parse("package:com.mi.health")))
                         }
                     }
                 }
@@ -349,12 +362,12 @@ fun FacesTab(vm: MainViewModel) {
 @Composable
 fun KeyTab(vm: MainViewModel) {
     var text by remember { mutableStateOf(vm.keyText) }
-    val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) vm.scanFolder(uri)
+    // вхід на сайті Xiaomi (окреме вікно з браузером) → кукі акаунта → ключі з хмари Mi Fitness
+    val login = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        val cookies = r.data?.getStringExtra(LoginActivity.COOKIES)
+        if (r.resultCode == android.app.Activity.RESULT_OK && !cookies.isNullOrEmpty()) vm.loadCloud(cookies)
     }
-    val file = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.importKey(uri)
-    }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     if (text != vm.keyText && vm.keyText.isNotEmpty()) text = vm.keyText
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = Dim.tabBarInset), verticalArrangement = Arrangement.spacedBy(Dim.cardGap)) {
@@ -365,13 +378,25 @@ fun KeyTab(vm: MainViewModel) {
                 textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 15.sp),
                 shape = RoundedCornerShape(8.dp),
             )
-            Primary(stringResource(R.string.find_auto), modifier = Modifier.fillMaxWidth().height(52.dp)) { folder.launch(null) }
+            Primary(stringResource(if (vm.cloudLoading) R.string.cloud_loading else R.string.xiaomi_login), enabled = !vm.cloudLoading,
+                modifier = Modifier.fillMaxWidth().height(52.dp)) { login.launch(android.content.Intent(ctx, LoginActivity::class.java)) }
             Tonal(stringResource(R.string.paste), modifier = Modifier.fillMaxWidth().height(52.dp)) { vm.pasteKey(); text = vm.keyText }
-            Tonal(stringResource(R.string.key_import), modifier = Modifier.fillMaxWidth()) { file.launch(arrayOf("*/*")) }
             vm.keyMessage?.let { Text(it, color = Green, fontSize = 14.sp) }
+            Text(stringResource(R.string.key_note), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        SectionCard("") {
-            Text(stringResource(R.string.android_note), fontSize = 14.sp)
+        if (vm.cloudDevices.size > 1) SectionCard(stringResource(R.string.cloud_devices)) {
+            for (d in vm.cloudDevices) {
+                Surface(
+                    onClick = { vm.chooseCloud(d); text = vm.keyText }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.background,
+                ) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Text(d.name.ifEmpty { d.model }, fontSize = Type.body, maxLines = 1)
+                        Text(d.key.take(4) + "…" + d.key.takeLast(4), fontFamily = FontFamily.Monospace, fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
     }
 }

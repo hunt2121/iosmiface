@@ -12,12 +12,10 @@
     <string name="not_connected">Not connected</string>
     <string name="key_title">Band auth key</string>
     <string name="key_hint">32 hex characters (16 bytes)</string>
-    <string name="key_import">Find key in a file</string>
     <string name="key_saved">Key saved</string>
     <string name="key_invalid">The auth key must be 32 hex characters</string>
-    <string name="key_found">Key found in the file</string>
     <string name="key_not_found">No key in the file</string>
-    <string name="key_note">The key is stored only on this phone and is never sent anywhere.</string>
+    <string name="key_note">The key is stored only on this phone. Your account password is entered on the Xiaomi site and is never passed to the app.</string>
     <string name="version">Version</string>
     <string name="log_empty">The log is empty</string>
     <string name="clear">Clear</string>
@@ -38,9 +36,7 @@
     <string name="pick_other">Choose another file</string>
     <string name="install_band">Install on band</string>
     <string name="transfer">Sending · %1$d%%</string>
-    <string name="find_auto">Find automatically</string>
     <string name="paste">Paste from clipboard</string>
-    <string name="android_note">Android blocks access to other apps\u2019 data. Automatic search works by choosing the Mi Fitness data folder; otherwise paste the key manually.</string>
     <string name="activity">Activity</string>
     <string name="dev_mode">Developer mode</string>
     <string name="copy">Copy</string>
@@ -52,4 +48,17 @@
     <string name="crash_copied">Copied — send it to the developer</string>
     <string name="crash_continue">Open the app</string>
     <string name="err_link">Couldn\'t connect to the band (code %1$s). Keep the band close and try again</string>
+    <string name="xiaomi_login">Sign in to Xiaomi account</string>
+    <string name="xiaomi_login_title">Xiaomi sign-in</string>
+    <string name="cloud_loading">Getting the key…</string>
+    <string name="cloud_devices">Devices in the account — tap your band</string>
+    <string name="cloud_empty">No bands with a key in this account</string>
+    <string name="cloud_failed">Couldn\'t get the key from the Xiaomi account. Details are in the log</string>
+    <string name="cloud_chosen">Key for “%1$s” saved</string>
+    <string name="err_busy">The band doesn\'t respond — most often Mi Fitness is holding it</string>
+    <string name="busy_hint">Stop Mi Fitness (“Force stop” in its settings) and try again. You can open Mi Fitness again after installing the watch face.</string>
+    <string name="open_mifitness">Open Mi Fitness settings</string>
+    <string name="band_no_key">No key — add it on the Key tab</string>
+    <string name="band_ok">Key is valid</string>
+    <string name="band_ok_battery">Key is valid · battery %1$d%%</string>
 </resources>

@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +49,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var progressText by mutableStateOf("")
     var keyMessage by mutableStateOf<String?>(null)
     var devMode by mutableStateOf(prefs.getBoolean("dev", false))
+    /** Браслети з акаунта Xiaomi після входу */
+    val cloudDevices = mutableStateListOf<CloudDevice>()
+    var cloudLoading by mutableStateOf(false)
+    /** Підключитися не вдалося, бо браслет, схоже, тримає Mi Fitness */
+    var bandBusy by mutableStateOf(false)
+    /** Після підключення: ключ підходить і заряд, або чому ні */
+    var bandInfo by mutableStateOf<String?>(null)
 
     val versionLabel: String = runCatching {
         val i = app.packageManager.getPackageInfo(app.packageName, 0)
@@ -80,42 +86,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         else keyMessage = s(R.string.key_not_found)
     }
 
-    /** Обходить вибрану папку і шукає ключ у текстових файлах. */
-    fun scanFolder(tree: Uri) {
-        viewModelScope.launch {
-            val found = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                var result: String? = null
-                fun walk(docId: String, depth: Int) {
-                    if (result != null || depth > 6) return
-                    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId)
-                    ctx.contentResolver.query(children, arrayOf(
-                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                        DocumentsContract.Document.COLUMN_MIME_TYPE,
-                        DocumentsContract.Document.COLUMN_SIZE), null, null, null)?.use { c ->
-                        val list = ArrayList<Triple<String, String, Long>>()
-                        while (c.moveToNext()) list.add(Triple(c.getString(0), c.getString(1), c.getLong(2)))
-                        for ((id, mime, size) in list) {
-                            if (result != null) return
-                            if (mime == DocumentsContract.Document.MIME_TYPE_DIR) walk(id, depth + 1)
-                            else if (size in 1..4_000_000) {
-                                val text = runCatching {
-                                    ctx.contentResolver.openInputStream(DocumentsContract.buildDocumentUriUsingTree(tree, id))
-                                        ?.use { it.readBytes().toString(Charsets.ISO_8859_1) }
-                                }.getOrNull() ?: continue
-                                val m = Regex("encryptKey\\W{0,8}([0-9a-fA-F]{32})").find(text)
-                                if (m != null) { result = m.groupValues[1]; return }
-                            }
-                        }
-                    }
-                }
-                walk(DocumentsContract.getTreeDocumentId(tree), 0)
-                result
-            }
-            if (found != null) { keyText = found.lowercase(); saveKey(keyText); keyMessage = s(R.string.key_found) }
-            else keyMessage = s(R.string.key_not_found)
-        }
-    }
-
     fun addLog(text: String) {
         viewModelScope.launch { log.add("${time.format(Date())}  $text") }
     }
@@ -133,11 +103,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         job = viewModelScope.launch {
             busy = true
             try {
+                bandBusy = false
+                bandInfo = null
                 ble.connect(d.address)
                 connectedName = ble.connectedName
                 addLog(s(R.string.connected, connectedName ?: ""))
+                checkBand()
             } catch (e: Exception) {
-                status = describe(e)
+                // браслет не відповідає на підключення (147 / таймаут) — найчастіше його тримає Mi Fitness
+                bandBusy = e is BandError && (e.kind == ErrorKind.TIMEOUT || e.detail.startsWith("status"))
+                status = if (bandBusy) s(R.string.err_busy) else describe(e)
                 addLog(status!!)
             } finally {
                 busy = false
@@ -157,20 +132,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
-    /** Шукає в текстовому файлі 32 hex-символи поспіль. */
-    fun importKey(uri: Uri) {
-        val text = runCatching {
-            ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.ISO_8859_1) }
-        }.getOrNull() ?: ""
-        val m = Regex("(?<![0-9a-fA-F])[0-9a-fA-F]{32}(?![0-9a-fA-F])").find(text)
-        if (m != null) {
-            keyText = m.value.lowercase()
-            saveKey(keyText)
-            keyMessage = s(R.string.key_found)
-        } else {
-            keyMessage = s(R.string.key_not_found)
-        }
-    }
 
     fun pickFace(uri: Uri) {
         try {
@@ -196,6 +157,58 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun disconnect() { ble.disconnect(); connectedName = null }
+
+    /** Після підключення, як в iOS: вхід ключем і заряд — одразу видно, чи ключ підходить */
+    private suspend fun checkBand() {
+        val key = Hex.decode(keyText)
+        if (key == null || key.size != 16) { bandInfo = s(R.string.band_no_key); return }
+        val config = SessionConfig()
+        if (devMode) config.log = { addLog(it) }
+        val session = BandSession(ble, config)
+        ble.onData = { session.receive(it) }
+        try {
+            session.open()
+            session.authenticate(key, "Android", "UK", phoneInfo())
+            val r = runCatching { session.command(Command.batteryRequest(), 2000) }.getOrNull()
+            val level = r?.root?.message(listOf(4, 2, 1))?.varint(1)?.takeIf { it in 0..100 }
+            bandInfo = if (level != null) s(R.string.band_ok_battery, level.toInt()) else s(R.string.band_ok)
+            addLog(bandInfo!!)
+        } catch (e: Exception) {
+            bandInfo = describe(e)
+            addLog(bandInfo!!)
+        } finally {
+            runCatching { session.close() }
+            ble.onData = null
+            session.dispose()
+        }
+    }
+
+    /** Вхід на сайті Xiaomi завершено: беремо браслети з ключами з хмари Mi Fitness */
+    fun loadCloud(cookies: String) {
+        viewModelScope.launch {
+            cloudLoading = true
+            cloudDevices.clear()
+            keyMessage = null
+            try {
+                val list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    XiaomiCloud.devices(cookies) { addLog(it) }
+                }
+                cloudDevices.addAll(list)
+                keyMessage = if (list.isEmpty()) s(R.string.cloud_empty) else null
+                // один браслет — ключ одразу
+                if (list.size == 1) chooseCloud(list[0])
+            } catch (e: Exception) {
+                addLog("xiaomi: ${e.message}")
+                keyMessage = s(R.string.cloud_failed)
+            } finally {
+                cloudLoading = false
+            }
+        }
+    }
+
+    fun chooseCloud(d: CloudDevice) {
+        if (saveKey(d.key)) keyMessage = s(R.string.cloud_chosen, d.name.ifEmpty { d.model })
+    }
 
     fun install() {
         val f = face ?: return

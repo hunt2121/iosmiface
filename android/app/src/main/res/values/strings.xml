@@ -13,12 +13,10 @@
     <string name="not_connected">Не підключено</string>
     <string name="key_title">Auth key браслета</string>
     <string name="key_hint">32 hex-символи (16 байт)</string>
-    <string name="key_import">Знайти ключ у файлі</string>
     <string name="key_saved">Ключ збережено</string>
     <string name="key_invalid">Auth key має бути 32 hex-символи</string>
-    <string name="key_found">Ключ знайдено у файлі</string>
     <string name="key_not_found">У файлі немає ключа</string>
-    <string name="key_note">Ключ зберігається лише на цьому телефоні й нікуди не надсилається.</string>
+    <string name="key_note">Ключ зберігається лише на цьому телефоні. Пароль від акаунта вводиться на сайті Xiaomi й застосунку не передається.</string>
     <string name="version">Версія</string>
     <string name="log_empty">Журнал порожній</string>
     <string name="clear">Очистити</string>
@@ -39,9 +37,7 @@
     <string name="pick_other">Вибрати інший файл</string>
     <string name="install_band">Встановити на браслет</string>
     <string name="transfer">Передача · %1$d%%</string>
-    <string name="find_auto">Знайти автоматично</string>
     <string name="paste">Вставити з буфера</string>
-    <string name="android_note">Android закриває доступ до даних інших застосунків. Автопошук працює через вибір папки з даними Mi Fitness; якщо ні, ключ вставляється вручну.</string>
     <string name="activity">Активність</string>
     <string name="dev_mode">Режим розробника</string>
     <string name="copy">Копіювати</string>
@@ -53,4 +49,17 @@
     <string name="crash_copied">Скопійовано — надішліть розробнику</string>
     <string name="crash_continue">Відкрити застосунок</string>
     <string name="err_link">Не вдалося підключитися до браслета (код %1$s). Тримайте браслет поруч і спробуйте ще раз</string>
+    <string name="xiaomi_login">Увійти в акаунт Xiaomi</string>
+    <string name="xiaomi_login_title">Вхід у Xiaomi</string>
+    <string name="cloud_loading">Отримую ключ…</string>
+    <string name="cloud_devices">Пристрої в акаунті — натисніть свій браслет</string>
+    <string name="cloud_empty">В акаунті немає браслетів із ключем</string>
+    <string name="cloud_failed">Не вдалося отримати ключ з акаунта Xiaomi. Подробиці — в журналі</string>
+    <string name="cloud_chosen">Ключ для «%1$s» збережено</string>
+    <string name="err_busy">Браслет не відповідає на підключення — найчастіше його тримає Mi Fitness</string>
+    <string name="busy_hint">Зупиніть Mi Fitness («Примусово зупинити» в налаштуваннях) і спробуйте ще раз. Після встановлення циферблата Mi Fitness можна відкрити знову.</string>
+    <string name="open_mifitness">Відкрити налаштування Mi Fitness</string>
+    <string name="band_no_key">Ключ не вказано — додайте його на вкладці «Ключ»</string>
+    <string name="band_ok">Ключ підходить</string>
+    <string name="band_ok_battery">Ключ підходить · заряд %1$d%%</string>
 </resources>
