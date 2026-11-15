@@ -52,6 +52,12 @@ struct ContentView: View {
     @State private var filePreview: UIImage?
     /// Анімоване превʼю вибраного файла (GIF), якщо циферблат анімований
     @State private var fileAnimation: Data?
+    /// Стилі й кольори вибраного файла (nil — вибирати нічого) і вибране для превʼю
+    @State private var fileLooks: FacePreviews.Looks?
+    @State private var lookStyle = 0
+    @State private var lookColor = 0
+    /// Превʼю вибраного стилю й кольору; nil — основний вигляд (картинка й анімація файла)
+    @State private var lookImage: UIImage?
     // Редактор циферблатів
     @StateObject private var editorStore = ProjectStore()
     /// Циферблат, відкритий у редакторі
@@ -624,7 +630,8 @@ struct ContentView: View {
     private var installSection: some View {
         Section("Встановлення циферблата") {
             HStack(alignment: .center, spacing: 18) {
-                FaceCapsule(image: filePreview, animation: fileAnimation)
+                // вибрано не основний стиль чи колір — його превʼю (без анімації)
+                FaceCapsule(image: lookImage ?? filePreview, animation: lookImage == nil ? fileAnimation : nil)
                 // Права колонка має фіксовані «слоти»: інформація, кнопки, прогрес.
                 // Їхня висота не змінюється, тож нічого не стрибає.
                 VStack(alignment: .leading, spacing: 8) {
@@ -660,6 +667,69 @@ struct ContentView: View {
                 .controlSize(.regular)
             }
             .padding(.vertical, 8)
+            // стилі й кольори файла — під роздільником тієї самої картки
+            if let looks = fileLooks {
+                looksRow(looks)
+            }
+        }
+    }
+
+    /// Перемикач стилів і кружечки кольорів, як на сторінці циферблата в магазині; підпис — лише про вибір на браслеті
+    private func looksRow(_ looks: FacePreviews.Looks) -> some View {
+        VStack(spacing: 16) {
+            if looks.styles.count > 1 {
+                Picker("Стиль", selection: $lookStyle) {
+                    ForEach(looks.styles.indices, id: \.self) { i in
+                        Text(looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name).tag(i)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: CGFloat(looks.styles.count) * 110)
+                .frame(maxWidth: .infinity)
+            }
+            if looks.colors.count > 1 {
+                HStack(spacing: 12) {
+                    ForEach(looks.colors.indices, id: \.self) { i in
+                        Button { lookColor = i } label: {
+                            Circle().fill(Color(hex: looks.colors[i]))
+                                .frame(width: 30, height: 30)
+                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
+                                .padding(3)
+                                .overlay(Circle().strokeBorder(i == lookColor ? Color(hex: looks.colors[i]) : .clear, lineWidth: 2.5))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(verbatim: looks.colors[i]))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            Text(looks.styles.count > 1 && looks.colors.count > 1
+                 ? String(localized: "Стиль і колір вибираються на браслеті\nпісля встановлення")
+                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті\nпісля встановлення")
+                 : String(localized: "Колір вибирається на браслеті\nпісля встановлення"))
+                .font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                .padding(.top, -4)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 12)
+        .onChange(of: lookStyle) { _ in renderLook() }
+        .onChange(of: lookColor) { _ in renderLook() }
+    }
+
+    /// Превʼю вибраного стилю й кольору; основний (перший стиль, перший колір) — картинка й анімація файла
+    private func renderLook() {
+        guard let looks = fileLooks, let file = face else { lookImage = nil; return }
+        let style = min(lookStyle, looks.styles.count - 1), color = lookColor
+        guard style > 0 || color > 0 else { lookImage = nil; return }
+        let data = Data(file.data), theme = looks.styles[style].theme
+        Task { @MainActor in
+            let img = await Task.detached(priority: .userInitiated) { FacePreviews.look(for: data, theme: theme, color: color) }.value
+            // за цей час могли вибрати інший файл чи інший вигляд
+            guard face?.data == file.data, lookStyle == style, lookColor == color else { return }
+            lookImage = img
         }
     }
 
@@ -805,6 +875,8 @@ struct ContentView: View {
             } catch {
                 face = nil
                 filePreview = nil
+                fileLooks = nil
+                lookImage = nil
                 fileAnimation = nil
                 fileName = nil
                 show(error is BandError ? error.localizedDescription
@@ -982,6 +1054,15 @@ struct ContentView: View {
     /// Превʼю вибраного файла з його ресурсів; поки малюється — вбудоване
     private func renderFilePreview(_ file: FaceFile) {
         let data = Data(file.data)
+        fileLooks = nil
+        lookStyle = 0
+        lookColor = 0
+        lookImage = nil
+        Task { @MainActor in
+            let looks = await Task.detached(priority: .userInitiated) { FacePreviews.looks(for: data) }.value
+            guard face?.data == file.data else { return }
+            fileLooks = looks
+        }
         Task { @MainActor in
             // один виклик: картинка й анімація з того самого кешу, що й у магазині
             let shots = await Task.detached(priority: .userInitiated) { FacePreviews.get(for: data) }.value
