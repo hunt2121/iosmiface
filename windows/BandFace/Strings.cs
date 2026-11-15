@@ -115,9 +115,9 @@ namespace BandFace
             ["pickOtherShort"] = new[] { "Інший файл", "Another file", "Другой файл" },
             ["lookStyle"] = new[] { "Стиль", "Style", "Стиль" },
             ["lookColor"] = new[] { "Колір", "Color", "Цвет" },
-            ["lookHintBoth"] = new[] { "Стиль і колір вибираються на браслеті після встановлення", "Style and color are chosen on the band after installing", "Стиль и цвет выбираются на браслете после установки" },
-            ["lookHintStyle"] = new[] { "Стиль вибирається на браслеті після встановлення", "The style is chosen on the band after installing", "Стиль выбирается на браслете после установки" },
-            ["lookHintColor"] = new[] { "Колір вибирається на браслеті після встановлення", "The color is chosen on the band after installing", "Цвет выбирается на браслете после установки" },
+            ["lookHintBoth"] = new[] { "Стиль і колір вибираються на браслеті", "Style and color are chosen on the band", "Стиль и цвет выбираются на браслете" },
+            ["lookHintStyle"] = new[] { "Стиль вибирається на браслеті", "The style is chosen on the band", "Стиль выбирается на браслете" },
+            ["lookHintColor"] = new[] { "Колір вибирається на браслеті", "The color is chosen on the band", "Цвет выбирается на браслете" },
             // Магазин
             ["storeAll"] = new[] { "Усі", "All", "Все" },
             ["storeFree"] = new[] { "Безкоштовні", "Free", "Бесплатные" },

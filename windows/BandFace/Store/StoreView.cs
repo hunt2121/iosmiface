@@ -181,8 +181,10 @@ namespace BandFace.Store
             else
             {
                 double w = Math.Max(400, ActualWidth - 36);
-                int cols = Math.Max(2, Math.Min(6, (int)((w + 12) / 222)));
-                var grid = new UniformGrid { Columns = cols };
+                // картка не вужча за 218 px: капсула 150 px і поля; у звичайному вікні — 4 в ряд
+                int cols = Math.Max(2, Math.Min(6, (int)((w + 12) / 230)));
+                // у карток відступ праворуч 12 — сітка ширша на нього, щоб правий край збігався з кнопкою сортування
+                var grid = new UniformGrid { Columns = cols, Margin = new Thickness(0, 0, -12, 0) };
                 foreach (var f in list) grid.Children.Add(Card(f));
                 sp.Children.Add(grid);
             }
@@ -194,7 +196,7 @@ namespace BandFace.Store
             var v = Variant(e);
             var look = StoreVariants.Look(v, 0, 0);
             var sp = new StackPanel();
-            sp.Children.Add(Capsule(look?.Main, 96, 236, IsActive(e)));
+            sp.Children.Add(Capsule(look?.Main, 144, 354, IsActive(e)));
 
             // назва й кружечки кольорів праворуч
             var name = new DockPanel { Margin = new Thickness(0, 14, 0, 0), LastChildFill = true };
@@ -562,8 +564,8 @@ namespace BandFace.Store
         {
             var sp = new StackPanel();
             sp.Children.Add(new TextBlock { Text = S.Get("storeInfo"), FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
-            var g = new UniformGrid { Columns = 2 };
-            g.Children.Add(Tile("band", S.Get("storeCompat"), "Band " + string.Join(" · ", e.Bands), new TextBlock { Text = "Xiaomi Smart Band", FontSize = 12, Foreground = BrushOf("Sub") }));
+            var tiles = new List<FrameworkElement>();
+            tiles.Add(Tile("band", S.Get("storeCompat"), "Band " + string.Join(" · ", e.Bands), new TextBlock { Text = "Xiaomi Smart Band", FontSize = 12, Foreground = BrushOf("Sub") }));
             FrameworkElement lookNote;
             if (v.Colors.Count > 1)
             {
@@ -573,14 +575,25 @@ namespace BandFace.Store
                 lookNote = row;
             }
             else lookNote = new TextBlock { Text = S.Get("storeNoColors"), FontSize = 12, Foreground = BrushOf("Sub") };
-            g.Children.Add(Tile("palette", S.Get("storeLook"), Plural(Math.Max(1, v.Styles.Count), "storeStyle1", "storeStyle2", "storeStyle5"), lookNote));
+            tiles.Add(Tile("palette", S.Get("storeLook"), Plural(Math.Max(1, v.Styles.Count), "storeStyle1", "storeStyle2", "storeStyle5"), lookNote));
             var lang = v.Langs.FirstOrDefault(l => l != "*");
-            g.Children.Add(Tile("globe", S.Get("language"), lang == null ? S.Get("storeAllLangs") : StoreVariants.LanguageName(lang),
+            tiles.Add(Tile("globe", S.Get("language"), lang == null ? S.Get("storeAllLangs") : StoreVariants.LanguageName(lang),
                 new TextBlock { Text = S.Get(v.Clock == "12h" ? "storeClock12" : v.Clock == "24h" ? "storeClock24" : "storeAnyClock"), FontSize = 12, Foreground = BrushOf("Sub") }));
             var day = Day(e.Updated ?? e.Added);
             if (day != null)
-                g.Children.Add(Tile("calendar", S.Get("storeUpdated"), day.Value.ToString("d MMMM", System.Globalization.CultureInfo.CurrentUICulture),
+                tiles.Add(Tile("calendar", S.Get("storeUpdated"), day.Value.ToString("d MMMM", System.Globalization.CultureInfo.CurrentUICulture),
                     new TextBlock { Text = day.Value.Year.ToString(), FontSize = 12, Foreground = BrushOf("Sub") }));
+            var g = new Grid();
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                if (i % 2 == 0) g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                Grid.SetRow(tiles[i], i / 2);
+                Grid.SetColumn(tiles[i], i % 2 == 0 ? 0 : 2);
+                g.Children.Add(tiles[i]);
+            }
             sp.Children.Add(g);
             if (e.Kinds.Count > 0)
             {
@@ -609,7 +622,7 @@ namespace BandFace.Store
             g.Children.Add(val);
             Grid.SetRow(note, 3);
             g.Children.Add(note);
-            return new Border { Style = StyleOf("CardBox"), Padding = new Thickness(14, 13, 14, 12), Margin = new Thickness(0, 0, 10, 10), Height = 88, Child = g };
+            return new Border { Style = StyleOf("CardBox"), Padding = new Thickness(14, 13, 14, 12), Margin = new Thickness(0, 0, 0, 10), Height = 88, Child = g };
         }
 
         FrameworkElement Caption(string icon, string text)
