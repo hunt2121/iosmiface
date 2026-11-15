@@ -463,14 +463,14 @@ namespace BandFace.Creator
                     var num = p.Layouts(0).Last();
                     if (kind == "widget")
                     {
-                        WidgetSlots.AddWidget(p, 0, cx, cy, "Пульс");
+                        WidgetSlots.AddWidget(p, 0, cx, cy, S.Get("src_healthHeartRate"));
                         var w = p.ResourceRef(p.Layouts(0).Last().Str("ref"));
                         w.Add("Item").Set("ref", "@" + dot).Set("x", 0).Set("y", 0);
                         WidgetSlots.AddToWidget(p, w, new Point(0, 0), num, 0);
                     }
                     else
                     {
-                        WidgetSlots.AddSlot(p, 0, cx, cy, "Пульс");
+                        WidgetSlots.AddSlot(p, 0, cx, cy, S.Get("src_healthHeartRate"));
                         var slot = p.ResourceRef(p.Layouts(0).Last().Str("ref"));
                         var w = WidgetSlots.Widgets(p, slot)[0];
                         w.Add("Item").Set("ref", "@" + dot).Set("x", 0).Set("y", 0);

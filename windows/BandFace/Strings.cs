@@ -68,7 +68,6 @@ namespace BandFace
             ["dropZone"] = new[] { "Перетягніть файл .bin сюди", "Drop a .bin file here", "Перетащите файл .bin сюда" },
             ["dropZoneSub"] = new[] { "або клікніть, щоб вибрати", "or click to choose", "или кликните, чтобы выбрать" },
             ["store"] = new[] { "Магазин", "Store", "Магазин" },
-            ["soon"] = new[] { "Незабаром", "Soon", "Скоро" },
             ["editor"] = new[] { "Редактор", "Editor", "Редактор" },
             ["settings"] = new[] { "Налаштування", "Settings", "Настройки" },
             ["menu"] = new[] { "Меню", "Menu", "Меню" },
