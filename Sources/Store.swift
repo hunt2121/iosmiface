@@ -656,7 +656,7 @@ struct StoreDetailView: View {
                 .frame(maxWidth: .infinity)
             }
             if item.styles.count > 1 || item.colors.count > 1 {
-                Text("Стиль і колір вибираються\nна браслеті після встановлення")
+                Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
                     .font(.caption).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
