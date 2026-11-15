@@ -254,7 +254,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         is BandError -> when (e.kind) {
             ErrorKind.AUTH_KEY_MISMATCH, ErrorKind.NOT_AUTHENTICATED, ErrorKind.INVALID_AUTH_KEY -> s(R.string.err_auth)
             ErrorKind.TIMEOUT, ErrorKind.SESSION_OPEN_FAILED -> s(R.string.err_timeout)
-            ErrorKind.NOT_CONNECTED -> s(R.string.err_connect)
+            // обрив під час підключення — з кодом Android, а не «спочатку підключіть»
+            ErrorKind.NOT_CONNECTED -> if (e.detail.startsWith("status")) s(R.string.err_link, e.detail.removePrefix("status ").trim()) else s(R.string.err_connect)
             ErrorKind.DISCONNECTED, ErrorKind.CANCELLED -> s(R.string.err_disconnected)
             ErrorKind.INVALID_FACE_FILE, ErrorKind.INVALID_PREVIEW -> s(R.string.err_face)
             ErrorKind.INSTALL_REJECTED, ErrorKind.UPLOAD_REJECTED, ErrorKind.INSTALL_ABORTED ->

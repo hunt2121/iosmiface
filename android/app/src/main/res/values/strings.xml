@@ -52,4 +52,5 @@
     <string name="crash_copy">Копіювати текст помилки</string>
     <string name="crash_copied">Скопійовано — надішліть розробнику</string>
     <string name="crash_continue">Відкрити застосунок</string>
+    <string name="err_link">Не вдалося підключитися до браслета (код %1$s). Тримайте браслет поруч і спробуйте ще раз</string>
 </resources>

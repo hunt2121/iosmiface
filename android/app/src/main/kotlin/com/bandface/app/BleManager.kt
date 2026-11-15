@@ -23,7 +23,10 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import java.util.UUID
 
-data class FoundDevice(val name: String, val address: String)
+data class FoundDevice(val name: String, val address: String) {
+    /** У списку лише браслети й годинники Xiaomi (навушники, колонки й інше — ні) */
+    val isXiaomi: Boolean get() = Regex("(?i)xiaomi|redmi|mi smart band|mi band|smart band").containsMatchIn(name)
+}
 
 /** BLE: сервіс FE95, сповіщення з 0x5E, запис без відповіді в 0x5F. */
 @SuppressLint("MissingPermission")
@@ -56,14 +59,14 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name = result.device.name ?: result.scanRecord?.deviceName ?: return
-            onFound?.invoke(FoundDevice(name, result.device.address))
+            FoundDevice(name, result.device.address).takeIf { it.isXiaomi }?.let { onFound?.invoke(it) }
         }
     }
 
     /** Спарені пристрої. Без дозволу «Пристрої поблизу» (Android 12+) — порожньо, а не падіння застосунку:
      *  при першому запуску дозволу ще немає, список оновиться після «Шукати пристрій». */
     fun bonded(): List<FoundDevice> = runCatching {
-        adapter?.bondedDevices?.map { FoundDevice(it.name ?: it.address, it.address) } ?: emptyList()
+        adapter?.bondedDevices?.map { FoundDevice(it.name ?: it.address, it.address) }?.filter { it.isXiaomi } ?: emptyList()
     }.getOrDefault(emptyList())
 
     fun startScan() {
@@ -77,8 +80,10 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            log("gatt: state $newState, status $status")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                g.requestMtu(247)
+                // MTU не погоджується (деякі телефони) — одразу шукаємо сервіси, без зависання
+                if (!g.requestMtu(247)) g.discoverServices()
             } else {
                 tx = null
                 connectedName = null
@@ -91,6 +96,7 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         }
 
         override fun onMtuChanged(g: BluetoothGatt, newMtu: Int, status: Int) {
+            log("gatt: mtu $newMtu, status $status")
             mtu = newMtu
             g.discoverServices()
         }
@@ -99,6 +105,7 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
             val s = g.getService(service)
             val r = s?.getCharacteristic(rx)
             val t = s?.getCharacteristic(txUuid)
+            log("gatt: services status $status, fe95 ${if (s != null) "є" else "немає"}")
             if (r == null || t == null) {
                 connectDone?.completeExceptionally(BandError(ErrorKind.CHARACTERISTIC_NOT_FOUND))
                 return
@@ -112,6 +119,7 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         }
 
         override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) {
+            log("gatt: notifications status $status")
             connectedName = g.device.name ?: g.device.address
             connectDone?.complete(Unit)
         }
@@ -125,7 +133,24 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         }
     }
 
+    /** Підключення з повторами: Android часто обриває першу спробу (status 133), друга вдається */
     suspend fun connect(address: String) {
+        var last: BandError? = null
+        for (attempt in 1..3) {
+            try {
+                connectOnce(address)
+                return
+            } catch (e: BandError) {
+                last = e
+                if (e.kind != ErrorKind.NOT_CONNECTED && e.kind != ErrorKind.TIMEOUT) throw e
+                log("спроба $attempt: ${e.message}")
+                if (attempt < 3) kotlinx.coroutines.delay(1_000)
+            }
+        }
+        throw last ?: BandError(ErrorKind.NOT_CONNECTED)
+    }
+
+    private suspend fun connectOnce(address: String) {
         disconnect()
         val device: BluetoothDevice = adapter?.getRemoteDevice(address) ?: throw BandError(ErrorKind.NOT_CONNECTED)
         val done = CompletableDeferred<Unit>()

@@ -51,4 +51,5 @@
     <string name="crash_copy">Copy error text</string>
     <string name="crash_copied">Copied — send it to the developer</string>
     <string name="crash_continue">Open the app</string>
+    <string name="err_link">Couldn\'t connect to the band (code %1$s). Keep the band close and try again</string>
 </resources>
