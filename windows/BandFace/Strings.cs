@@ -67,9 +67,6 @@ namespace BandFace
             ["logFile"] = new[] { "Файл журналу", "Log file", "Файл журнала" },
             ["dropZone"] = new[] { "Перетягніть файл .bin сюди", "Drop a .bin file here", "Перетащите файл .bin сюда" },
             ["dropZoneSub"] = new[] { "або клікніть, щоб вибрати", "or click to choose", "или кликните, чтобы выбрать" },
-            ["design"] = new[] { "Дизайн", "Design", "Дизайн" },
-            ["designOld"] = new[] { "Старий", "Old", "Старый" },
-            ["designNew"] = new[] { "Новий", "New", "Новый" },
             ["store"] = new[] { "Магазин", "Store", "Магазин" },
             ["soon"] = new[] { "Незабаром", "Soon", "Скоро" },
             ["editor"] = new[] { "Редактор", "Editor", "Редактор" },
@@ -114,6 +111,13 @@ namespace BandFace
             ["savedBand"] = new[] { "збережений", "saved", "сохранённый" },
             ["tgHint"] = new[] { "Telegram: у Telegram Desktop відкрийте «Налаштування → Сповіщення і звуки» й увімкніть «Використовувати сповіщення Windows» (системна інтеграція). Інакше Telegram показує власні вікна, і Windows їх не бачить.", "Telegram: in Telegram Desktop open “Settings → Notifications and Sounds” and turn on “Use Windows notifications” (system integration). Otherwise Telegram shows its own windows that Windows can't see.", "Telegram: в Telegram Desktop откройте «Настройки → Уведомления и звуки» и включите «Использовать уведомления Windows» (системная интеграция). Иначе Telegram показывает собственные окна, и Windows их не видит." },
             ["forwardFail"] = new[] { "Windows не дав доступу до сповіщень ({0}). Перевірте Параметри → Конфіденційність → Сповіщення", "Windows didn't allow access to notifications ({0}). Check Settings → Privacy → Notifications", "Windows не дал доступа к уведомлениям ({0}). Проверьте Параметры → Конфиденциальность → Уведомления" },
+            // Стилі й кольори вибраного файла (картка встановлення)
+            ["pickOtherShort"] = new[] { "Інший файл", "Another file", "Другой файл" },
+            ["lookStyle"] = new[] { "Стиль", "Style", "Стиль" },
+            ["lookColor"] = new[] { "Колір", "Color", "Цвет" },
+            ["lookHintBoth"] = new[] { "Стиль і колір вибираються на браслеті після встановлення", "Style and color are chosen on the band after installing", "Стиль и цвет выбираются на браслете после установки" },
+            ["lookHintStyle"] = new[] { "Стиль вибирається на браслеті після встановлення", "The style is chosen on the band after installing", "Стиль выбирается на браслете после установки" },
+            ["lookHintColor"] = new[] { "Колір вибирається на браслеті після встановлення", "The color is chosen on the band after installing", "Цвет выбирается на браслете после установки" },
             // Магазин
             ["storeAll"] = new[] { "Усі", "All", "Все" },
             ["storeFree"] = new[] { "Безкоштовні", "Free", "Бесплатные" },
