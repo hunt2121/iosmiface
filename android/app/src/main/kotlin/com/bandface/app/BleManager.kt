@@ -32,8 +32,10 @@ data class FoundDevice(val name: String, val address: String) {
 @SuppressLint("MissingPermission")
 @Suppress("DEPRECATION")
 class BleManager(private val context: Context, private val log: (String) -> Unit) : BandTransport {
-    private val adapter: BluetoothAdapter? =
-        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    private val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val adapter: BluetoothAdapter? = manager.adapter
+    /** Пристрої з пошуку: у них правильний тип адреси (Xiaomi — випадкова), а не лише рядок адреси */
+    private val seen = HashMap<String, BluetoothDevice>()
     private val main = Handler(Looper.getMainLooper())
 
     private var gatt: BluetoothGatt? = null
@@ -59,6 +61,7 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name = result.device.name ?: result.scanRecord?.deviceName ?: return
+            seen[result.device.address] = result.device
             FoundDevice(name, result.device.address).takeIf { it.isXiaomi }?.let { onFound?.invoke(it) }
         }
     }
@@ -138,7 +141,7 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         var last: BandError? = null
         for (attempt in 1..3) {
             try {
-                connectOnce(address)
+                connectOnce(address, attempt)
                 return
             } catch (e: BandError) {
                 last = e
@@ -150,20 +153,37 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
         throw last ?: BandError(ErrorKind.NOT_CONNECTED)
     }
 
-    private suspend fun connectOnce(address: String) {
+    /** Спроба 1 — браслет, уже підключений до системи (Mi Fitness): приєднуємося до того самого з'єднання;
+     *  спроба 2 — та сама адреса як випадкова (так оголошуються браслети Xiaomi, Android 13+);
+     *  спроба 3 — чекаємо, поки браслет сам з'явиться (autoConnect), до 30 с */
+    private suspend fun connectOnce(address: String, attempt: Int) {
         disconnect()
-        val device: BluetoothDevice = adapter?.getRemoteDevice(address) ?: throw BandError(ErrorKind.NOT_CONNECTED)
+        val system = runCatching { manager.getConnectedDevices(BluetoothProfile.GATT).firstOrNull { it.address.equals(address, true) } }.getOrNull()
+        val bonded = runCatching { adapter?.bondedDevices?.firstOrNull { it.address.equals(address, true) } }.getOrNull()
+        val random = if (attempt == 2) randomAddressDevice(address) else null
+        val device: BluetoothDevice = random ?: system ?: seen[address] ?: bonded ?: adapter?.getRemoteDevice(address) ?: throw BandError(ErrorKind.NOT_CONNECTED)
+        val auto = attempt == 3
         val done = CompletableDeferred<Unit>()
         connectDone = done
-        log("connect $address")
-        gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
+        log("connect $address" + when {
+            random != null -> " (випадкова адреса)"
+            system != null -> " (уже підключений до системи)"
+            auto -> " (очікування браслета)"
+            else -> ""
+        })
+        gatt = device.connectGatt(context, auto, callback, BluetoothDevice.TRANSPORT_LE)
         try {
-            withTimeout(15_000) { done.await() }
+            withTimeout(if (auto) 30_000 else 15_000) { done.await() }
         } catch (e: Exception) {
             disconnect()
             throw if (e is BandError) e else BandError(ErrorKind.TIMEOUT, "connect")
         }
     }
+
+    private fun randomAddressDevice(address: String): BluetoothDevice? =
+        if (android.os.Build.VERSION.SDK_INT >= 33)
+            runCatching { adapter?.getRemoteLeDevice(address, BluetoothDevice.ADDRESS_TYPE_RANDOM) }.getOrNull()
+        else null
 
     fun disconnect() {
         gatt?.let { runCatching { it.disconnect() }; runCatching { it.close() } }
