@@ -18,12 +18,24 @@ android {
         versionName = "0.1.$versionBuild"
     }
 
+    // Постійний ключ підпису (секрети ANDROID_KEYSTORE / ANDROID_KEY_PASSWORD у GitHub): оновлення ставляться поверх.
+    // Без секретів — тимчасовий debug-ключ, тоді кожну збірку треба перевстановлювати.
+    val keystore = System.getenv("ANDROID_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (keystore != null) create("release") {
+            storeFile = keystore
+            storePassword = System.getenv("ANDROID_KEY_PASSWORD")
+            keyAlias = "bandface"
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (keystore != null) "release" else "debug")
         }
     }
     compileOptions {
