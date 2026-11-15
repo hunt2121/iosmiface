@@ -51,7 +51,15 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
     var onFound: ((FoundDevice) -> Unit)? = null
     var connectedName: String? = null
         private set
-    val isConnected: Boolean get() = tx != null && connectedName != null
+    val isConnected: Boolean get() = (tx != null || spp != null) && connectedName != null
+
+    /** Класичний Bluetooth (SPP), як у Mi Fitness: ті самі кадри A5 A5…, лише без BLE.
+     *  Прив'язаний до телефона браслет тримає класичне з'єднання й на BLE не відповідає (147) */
+    @Volatile private var spp: android.bluetooth.BluetoothSocket? = null
+    private val sppUuids = listOf(
+        UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb"),
+        UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"),
+    )
 
     private val service = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
     private val rx = UUID.fromString("0000005e-0000-1000-8000-00805f9b34fb")
@@ -138,6 +146,9 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
 
     /** Підключення з повторами: Android часто обриває першу спробу (status 133), друга вдається */
     suspend fun connect(address: String) {
+        // спарений браслет — спершу класичний Bluetooth (так з'єднаний Mi Fitness), потім BLE
+        val bondedDevice = runCatching { adapter?.bondedDevices?.firstOrNull { it.address.equals(address, true) } }.getOrNull()
+        if (bondedDevice != null && connectSpp(bondedDevice)) return
         var last: BandError? = null
         for (attempt in 1..3) {
             try {
@@ -185,7 +196,54 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
             runCatching { adapter?.getRemoteLeDevice(address, BluetoothDevice.ADDRESS_TYPE_RANDOM) }.getOrNull()
         else null
 
+    private suspend fun connectSpp(device: BluetoothDevice): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        disconnect()
+        runCatching { adapter?.cancelDiscovery() }
+        val known = runCatching { device.uuids?.map { it.uuid } }.getOrNull().orEmpty()
+        log("spp: uuids ${known.joinToString { it.toString().substring(4, 8) }}")
+        // спершу відомі канали Xiaomi, потім решта не звукових сервісів браслета
+        val audio = setOf("1108", "110a", "110b", "110c", "110d", "110e", "110f", "111e", "111f", "1112", "112f", "1132", "1200", "1203")
+        val candidates = (sppUuids + known.filter { it.toString().substring(4, 8) !in audio }).distinct()
+        for (uuid in candidates) {
+            val socket = runCatching { device.createRfcommSocketToServiceRecord(uuid) }.getOrNull() ?: continue
+            // connect() блокує: закриваємо сокет, якщо браслет мовчить
+            val timeout = Runnable { runCatching { socket.close() } }
+            main.postDelayed(timeout, 8_000)
+            val ok = runCatching { socket.connect() }.onFailure { log("spp ${uuid.toString().substring(4, 8)}: ${it.message}") }.isSuccess
+            main.removeCallbacks(timeout)
+            if (!ok) { runCatching { socket.close() }; continue }
+            spp = socket
+            connectedName = device.name ?: device.address
+            log("spp ${uuid.toString().substring(4, 8)}: connected")
+            startReader(socket)
+            return@withContext true
+        }
+        false
+    }
+
+    private fun startReader(socket: android.bluetooth.BluetoothSocket) {
+        Thread {
+            val buf = ByteArray(4096)
+            try {
+                val input = socket.inputStream
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    if (n > 0) onData?.invoke(buf.copyOf(n))
+                }
+            } catch (e: Exception) {
+            }
+            if (spp === socket) {
+                spp = null
+                connectedName = null
+                writeDone?.completeExceptionally(BandError(ErrorKind.DISCONNECTED))
+                onDisconnect?.invoke()
+            }
+        }.apply { isDaemon = true; name = "spp-reader" }.start()
+    }
+
     fun disconnect() {
+        spp?.let { s -> spp = null; runCatching { s.close() } }
         gatt?.let { runCatching { it.disconnect() }; runCatching { it.close() } }
         gatt = null
         tx = null
@@ -193,6 +251,18 @@ class BleManager(private val context: Context, private val log: (String) -> Unit
     }
 
     override suspend fun write(frame: ByteArray) {
+        spp?.let { socket ->
+            writeLock.withLock {
+                try {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        socket.outputStream.write(frame); socket.outputStream.flush()
+                    }
+                } catch (e: java.io.IOException) {
+                    throw BandError(ErrorKind.DISCONNECTED, "spp write")
+                }
+            }
+            return
+        }
         val g = gatt ?: throw BandError(ErrorKind.NOT_CONNECTED)
         val t = tx ?: throw BandError(ErrorKind.NOT_CONNECTED)
         val chunk = maxOf(mtu - 3, 20)

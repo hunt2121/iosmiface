@@ -311,9 +311,12 @@ fun FacesTab(vm: MainViewModel) {
                     val ctx = androidx.compose.ui.platform.LocalContext.current
                     Text(stringResource(R.string.busy_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Tonal(stringResource(R.string.open_mifitness), modifier = Modifier.fillMaxWidth()) {
+                        // сторінка Mi Fitness, якщо Android її знайде; інакше — список усіх застосунків
                         runCatching {
                             ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                android.net.Uri.parse("package:com.mi.health")))
+                                android.net.Uri.parse("package:com.mi.health")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }.onFailure {
+                            runCatching { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS)) }
                         }
                     }
                 }
