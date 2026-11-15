@@ -627,39 +627,44 @@ struct StoreDetailView: View {
             }
             // перемальовуються лише превʼю, коли довантажились; перемикачі не створюються заново посеред анімації
             .id(loadedLook)
-            if item.styles.count > 1 {
-                Picker("Стиль", selection: $style) {
-                    ForEach(item.styles.indices, id: \.self) { i in
-                        Text(item.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : item.styles[i].name).tag(i)
-                    }
-                }
-                .pickerStyle(.segmented)
-                // за шириною назв, по центру — не на всю картку
-                .fixedSize()
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-            }
-            if item.colors.count > 1 {
-                HStack(spacing: 12) {
-                    ForEach(item.colors.indices, id: \.self) { i in
-                        Button { color = i } label: {
-                            Circle().fill(Color(hex: item.colors[i]))
-                                .frame(width: 30, height: 30)
-                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
-                                .padding(3)
-                                .overlay(Circle().strokeBorder(i == color ? Color(hex: item.colors[i]) : .clear, lineWidth: 2.5))
+            // перемикач стилів, кольори й підпис — з однаковими відступами між собою
+            VStack(spacing: 16) {
+                if item.styles.count > 1 {
+                    Picker("Стиль", selection: $style) {
+                        ForEach(item.styles.indices, id: \.self) { i in
+                            Text(item.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : item.styles[i].name).tag(i)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(verbatim: item.colors[i]))
                     }
+                    .pickerStyle(.segmented)
+                    // за шириною назв, по центру — не на всю картку
+                    .fixedSize()
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16)
                 }
-                .frame(maxWidth: .infinity)
-            }
-            if item.styles.count > 1 || item.colors.count > 1 {
-                Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if item.colors.count > 1 {
+                    HStack(spacing: 12) {
+                        ForEach(item.colors.indices, id: \.self) { i in
+                            Button { color = i } label: {
+                                Circle().fill(Color(hex: item.colors[i]))
+                                    .frame(width: 30, height: 30)
+                                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
+                                    .padding(3)
+                                    .overlay(Circle().strokeBorder(i == color ? Color(hex: item.colors[i]) : .clear, lineWidth: 2.5))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text(verbatim: item.colors[i]))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                if item.styles.count > 1 || item.colors.count > 1 {
+                    Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                        .padding(.top, -4)
+                }
             }
         }
         .frame(maxWidth: .infinity)
