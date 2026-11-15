@@ -114,7 +114,9 @@ namespace BandFace.Store
         string CategoryName(string key)
         {
             var c = _catalog?.Categories.FirstOrDefault(x => x.Key == key);
-            return c == null ? key : StoreVariants.Text(c.Name, null);
+            var name = c == null ? key : StoreVariants.Text(c.Name, null);
+            // назва з великої літери, навіть якщо на сервері записана з малої («digital» → «Digital»)
+            return string.IsNullOrEmpty(name) ? name : char.ToUpper(name[0], System.Globalization.CultureInfo.CurrentCulture) + name.Substring(1);
         }
 
         static DateTime? Day(string iso) =>
@@ -140,8 +142,10 @@ namespace BandFace.Store
             }
 
             // фільтри й сортування
-            var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 18), LastChildFill = false };
-            var sort = new Button { Style = StyleOf("Btn"), Content = S.Get(_sort == "name" ? "storeSortName" : "storeSortNew") + "  " };
+            // нижній відступ 10 + 8 під кожною капсулою = 18 до карток
+            var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 10), LastChildFill = false };
+            // висота як у категорій — один рівний ряд
+            var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = S.Get(_sort == "name" ? "storeSortName" : "storeSortNew") + "  " };
             sort.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
             var menu = new ContextMenu();
             Creator.Ui.MenuAdd(menu, S.Get("storeSortNew"), _sort == "date" ? "" : null, () => { _sort = "date"; RenderList(); });
@@ -149,7 +153,8 @@ namespace BandFace.Store
             sort.Click += (s, e) => { menu.PlacementTarget = sort; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true; };
             DockPanel.SetDock(sort, Dock.Right);
             bar.Children.Add(sort);
-            var chips = new WrapPanel();
+            // «Усі», «Безкоштовні», «Платні» — такі самі категорії, як категорії циферблатів (лише не з сервера)
+            var chips = new WrapPanel { Margin = new Thickness(0, 0, 16, 0) };
             var filters = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("all", S.Get("storeAll")) };
             if (_catalog.Faces.Any(f => f.Price != null))
             {
@@ -161,7 +166,7 @@ namespace BandFace.Store
             foreach (var f in filters)
             {
                 var key = f.Key;
-                var chip = new ToggleButton { Style = StyleOf("Chip"), Content = f.Value, IsChecked = _filter == key, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(6, 0, 6, 0), FontSize = 13 };
+                var chip = new ToggleButton { Style = StyleOf("Pill"), Content = f.Value, IsChecked = _filter == key, Margin = new Thickness(0, 0, 8, 8) };
                 chip.Click += (s, e) => { _filter = key; RenderList(); };
                 chips.Children.Add(chip);
             }
