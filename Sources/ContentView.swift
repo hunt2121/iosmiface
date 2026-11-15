@@ -667,6 +667,8 @@ struct ContentView: View {
                 .controlSize(.regular)
             }
             .padding(.vertical, 8)
+            // роздільник під цим рядком — на всю ширину вмісту картки (від капсули), а не від тексту
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
             // стилі й кольори файла — під роздільником тієї самої картки
             if let looks = fileLooks {
                 looksRow(looks)
@@ -678,12 +680,10 @@ struct ContentView: View {
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
         VStack(spacing: 16) {
             if looks.styles.count > 1 {
-                Picker("Стиль", selection: $lookStyle) {
-                    ForEach(looks.styles.indices, id: \.self) { i in
-                        Text(looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name).tag(i)
-                    }
-                }
-                .pickerStyle(.segmented)
+                // свій перемикач: системний на білій картці налаштувань малює зайве світле обведення
+                LookSegment(names: looks.styles.indices.map { i in
+                    looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name
+                }, selection: $lookStyle)
                 .frame(maxWidth: CGFloat(looks.styles.count) * 110)
                 .frame(maxWidth: .infinity)
             }
@@ -704,9 +704,9 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
             }
             Text(looks.styles.count > 1 && looks.colors.count > 1
-                 ? String(localized: "Стиль і колір вибираються на браслеті\nпісля встановлення")
-                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті\nпісля встановлення")
-                 : String(localized: "Колір вибирається на браслеті\nпісля встановлення"))
+                 ? String(localized: "Стиль і колір вибираються на браслеті")
+                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті")
+                 : String(localized: "Колір вибирається на браслеті"))
                 .font(.caption).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1393,5 +1393,40 @@ final class ProgressThrottle {
         let stage = text.split(separator: " ").first.map(String.init) ?? text
         defer { lastPercent = percent; lastStage = stage }
         return percent != lastPercent || stage != lastStage || value >= 1
+    }
+}
+
+/// Перемикач стилів у картці встановлення: як системний (сіра доріжка, біла капсула вибраного), без обведення
+struct LookSegment: View {
+    let names: [String]
+    @Binding var selection: Int
+
+    private static let thumb = Color(UIColor { $0.userInterfaceStyle == .dark ? .systemGray3 : .white })
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(names.indices, id: \.self) { i in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selection = i }
+                } label: {
+                    Text(names[i])
+                        .font(.footnote.weight(i == selection ? .semibold : .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 28)
+                        .background {
+                            if i == selection {
+                                Capsule().fill(Self.thumb).shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(i == selection ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .background(Capsule().fill(Color(.tertiarySystemFill)))
     }
 }
