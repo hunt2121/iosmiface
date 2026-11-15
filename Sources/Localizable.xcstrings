@@ -2554,6 +2554,29 @@
         }
       }
     },
+    "Головна": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Главная"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Головна"
+          }
+        }
+      }
+    },
     "Циферблати": {
       "extractionState": "manual",
       "localizations": {

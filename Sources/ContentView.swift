@@ -81,7 +81,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $tab) {
             facesTab
-                .tabItem { Label("Циферблати", image: "TabWatch") }
+                .tabItem { Label("Головна", image: "TabWatch") }
                 .tag(Tab.faces)
 
             StoreView(faces: storeFaces,

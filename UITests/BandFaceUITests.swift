@@ -76,7 +76,7 @@ final class BandFaceUITests: XCTestCase {
             settle(); shot("install-from-editor")
             if app.alerts.firstMatch.waitForExistence(timeout: 2) { app.alerts.firstMatch.buttons.firstMatch.tap() }
             settle()
-            app.tabBars.buttons["Циферблати"].tap()
+            app.tabBars.buttons["Головна"].tap()
             settle(); shot("faces-with-editor-face")
         }
         app.tabBars.buttons["Редактор"].tap()
