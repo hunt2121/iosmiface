@@ -108,27 +108,29 @@
       </Setter>
     </Style>
 
-    <!-- Категорія в магазині: капсула без рамки, сіра підкладка; вибрана — кольором акценту -->
-    <Style x:Key="Pill" TargetType="ToggleButton">
+    <!-- Категорія в магазині: плитка як кнопки (той самий фон, рамка й заокруглення), вибрана — кольором акценту -->
+    <Style x:Key="CatTile" TargetType="ToggleButton">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-      <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
+      <Setter Property="Background" Value="{DynamicResource BtnBg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BtnBorder}"/>
       <Setter Property="Height" Value="32"/>
       <Setter Property="FontSize" Value="13"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ToggleButton">
-            <Border x:Name="b" CornerRadius="16" Background="{TemplateBinding Background}">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16,0,16,1">
+            <Border x:Name="b" CornerRadius="5" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0,12,1">
                 <ContentPresenter.Resources><Style TargetType="TextBlock"/></ContentPresenter.Resources>
               </ContentPresenter>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsChecked" Value="True">
                 <Setter TargetName="b" Property="Background" Value="{DynamicResource Accent}"/>
+                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
               </Trigger>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.85"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.88"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
