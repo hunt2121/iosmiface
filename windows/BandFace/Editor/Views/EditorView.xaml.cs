@@ -60,7 +60,6 @@ namespace BandFace.Creator
                 Retry = () => Install_Click(InstallBtn, null),
             };
         }
-        public FaceProject Project => project;
 
         public EditorView()
         {
