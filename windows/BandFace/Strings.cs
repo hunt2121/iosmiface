@@ -71,6 +71,7 @@ namespace BandFace
             ["store"] = new[] { "Магазин", "Store", "Магазин" },
             ["editor"] = new[] { "Редактор", "Editor", "Редактор" },
             ["settings"] = new[] { "Налаштування", "Settings", "Настройки" },
+            ["more"] = new[] { "Ще", "More", "Ещё" },   // пункт меню; заголовок сторінки лишається «Налаштування»
             ["menu"] = new[] { "Меню", "Menu", "Меню" },
             ["addKey"] = new[] { "Додати ключ пристрою", "Add the device key", "Добавить ключ устройства" },
             ["addKeyNote"] = new[] { "Без ключа застосунок не зможе підключитися до пристрою. Його можна отримати з акаунта Xiaomi через QR.", "Without the key the app can't connect to the device. You can get it from your Xiaomi account via QR.", "Без ключа приложение не сможет подключиться к устройству. Его можно получить из аккаунта Xiaomi через QR." },

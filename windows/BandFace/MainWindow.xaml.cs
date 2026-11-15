@@ -240,7 +240,7 @@ namespace BandFace
             NavFacesText.Text = S.Get("home"); TitleFaces.Text = S.Get("faces");
             NavStoreText.Text = S.Get("store");
             NavEditorText.Text = S.Get("editor");
-            NavSettingsText.Text = TitleSettings.Text = S.Get("settings");
+            NavSettingsText.Text = S.Get("more"); TitleSettings.Text = S.Get("settings");
             MenuBtn.ToolTip = S.Get("menu");
             KeyNoticeLabel.Text = S.Get("key").ToUpperInvariant();
             AddKeyBtn.Content = S.Get("addKey");
@@ -367,7 +367,7 @@ namespace BandFace
             // у вузькій смузі назва вкладки — підказкою
             NavFaces.ToolTip = wide ? null : S.Get("home");
             NavEditor.ToolTip = wide ? null : S.Get("editor");
-            NavSettings.ToolTip = wide ? null : S.Get("settings");
+            NavSettings.ToolTip = wide ? null : S.Get("more");
         }
 
         void Menu_Click(object sender, RoutedEventArgs e) { _flyout = !_flyout; UpdateSidebar(); }
