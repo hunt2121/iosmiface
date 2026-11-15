@@ -669,14 +669,16 @@ struct ContentView: View {
             .padding(.vertical, 8)
             // роздільник під цим рядком — на всю ширину вмісту картки (від капсули), а не від тексту
             .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
-            // стилі й кольори файла — під роздільником тієї самої картки
+            // стилі й кольори — без роздільника, однією карткою з капсулою
+            .listRowSeparator(fileLooks == nil ? .automatic : .hidden, edges: .bottom)
+            // стилі й кольори файла — нижче в тій самій картці
             if let looks = fileLooks {
                 looksRow(looks)
             }
         }
     }
 
-    /// Перемикач стилів і кружечки кольорів, як на сторінці циферблата в магазині, без підпису
+    /// Перемикач стилів, кружечки кольорів і підпис — як на сторінці циферблата в магазині
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
         VStack(spacing: 16) {
             if looks.styles.count > 1 {
@@ -705,10 +707,22 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+            Text(looks.styles.count > 1 && looks.colors.count > 1
+                 ? String(localized: "Стиль і колір вибираються на браслеті")
+                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті")
+                 : String(localized: "Колір вибирається на браслеті"))
+                .font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                .padding(.top, -4)
+                .frame(maxWidth: .infinity)
         }
-        // як у рядку вище (системний відступ рядка + 8): від роздільника до стилів і від кольорів до низу картки
-        // стільки ж, скільки від верху картки до капсули
-        .padding(.vertical, 8)
+        // як на сторінці циферблата в магазині: без роздільника, від капсули до стилів — системний відступ рядка
+        // (той самий, що 16 між стилями, кольорами й підписом, на око);
+        // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули (системний відступ + 8)
+        .padding(.top, -8)
+        .padding(.bottom, 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         .onChange(of: lookStyle) { _ in renderLook() }
         .onChange(of: lookColor) { _ in renderLook() }
     }
