@@ -358,16 +358,6 @@
     <Border x:Name="Sidebar" Width="228" HorizontalAlignment="Left" Background="{DynamicResource Bg}">
       <DockPanel x:Name="SidebarPanel" Margin="10,8">
         <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
-        <!-- перемикач дизайну: старий / новий (видно в повному меню) -->
-        <StackPanel x:Name="DesignSwitch" DockPanel.Dock="Bottom" Margin="10,0,10,14">
-          <TextBlock x:Name="DesignLabel" FontSize="12" Margin="2,0,0,6" Foreground="{DynamicResource Sub}"/>
-          <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="3">
-            <UniformGrid Columns="2">
-              <ToggleButton x:Name="DesignOld" Style="{StaticResource Chip}" Margin="0" Height="26" Click="DesignOld_Click"/>
-              <ToggleButton x:Name="DesignNew" Style="{StaticResource Chip}" Margin="0" Height="26" Click="DesignNew_Click"/>
-            </UniformGrid>
-          </Border>
-        </StackPanel>
         <StackPanel>
           <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="40" Height="36" BorderThickness="0" Background="Transparent"
                   HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click"/>

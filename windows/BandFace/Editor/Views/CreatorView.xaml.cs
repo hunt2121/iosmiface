@@ -59,7 +59,6 @@ namespace BandFace.Creator
             Editor.BackRequested += ShowList;
             Editor.InstallRequested += (bin, name) => InstallRequested?.Invoke(bin, name);
             Editor.CancelInstallRequested += () => CancelInstallRequested?.Invoke();
-            AppDesign.Changed += RefreshProjects;
             RefreshProjects();
         }
 
@@ -264,67 +263,7 @@ namespace BandFace.Creator
             return menu;
         }
 
-        FrameworkElement Card(FaceProject p)
-        {
-            if (AppDesign.New) return StoreCard(p);
-            // капсула така сама, як на вкладці «Циферблати»: 102×242, сіре обведення 3 px, вміст 96×236 обрізано по капсулі,
-            // картинка масштабується якісно (без змазування)
-            // новий дизайн — екран 144×354, як на головній; старий — 96×236
-            bool big = AppDesign.New;
-            double iw = big ? 144 : 96, ih = big ? 354 : 236;
-            var img = new Image { Stretch = Stretch.UniformToFill };
-            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-            var inner = new Grid { Width = iw, Height = ih, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, iw, ih), iw / 2, iw / 2) };
-            inner.Children.Add(img);
-            var capsule = new Border
-            {
-                Width = iw + 6, Height = ih + 6, CornerRadius = new CornerRadius((iw + 6) / 2), Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
-                Padding = new Thickness(3), Child = inner,
-            };
-            var sp = new StackPanel { Width = big ? 170 : 150 };
-            sp.Children.Add(capsule);
-            sp.Children.Add(new TextBlock { Text = p.DisplayName, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, big ? 14 : 10, 0, 0) });
-            sp.Children.Add(new TextBlock { Text = p.Meta.Modified.ToLocalTime().ToString("g"), FontSize = 11, Foreground = (Brush)FindResource("Sub"), TextAlignment = TextAlignment.Center });
-            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = big ? new Thickness(0) : new Thickness(0, 0, 14, 14), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
-            card.MouseLeftButtonUp += (s, e) => OpenProject(p);
-            var menu = new ContextMenu();
-            Ui.MenuAdd(menu, S.Get("open"), "\uE8E5", () => OpenProject(p));
-            Ui.MenuAdd(menu, S.Get("installBand"), "\uE896", () => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); });
-            Ui.MenuAdd(menu, S.Get("duplicate"), "\uE8C8", () => { store.Duplicate(p); RefreshProjects(); });
-            Ui.MenuAdd(menu, S.Get("saveBin"), "\uE74E", () => Actions.ExportBin(Owner, p));
-            Ui.MenuAdd(menu, S.Get("showInFolder"), "\uE838", () => { try { Process.Start("explorer.exe", "\"" + p.Folder + "\""); } catch (Exception) { } });
-            menu.Items.Add(new Separator());
-            Ui.MenuAdd(menu, S.Get("deleteFace"), "\uE74D", () =>
-            {
-                var ask = ProjectStore.IsExternal(p) ? S.Get("removeFaceAsk", p.DisplayName, p.Folder) : S.Get("deleteFaceAsk", p.DisplayName);
-                if (MessageBox.Show(Owner, ask, "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-                store.Delete(p);
-                RefreshProjects();
-            }, danger: true);
-            card.ContextMenu = menu;
-            // мініатюра — коли картки вже на екрані
-            var key = p.Id + "#" + p.Revision + "#" + p.Meta.Modified.Ticks + "#" + ih;
-            if (thumbs.TryGetValue(key, out var t0)) img.Source = t0;
-            else Dispatcher.BeginInvoke(new Action(() =>
-            {
-                try
-                {
-                    double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                    var src = new FaceRenderer(p).Render(0, Math.Max(328, ih * dpi * 1.5) / p.Meta.Device.Height).Image;
-                    thumbs[key] = src;
-                    img.Source = src;
-                }
-                catch (Exception) { }
-            }), DispatcherPriority.Background);
-            if (!big) return card;
-            // нова схема: кнопка встановлення — окремо, одразу під карткою на всю її ширину
-            var inst = new Button { Content = S.Get(installedIds.Contains(p.Root.Str("id") ?? "") ? "reinstallShort" : "installShort"), Style = (Style)FindResource("Btn"), Height = 36, Margin = new Thickness(0, 8, 0, 0) };
-            inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
-            var wrap = new StackPanel { Margin = new Thickness(0, 0, 14, 14) };
-            wrap.Children.Add(card);
-            wrap.Children.Add(inst);
-            return wrap;
-        }
+        FrameworkElement Card(FaceProject p) => StoreCard(p);
 
         void New_Click(object sender, RoutedEventArgs e) => OpenProject(store.Create(S.Get("newFaceName"), DeviceProfile.Band10));
 

@@ -47,13 +47,13 @@ namespace BandFace
             VersionValue.Text = "BandFace " + _version;
             ApplyTexts();
             InitStore();
+            InitLooks();
             UpdateSidebar();
             FillSettings();
             RefreshBand();
             RefreshFace();
             RefreshKeyState();
-            ApplyDesign();
-            AppDesign.Changed += ApplyDesign;
+            ApplyLayout();
             _ble.Info += m => Dispatcher.BeginInvoke(new Action(() => AddLog(m)));
             _ble.Data += b => _session?.Receive(b);
             _ble.Disconnected += () => Dispatcher.BeginInvoke(new Action(() => { _session?.ConnectionLost(); AddLog("disconnected"); RefreshBand(); }));
@@ -90,8 +90,6 @@ namespace BandFace
                 else if (a == "--demo-done") demoDone = true;
                 else if (a == "--demo-progress") demoProgress = true;
                 else if (a.StartsWith("--demo-installed=")) EditorTab.SetInstalledFaces(new[] { a.Substring(17) });
-                else if (a == "--design=old") AppDesign.Try(false);
-                else if (a == "--design=new") AppDesign.Try(true);
                 else if (a.StartsWith("--editor-list=")) { var f = a.Substring(14); NavEditor.IsChecked = true; EditorTab.OpenPath(f); EditorTab.ShowList(); }
                 else if (!a.StartsWith("--") && File.Exists(a)) openFile = a;
             }
@@ -361,7 +359,6 @@ namespace BandFace
             VersionText.Margin = new Thickness(wide ? 12 : 0, 0, 0, 6);
             VersionText.FontSize = wide ? 12 : 10;
             MenuBtn.Visibility = _compact ? Visibility.Visible : Visibility.Collapsed;
-            DesignSwitch.Visibility = textVis;
             Shade.Visibility = _flyout ? Visibility.Visible : Visibility.Collapsed;
             Sidebar.Effect = _flyout ? new DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Direction = 0, Opacity = 0.25 } : null;
             // у вузькій смузі назва вкладки — підказкою
@@ -610,6 +607,7 @@ namespace BandFace
                 FaceInfo.Text = S.Get("format");
                 FaceFileName.Text = S.Get("pickHint");
                 PickBtn.Content = S.Get("pick");
+                UpdateLooks();
             }
             else
             {
@@ -618,6 +616,7 @@ namespace BandFace
                 FaceFileName.Text = _faceFile;
                 PickBtn.Content = S.Get("pickOther");
                 ShowPreview(_faceData);
+                UpdateLooks();
             }
             PreviewPlaceholder.Visibility = _face == null ? Visibility.Visible : Visibility.Collapsed;
             RefreshButtons();
@@ -660,7 +659,7 @@ namespace BandFace
         /// <summary>Як в iOS: поки файл не вибрано, головна кнопка — «Вибрати файл», далі — «Встановити».</summary>
         void RefreshButtons()
         {
-            PickBtn.Style = (Style)FindResource(AppDesign.New || _face != null ? "Btn" : "PrimaryBtn");
+            PickBtn.Style = (Style)FindResource("Btn");
             PickBtn.IsEnabled = !_busy;
             InstallBtn.IsEnabled = !_busy && _face != null;
         }
@@ -841,8 +840,12 @@ namespace BandFace
 
         static bool IsFace(string f) => f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".face", StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>На вкладці «Циферблати» файл приймає лише поле перетягування в картці встановлення</summary>
+        bool OnFacesPage => NavFaces.IsChecked == true && PageFaces.Visibility == Visibility.Visible;
+
         void Window_DragEnter(object sender, DragEventArgs e)
         {
+            if (OnFacesPage) { e.Effects = DragDropEffects.None; DropHint.Visibility = Visibility.Collapsed; e.Handled = true; return; }
             bool ok = Dropped(e).Any(f => IsFace(f) || Directory.Exists(f));
             e.Effects = ok ? DragDropEffects.Copy : DragDropEffects.None;
             DropHint.Visibility = ok ? Visibility.Visible : Visibility.Collapsed;
@@ -852,6 +855,7 @@ namespace BandFace
         void Window_Drop(object sender, DragEventArgs e)
         {
             DropHint.Visibility = Visibility.Collapsed;
+            if (OnFacesPage) return;
             var files = Dropped(e);
             // один .bin — спитати, що з ним робити; тека розпакованого циферблата або кілька файлів — одразу в редактор
             if (files.Length == 1 && IsFace(files[0])) { AskAboutFile(files[0]); return; }
@@ -910,7 +914,7 @@ namespace BandFace
             // повідомлення — на місці поля перетягування, 10 секунд (або до нового файла)
             _msgTimer?.Stop();
             _showMessage = !string.IsNullOrEmpty(text);
-            if (_showMessage && AppDesign.New)
+            if (_showMessage)
             {
                 _msgTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
                 _msgTimer.Tick += (s, e) => HideMessage();
@@ -931,7 +935,7 @@ namespace BandFace
         {
             bool busy = ProgressPanel.Visibility == Visibility.Visible;
             MessagePanel.Visibility = !busy && _showMessage ? Visibility.Visible : Visibility.Collapsed;
-            DropLayer.Visibility = AppDesign.New && !busy && !_showMessage ? Visibility.Visible : Visibility.Collapsed;
+            DropLayer.Visibility = !busy && !_showMessage ? Visibility.Visible : Visibility.Collapsed;
         }
 
         void HideMessage()
@@ -972,7 +976,7 @@ namespace BandFace
         }
 
         void Zone_Click(object sender, MouseButtonEventArgs e) { if (!_busy) Pick_Click(sender, e); }
-        void Message_Click(object sender, MouseButtonEventArgs e) { if (AppDesign.New) HideMessage(); }
+        void Message_Click(object sender, MouseButtonEventArgs e) => HideMessage();
 
         /// <summary>Як у редакторі: циферблат увімкнений на браслеті — зелене обведення капсули</summary>
         void SetActiveId(string id) { _activeId = id; RefreshCapsuleBorder(); StoreTab?.BandChanged(); }
