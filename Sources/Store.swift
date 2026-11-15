@@ -625,6 +625,8 @@ struct StoreDetailView: View {
                     }
                 }
             }
+            // перемальовуються лише превʼю, коли довантажились; перемикачі не створюються заново посеред анімації
+            .id(loadedLook)
             if item.styles.count > 1 {
                 Picker("Стиль", selection: $style) {
                     ForEach(item.styles.indices, id: \.self) { i in
@@ -632,6 +634,9 @@ struct StoreDetailView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                // за шириною назв, по центру — не на всю картку
+                .fixedSize()
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 16)
             }
             if item.colors.count > 1 {
@@ -657,7 +662,6 @@ struct StoreDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .id(loadedLook)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 22)
         .background(RoundedRectangle(cornerRadius: 30, style: .continuous)
