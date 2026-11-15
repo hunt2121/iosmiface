@@ -676,7 +676,7 @@ struct ContentView: View {
         }
     }
 
-    /// Перемикач стилів і кружечки кольорів, як на сторінці циферблата в магазині; підпис — лише про вибір на браслеті
+    /// Перемикач стилів і кружечки кольорів, як на сторінці циферблата в магазині, без підпису
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
         VStack(spacing: 16) {
             if looks.styles.count > 1 {
@@ -705,18 +705,10 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            Text(looks.styles.count > 1 && looks.colors.count > 1
-                 ? String(localized: "Стиль і колір вибираються на браслеті")
-                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті")
-                 : String(localized: "Колір вибирається на браслеті"))
-                .font(.caption).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
-                .padding(.top, -4)
-                .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 12)
+        // як у рядку вище (системний відступ рядка + 8): від роздільника до стилів і від кольорів до низу картки
+        // стільки ж, скільки від верху картки до капсули
+        .padding(.vertical, 8)
         .onChange(of: lookStyle) { _ in renderLook() }
         .onChange(of: lookColor) { _ in renderLook() }
     }
