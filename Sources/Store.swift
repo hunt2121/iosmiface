@@ -60,7 +60,6 @@ struct StoreFace: Identifiable {
     /// Платний і ще не куплений: на кнопці — ціна
     var needsPurchase: Bool { price != nil && !owned }
     var sizeText: String { ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file) }
-    var sizeKB: Int { size / 1024 }
     /// «Band 10 · 11»
     var bandsText: String { "Band " + bands.map(String.init).joined(separator: " · ") }
     /// «1,2 MB · v1.1»
