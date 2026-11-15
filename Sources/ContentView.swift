@@ -707,10 +707,8 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            Text(looks.styles.count > 1 && looks.colors.count > 1
-                 ? String(localized: "Стиль і колір вибираються на браслеті")
-                 : looks.styles.count > 1 ? String(localized: "Стиль вибирається на браслеті")
-                 : String(localized: "Колір вибирається на браслеті"))
+            // той самий підпис, що на сторінці циферблата в магазині
+            Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
                 .font(.caption).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
