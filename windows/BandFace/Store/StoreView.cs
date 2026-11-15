@@ -310,7 +310,7 @@ namespace BandFace.Store
             sp.Children.Add(crumb);
 
             var cols = new Grid();
-            cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(388) });
+            cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(356) });   // дві капсули 150 + 22 між ними + поля
             cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
             cols.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var left = PreviewCard(e, v);
@@ -332,7 +332,7 @@ namespace BandFace.Store
             var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
             var shots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             shots.Children.Add(Shot(look?.Main, S.Get("storeNormal")));
-            if (look?.Aod != null) { var a = Shot(look.Aod, S.Get("storeAod")); a.Margin = new Thickness(26, 0, 0, 0); shots.Children.Add(a); }
+            if (look?.Aod != null) { var a = Shot(look.Aod, S.Get("storeAod")); a.Margin = new Thickness(22, 0, 0, 0); shots.Children.Add(a); }
             sp.Children.Add(shots);
 
             bool looks = v.Styles.Count > 1 || v.Colors.Count > 1;
