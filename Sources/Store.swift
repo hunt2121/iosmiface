@@ -606,6 +606,9 @@ struct StoreDetailView: View {
         }
     }
 
+    /// Є що вибирати: кілька стилів або кольорів
+    private var hasLooks: Bool { item.styles.count > 1 || item.colors.count > 1 }
+
     /// Превʼю вибраного стилю й кольору; на головній завантажено лише основне — решта тут, усі одразу після відкриття
     private var previews: some View {
         let look = item.look(style: style, color: color)
@@ -627,7 +630,9 @@ struct StoreDetailView: View {
             }
             // перемальовуються лише превʼю, коли довантажились; перемикачі не створюються заново посеред анімації
             .id(loadedLook)
-            // перемикач стилів, кольори й підпис — з однаковими відступами між собою
+            // перемикач стилів, кольори й підпис — з однаковими відступами між собою;
+            // без вибору стилю й кольору блоку немає зовсім (інакше під превʼю зайвий відступ)
+            if hasLooks {
             VStack(spacing: 16) {
                 if item.styles.count > 1 {
                     Picker("Стиль", selection: $style) {
@@ -657,7 +662,7 @@ struct StoreDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                if item.styles.count > 1 || item.colors.count > 1 {
+                if hasLooks {
                     Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
                         .font(.caption).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -666,9 +671,13 @@ struct StoreDetailView: View {
                         .padding(.top, -4)
                 }
             }
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
+        // знизу від букв останнього рядка до краю картки — стільки ж, скільки зверху до превʼю:
+        // рамка рядка тексту нижче букв на висоту виносних елементів шрифту
+        .padding(.top, 22)
+        .padding(.bottom, 22 + UIFont.preferredFont(forTextStyle: hasLooks ? .caption1 : .footnote).descender)
         .background(RoundedRectangle(cornerRadius: 30, style: .continuous)
             .fill(Color(.secondarySystemGroupedBackground)))
         .task(id: "\(item.variantKey ?? "")/\(style)/\(color)") {
