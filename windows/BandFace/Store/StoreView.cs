@@ -111,6 +111,28 @@ namespace BandFace.Store
             return map.TryGetValue(v.FaceId, out var ver) && StoreVersions.Older(ver, e.Version);
         }
 
+        /// <summary>Іконки лише в «Усі», «Безкоштовні», «Платні»; категорії з сервера — без іконок</summary>
+        static readonly Dictionary<string, string> FilterIcons = new Dictionary<string, string>
+        {
+            // чотири квадратики
+            { "all", "M2.5,2 H6 Q7,2 7,3 V6 Q7,7 6,7 H3 Q2,7 2,6 V3 Q2,2 3,2 Z M10,2 H13 Q14,2 14,3 V6 Q14,7 13,7 H10 Q9,7 9,6 V3 Q9,2 10,2 Z M3,9 H6 Q7,9 7,10 V13 Q7,14 6,14 H3 Q2,14 2,13 V10 Q2,9 3,9 Z M10,9 H13 Q14,9 14,10 V13 Q14,14 13,14 H10 Q9,14 9,13 V10 Q9,9 10,9 Z" },
+            // стрілка завантаження
+            { "free", "M7.25,2 H8.75 V8.9 L11,6.65 L12.06,7.71 L8,11.77 L3.94,7.71 L5,6.65 L7.25,8.9 Z M3,12.75 H13 V14.25 H3 Z" },
+            // монета
+            { "paid", "M8,1.5 A6.5,6.5 0 1 1 7.99,1.5 Z M8,3 A5,5 0 1 0 8.01,3 Z M7.3,4 H8.7 V5 Q10,5.2 10.4,6.3 L9.2,6.8 Q8.9,6.2 8,6.2 Q6.9,6.2 6.9,6.9 Q6.9,7.4 8.2,7.6 Q10.5,8 10.5,9.3 Q10.5,10.6 8.7,10.9 V12 H7.3 V10.9 Q5.9,10.7 5.5,9.6 L6.7,9.1 Q7,9.8 8,9.8 Q9.1,9.8 9.1,9.2 Q9.1,8.8 7.8,8.6 Q5.5,8.2 5.5,6.8 Q5.5,5.3 7.3,5 Z" },
+        };
+
+        /// <summary>Іконка й текст; колір іконки — колір тексту плитки (білий на вибраній)</summary>
+        static FrameworkElement IconLabel(Control owner, string geometry, string text)
+        {
+            var path = new System.Windows.Shapes.Path { Data = Geometry.Parse(geometry), Width = 14, Height = 14, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+            path.SetBinding(System.Windows.Shapes.Shape.FillProperty, new System.Windows.Data.Binding("Foreground") { Source = owner });
+            var sp = new StackPanel { Orientation = Orientation.Horizontal };
+            sp.Children.Add(path);
+            sp.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+            return sp;
+        }
+
         string CategoryName(string key)
         {
             var c = _catalog?.Categories.FirstOrDefault(x => x.Key == key);
@@ -144,7 +166,7 @@ namespace BandFace.Store
             // фільтри й сортування
             // нижній відступ 10 + 8 під кожною капсулою = 18 до карток
             var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 10), LastChildFill = false };
-            // висота як у категорій — один рівний ряд
+            // висота як у плиток категорій — один рівний ряд
             var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = S.Get(_sort == "name" ? "storeSortName" : "storeSortNew") + "  " };
             sort.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
             var menu = new ContextMenu();
@@ -166,7 +188,8 @@ namespace BandFace.Store
             foreach (var f in filters)
             {
                 var key = f.Key;
-                var chip = new ToggleButton { Style = StyleOf("Pill"), Content = f.Value, IsChecked = _filter == key, Margin = new Thickness(0, 0, 8, 8) };
+                var chip = new ToggleButton { Style = StyleOf("CatTile"), IsChecked = _filter == key, Margin = new Thickness(0, 0, 8, 8) };
+                chip.Content = FilterIcons.TryGetValue(key, out var icon) ? IconLabel(chip, icon, f.Value) : (object)f.Value;
                 chip.Click += (s, e) => { _filter = key; RenderList(); };
                 chips.Children.Add(chip);
             }
