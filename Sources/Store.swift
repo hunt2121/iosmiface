@@ -438,9 +438,9 @@ struct StoreDetailView: View {
                 previews
 
                 HStack(spacing: 0) {
-                    infoColumn("Версія", item.version)
-                    Divider().frame(height: 34)
                     infoColumn("Розмір", item.sizeText)
+                    Divider().frame(height: 34)
+                    infoColumn("Версія", item.version)
                     Divider().frame(height: 34)
                     infoColumn("Пристрої", item.bandsText)
                 }
