@@ -88,6 +88,28 @@ enum StoreServer {
         return catalog
     }
 
+    /// Перегляди й завантаження запису (усі мови разом)
+    struct FaceStats: Decodable, Equatable {
+        let views: Int
+        let downloads: Int
+    }
+    private struct StatsResponse: Decodable { let stats: [String: FaceStats] }
+
+    /// Відкрили картку циферблата: +1 перегляд на сервері (без відповіді, помилки не важливі)
+    static func sendView(_ key: String) async {
+        guard let base, !key.isEmpty else { return }
+        var r = URLRequest(url: base.appendingPathComponent("view").appendingPathComponent(key))
+        r.httpMethod = "POST"
+        _ = try? await URLSession.shared.data(for: r)
+    }
+
+    /// Числа всіх записів; nil — сервер без лічильників або немає мережі
+    static func stats() async -> [String: FaceStats]? {
+        guard let base, let r = try? await URLSession.shared.data(from: base.appendingPathComponent("stats.json")),
+              (r.1 as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return try? JSONDecoder().decode(StatsResponse.self, from: r.0).stats
+    }
+
     private static func local(_ path: String) -> URL { dir.appendingPathComponent(path.replacingOccurrences(of: "/", with: "_")) }
 
     /// Превʼю за шляхом з каталогу («b/<відбиток>.png»). Шлях — відбиток вмісту, тож файл ніколи не змінюється:

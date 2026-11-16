@@ -431,6 +431,8 @@ struct StoreDetailView: View {
     @State private var loadedLook = 0
     @State private var askDelete = false
     @State private var error: String?
+    /// Перегляди й завантаження запису (з сервера)
+    @State private var stats: StoreServer.FaceStats?
 
     var body: some View {
         ScrollView {
@@ -470,6 +472,11 @@ struct StoreDetailView: View {
 
                 actions
 
+                // перегляди й завантаження — тонкий рядок під кнопкою; без лічильників на сервері його немає
+                if let stats {
+                    StoreStatsLine(stats: stats)
+                }
+
                 if let error {
                     Text(error)
                         .font(.footnote)
@@ -508,6 +515,11 @@ struct StoreDetailView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        // відкрили сторінку: +1 перегляд, потім числа (перемикання мови — той самий запис, не рахується вдруге)
+        .task(id: item.key) {
+            await StoreServer.sendView(item.key)
+            if let all = await StoreServer.stats() { stats = all[item.key] }
+        }
         .alert(String(localized: "Видалити \(item.name) з пристрою?"), isPresented: $askDelete) {
             Button("Видалити", role: .destructive) { run(.delete) }
             Button("Скасувати", role: .cancel) {}

@@ -63,11 +63,69 @@ enum StoreText {
         }
     }
 
+    /// Число з розділювачем розрядів мови інтерфейсу: «1 240»
+    private static func grouped(_ n: Int) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = Locale(identifier: lang)
+        return f.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
+
+    private static func pluralWord(_ n: Int, _ one: String, _ few: String, _ many: String) -> String {
+        let a = n % 10, b = n % 100
+        if a == 1 && b != 11 { return one }
+        if (2...4).contains(a) && !(12...14).contains(b) { return few }
+        return many
+    }
+
+    /// «1 240 завантажень»
+    static func downloads(_ n: Int) -> String {
+        switch lang {
+        case "uk": return grouped(n) + " " + pluralWord(n, "завантаження", "завантаження", "завантажень")
+        case "ru": return grouped(n) + " " + pluralWord(n, "загрузка", "загрузки", "загрузок")
+        default: return grouped(n) + (n == 1 ? " download" : " downloads")
+        }
+    }
+
+    /// «3 400 переглядів»
+    static func views(_ n: Int) -> String {
+        switch lang {
+        case "uk": return grouped(n) + " " + pluralWord(n, "перегляд", "перегляди", "переглядів")
+        case "ru": return grouped(n) + " " + pluralWord(n, "просмотр", "просмотра", "просмотров")
+        default: return grouped(n) + (n == 1 ? " view" : " views")
+        }
+    }
+
     /// «2 стилі · 4 кольори»
     static func looks(styles s: Int, colors c: Int) -> String {
         var parts: [String] = []
         if s > 1 { parts.append(styles(s)) }
         if c > 1 { parts.append(colors(c)) }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// Рядок під «Встановити» на сторінці циферблата: «↓ 1 240 завантажень   👁 3 400 переглядів».
+/// Системні значки стоять на базовій лінії тексту й сумірні з цифрами; по центру кнопки.
+struct StoreStatsLine: View {
+    let stats: StoreServer.FaceStats
+
+    var body: some View {
+        HStack(spacing: 16) {
+            item("arrow.down.to.line", StoreText.downloads(stats.downloads))
+            item("eye", StoreText.views(stats.views))
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func item(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5.5) {
+            Image(systemName: symbol)
+            Text(verbatim: text)
+        }
     }
 }
