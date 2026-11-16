@@ -467,7 +467,7 @@ namespace BandFace.Store
             // Версія · Розмір · Пристрої
             var strip = new Grid();
             for (int i = 0; i < 3; i++) strip.ColumnDefinitions.Add(new ColumnDefinition());
-            string[][] cells = { new[] { S.Get("storeVersion"), e.Version }, new[] { S.Get("storeSize"), SizeText(v.Size) }, new[] { S.Get("storeDevices"), "Band " + string.Join(" · ", e.Bands) } };
+            string[][] cells = { new[] { S.Get("storeSize"), SizeText(v.Size) }, new[] { S.Get("storeVersion"), e.Version }, new[] { S.Get("storeDevices"), "Band " + string.Join(" · ", e.Bands) } };
             for (int i = 0; i < 3; i++)
             {
                 var c = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
