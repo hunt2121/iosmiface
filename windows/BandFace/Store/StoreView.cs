@@ -313,6 +313,45 @@ namespace BandFace.Store
             RenderPage();
             _pageScroll.ScrollToTop();
             _ = PrefetchAsync(e, Variant(e));
+            _ = LoadStatsAsync(e);
+        }
+
+        /// <summary>Перегляди й завантаження (з сервера): відкриття сторінки — +1 перегляд, потім числа</summary>
+        Dictionary<string, Tuple<int, int>> _stats;
+
+        async Task LoadStatsAsync(StoreEntry e)
+        {
+            await StoreClient.SendViewAsync(e.Id);
+            var all = await StoreClient.StatsAsync();
+            if (all == null) return;
+            _stats = all;
+            if (_open == e) RenderPage();
+        }
+
+        /// <summary>«↓ 1 240 завантажень   👁 3 400 переглядів» — під кнопками, по центру</summary>
+        FrameworkElement StatsLine(Tuple<int, int> st)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 14) };
+            Func<string, string, FrameworkElement> item = (glyph, text) =>
+            {
+                var p = new StackPanel { Orientation = Orientation.Horizontal };
+                p.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = BrushOf("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 6, 0) });
+                p.Children.Add(new TextBlock { Text = text, FontSize = 12, Foreground = BrushOf("Sub"), VerticalAlignment = VerticalAlignment.Center });
+                return p;
+            };
+            string N(int n) => n.ToString("N0", System.Globalization.CultureInfo.CurrentUICulture);
+            row.Children.Add(item("\uE896", PluralText(st.Item2, "storeDl1", "storeDl2", "storeDl5", N(st.Item2))));
+            var views = item("\uE890", PluralText(st.Item1, "storeView1", "storeView2", "storeView5", N(st.Item1)));
+            ((FrameworkElement)views).Margin = new Thickness(16, 0, 0, 0);
+            row.Children.Add(views);
+            return row;
+        }
+
+        static string PluralText(int n, string one, string few, string many, string shown)
+        {
+            int a = n % 10, b = n % 100;
+            var key = a == 1 && b != 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many;
+            return S.Get(key, shown);
         }
 
         /// <summary>Сторінка запису за ID (для знімків екрана на збірковому сервері)</summary>
@@ -509,6 +548,7 @@ namespace BandFace.Store
 
             // кнопки або прогрес встановлення
             sp.Children.Add(Actions(e, v));
+            if (_stats != null && _stats.TryGetValue(e.Id, out var st)) sp.Children.Add(StatsLine(st));
             if (_actionError != null)
                 sp.Children.Add(new TextBlock { Text = _actionError, FontSize = 12, Foreground = BrushOf("Err"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, -4, 0, 12) });
 
