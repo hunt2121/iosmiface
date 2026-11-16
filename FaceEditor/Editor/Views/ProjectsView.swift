@@ -145,10 +145,17 @@ struct ProjectsView: View {
         .padding(.top, 80)
     }
 
+    /// Відступ під капсулою до рамки рядка назви: від капсули до верху великих літер — 22 pt,
+    /// як від верху картки до капсули (над великими літерами в рамці тексту — ascender − capHeight)
+    private static let capsuleToName: CGFloat = {
+        let f = UIFont.systemFont(ofSize: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .semibold)
+        return max(0, 22 - (f.ascender - f.capHeight))
+    }()
+
     /// Картка як у магазині BandFace: капсула, назва, дата зміни; у BandFace ще й «Встановити».
     private func card(_ p: FaceProject) -> some View {
         Button { editing = p } label: {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
                 ZStack {
                     Color.black
                     let k = FacePreviews.key(p)
@@ -161,7 +168,9 @@ struct ProjectsView: View {
                 .frame(width: 96, height: 236)
                 .faceCapsule(active: (install?.status.activeID).map { $0 == p.root.string("id") } ?? false)
                 .frame(maxWidth: .infinity)
-                .frame(height: 266)
+                // як у магазині: від капсули до букв назви — стільки ж, скільки від верху картки до капсули
+                .padding(.top, 12)
+                .padding(.bottom, Self.capsuleToName)
 
                 // як картка магазину: назва й кольори праворуч; нижче «вага · дата» і кількість стилів
                 VStack(alignment: .leading, spacing: 0) {
@@ -187,6 +196,7 @@ struct ProjectsView: View {
 
                 if let install {
                     ProjectInstallButton(project: p, status: install.status) { installProject(p) }
+                        .padding(.top, 10)
                 }
             }
             .padding(10)
