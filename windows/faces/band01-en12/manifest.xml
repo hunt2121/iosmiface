@@ -74,6 +74,15 @@
         <Image name="g_wk" src="g_wk.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="g5" src="g5.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="dash" src="dash.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="ampm" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ampm/0.png"/>
+            <Image src="ampm/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ampm" source="miscIsPM" ref="@ampm" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <Image name="g_ampm" src="g_ampm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <DataItemImageNumber name="dd1" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <DataItemImageNumber name="dd2" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <ImageArray name="astro" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
@@ -197,6 +206,8 @@
         <Layout ref="@g_wk" x="25" y="229"/>
         <Layout ref="@v_wk" x="25" y="229"/>
         <Layout ref="@g5" x="96" y="229"/>
+        <Layout ref="@g_ampm" x="167" y="207"/>
+        <Layout ref="@v_ampm" x="167" y="207"/>
         <Layout ref="@dd1" x="96" y="229"/>
         <Layout ref="@dash" x="134" y="229"/>
         <Layout ref="@dd2" x="153" y="229"/>
