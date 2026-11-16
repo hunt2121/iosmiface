@@ -31,6 +31,22 @@
             <Image src="d_sec/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="sec" source="timeSecond" ref="@d_sec" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="ampm" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ampm/0.png"/>
+            <Image src="ampm/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ampm" source="miscIsPM" ref="@ampm" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="m24" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="m24/0.png"/>
+            <Image src="m24/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_m24" source="miscIs24H" ref="@m24" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
         <ImageArray name="wk_n" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="wk_n/0.png"/>
             <Image src="wk_n/1.png"/>
@@ -152,10 +168,12 @@
         <Layout ref="@min_n" x="15" y="189"/>
         <Layout ref="@xv_n" x="46" y="277"/>
         <Layout ref="@sec" x="42" y="311"/>
+        <Layout ref="@v_ampm" x="31" y="145"/>
+        <Layout ref="@v_m24" x="31" y="145"/>
         <Layout ref="@v_wk_n" x="26" y="75"/>
         <Layout ref="@day_n" x="61" y="96"/>
-        <Layout ref="@v_bat_n" x="52" y="146"/>
-        <Layout ref="@v_bt_n" x="52" y="146"/>
+        <Layout ref="@v_bat_n" x="39" y="146"/>
+        <Layout ref="@v_bt_n" x="39" y="146"/>
         <Layout ref="@st_n" x="60" y="413"/>
     </Theme>
     <Theme type="AOD" name="Стиль 1" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
@@ -166,8 +184,8 @@
         <Layout ref="@xv_a" x="46" y="277"/>
         <Layout ref="@v_wk_n" x="26" y="75"/>
         <Layout ref="@day_n" x="61" y="96"/>
-        <Layout ref="@v_bat_a" x="52" y="146"/>
-        <Layout ref="@v_bt_a" x="52" y="146"/>
+        <Layout ref="@v_bat_a" x="39" y="146"/>
+        <Layout ref="@v_bt_a" x="39" y="146"/>
         <Layout ref="@st_a" x="60" y="413"/>
         <Layout ref="@dimmer" x="0" y="0"/>
     </Theme>
@@ -177,10 +195,12 @@
         <Layout ref="@min_n" x="15" y="189"/>
         <Layout ref="@xv_n" x="46" y="277"/>
         <Layout ref="@sec" x="42" y="311"/>
+        <Layout ref="@v_ampm" x="31" y="128"/>
+        <Layout ref="@v_m24" x="31" y="128"/>
         <Layout ref="@v_wk_n" x="71" y="40"/>
         <Layout ref="@day_n" x="105" y="61"/>
-        <Layout ref="@v_bat_n" x="52" y="129"/>
-        <Layout ref="@v_bt_n" x="52" y="129"/>
+        <Layout ref="@v_bat_n" x="39" y="129"/>
+        <Layout ref="@v_bt_n" x="39" y="129"/>
         <Layout ref="@st_n" x="105" y="448"/>
     </Theme>
     <Theme type="AOD" name="Стиль 2" bgColor="#000000" colorGroup="#FF5F1F,#FC8EAC,#B8F02A,#F2F2F2">
@@ -191,8 +211,8 @@
         <Layout ref="@xv_a" x="46" y="277"/>
         <Layout ref="@v_wk_n" x="71" y="40"/>
         <Layout ref="@day_n" x="105" y="61"/>
-        <Layout ref="@v_bat_a" x="52" y="129"/>
-        <Layout ref="@v_bt_a" x="52" y="129"/>
+        <Layout ref="@v_bat_a" x="39" y="129"/>
+        <Layout ref="@v_bt_a" x="39" y="129"/>
         <Layout ref="@st_a" x="105" y="448"/>
         <Layout ref="@dimmer" x="0" y="0"/>
     </Theme>
