@@ -8,7 +8,7 @@ LANGV=os.environ.get("LANGV","ua")      # ua / ru / en / en12 (англійсь�
 DEST=os.environ.get("FACE_DEST") or os.path.join(os.path.dirname(HERE),"ruler" if LANGV=="ua" else "ruler-"+LANGV)
 OUT=os.path.join(DEST,"files")
 FACE_ID={"ua":"318470560","ru":"318470561","en":"318470562","en12":"318470563"}[LANGV]; FACE_NAME="VISUAL"   # назва однакова, ідентифікатор у кожної мови свій
-H12=LANGV=="en12"; AMPM_DX=0; AMPM_ST2={}
+H12=LANGV=="en12"; AMPM_DX=0
 MINW={"ua":"ХВ","ru":"МИН","en":"MIN","en12":"MIN"}[LANGV]
 DTOP=DTOP_; DCX=105.5; DLGAP=7; DAYDX=0; STX=105; STDY=35; BDY=1   # BDY — блок хвилини/ХВ/секунди посередині між датою й кроками   # верх дати; проміжок між рядками дати; поправка числа по осі
 K=4; W,H=212,520; FD="/usr/share/fonts/opentype/inter/"
@@ -123,18 +123,6 @@ for t,dim in (("n",False),("a",True)):
                 out=Image.new("RGBA",im.size,(0,0,0,0)); out.alpha_composite(im,(int(dx),0)) if dx>=0 else out.alpha_composite(im.crop((-int(dx),0,im.width,im.height)),(0,0)); return out
             array("ampm",[vis_center(x) for x in ("AM","PM")]); values("ampm","miscIsPM","ampm",[0,1]); lay("n","v_ampm",61-30,MID+48-18+10+BDY)
         else: cs=digits("sec",fs,GY,36); number("sec","timeSecond","sec",2); lay("n","sec",62-cs-1,MID+48-18+10+BDY)   # від «ХВ» до секунд — як від хвилин до «ХВ» (24 px); блок хвилини–ХВ–секунди по центру екрана
-        AMPM_V=os.environ.get("AMPM_V","above")   # над хвилинами, на місці значків стану
-        if AMPM_V and not H12:   # AM/PM лише в 12-годинному режимі (miscIs24H = 1 — чорна плашка); значок стану закриває напис
-            fa=F("Medium",int(os.environ.get("AMPM_PT","24"))); AW=60; AH=34
-            def ink_c(x):
-                im=text_img(x,fa,GY,w=AW,h=AH); b=im.getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
-                dx=math.floor(30-(b[0]+b[2]-1)/2); o=Image.new("RGBA",im.size,(0,0,0,0)); o.alpha_composite(im.crop((max(0,-dx),0,im.width,im.height)),(max(0,dx),0)); return o,b
-            fr=[ink_c(x) for x in ("AM","PM")]; top=fr[1][1][1]; ih=fr[1][1][3]-fr[1][1][1]
-            array("ampm",[f for f,_ in fr]); values("ampm","miscIsPM","ampm",[0,1])
-            array("m24",[Image.new("RGBA",(AW,AH),(0,0,0,0)),Image.new("RGBA",(AW,AH),(0,0,0,255))]); values("m24","miscIs24H","m24",[0,1])
-            iy={"under":339+21,"mid":339+math.floor((419-339-ih)/2),"top":80-21-ih,"above":162-ih//2}[AMPM_V]   # верх видимих пікселів (стиль 1)
-            iy2=88+math.floor((202-88-ih)/2) if AMPM_V=="above" else iy   # стиль 2: посередині між датою (низ 87) і хвилинами (верх 202); пів пікселя — вгору
-            for n_ in ("v_ampm","v_m24"): lay("n",n_,61-30,iy2-top); AMPM_ST2[n_]=(61-30,iy-top)
     # Дата у два рядки: день тижня (менший) зверху, число під ним; кожен рядок рівно по осі x=61.
     # Верх дня тижня — 80 px від верху екрана (як кроки від низу).
     fd=F("SemiBold",26,False); col=WH   # дата біла — AOD показує ті самі елементи під шаром 50 %
@@ -150,7 +138,7 @@ for t,dim in (("n",False),("a",True)):
     db=Image.open(os.path.join(OUT,"d_day_n","1.png")).getchannel("A").point(lambda v:255 if v>40 else 0).getbbox()
     lay(t,"day_n",DCX+DAYDX,DTOP+(wb[3]-wb[1])+DLGAP-db[1])
     if t=="n":   # стиль 2 (як раніше): дата на осі x=61, верх за 80 px від краю
-        ST2={"v_wk_n":(26,80-wb[1]),"day_n":(61,80+(wb[3]-wb[1])+DLGAP-db[1])}; ST2.update(AMPM_ST2)
+        ST2={"v_wk_n":(26,80-wb[1]),"day_n":(61,80+(wb[3]-wb[1])+DLGAP-db[1])}
     # Значки стану над хвилинами (30 px): блискавка — заряд нижче 20 %, блютуз — немає зв'язку.
     # Блютуз — шаром поверх, під ним чорна підкладка (на 1 px більша за обидва значки), тож при обох показується він.
     if t=="n" or dim:
@@ -168,12 +156,11 @@ for t,dim in (("n",False),("a",True)):
             return crop_(im.convert("RGBa").resize((w,h),Image.LANCZOS).convert("RGBA"))
         bi,li=bt_icon(),bolt_icon()
         IW=max(bi.width,li.width)+2; IW+=1-IW%2; IH=max(bi.height,li.height)+2   # рамка: непарна ширина — центр рівно в пікселі
-        if os.environ.get("AMPM_V","above")=="above": IW=max(IW,45)   # значок стану на місці AM/PM: плашка ширша за «PM», значок закриває напис
         def framed(ic,plate):
             fr=Image.new("RGBA",(IW,IH),(0,0,0,255) if plate else (0,0,0,0))
             fr.alpha_composite(ic,((IW-ic.width)//2,(IH-ic.height)//2)); return fr
         empty=Image.new("RGBA",(IW,IH),(0,0,0,0))
-        array("bat_"+t,[framed(li,os.environ.get("AMPM_V","above")=="above"),empty]); values("bat_"+t,"systemStatusBattery","bat_"+t,[0,20])
+        array("bat_"+t,[framed(li,False),empty]); values("bat_"+t,"systemStatusBattery","bat_"+t,[0,20])
         array("bt_"+t,[framed(bi,True),empty]); values("bt_"+t,"systemStatusBluetooth","bt_"+t,[0,1])
         def icon_pos(cy): return 61-(IW-1)//2, int(cy-(IH-1)/2)        # пів пікселя — вгору
         x2,y2=icon_pos(144.5)        # стиль 2: посередині між датою (низ 87) і хвилинами (верх 202)
