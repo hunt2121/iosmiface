@@ -213,10 +213,14 @@ image("g_wk",ghost(nwk,h)); lay("n","g_wk",Lc,y1); lay("n","v_wk",Lc,y1)
 DW=cells_w(5,h); xd=Rc-DW
 image("g5",ghost(5,h)); lay("n","g5",xd,y1)   # та сама підкладка на 5 клітинок, що й під кроками
 image("dash",cell('-',h))
-if H12:   # AM / PM (miscIsPM: 0 — AM, 1 — PM): 15 px під хвилинами, праворуч, рівно посередині між годинником і рядком дати
+AUTO12=LANGV=="ua"   # тест: години timeHour (за форматом телефона), AM/PM ховається в 24-годинному режимі
+if H12 or AUTO12:   # AM / PM (miscIsPM: 0 — AM, 1 — PM): 15 px під хвилинами, праворуч, рівно посередині між годинником і рядком дати
     ah=15; ax=Rc-cells_w(2,ah); ay=YC+hc+floor_c((rnd(y1)-(YC+hc)-ah)/2)   # rnd: рядок дати теж округлюється при розміщенні
     array("ampm",[text_lcd("AM",ah),text_lcd("PM",ah)]); values("v_ampm","miscIsPM","ampm",[0,1])
     image("g_ampm",ghost(2,ah)); lay("n","g_ampm",ax,ay); lay("n","v_ampm",ax,ay)
+    if AUTO12:   # miscIs24H = 1 → чорна плашка поверх AM/PM разом із підкладкою
+        aw=cells_w(2,ah); array("m24",[Image.new("RGBA",(aw,ah),(0,0,0,0)),Image.new("RGBA",(aw,ah),(0,0,0,255))])
+        values("v_m24","miscIs24H","m24",[0,1]); lay("n","v_m24",ax,ay)
 first,second=("dateMonth","dateDay") if H12 else ("dateDay","dateMonth")   # місяць-день лише в EN 12h
 number("dd1",first,"d26",2,"left",True,sp); number("dd2",second,"d26",2,"left",True,sp)
 lay("n","dd1",xd,y1); lay("n","dash",xd+2*(wI+sp),y1); lay("n","dd2",xd+3*(wI+sp),y1)
