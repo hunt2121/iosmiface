@@ -229,6 +229,34 @@ namespace BandFace.Store
             }
         }
 
+        // MARK: Перегляди й завантаження
+
+        /// <summary>Відкрили сторінку циферблата: +1 перегляд на сервері (помилки не важливі)</summary>
+        public static async Task SendViewAsync(string id)
+        {
+            try { using (await Http.PostAsync(BaseUrl + "view/" + Uri.EscapeDataString(id), new StringContent("")).ConfigureAwait(false)) { } }
+            catch (Exception) { }
+        }
+
+        /// <summary>Перегляди й завантаження всіх записів (усі мови разом); null — без мережі або без лічильників на сервері</summary>
+        public static async Task<Dictionary<string, Tuple<int, int>>> StatsAsync()
+        {
+            try
+            {
+                var root = MiniJson.Parse(await Http.GetStringAsync(BaseUrl + "stats.json").ConfigureAwait(false)) as Dictionary<string, object>;
+                if (root == null || !(root.TryGetValue("stats", out var o) && o is Dictionary<string, object> all)) return null;
+                var r = new Dictionary<string, Tuple<int, int>>();
+                foreach (var kv in all)
+                    if (kv.Value is Dictionary<string, object> d)
+                        r[kv.Key] = Tuple.Create(ToInt(d, "views"), ToInt(d, "downloads"));
+                return r;
+            }
+            catch (Exception) { return null; }
+        }
+
+        static int ToInt(Dictionary<string, object> d, string k) =>
+            d.TryGetValue(k, out var v) && v != null && double.TryParse(Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var x) ? (int)x : 0;
+
         // MARK: Встановлені з магазину
 
         /// <summary>ID на браслеті → версія, встановлена з магазину (для «Оновити»)</summary>
