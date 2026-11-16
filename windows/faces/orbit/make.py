@@ -93,28 +93,33 @@ lay("n","v_day",CX,214); lay("a","v_day",CX,214)
 fw=F("Bold",20); wk,wkw,_=word_array(WEEK[L],fw,LM,2.2); array("wk",wk); values("v_wk","dateWeek","wk",range(7)); lay("n","v_wk",CX-wkw/2,290)
 wka,_,_=word_array(WEEK[L],fw,WH,2.2); array("wk_a",wka); values("v_wk_a","dateWeek","wk_a",range(7)); lay("a","v_wk_a",CX-wkw/2,290)
 fm=F("Bold",18); mo,mow,_=word_array(MON[L],fm,MG,2.0); array("mon",mo); values("v_mon","dateMonth","mon",range(1,13)); lay("n","v_mon",CX-mow/2,317); lay("a","v_mon",CX-mow/2,317)
-# ── кроки: коло з 28 сегментів (два нижні — місце для значка), число в центрі
+# ── кроки: коло з 28 сегментів і слідів на місці двох нижніх, число в центрі
 BX,BY=106,428; N=30; GAP=(14,15); RR=72; RW=9
-order=[i for i in range(N) if i not in GAP]
-frames=[]
-for k in range(len(order)+1):
-    im,d=canvas(2*RR+2,2*RR+2); o=1
-    for j,i in enumerate(order):
-        a0=i*360/N+2.2; a1=(i+1)*360/N-2.2
-        d.arc([o*K,o*K,(o+2*RR)*K,(o+2*RR)*K],a0-90,a1-90,fill=LM if j<k else DG,width=RW*K)
-    frames.append(down(im))
-array("ring",frames); values("v_ring","healthStepProgress","ring",[round(k*100/len(order)) for k in range(len(order)+1)])
-lay("n","v_ring",BX-RR-1,BY-RR-1)
-def feet(col,k=0.8):
+def feet(cl,cr=None,k=0.8):   # cl — лівий слід, cr — правий
+    cr=cl if cr is None else cr
     im,d=canvas(24,28); cx,cy=12,14
-    def foot(fx,fy,m):
+    def foot(fx,fy,m,col):
         e=lambda x,y,rx,ry: d.ellipse([(fx+(x*m-rx)*k)*K,(fy+(y-ry)*k)*K,(fx+(x*m+rx)*k)*K,(fy+(y+ry)*k)*K],fill=col)
         e(0,-3.2,4.2,6.2); e(0.6,6.8,3.0,3.2)
-    foot(cx-6*k,cy+2.5*k,-1); foot(cx+6*k,cy-2.5*k,1)
-    im=down(im); return im.crop(ink(im,1))
-fe=image("feet",feet(LM)); fa=image("feet_a",feet(WH))
-bb=ink(fe); fx=BX-(bb[2]-bb[0])/2-bb[0]; fy=(BY+RR-RW/2)-(bb[3]-bb[1])/2-bb[1]   # по центру лінії кола
-lay("n","feet",fx,fy); lay("a","feet_a",fx,fy)
+    foot(cx-6*k,cy+2.5*k,-1,cl); foot(cx+6*k,cy-2.5*k,1,cr)
+    return down(im)
+FB=ink(feet(WH),1)   # спільна рамка обох слідів — однакова для всіх кольорів
+def feet_c(cl,cr=None): return feet(cl,cr).crop(FB)
+bb=ink(feet_c(WH)); fx=BX-(bb[2]-bb[0])/2-bb[0]; fy=(BY+RR-RW/2)-(bb[3]-bb[1])/2-bb[1]   # по центру лінії кола
+# кожен слід — один сегмент кола: 14-й (праворуч від низу) — правий слід, 15-й — лівий; заповнюються разом із колом
+P=12   # запас полотна, щоб сліди не обрізались
+frames=[]
+for k in range(N+1):
+    im,d=canvas(2*RR+2+2*P,2*RR+2+2*P); o=1+P
+    for i in range(N):
+        if i in GAP: continue
+        a0=i*360/N+2.2; a1=(i+1)*360/N-2.2
+        d.arc([o*K,o*K,(o+2*RR)*K,(o+2*RR)*K],a0-90,a1-90,fill=LM if i<k else DG,width=RW*K)
+    im=down(im)
+    im.alpha_composite(feet_c(LM if GAP[1]<k else DG, LM if GAP[0]<k else DG),(rnd(fx)-(BX-RR-1-P),rnd(fy)-(BY-RR-1-P))); frames.append(im)
+array("ring",frames); values("v_ring","healthStepProgress","ring",[round(k*100/N) for k in range(N+1)])
+lay("n","v_ring",BX-RR-1-P,BY-RR-1-P)
+fa=image("feet_a",feet_c(WH)); lay("a","feet_a",fx,fy)
 fs=F("Bold",38); dg=cells("0123456789",fs,WH); array("stp",dg); number("v_stp","healthStepCount","stp",5,"center")
 # цифри: видима частина «0» по центру кола
 b0=ink(dg[0]); sy=BY-(b0[1]+b0[3])/2

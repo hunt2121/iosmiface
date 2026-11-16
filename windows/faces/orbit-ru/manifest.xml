@@ -115,39 +115,42 @@
             <Image src="ring/26.png"/>
             <Image src="ring/27.png"/>
             <Image src="ring/28.png"/>
+            <Image src="ring/29.png"/>
+            <Image src="ring/30.png"/>
         </ImageArray>
         <DataItemImageValues name="v_ring" source="healthStepProgress" ref="@ring" renderRule="alwaysShow" rotation="0">
             <Param value="0"/>
-            <Param value="4"/>
+            <Param value="3"/>
             <Param value="7"/>
-            <Param value="11"/>
-            <Param value="14"/>
-            <Param value="18"/>
-            <Param value="21"/>
-            <Param value="25"/>
-            <Param value="29"/>
-            <Param value="32"/>
-            <Param value="36"/>
-            <Param value="39"/>
+            <Param value="10"/>
+            <Param value="13"/>
+            <Param value="17"/>
+            <Param value="20"/>
+            <Param value="23"/>
+            <Param value="27"/>
+            <Param value="30"/>
+            <Param value="33"/>
+            <Param value="37"/>
+            <Param value="40"/>
             <Param value="43"/>
-            <Param value="46"/>
+            <Param value="47"/>
             <Param value="50"/>
-            <Param value="54"/>
+            <Param value="53"/>
             <Param value="57"/>
-            <Param value="61"/>
-            <Param value="64"/>
-            <Param value="68"/>
-            <Param value="71"/>
-            <Param value="75"/>
-            <Param value="79"/>
-            <Param value="82"/>
-            <Param value="86"/>
-            <Param value="89"/>
+            <Param value="60"/>
+            <Param value="63"/>
+            <Param value="67"/>
+            <Param value="70"/>
+            <Param value="73"/>
+            <Param value="77"/>
+            <Param value="80"/>
+            <Param value="83"/>
+            <Param value="87"/>
+            <Param value="90"/>
             <Param value="93"/>
-            <Param value="96"/>
+            <Param value="97"/>
             <Param value="100"/>
         </DataItemImageValues>
-        <Image name="feet" src="feet.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="feet_a" src="feet_a.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <ImageArray name="stp" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
             <Image src="stp/0.png"/>
@@ -189,8 +192,7 @@
         <Layout ref="@v_day" x="106" y="214"/>
         <Layout ref="@v_wk" x="13" y="290"/>
         <Layout ref="@v_mon" x="48" y="317"/>
-        <Layout ref="@v_ring" x="33" y="355"/>
-        <Layout ref="@feet" x="95" y="483"/>
+        <Layout ref="@v_ring" x="21" y="343"/>
         <Layout ref="@v_stp" x="106" y="405"/>
         <Layout ref="@v_ampm" x="88" y="139"/>
         <Layout ref="@v_m24" x="88" y="139"/>
