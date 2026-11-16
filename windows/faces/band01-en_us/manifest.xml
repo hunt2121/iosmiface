@@ -49,7 +49,7 @@
         </ImageArray>
         <Image name="colon" src="colon.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="g_clock" src="g_clock.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
-        <DataItemImageNumber name="hr" source="timeHour12H" ref="@d54" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="7"/>
+        <DataItemImageNumber name="hr" source="timeHour" ref="@d54" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="7"/>
         <DataItemImageNumber name="mn" source="timeMinute" ref="@d54" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="7"/>
         <Image name="heart" src="heart.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
         <Image name="deg" src="deg.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
@@ -83,6 +83,14 @@
             <Param value="1"/>
         </DataItemImageValues>
         <Image name="g_ampm" src="g_ampm.png" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false"/>
+        <ImageArray name="m24" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="m24/0.png"/>
+            <Image src="m24/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_m24" source="miscIs24H" ref="@m24" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
         <DataItemImageNumber name="dd1" source="dateMonth" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <DataItemImageNumber name="dd2" source="dateDay" ref="@d26" totalDigits="2" decimalDigits="0" align="left" leadingZero="true" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="4"/>
         <ImageArray name="astro" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
@@ -208,6 +216,7 @@
         <Layout ref="@g5" x="96" y="229"/>
         <Layout ref="@g_ampm" x="167" y="207"/>
         <Layout ref="@v_ampm" x="167" y="207"/>
+        <Layout ref="@v_m24" x="167" y="207"/>
         <Layout ref="@dd1" x="96" y="229"/>
         <Layout ref="@dash" x="134" y="229"/>
         <Layout ref="@dd2" x="153" y="229"/>

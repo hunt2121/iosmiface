@@ -7,9 +7,9 @@ import d7cyr as D7, pix
 LANGV=os.environ.get("LANGV","ua")
 DEST=os.environ.get("FACE_DEST") or os.path.join(os.path.dirname(HERE),"band01" if LANGV=="ua" else "band01-"+LANGV)
 OUT=os.path.join(DEST,"files")
-FACE_ID={"ua":"318470570","ru":"318470571","en":"318470572","en12":"318470573"}[LANGV]; FACE_NAME="BAND 01"
+FACE_ID={"ua":"318470570","ru":"318470571","en":"318470572","en_us":"318470573"}[LANGV]; FACE_NAME="BAND 01"
 SA=os.environ.get("SA_FRAMES","/tmp/claude-0/-home-claude/db6005de-023b-57f2-8d4f-7e2b4fccd61e/scratchpad/sa_out2")
-H12=LANGV=="en12"
+H12=LANGV=="en_us"   # EN US: дата місяць-день
 W,H=212,520; K=4
 WH=(255,255,255); DIM=(150,150,155); GHOST=(40,40,40)
 FD="/usr/share/fonts/opentype/inter/"
@@ -18,7 +18,7 @@ F=lambda w,s,disp=True: ImageFont.truetype(FD+("InterDisplay-" if disp else "Int
 TXT={"ua":("НА ЗВ'ЯЗКУ","",["НД","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
      "ru":("НА СВЯЗИ","",["ВС","ПН","ВТ","СР","ЧТ","ПТ","СБ"]),
      "en":("CONNECTED","",["SUN","MON","TUE","WED","THU","FRI","SAT"])}
-TXT["en12"]=TXT["en"]
+TXT["en_us"]=TXT["en"]
 ST_OK,ST_LOST,WEEK=TXT[LANGV]    # dateWeek: 0 — неділя
 ST_OK=os.environ.get("ST_OK_TXT",ST_OK); ST_LOST=os.environ.get("ST_LOST_TXT",ST_LOST)   # для макетів
 
@@ -124,7 +124,7 @@ CLW=2*wc+spc+spc+colw+2*wc+spc
 Lc=floor_c((W-CLW)/2); Rc=Lc+CLW; YC=136
 xh=Lc; hrR=Lc+2*wc+spc; xm=hrR+spc+colw; xcol=hrR+floor_c((xm-hrR-cimg.width)/2)   # однакові проміжки зліва й справа
 image("g_clock",ghost(4,hc,[0,wc+spc,xm-Lc,xm-Lc+wc+spc])); lay("n","g_clock",Lc,YC)
-hsrc="timeHour12H" if H12 else "timeHour"
+hsrc="timeHour"   # за форматом телефона: 12 або 24 години
 number("hr",hsrc,"d54",2,"left",True,spc); number("mn","timeMinute","d54",2,"left",True,spc)
 lay("n","hr",xh,YC); lay("n","colon",xcol,YC); lay("n","mn",xm,YC)
 
@@ -213,7 +213,7 @@ image("g_wk",ghost(nwk,h)); lay("n","g_wk",Lc,y1); lay("n","v_wk",Lc,y1)
 DW=cells_w(5,h); xd=Rc-DW
 image("g5",ghost(5,h)); lay("n","g5",xd,y1)   # та сама підкладка на 5 клітинок, що й під кроками
 image("dash",cell('-',h))
-AUTO12=LANGV=="ua"   # тест: години timeHour (за форматом телефона), AM/PM ховається в 24-годинному режимі
+AUTO12=True   # AM/PM ховається в 24-годинному режимі (перевірено на браслеті)
 if H12 or AUTO12:   # AM / PM (miscIsPM: 0 — AM, 1 — PM): 15 px під хвилинами, праворуч, рівно посередині між годинником і рядком дати
     ah=15; ax=Rc-cells_w(2,ah); ay=YC+hc+floor_c((rnd(y1)-(YC+hc)-ah)/2)   # rnd: рядок дати теж округлюється при розміщенні
     array("ampm",[text_lcd("AM",ah),text_lcd("PM",ah)]); values("v_ampm","miscIsPM","ampm",[0,1])
@@ -221,7 +221,7 @@ if H12 or AUTO12:   # AM / PM (miscIsPM: 0 — AM, 1 — PM): 15 px під хв�
     if AUTO12:   # miscIs24H = 1 → чорна плашка поверх AM/PM разом із підкладкою
         aw=cells_w(2,ah); array("m24",[Image.new("RGBA",(aw,ah),(0,0,0,0)),Image.new("RGBA",(aw,ah),(0,0,0,255))])
         values("v_m24","miscIs24H","m24",[0,1]); lay("n","v_m24",ax,ay)
-first,second=("dateMonth","dateDay") if H12 else ("dateDay","dateMonth")   # місяць-день лише в EN 12h
+first,second=("dateMonth","dateDay") if H12 else ("dateDay","dateMonth")   # місяць-день лише в EN US
 number("dd1",first,"d26",2,"left",True,sp); number("dd2",second,"d26",2,"left",True,sp)
 lay("n","dd1",xd,y1); lay("n","dash",xd+2*(wI+sp),y1); lay("n","dd2",xd+3*(wI+sp),y1)
 # анімація: обриси астронавта від лівого краю годинника, по центру висоти блоку; далі — центр між краєм екрана й колонкою, +5 px
