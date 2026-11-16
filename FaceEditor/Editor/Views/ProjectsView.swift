@@ -333,11 +333,11 @@ struct ProjectInstallButton: View {
             // циферблат уже на браслеті — «Перевстановити» (замінить його на браслеті)
             Button(action: action) {
                 Text("Перевстановити")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(maxWidth: .infinity)
-                .frame(height: 36)
-                .background(Capsule().fill(Color(.systemGroupedBackground)))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(Capsule().fill(Color(.systemGroupedBackground)))
             }
             .buttonStyle(.plain)
             .disabled(status.current != nil)
