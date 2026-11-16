@@ -296,10 +296,12 @@ struct StoreView: View, Equatable {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
+            // від капсули до букв назви — стільки ж, скільки від верху картки до капсули (12 + 10 відступу картки)
             FaceCapsule(image: item.preview, active: item.id == activeID, animation: item.animation)
                 .frame(maxWidth: .infinity)
-                .frame(height: 266)
+                .padding(.top, 12)
+                .padding(.bottom, Self.capsuleToName)
 
             VStack(alignment: .leading, spacing: 1) {
                 // кольори циферблата — кружечки праворуч від назви
@@ -322,6 +324,7 @@ struct StoreView: View, Equatable {
                 .lineLimit(1)
             }
             .padding(.horizontal, 2)
+            .padding(.bottom, 10)
 
             FaceActionButton(state: state(item), price: item.buyText, busy: busy,
                              progress: progress, progressText: progressText) {
@@ -333,6 +336,15 @@ struct StoreView: View, Equatable {
             .fill(Color(.secondarySystemGroupedBackground)))
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
+
+    /// Відступ під капсулою до рамки рядка назви: щоб від капсули до верху великих літер назви було 22 pt —
+    /// як від верху картки до капсули. Рядок назви 20 pt заввишки, текст у ньому по центру;
+    /// над великими літерами в рамці тексту — ascender − capHeight
+    private static let capsuleToName: CGFloat = {
+        let f = UIFont.systemFont(ofSize: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .semibold)
+        let inset = (20 - f.lineHeight) / 2 + (f.ascender - f.capHeight)
+        return max(0, 22 - inset)
+    }()
 
     /// «1,2 MB · v1.1», для оновлення — «1,2 MB · v1.0 → 1.1»
     private func infoText(_ item: StoreFace) -> String {
