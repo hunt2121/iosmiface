@@ -7,7 +7,7 @@ HERE=os.path.dirname(os.path.abspath(__file__))
 LANGV=os.environ.get("LANGV","ua")
 DEST=os.environ.get("FACE_DEST") or os.path.join(os.path.dirname(HERE),"orbit" if LANGV=="ua" else "orbit-"+LANGV)
 OUT=os.path.join(DEST,"files")
-FACE_ID={"ua":"318470580","ru":"318470581","en":"318470582","en12":"318470583"}[LANGV]; FACE_NAME="ORBIT"
+FACE_ID={"ua":"318470580","ru":"318470581","en":"318470582"}[LANGV]; FACE_NAME="ORBIT"
 W,H=212,520; K=4
 WH=(255,255,255); LM=(198,244,50); GY=(110,110,115); DG=(40,40,42); RD=(255,69,58); MG=(160,160,166)
 FD="/usr/share/fonts/opentype/inter/"
@@ -119,6 +119,18 @@ fs=F("Bold",38); dg=cells("0123456789",fs,WH); array("stp",dg); number("v_stp","
 # цифри: видима частина «0» по центру кола
 b0=ink(dg[0]); sy=BY-(b0[1]+b0[3])/2
 lay("n","v_stp",BX,sy); lay("a","v_stp",BX,sy)
+# AM/PM на циферблаті — лише в 12-годинному режимі (miscIs24H = 1 — чорна плашка); під стрілками
+AMPM_V=os.environ.get("AMPM_V","bottom")   # над 6
+if AMPM_V:
+    fa=F("Bold",int(os.environ.get("AMPM_PT","16"))); AW,AH=36,22
+    def ampm_img(t):
+        im,dd=canvas(AW,AH); dd.text((AW*K/2,AH*K/2),t,font=fa,fill=MG,anchor="mm"); im=down(im)
+        b=ink(im); dx=math.floor((AW-1)/2-(b[0]+b[2]-1)/2); dy=math.floor((AH-1)/2-(b[1]+b[3]-1)/2)
+        o=Image.new("RGBA",(AW,AH),(0,0,0,0)); o.alpha_composite(im.crop((max(0,-dx),max(0,-dy),AW,AH)),(max(0,dx),max(0,dy))); return o
+    array("ampm",[ampm_img("AM"),ampm_img("PM")]); values("v_ampm","miscIsPM","ampm",[0,1])
+    array("m24",[Image.new("RGBA",(AW,AH),(0,0,0,0)),Image.new("RGBA",(AW,AH),(0,0,0,255))]); values("v_m24","miscIs24H","m24",[0,1])
+    acx,acy={"top":(CX,CY-42),"right":(CX+44,CY),"bottom":(CX,CY+42)}[AMPM_V]
+    for n_ in ("v_ampm","v_m24"): lay("n",n_,acx-(AW-1)/2,acy-(AH-1)/2)
 # стрілки — поверх усього у верхній частині
 place_hand("n","v_hour","h_hour","timeHour",*hp,24,720)
 place_hand("n","v_min","h_min","timeMinute",*mp,60,360)

@@ -162,6 +162,22 @@
             <Image src="stp/9.png"/>
         </ImageArray>
         <DataItemImageNumber name="v_stp" source="healthStepCount" ref="@stp" totalDigits="5" decimalDigits="0" align="center" leadingZero="false" trailingZero="false" renderRule="alwaysShow" rotation="0" decimalOffsetX="0" space="0"/>
+        <ImageArray name="ampm" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="ampm/0.png"/>
+            <Image src="ampm/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_ampm" source="miscIsPM" ref="@ampm" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
+        <ImageArray name="m24" compressMethod="RLEReversed" format="RGBA32" recolorEnable="false">
+            <Image src="m24/0.png"/>
+            <Image src="m24/1.png"/>
+        </ImageArray>
+        <DataItemImageValues name="v_m24" source="miscIs24H" ref="@m24" renderRule="alwaysShow" rotation="0">
+            <Param value="0"/>
+            <Param value="1"/>
+        </DataItemImageValues>
         <DataItemPointer name="v_hour" source="timeHour" ref="@h_hour" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="24" pivotX="6" pivotY="54" angleStart="0" angleRange="720"/>
         <DataItemPointer name="v_min" source="timeMinute" ref="@h_min" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="60" pivotX="4" pivotY="76" angleStart="0" angleRange="360"/>
         <DataItemPointer name="v_sec" source="timeSecond" ref="@h_sec" param="1000" renderRule="alwaysShow" valueStart="0" valueRange="60" pivotX="3" pivotY="86" angleStart="0" angleRange="360"/>
@@ -176,6 +192,8 @@
         <Layout ref="@v_ring" x="33" y="355"/>
         <Layout ref="@feet" x="95" y="483"/>
         <Layout ref="@v_stp" x="106" y="405"/>
+        <Layout ref="@v_ampm" x="88" y="139"/>
+        <Layout ref="@v_m24" x="88" y="139"/>
         <Layout ref="@v_hour" x="99" y="53"/>
         <Layout ref="@v_min" x="101" y="31"/>
         <Layout ref="@v_sec" x="103" y="21"/>
