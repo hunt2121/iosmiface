@@ -332,10 +332,7 @@ struct ProjectInstallButton: View {
         } else if status.onBand.contains(project.root.string("id") ?? "") {
             // циферблат уже на браслеті — «Перевстановити» (замінить його на браслеті)
             Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Перевстановити")
-                }
+                Text("Перевстановити")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
                 .frame(maxWidth: .infinity)
