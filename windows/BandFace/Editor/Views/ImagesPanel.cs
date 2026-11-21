@@ -36,9 +36,11 @@ namespace BandFace.Creator
                 foreach (var c in n.Elements) Walk(owner, c);
             }
             foreach (var r in project.Resources.Elements) Walk(r, r);
-            var dim = AodDim.Find(project);
-            var dimSrc = dim == null ? null : project.ElementOf(dim)?.Str("src");
-            if (dimSrc != null) { var k = MemoryStorage.Normalize(dimSrc); o.RemoveAll(i => MemoryStorage.Normalize(i.Src) == k); }
+            foreach (var dim in AodDim.All(project))
+            {
+                var dimSrc = project.ElementOf(dim)?.Str("src");
+                if (dimSrc != null) { var k = MemoryStorage.Normalize(dimSrc); o.RemoveAll(i => MemoryStorage.Normalize(i.Src) == k); }
+            }
             return o;
         }
 
@@ -254,7 +256,7 @@ namespace BandFace.Creator
                         int t = tl.Item1;
                         var src = u.Str("source");
                         var n = src != null ? SampleData.Title(src) : Elements.Title(Elements.Of(u, project));
-                        names.Add(n + (t == 1 ? " (AOD)" : ""));
+                        names.Add(n + (project.IsAod(t) ? " (AOD" + (project.StyleThemes().Count > 1 ? " " + project.StyleNumber(t) : "") + ")" : ""));
                     }
             return string.Join(", ", names.Distinct());
         }

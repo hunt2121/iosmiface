@@ -359,6 +359,25 @@ namespace BandFace.Creator
             var copy = res.Copy();
             var name = p.UniqueName(res.Str("name") ?? "copy");
             copy.Set("name", name);
+            // свої файли картинок у копії: інакше видалення однієї копії стирало спільний файл, а зміна — обидві
+            int n = 0;
+            void OwnFiles(XNode node)
+            {
+                var src = node.Str("src");
+                var data = p.File(src);
+                if (data != null)
+                {
+                    var ext = System.IO.Path.GetExtension(src);
+                    if (string.IsNullOrEmpty(ext)) ext = ".png";
+                    string path = name + (n == 0 ? "" : "_" + n) + ext;
+                    while (p.File(path) != null) { n++; path = name + "_" + n + ext; }
+                    n++;
+                    p.SetFile(path, data);
+                    node.Set("src", path);
+                }
+                foreach (var c in node.Elements) OwnFiles(c);
+            }
+            OwnFiles(copy);
             p.Resources.Kids.Add(copy);
             var g = p.Meta.Gen(res.Str("name"));
             if (g != null) p.Meta.Generators[name] = g.Copy();
