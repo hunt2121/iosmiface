@@ -155,7 +155,7 @@ namespace BandFace
                 double dpi = VisualTreeHelper.GetDpi(this).DpiScaleY;
                 _lookRenderer.ColorVariant = _lookColor;
                 var img = _lookRenderer.Render(_lookStyles[_lookStyle].Item2, Math.Max(328, CapsuleInner.Height * dpi * 1.5) / _lookProject.Meta.Device.Height).Image;
-                PreviewImage.Source = img;
+                Sharp.Show(PreviewImage, img);
             }
             catch (Exception ex) { AddLog("look: " + ex.Message); }
             finally { _lookRenderer.ColorVariant = 0; }

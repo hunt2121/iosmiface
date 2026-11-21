@@ -603,7 +603,7 @@ namespace BandFace
         void RefreshFace()
         {
             StopAnimation();
-            PreviewImage.Source = null;
+            Sharp.Show(PreviewImage, null);
             if (_face == null)
             {
                 FaceName.Text = S.Get("noFile");
@@ -636,12 +636,12 @@ namespace BandFace
             var shots = FacePreview.Render(data, Math.Max(328, CapsuleInner.Height * dpi * 1.5));
             if (shots != null && shots.Frames.Count > 0)
             {
-                PreviewImage.Source = shots.Frames[0];
+                Sharp.Show(PreviewImage, shots.Frames[0]);
                 if (shots.Frames.Count > 1)
                 {
                     int i = 0;
                     _anim = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(shots.IntervalMs) };
-                    _anim.Tick += (s, e) => { i = (i + 1) % shots.Frames.Count; PreviewImage.Source = shots.Frames[i]; };
+                    _anim.Tick += (s, e) => { i = (i + 1) % shots.Frames.Count; Sharp.Show(PreviewImage, shots.Frames[i]); };
                     _anim.Start();
                 }
                 return;
@@ -652,7 +652,7 @@ namespace BandFace
                 if (p == null) return;
                 var bmp = BitmapSource.Create(p.Width, p.Height, 96, 96, PixelFormats.Bgra32, null, p.Bgra, p.Width * 4);
                 bmp.Freeze();
-                PreviewImage.Source = bmp;
+                Sharp.Show(PreviewImage, bmp);
             }
             catch (Exception) { }
         }
