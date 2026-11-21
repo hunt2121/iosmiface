@@ -8,7 +8,7 @@ namespace BandFace.Store
     /// <summary>
     /// «👁 4.8k   ↓ 1.1k» (спершу перегляди, потім завантаження) — значки й числа малюються як контури й ставляться за чорнилом (межами самих штрихів),
     /// а не за рамками тексту, у яких різні порожні поля:
-    /// від значка до числа рівно 3 px, стрілка заввишки з цифри, око — 80% (значки — як в iOS), по вертикалі центр чорнила значків — на центрі цифр, а та — по центру елемента.
+    /// від значка до числа рівно 3 px, стрілка на піксель вища й нижча за цифри, око заввишки з цифри (значки — як в iOS), по вертикалі центр чорнила значків — на центрі цифр, а та — по центру елемента.
     /// Пари разом, уся група по центру; між парами MinGap (14 px).
     /// Spread = true: малі числа трохи розсунуті — проміжок від MinGap + 10 до MinGap зі зростанням чисел (у масштабі шрифту).
     /// </summary>
@@ -37,14 +37,14 @@ namespace BandFace.Store
 
         /// <summary>Стрілка до риски: штрих 2.1, круглі кінці</summary>
         static Geometry ArrowShape() =>
-            ArrowLines.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.1) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round });
+            ArrowLines.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.5) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round });
 
         /// <summary>Око: контур і суцільна зіниця</summary>
         static Geometry EyeShape()
         {
             var g = new GeometryGroup { FillRule = FillRule.Nonzero };
-            g.Children.Add(EyeLine.GetWidenedPathGeometry(new Pen(Brushes.Black, 1.9) { LineJoin = PenLineJoin.Round }));
-            g.Children.Add(new EllipseGeometry(new Point(12, 12), 3.5, 3.5));
+            g.Children.Add(EyeLine.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.3) { LineJoin = PenLineJoin.Round }));
+            g.Children.Add(new EllipseGeometry(new Point(12, 12), 3.6, 3.6));
             return g;
         }
 
@@ -79,9 +79,10 @@ namespace BandFace.Store
             // вертикаль і розмір — за плоскою цифрою «1» (від базової лінії до висоти великих літер);
             // кругла «0» виступає вгору й униз, і стрілка за нею виходила більшою й нижчою
             var digits = Outline("1", Text, TextSize).Bounds;
-            // стрілка — рівно заввишки з цифри, око — 80% (як в iOS)
-            var arrow = Scaled(ArrowShape(), digits.Height);
-            var eye = Scaled(EyeShape(), digits.Height * 0.8);
+            // як в iOS: стрілка на піксель вища й нижча за цифри, око — заввишки з цифри; штрихи трохи товщі за текст
+            double px = 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
+            var arrow = Scaled(ArrowShape(), digits.Height + 2 * px);
+            var eye = Scaled(EyeShape(), digits.Height);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
@@ -108,6 +109,10 @@ namespace BandFace.Store
             Draw(dc, arrow, x2 - ra.Left, cy - (ra.Top + ra.Bottom) / 2);
             Draw(dc, d, x2 + ra.Width + IconGap - rd.Left, textDy);
         }
+
+        /// <summary>Висота плоскої цифри «1» (від базової лінії до верху) у Segoe UI розміру size</summary>
+        public static double DigitHeight(double size) =>
+            new FormattedText("1", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, Text, size, Brushes.Black, 1).BuildGeometry(new Point(0, 0)).Bounds.Height;
 
         static Rect Ink(Geometry g) => g.Bounds.IsEmpty ? new Rect(0, 0, 0, 0) : g.Bounds;
 

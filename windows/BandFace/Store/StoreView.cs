@@ -385,15 +385,19 @@ namespace BandFace.Store
             };
         }
 
-        /// <summary>Низ картки: тонка лінія, під нею перегляди й завантаження — рівно посередині між лінією й кнопкою;
+        /// <summary>Низ картки: тонка лінія, під нею перегляди й завантаження; від тексту до лінії, від лінії до цифр і від цифр до кнопки — однаково;
         /// пари разом по центру, малі числа трохи розсунуті (проміжок від 28 до 18)</summary>
         FrameworkElement CardButton(StoreEntry e, Button btn)
         {
             var st = StatsOf(e);
+            // від низу напису «вага · версія» до лінії, від лінії до верху цифр і від низу цифр до кнопки — однаково:
+            // 10 + частина рядка Segoe UI 12 під базовою лінією
+            var ff = new FontFamily("Segoe UI");
+            double gap = 10 + (ff.LineSpacing - ff.Baseline) * 12, dh = StatsRow.DigitHeight(12), rowH = 18, m = gap - (rowH - dh) / 2;
             var sp = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
             sp.Children.Add(new Border { Height = 1, Background = BrushOf("CardBorder") });
-            sp.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, MinGap = 18, Height = 18,
-                Margin = new Thickness(0, 9, 0, 9) });
+            sp.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, MinGap = 18, Height = rowH,
+                Margin = new Thickness(0, m, 0, m) });
             btn.Height = 32;
             sp.Children.Add(btn);
             return sp;
