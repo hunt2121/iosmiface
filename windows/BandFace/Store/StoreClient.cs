@@ -360,7 +360,14 @@ namespace BandFace.Store
         /// <summary>«Англійська · 12 год» — назва мовою інтерфейсу</summary>
         public static string Label(StoreVariant v)
         {
-            var title = LanguageName(v.Key.Length >= 2 ? v.Key.Substring(0, 2) : v.Key);
+            var code = v.Key.Length >= 2 ? v.Key.Substring(0, 2) : v.Key;
+            // англійська з AM/PM — це англійська для США
+            if (code == "en" && v.Clock == "12h")
+            {
+                try { var us = new CultureInfo("en-US").DisplayName; return us.Length > 0 ? char.ToUpper(us[0]) + us.Substring(1) : us; }
+                catch (Exception) { }
+            }
+            var title = LanguageName(code);
             return v.Clock == "12h" ? title + " · " + S.Get("clock12short") : v.Clock == "24h" ? title + " · " + S.Get("clock24short") : title;
         }
 
