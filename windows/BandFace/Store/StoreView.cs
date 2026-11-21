@@ -40,11 +40,16 @@ namespace BandFace.Store
         StoreCatalog _catalog;
         string _filter = "all";
         string _sort = "date";
-        /// <summary>Сортування (порядок у меню): ключ → рядок назви. Числа — з сервера, спочатку більше</summary>
-        static readonly Dictionary<string, string> SortTitles = new Dictionary<string, string>
+        /// <summary>Протилежний до звичного напрямок: старі першими, найменше переглядів/завантажень першими</summary>
+        bool _sortReversed;
+        /// <summary>Сортування (порядок у меню): ключ → рядки назви (звичний напрямок, протилежний). Числа — з сервера</summary>
+        static readonly Dictionary<string, string[]> SortTitles = new Dictionary<string, string[]>
         {
-            ["date"] = "storeSortNew", ["views"] = "storeSortViews", ["downloads"] = "storeSortDownloads",
+            ["date"] = new[] { "storeSortNew", "storeSortOld" },
+            ["views"] = new[] { "storeSortViews", "storeSortViewsFew" },
+            ["downloads"] = new[] { "storeSortDownloads", "storeSortDownloadsFew" },
         };
+        string SortTitle(string key) => S.Get(SortTitles[key][key == _sort && _sortReversed ? 1 : 0]);
         string _error;
         bool _loading;
         readonly Dictionary<string, string> _variantOverride = new Dictionary<string, string>();
@@ -178,13 +183,18 @@ namespace BandFace.Store
             // нижній відступ 10 + 8 під кожною капсулою = 18 до карток
             var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 10), LastChildFill = false };
             // висота як у плиток категорій — один рівний ряд
-            var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = S.Get(SortTitles[_sort]) + "  " };
+            var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = SortTitle(_sort) + "  " };
             sort.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
             var menu = new ContextMenu();
             foreach (var kv in SortTitles)
             {
                 var key = kv.Key;
-                Creator.Ui.MenuAdd(menu, S.Get(kv.Value), _sort == key ? "" : null, () => { _sort = key; RenderList(); });
+                // вибраний пункт ще раз — протилежний напрямок
+                Creator.Ui.MenuAdd(menu, SortTitle(key), _sort == key ? "" : null, () =>
+                {
+                    if (_sort == key) _sortReversed = !_sortReversed; else { _sort = key; _sortReversed = false; }
+                    RenderList();
+                });
             }
             sort.Click += (s, e) => { menu.PlacementTarget = sort; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true; };
             DockPanel.SetDock(sort, Dock.Right);
@@ -238,6 +248,7 @@ namespace BandFace.Store
             faces = _sort == "date"
                 ? faces.OrderByDescending(f => Day(f.Added ?? f.Updated) ?? DateTime.MinValue)
                 : faces.OrderByDescending(Count).ThenByDescending(f => Day(f.Added ?? f.Updated) ?? DateTime.MinValue);
+            if (_sortReversed) faces = faces.Reverse();
             var list = faces.ToList();
             if (list.Count == 0)
             {
