@@ -892,8 +892,11 @@ namespace BandFace
             if (be == null) return S.Get("errGeneric", ex.Message);
             switch (be.Kind)
             {
-                case ErrorKind.InvalidAuthKey:
                 case ErrorKind.AuthKeyMismatch:
+                    // браслет довів, що ключ не його: стираємо ключ і просимо новий (інакше програма й далі пробує старим)
+                    Dispatcher.BeginInvoke(new Action(KeyRejected));
+                    return S.Get("keyRejected");
+                case ErrorKind.InvalidAuthKey:
                 case ErrorKind.NotAuthenticated: return S.Get("errAuth");
                 case ErrorKind.Timeout:
                 case ErrorKind.SessionOpenFailed: return S.Get("errTimeout");
@@ -1001,6 +1004,22 @@ namespace BandFace
             KeyNotice.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
             KeyStateIcon.Text = ok ? "\uE73E" : "\uE783";   // ✓ або «!» у колі, як в iOS
             KeyStateIcon.Foreground = (Brush)FindResource(ok ? "Ok" : "Err");
+        }
+
+        /// <summary>Ключ не підходить до браслета: стерти збережений, відключитися (без автопідключення) й відкрити сторінку «Ключ»</summary>
+        void KeyRejected()
+        {
+            if (KeyBox.Text.Length == 0) return;
+            AddLog("key rejected by the band: cleared");
+            Storage.SaveKey("");
+            KeyBox.Text = "";
+            Storage.SaveText("auto", "0");
+            try { if (_ble.IsConnected) _ble.Disconnect(); } catch (Exception) { }
+            RefreshBand();
+            NavSettings.IsChecked = true;
+            ShowSettingsPage(PageKey);
+            KeyMessage.Text = S.Get("keyRejected");
+            KeyMessage.Foreground = (Brush)FindResource("Err");
         }
 
         void KeyBox_TextChanged(object sender, TextChangedEventArgs e)
