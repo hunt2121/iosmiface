@@ -385,23 +385,18 @@ namespace BandFace.Store
             };
         }
 
-        /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), «піднята»: колір картки з м'якою тінню;
-        /// пари разом по центру, малі числа трохи розсунуті (StatsRow.Spread)</summary>
+        /// <summary>Низ картки: тонка лінія, під нею перегляди й завантаження — рівно посередині між лінією й кнопкою;
+        /// пари разом по центру, малі числа трохи розсунуті (проміжок від 28 до 18)</summary>
         FrameworkElement CardButton(StoreEntry e, Button btn)
         {
             var st = StatsOf(e);
-            const double visible = 22, under = 8;
-            var g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
-            // тінь — лише у підкладки (ефект на Border з текстом затінив би й цифри)
-            g.Children.Add(new Border { Height = visible + under, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0),
-                CornerRadius = new CornerRadius(6), Background = BrushOf("StatsTab"),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 6, ShadowDepth = 1, Direction = 270, Opacity = 0.22, Color = Colors.Black } });
-            g.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, Height = visible,
-                VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0) });
-            // під кнопкою — непрозора підкладка кольору картки: вимкнена кнопка напівпрозора, капсула крізь неї не просвічує
+            var sp = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
+            sp.Children.Add(new Border { Height = 1, Background = BrushOf("CardBorder") });
+            sp.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, MinGap = 18, Height = 18,
+                Margin = new Thickness(0, 9, 0, 9) });
             btn.Height = 32;
-            g.Children.Add(new Border { Margin = new Thickness(0, visible, 0, 0), CornerRadius = new CornerRadius(5), Background = BrushOf("Card"), Child = btn });
-            return g;
+            sp.Children.Add(btn);
+            return sp;
         }
 
         /// <summary>Сторінка запису за ID (для знімків екрана на збірковому сервері)</summary>
