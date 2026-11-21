@@ -51,6 +51,19 @@ final class FaceEditorTests: XCTestCase {
         XCTAssertEqual(r.manifestBytes, p.manifestBytes)
         XCTAssertEqual(r.files, p.files)
         XCTAssertEqual(try r.compile().0, try p.compile().0)
+        // стилі: копія стилю й AOD до неї не додають файлів; порядок тем — стиль, [AOD], стиль, AOD
+        let files = p.files.count
+        var s2 = 0, a2 = 0
+        p.edit { s2 = ElementFactory.addStyle($0, copyOf: 0) }
+        p.edit { a2 = ElementFactory.addAod($0, style: s2) }
+        XCTAssertEqual(p.files.count, files)
+        XCTAssertEqual(p.styleThemes.count, 2)
+        XCTAssertEqual(p.aodTheme(forStyle: s2), a2)
+        XCTAssertEqual(p.styleNumber(of: a2), 2)
+        p.edit { ElementFactory.deleteStyle($0, style: s2) }
+        XCTAssertEqual(p.files.count, files)          // спільні картинки лишилися
+        XCTAssertEqual(p.styleThemes.count, 1)
+        _ = try p.compile()
         // і через шлях із символьним посиланням (на iOS /var -> /private/var)
         let link = FileManager.default.temporaryDirectory.appendingPathComponent("link-\(UUID().uuidString)")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: p.folder)
