@@ -239,9 +239,13 @@ enum StoreVariants {
         return best(keys.filter { variants[$0]!.langs.contains("*") }) ?? best(keys)
     }
 
-    /// «Англійська · 12 год» — назва мовою інтерфейсу
+    /// «Англійська · 24 год», «Англійська (США)» для 12 год — назва мовою інтерфейсу
     static func label(_ key: String, _ v: RemoteCatalog.Variant) -> String {
         let code = String(key.prefix(2))
+        // англійська з AM/PM — це англійська для США
+        if code == "en", v.clock == "12h", let us = Locale.current.localizedString(forIdentifier: "en_US") {
+            return us.prefix(1).uppercased() + us.dropFirst()
+        }
         let name = Locale.current.localizedString(forLanguageCode: code) ?? code
         let title = name.prefix(1).uppercased() + name.dropFirst()
         switch v.clock {
