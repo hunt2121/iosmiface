@@ -35,6 +35,8 @@ struct RemoteCatalog: Codable {
         let sha256: String
         let langs: [String]
         let clock: String?
+        /// Порядок дати на циферблаті: "dmy", "mdy" (США) або nil — не важливо
+        let date: String?
         let bands: [Int]?
         let download: String
         let colors: [String]
@@ -201,7 +203,7 @@ enum StoreVersions {
 }
 
 /// Вибір варіанта: пристрій, потім мова телефона (за списком мов у налаштуваннях), інакше «для всіх інших»
-/// ("*"); серед них — той, чий формат часу збігається з налаштуванням телефона (точний збіг важливіший)
+/// ("*"); серед них — той, де збігаються формат часу й порядок дати з налаштуваннями телефона (час важливіший)
 enum StoreVariants {
     /// Мови телефона в порядку налаштувань: ["uk", "en"]
     static var phoneLanguages: [String] {
@@ -219,6 +221,13 @@ enum StoreVariants {
         return f.contains("a") ? "12h" : "24h"
     }
 
+    /// Порядок дати на телефоні: "mdy" (місяць перед днем, як у США) або "dmy"
+    static var phoneDate: String {
+        let f = DateFormatter.dateFormat(fromTemplate: "dM", options: 0, locale: .current) ?? ""
+        guard let m = f.firstIndex(of: "M"), let d = f.firstIndex(of: "d") else { return "dmy" }
+        return m < d ? "mdy" : "dmy"
+    }
+
     /// Варіанти для пристрою (модель Smart Band; невідома — 10)
     static func forBand(_ variants: [String: RemoteCatalog.Variant], _ band: Int) -> [String: RemoteCatalog.Variant] {
         let fit = variants.filter { $0.value.bands?.contains(band) ?? true }
@@ -227,9 +236,17 @@ enum StoreVariants {
 
     static func choose(_ all: [String: RemoteCatalog.Variant], band: Int) -> String? {
         let variants = forBand(all, band)
-        let clock = phoneClock
+        let clock = phoneClock, date = phoneDate
+        // серед варіантів мови: збігаються і час, і порядок дати → лише час → лише дата → будь-який.
+        // «Будь-який» формат часу і «не важливо» для дати підходять до всього; точний збіг важливіший
         func best(_ keys: [String]) -> String? {
-            keys.first { variants[$0]?.clock == clock } ?? keys.first { variants[$0]?.clock == nil } ?? keys.first
+            func score(_ k: String) -> Int {
+                let v = variants[k]!
+                let c = v.clock == clock ? 2 : (v.clock == nil ? 1 : 0)
+                let d = v.date == date ? 2 : (v.date == nil ? 1 : 0)
+                return (c > 0 ? 100 : 0) + (d > 0 ? 10 : 0) + 2 * (c + d) + (d == 2 ? 1 : 0)   // нічия — за точним порядком дати
+            }
+            return keys.max { score($0) < score($1) || (score($0) == score($1) && $0 > $1) }
         }
         let keys = variants.keys.sorted()
         for lang in phoneLanguages {
@@ -239,17 +256,13 @@ enum StoreVariants {
         return best(keys.filter { variants[$0]!.langs.contains("*") }) ?? best(keys)
     }
 
-    /// «Англійська · 24 год», «Англійська (США)» для 12 год — назва мовою інтерфейсу
+    /// «Англійська · 24 год»; англійська з датою місяць/день — «Англійська (США)» — назва мовою інтерфейсу
     static func label(_ key: String, _ v: RemoteCatalog.Variant) -> String {
         let code = String(key.prefix(2))
-        // англійська з AM/PM — це англійська для США
-        // «Англійська (США)» — коротко, а не «(Сполучені Штати)»
-        if code == "en", v.clock == "12h" {
-            let en = Locale.current.localizedString(forLanguageCode: "en") ?? "English"
-            return en.prefix(1).uppercased() + en.dropFirst() + " (" + String(localized: "США") + ")"
-        }
         let name = Locale.current.localizedString(forLanguageCode: code) ?? code
-        let title = name.prefix(1).uppercased() + name.dropFirst()
+        var title = name.prefix(1).uppercased() + name.dropFirst()
+        // «(США)» — коротко, а не «(Сполучені Штати)»
+        if code == "en", v.date == "mdy" { title += " (" + String(localized: "США") + ")" }
         switch v.clock {
         case "12h": return title + " · " + String(localized: "12 год")
         case "24h": return title + " · " + String(localized: "24 год")
@@ -260,8 +273,8 @@ enum StoreVariants {
     /// Текст мовою телефона, інакше першою мовою варіанта, інакше англійською чи українською
     static func text(_ dict: [String: String], variant: RemoteCatalog.Variant?) -> String {
         var order = phoneLanguages + (variant?.langs.filter { $0 != "*" } ?? []) + ["en", "uk"]
-        // англійська з AM/PM (США) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
-        if variant?.clock == "12h", variant?.langs.contains("en") == true, let i = order.firstIndex(of: "en") { order.insert("en-US", at: i) }
+        // англійська США (дата місяць/день) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
+        if variant?.date == "mdy", variant?.langs.contains("en") == true, let i = order.firstIndex(of: "en") { order.insert("en-US", at: i) }
         for l in order { if let s = dict[l], !s.isEmpty { return s } }
         return dict.values.first { !$0.isEmpty } ?? ""
     }
