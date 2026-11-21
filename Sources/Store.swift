@@ -339,7 +339,6 @@ struct StoreView: View, Equatable {
             // рядок ховаємо, місце лишаємо (картка не стрибає)
             Divider().padding(.horizontal, 2)
             StoreStatsCardRow(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
-                .padding(.vertical, 9)
                 .opacity(state(item) == .installing ? 0 : 1)
             FaceActionButton(state: state(item), price: item.buyText, busy: busy,
                              progress: progress, progressText: progressText) {

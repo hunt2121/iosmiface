@@ -301,11 +301,23 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.textFont(.caption1), roomy: true, minGap: 18)
-            .frame(height: 18)
+                      font: Self.font, roomy: true, minGap: 18)
+            .frame(height: Self.font.lineHeight)
+            .padding(.top, Self.insets.top)
+            .padding(.bottom, Self.insets.bottom)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
     }
+
+    static let font = StoreStatsRow.textFont(.caption1)
+
+    /// Відступи рядка: від лінії до верху цифр і від низу цифр до кнопки — стільки ж, скільки від низу напису
+    /// «вага · версія» до лінії (8 pt + частина рядка підписів під базовою лінією)
+    static let insets: (top: CGFloat, bottom: CGFloat) = {
+        let f = font
+        let gap = 8 + (f.lineHeight - f.ascender)
+        return (gap - (f.ascender - StoreStatsRow.digitHeight(f)), gap - (f.lineHeight - f.ascender))
+    }()
 }
 
 /// Рядок у плашці «Розмір · Версія · Пристрої» на сторінці циферблата: «👁 3.4k переглядів   ↓ 1.2k завантажень» —
