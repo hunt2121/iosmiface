@@ -156,7 +156,14 @@ namespace BandFace.Creator
             ScreenBox.Items.Clear();
             var ts = project.Themes;
             for (int i = 0; i < ts.Count; i++)
-                ScreenBox.Items.Add(new ComboBoxItem { Content = ts[i].Str("type") == "AOD" ? S.Get("screenAod") : S.Get("screenMain"), Tag = i });
+            {
+                // кілька стилів — «Стиль 2 · Спорт» і «Стиль 2 · Завжди на екрані»; один — як раніше
+                bool many = project.StyleThemes().Count > 1;
+                string label = project.IsAod(i)
+                    ? (many ? S.Get("styleN", project.StyleNumber(i)) + " · " + S.Get("screenAod") : S.Get("screenAod"))
+                    : (many ? project.StyleTitle(i) : S.Get("screenMain"));
+                ScreenBox.Items.Add(new ComboBoxItem { Content = label, Tag = i });
+            }
             ScreenBox.SelectedIndex = Math.Min(theme, ts.Count - 1);
             ScreenBox.IsEnabled = ts.Count > 1;
             syncingList = false;
