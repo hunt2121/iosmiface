@@ -31,19 +31,33 @@ namespace BandFace.Store
         const double IconGap = 3;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);   // як підписи поруч
 
-        // Значки як в iOS (SF Symbols arrow.down.to.line і eye), у полі 24×24: лінії, що потім «товщають» пером
-        static readonly Geometry ArrowLines = Geometry.Parse("M12,3 L12,15.5 M6.5,10 L12,15.5 L17.5,10 M5,20.5 L19,20.5");
+        // Око як в iOS (SF Symbols eye), у полі 24×24: лінія, що потім «товщає» пером
         static readonly Geometry EyeLine = Geometry.Parse("M1.8,12 C4,7.7 7.7,5.2 12,5.2 C16.3,5.2 20,7.7 22.2,12 C20,16.3 16.3,18.8 12,18.8 C7.7,18.8 4,16.3 1.8,12 Z");
 
-        /// <summary>Стрілка до риски: штрих 2.1, круглі кінці</summary>
-        static Geometry ArrowShape() =>
-            ArrowLines.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.5) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round });
+        const double EyeStroke = 2.3;
+
+        /// <summary>Стрілка до риски рівно по чорнилу width × height: риска внизу на всю ширину, наконечник; лінії line (як в ока)</summary>
+        static Geometry ArrowShape(double width, double height, double line)
+        {
+            double span = height - line, cx = width / 2, top = line / 2, tip = top + span * 0.714, arm = span * 0.343;
+            var g = new PathGeometry();
+            void Line(params Point[] pts)
+            {
+                var f = new PathFigure { StartPoint = pts[0], IsClosed = false };
+                for (int i = 1; i < pts.Length; i++) f.Segments.Add(new LineSegment(pts[i], true));
+                g.Figures.Add(f);
+            }
+            Line(new Point(cx, top), new Point(cx, tip));
+            Line(new Point(cx - arm, tip - arm), new Point(cx, tip), new Point(cx + arm, tip - arm));
+            Line(new Point(line / 2, height - line / 2), new Point(width - line / 2, height - line / 2));
+            return g.GetWidenedPathGeometry(new Pen(Brushes.Black, line) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }).GetFlattenedPathGeometry();
+        }
 
         /// <summary>Око: контур і суцільна зіниця</summary>
         static Geometry EyeShape()
         {
             var g = new GeometryGroup { FillRule = FillRule.Nonzero };
-            g.Children.Add(EyeLine.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.3) { LineJoin = PenLineJoin.Round }));
+            g.Children.Add(EyeLine.GetWidenedPathGeometry(new Pen(Brushes.Black, EyeStroke) { LineJoin = PenLineJoin.Round }));
             g.Children.Add(new EllipseGeometry(new Point(12, 12), 3.6, 3.6));
             return g;
         }
@@ -79,10 +93,12 @@ namespace BandFace.Store
             // вертикаль і розмір — за плоскою цифрою «1» (від базової лінії до висоти великих літер);
             // кругла «0» виступає вгору й униз, і стрілка за нею виходила більшою й нижчою
             var digits = Outline("1", Text, TextSize).Bounds;
-            // як в iOS: стрілка на піксель вища й нижча за цифри, око — заввишки з цифри; штрихи трохи товщі за текст
+            // як в iOS: око заввишки з цифри; стрілка завширшки з око, на піксель вища й нижча за цифри, лінії як в ока
             double px = 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
-            var arrow = Scaled(ArrowShape(), digits.Height + 2 * px);
-            var eye = Scaled(EyeShape(), digits.Height);
+            var eyeRaw = EyeShape();
+            var eye = Scaled(eyeRaw, digits.Height);
+            double eyeLine = EyeStroke * digits.Height / eyeRaw.Bounds.Height;
+            var arrow = ArrowShape(Ink(eye).Width, digits.Height + 2 * px, eyeLine);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
