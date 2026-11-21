@@ -10,8 +10,8 @@ namespace BandFace.Store
     /// а не за рамками тексту, у яких різні порожні поля:
     /// від значка до числа рівно 3 px, стрілка заввишки з цифри, по вертикалі всі по центру висоти цифр, а та — по центру елемента.
     /// Разом (Spread = false): між парами 14 px, уся група по центру.
-    /// Розведено (Spread = true, картка магазину): центри пар на 18% ширини від середини, але між парами не менше 16 px —
-    /// малі числа не злипаються посередині, великі не налазять на краї.
+    /// Розведено (Spread = true, картка магазину): центри пар на 28% ширини від середини, між парами не менше 16 px
+    /// і не менше 8 px від країв — малі числа не злипаються посередині, великі не налазять на краї (як на iPhone).
     /// </summary>
     sealed class StatsRow : FrameworkElement
     {
@@ -27,7 +27,7 @@ namespace BandFace.Store
 
         /// <summary>Segoe MDL2 Assets: «Завантажити» і «Переглянути»</summary>
         const string ArrowGlyph = "\uE896", EyeGlyph = "\uE890";
-        const double IconGap = 3, PairGap = 14, MinPairGap = 16, SpreadShare = 0.18;
+        const double IconGap = 3, PairGap = 14, MinPairGap = 16, SpreadShare = 0.28, Edge = 8;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
         static readonly Typeface Icons = new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
@@ -68,6 +68,10 @@ namespace BandFace.Store
                 x2 = c + off - w2 / 2;
                 double gap = x2 - (x1 + w1);
                 if (gap < MinPairGap) { x1 -= (MinPairGap - gap) / 2; x2 += (MinPairGap - gap) / 2; }
+                if (x1 < Edge) x1 = Edge;
+                if (x2 + w2 > w - Edge) x2 = w - Edge - w2;
+                // зовсім не вміщається — разом по центру
+                if (x2 - (x1 + w1) < MinPairGap) { x1 = (w - (w1 + MinPairGap + w2)) / 2; x2 = x1 + w1 + MinPairGap; }
             }
             else
             {
