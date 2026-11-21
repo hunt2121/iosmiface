@@ -387,17 +387,19 @@ namespace BandFace.Store
                 BorderThickness = new Thickness(1), Margin = new Thickness(20, 0, 20, 12), Child = row };
         }
 
-        /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), колір фону сторінки;
+        /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), «піднята»: колір картки з м'якою тінню;
         /// пари разом по центру, малі числа трохи розсунуті (StatsRow.Spread)</summary>
         FrameworkElement CardButton(StoreEntry e, Button btn)
         {
             var st = StatsOf(e);
             const double visible = 22, under = 8;
             var g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
-            var tab = new Border { Height = visible + under, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0),
-                CornerRadius = new CornerRadius(6), Background = BrushOf("Bg"),
-                Child = new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, Height = visible, VerticalAlignment = VerticalAlignment.Top } };
-            g.Children.Add(tab);
+            // тінь — лише у підкладки (ефект на Border з текстом затінив би й цифри)
+            g.Children.Add(new Border { Height = visible + under, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0),
+                CornerRadius = new CornerRadius(6), Background = BrushOf("StatsTab"),
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 6, ShadowDepth = 1, Direction = 270, Opacity = 0.22, Color = Colors.Black } });
+            g.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, Height = visible,
+                VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0) });
             // під кнопкою — непрозора підкладка кольору картки: вимкнена кнопка напівпрозора, капсула крізь неї не просвічує
             btn.Height = 32;
             g.Children.Add(new Border { Margin = new Thickness(0, visible, 0, 0), CornerRadius = new CornerRadius(5), Background = BrushOf("Card"), Child = btn });
