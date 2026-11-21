@@ -202,12 +202,13 @@ namespace BandFace.Store
             // «Усі», «Безкоштовні», «Платні» — такі самі категорії, як категорії циферблатів (лише не з сервера).
             // Один рядок: що не вміщається — у меню кнопки «Ще»
             var chips = new CategoryRow { Margin = new Thickness(0, 0, 16, 0) };
-            var filters = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("all", S.Get("storeAll")) };
-            if (_catalog.Faces.Any(f => f.Price != null))
+            // як в iOS: «Усі», «Платні», «Безкоштовні» — завжди, навіть коли платних ще немає
+            var filters = new List<KeyValuePair<string, string>>
             {
-                filters.Add(new KeyValuePair<string, string>("free", S.Get("storeFree")));
-                filters.Add(new KeyValuePair<string, string>("paid", S.Get("storePaid")));
-            }
+                new KeyValuePair<string, string>("all", S.Get("storeAll")),
+                new KeyValuePair<string, string>("paid", S.Get("storePaid")),
+                new KeyValuePair<string, string>("free", S.Get("storeFree")),
+            };
             foreach (var c in _catalog.Categories.Where(c => _catalog.Faces.Any(f => f.Kinds.Contains(c.Key))))
                 filters.Add(new KeyValuePair<string, string>(c.Key, CategoryName(c.Key)));
             foreach (var f in filters)
