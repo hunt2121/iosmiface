@@ -334,11 +334,12 @@ struct InfoFlow: Layout {
 }
 
 extension InfoIcon.Kind {
-    /// Оптичне підрівнювання значка по вертикалі (pt): «−» — вгору, «+» — вниз
+    /// Оптичне підрівнювання значка по вертикалі (pt): «−» — вгору, «+» — вниз.
+    /// Сумісність, Мова, Категорії — рівно по центру великих літер підпису; Оновлено — трохи вище
     var nudge: CGFloat {
         switch self {
-        case .band, .calendar, .globe: return -0.5
-        case .tag: return 0.5
+        case .band, .globe, .tag: return 1.0 / 6
+        case .calendar: return -0.5
         default: return 0
         }
     }
