@@ -182,8 +182,9 @@ struct StoreView: View, Equatable {
     /// reversed — протилежний до звичного напрямок
     @State private var sortKey = StoreSort.date.rawValue
     @State private var sortReversed = false
-    /// Перегляди й завантаження всіх записів (з сервера) — для сортування й капсули на картці; без мережі порожньо
-    @State private var stats: [String: StoreServer.FaceStats] = [:]
+    /// Перегляди й завантаження всіх записів — для сортування й капсули на картці;
+    /// одразу збережені з диска, потім свіжі з сервера (не відповів — лишаються збережені)
+    @State private var stats: [String: StoreServer.FaceStats] = StoreServer.cachedStats()
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
@@ -287,7 +288,7 @@ struct StoreView: View, Equatable {
 
     /// Числа для сортування за переглядами й завантаженнями
     private func loadStats() async {
-        if let all = await StoreServer.stats() { stats = all }
+        stats = await StoreServer.stats()
     }
 
     /// Пункти фільтра: (ідентифікатор, назва)
@@ -304,8 +305,7 @@ struct StoreView: View, Equatable {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        let showStats = !stats.isEmpty
-        return VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             // від капсули до букв назви — стільки ж, скільки від верху картки до капсули (12 + 10 відступу картки)
             FaceCapsule(image: item.preview, active: item.id == activeID, animation: item.animation)
                 .frame(maxWidth: .infinity)
@@ -333,15 +333,14 @@ struct StoreView: View, Equatable {
                 .lineLimit(1)
             }
             .padding(.horizontal, 2)
-            .padding(.bottom, showStats ? 8 : 10)
+            .padding(.bottom, 8)
 
-            // завантаження й перегляди — капсула з-за кнопки (кнопка намальована поверх);
+            // завантаження й перегляди — капсула з-за кнопки (кнопка намальована поверх), завжди;
+            // ще не відкривали чи чисел немає зовсім — 0
             // під час встановлення смужка прогресу прозора — капсулу ховаємо, місце лишаємо (картка не стрибає)
             VStack(spacing: -StoreStatsTab.under) {
-                if showStats {
-                    StoreStatsTab(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
-                        .opacity(state(item) == .installing ? 0 : 1)
-                }
+                StoreStatsTab(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
+                    .opacity(state(item) == .installing ? 0 : 1)
                 FaceActionButton(state: state(item), price: item.buyText, busy: busy,
                                  progress: progress, progressText: progressText) {
                     onInstall(item)
@@ -546,8 +545,9 @@ struct StoreDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         // відкрили сторінку: +1 перегляд, потім числа (перемикання мови — той самий запис, не рахується вдруге)
         .task(id: item.key) {
+            if stats == nil { stats = StoreServer.cachedStats()[item.key] }
             await StoreServer.sendView(item.key)
-            if let all = await StoreServer.stats() { stats = all[item.key] }
+            stats = await StoreServer.stats()[item.key] ?? StoreServer.FaceStats(views: 0, downloads: 0)
         }
         .alert(String(localized: "Видалити \(item.name) з пристрою?"), isPresented: $askDelete) {
             Button("Видалити", role: .destructive) { run(.delete) }

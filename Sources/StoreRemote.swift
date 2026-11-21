@@ -103,11 +103,23 @@ enum StoreServer {
         _ = try? await URLSession.shared.data(for: r)
     }
 
-    /// Числа всіх записів; nil — сервер без лічильників або немає мережі
-    static func stats() async -> [String: FaceStats]? {
+    /// Останні отримані числа — на диску, щоб без мережі показувати хоч застарілі
+    private static var statsFile: URL { dir.appendingPathComponent("stats.json") }
+
+    /// Числа з диска (порожньо, якщо ще жодного разу не отримали)
+    static func cachedStats() -> [String: FaceStats] {
+        guard let data = try? Data(contentsOf: statsFile),
+              let r = try? JSONDecoder().decode(StatsResponse.self, from: data) else { return [:] }
+        return r.stats
+    }
+
+    /// Свіжі числа всіх записів (і зберігаємо на диск); сервер не відповів — останні збережені
+    static func stats() async -> [String: FaceStats] {
         guard let base, let r = try? await URLSession.shared.data(from: base.appendingPathComponent("stats.json")),
-              (r.1 as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-        return try? JSONDecoder().decode(StatsResponse.self, from: r.0).stats
+              (r.1 as? HTTPURLResponse)?.statusCode == 200,
+              let fresh = try? JSONDecoder().decode(StatsResponse.self, from: r.0) else { return cachedStats() }
+        try? r.0.write(to: statsFile, options: .atomic)
+        return fresh.stats
     }
 
     private static func local(_ path: String) -> URL { dir.appendingPathComponent(path.replacingOccurrences(of: "/", with: "_")) }
@@ -125,7 +137,7 @@ enum StoreServer {
 
     /// Прибирає з кешу превʼю, на які новий каталог уже не посилається
     private static func prune(_ catalog: RemoteCatalog) {
-        var keep: Set<String> = ["catalog-v3.json"]
+        var keep: Set<String> = ["catalog-v3.json", "stats.json"]
         for e in catalog.faces {
             for v in e.variants.values {
                 for s in v.styles {
