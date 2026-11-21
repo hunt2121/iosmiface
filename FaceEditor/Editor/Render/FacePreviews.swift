@@ -151,16 +151,8 @@ enum FacePreviews {
     static func looks(for data: Data) -> Looks? {
         queue.sync { () -> Looks? in
             guard let project = lookProject(data)?.0 else { return nil }
-            let themes = project.themes
-            var styles: [(String, Int)] = []
-            // старі файли без типів тем: друга тема — AOD
-            if themes.count == 2, themes.allSatisfy({ !$0.has("type") }) {
-                styles = [(themes[0].string("name") ?? "", 0)]
-            } else {
-                for (i, t) in themes.enumerated() where t.string("type") != "AOD" && !project.layouts(i).isEmpty {
-                    styles.append((t.string("name") ?? "", i))
-                }
-            }
+            // стилі — ті самі, що в редакторі (styleThemes: без AOD, старі файли теж); порожні не показуємо
+            let styles = project.styleThemes.filter { !project.layouts($0).isEmpty }.map { (project.theme($0)?.string("name") ?? "", $0) }
             let colors = ColorVariants.colors(project)
             guard styles.count > 1 || colors.count > 1 else { return nil }
             return Looks(styles: styles.map { (name: $0.0, theme: $0.1) }, colors: colors)

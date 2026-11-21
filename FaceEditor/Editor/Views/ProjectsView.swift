@@ -238,11 +238,7 @@ struct ProjectsView: View {
     }
 
     /// Стилі: звичайні теми (у старих файлах без типів тем друга тема — AOD)
-    static func styleCount(_ p: FaceProject) -> Int {
-        let themes = p.themes
-        if themes.count == 2, themes.allSatisfy({ !$0.has("type") }) { return 1 }
-        return max(themes.filter { $0.string("type") != "AOD" }.count, 1)
-    }
+    static func styleCount(_ p: FaceProject) -> Int { max(p.styleThemes.count, 1) }
 
     /// «2 стилі», «5 стилів» мовою інтерфейсу
     static func styles(_ n: Int) -> String {
