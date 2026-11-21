@@ -56,11 +56,12 @@
       </Border>
     </Grid>
 
-    <Grid x:Name="VisualView" Grid.Row="1" Margin="18,0,18,16">
+    <!-- ширини бокових колонок — у SizeChanged: у вузькому вікні вони звужуються, щоб полотну й нижній смузі вистачало місця -->
+    <Grid x:Name="VisualView" Grid.Row="1" Margin="18,0,18,16" SizeChanged="VisualView_SizeChanged">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="284"/>
+        <ColumnDefinition x:Name="LayersCol" Width="284"/>
         <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="370"/>
+        <ColumnDefinition x:Name="InspectorCol" Width="370"/>
       </Grid.ColumnDefinitions>
 
       <!-- Шари -->
@@ -128,14 +129,15 @@
           <!-- Нижня смуга полотна: колір, масштаб, прив'язка -->
           <!-- у вузькому вікні групи переносяться на другий рядок, нічого не обрізається -->
           <WrapPanel Grid.Row="1" Margin="12,6,12,10" HorizontalAlignment="Center">
-            <StackPanel x:Name="Swatches" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,12,2"/>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,16,2">
+            <!-- кольорові варіанти теж переносяться (раніше в один рядок — у вузькому вікні обрізалися разом із сусідами) -->
+            <WrapPanel x:Name="Swatches" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,12,2"/>
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,16,2">
               <TextBlock x:Name="SnapText" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
               <CheckBox x:Name="SnapBox" Style="{StaticResource Switch}" IsChecked="True" VerticalAlignment="Center" Click="Snap_Click"/>
               <TextBlock x:Name="GridText" FontSize="12" VerticalAlignment="Center" Margin="16,0,8,0"/>
               <ComboBox x:Name="GridBox" Width="64" Height="28" SelectionChanged="Grid_Changed"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2">
+            </WrapPanel>
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2">
               <Button Style="{StaticResource IconBtn}" Height="28" Width="28" FontSize="12" Content="&#xE71F;" Click="ZoomOut_Click"/>
               <!-- масштаб можна ввести числом (25–800 %) -->
               <TextBox x:Name="ZoomBox" Width="64" Height="28" FontSize="12" Margin="4,0" HorizontalContentAlignment="Center" KeyDown="ZoomBox_KeyDown" LostKeyboardFocus="ZoomBox_LostFocus"/>
@@ -146,7 +148,7 @@
               <!-- замок: елементи не пересуваються, мишею тягнеться полотно -->
               <ToggleButton x:Name="LockBtn" Style="{StaticResource IconChip}" Width="28" Height="28" Margin="6,0,0,0"
                             FontFamily="Segoe MDL2 Assets" FontSize="13" Content="&#xE785;" Click="Lock_Click"/>
-            </StackPanel>
+            </WrapPanel>
           </WrapPanel>
         </Grid>
       </Border>

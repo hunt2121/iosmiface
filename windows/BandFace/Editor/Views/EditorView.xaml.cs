@@ -619,6 +619,17 @@ namespace BandFace.Creator
 
         // MARK: Кольорові варіанти на полотні
 
+        /// <summary>Бокові колонки (шари 284, властивості 370) звужуються до 200 і 260, щоб полотну лишалося ≥ 320 px —
+        /// інакше нижня смуга (кольори, прив'язка, масштаб, замок) у вузькому вікні обрізалася</summary>
+        void VisualView_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            const double layers = 284, inspector = 370, minLayers = 200, minInspector = 260, canvas = 320, gaps = 28;
+            double free = e.NewSize.Width - gaps - canvas;
+            double k = free >= layers + inspector ? 1 : Math.Max(0, (free - minLayers - minInspector) / (layers + inspector - minLayers - minInspector));
+            LayersCol.Width = new GridLength(minLayers + (layers - minLayers) * k);
+            InspectorCol.Width = new GridLength(minInspector + (inspector - minInspector) * k);
+        }
+
         void RefreshSwatches()
         {
             Swatches.Children.Clear();
@@ -630,7 +641,7 @@ namespace BandFace.Creator
                 int idx = i;
                 var b = new Border
                 {
-                    Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Background = Imaging.Brush(cols[i]), Margin = new Thickness(0, 0, 6, 0),
+                    Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Background = Imaging.Brush(cols[i]), Margin = new Thickness(0, 2, 6, 2),
                     BorderThickness = new Thickness(2), BorderBrush = i == variant ? (Brush)FindResource("Accent") : (Brush)FindResource("CardBorder"),
                     Cursor = Cursors.Hand, ToolTip = i == 0 ? S.Get("baseColor") : cols[i],
                 };
