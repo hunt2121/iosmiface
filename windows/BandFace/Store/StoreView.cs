@@ -854,7 +854,7 @@ namespace BandFace.Store
         static async Task LoadImage(Image img, string path)
         {
             if (string.IsNullOrEmpty(path)) return;
-            if (Images.TryGetValue(path, out var cached)) { img.Source = cached; return; }
+            if (Images.TryGetValue(path, out var cached)) { Sharp.Show(img, cached); return; }
             var data = await StoreClient.FileAsync(path);
             if (data == null) return;
             try
@@ -866,7 +866,7 @@ namespace BandFace.Store
                 bmp.EndInit();
                 bmp.Freeze();
                 Images[path] = bmp;
-                img.Source = bmp;
+                Sharp.Show(img, bmp);
             }
             catch (Exception) { }
         }

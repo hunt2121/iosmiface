@@ -224,7 +224,7 @@ namespace BandFace.Creator
             card.ContextMenu = CardMenu(p);
 
             // мініатюра й вага — коли картки вже на екрані
-            if (thumbs.TryGetValue(key, out var t0)) img.Source = t0;
+            if (thumbs.TryGetValue(key, out var t0)) Sharp.Show(img, t0);
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 try
@@ -234,7 +234,7 @@ namespace BandFace.Creator
                         double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
                         var src = new FaceRenderer(p).Render(0, Math.Max(328, ih * dpi * 1.5) / p.Meta.Device.Height).Image;
                         thumbs[key] = src;
-                        img.Source = src;
+                        Sharp.Show(img, src);
                     }
                     if (!sizes.ContainsKey(key))
                     {
