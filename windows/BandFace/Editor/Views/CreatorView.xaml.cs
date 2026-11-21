@@ -257,12 +257,7 @@ namespace BandFace.Creator
         static string SizeText(int bytes) => bytes >= 1024 * 1024 ? (bytes / 1048576.0).ToString("0.0") + " MB" : Math.Max(1, bytes / 1024) + " KB";
 
         /// <summary>Стилі: звичайні теми (у старих файлах без типів тем друга тема — AOD)</summary>
-        static int StyleCount(FaceProject p)
-        {
-            var themes = p.Themes;
-            if (themes.Count == 2 && themes.All(t => !t.Has("type"))) return 1;
-            return Math.Max(1, themes.Count(t => t.Str("type") != "AOD"));
-        }
+        static int StyleCount(FaceProject p) => Math.Max(1, p.StyleThemes().Count);
 
         ContextMenu CardMenu(FaceProject p)
         {

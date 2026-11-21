@@ -61,12 +61,9 @@ namespace BandFace
                 {
                     var u = FaceProject.Unpack(_faceData);
                     var p = new FaceProject("looks", System.IO.Path.GetTempPath(), u.Item1, u.Item2, new ProjectMeta());
-                    var themes = p.Themes;
-                    var styles = new List<Tuple<string, int>>();
-                    // старі файли без типів тем: друга тема — AOD
-                    if (themes.Count == 2 && themes.All(t => !t.Has("type"))) styles.Add(Tuple.Create(themes[0].Str("name") ?? "", 0));
-                    else for (int i = 0; i < themes.Count; i++)
-                            if (themes[i].Str("type") != "AOD" && p.Layouts(i).Count > 0) styles.Add(Tuple.Create(themes[i].Str("name") ?? "", i));
+                    // стилі — ті самі, що в редакторі (Styles.StyleThemes: без AOD, старі файли теж); порожні не показуємо
+                    var styles = p.StyleThemes().Where(i => p.Layouts(i).Count > 0)
+                        .Select(i => Tuple.Create(p.Theme(i).Str("name") ?? "", i)).ToList();
                     var colors = ColorVariants.Colors(p);
                     if (styles.Count > 1 || colors.Count > 1)
                     {
