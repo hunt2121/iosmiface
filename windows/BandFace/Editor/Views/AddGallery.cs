@@ -407,7 +407,7 @@ namespace BandFace.Creator
         void UpdatePreview()
         {
             UpdateNext();
-            if (item == null) { preview.Source = null; previewTitle.Text = ""; previewText.Text = ""; return; }
+            if (item == null) { Sharp.Show(preview, null); previewTitle.Text = ""; previewText.Text = ""; return; }
             previewTitle.Text = step == 2 && SelectedSource != null ? S.Get("kind_" + item.Kind) + " · " + SampleData.Title(SelectedSource) : S.Get("kind_" + item.Kind);
             previewText.Text = S.Get("about_" + item.Kind);
             try
@@ -416,13 +416,13 @@ namespace BandFace.Creator
                 var dev = p.Meta.Device;
                 double scale = 300.0 / dev.Height;
                 double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                preview.Source = new FaceRenderer(p).Render(0, scale * dpi).Image;
                 preview.Width = dev.Width * scale; preview.Height = dev.Height * scale;
+                Sharp.Show(preview, new FaceRenderer(p).Render(0, scale * dpi).Image);
                 double rad = dev.Corner * scale;
                 preview.Clip = new RectangleGeometry(new Rect(0, 0, preview.Width, preview.Height), rad, rad);
                 previewFace.CornerRadius = new CornerRadius(rad + 3);
             }
-            catch (Exception) { preview.Source = null; }
+            catch (Exception) { Sharp.Show(preview, null); }
         }
 
         static RgbaImage SampleArt(int w, int h, string a, string b)

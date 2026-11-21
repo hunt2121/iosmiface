@@ -160,7 +160,7 @@ namespace BandFace.Creator
         {
             renderer.Time = (DateTime.Now - start).TotalSeconds;
             double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-            image.Source = renderer.Render(theme, 1.5 * dpi * 1.4).Image;
+            Sharp.Show(image, renderer.Render(theme, 1.5 * dpi * 1.4).Image);
         }
     }
 
