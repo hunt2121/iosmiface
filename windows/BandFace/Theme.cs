@@ -46,6 +46,8 @@ namespace BandFace
             r["BtnBorder"] = B(dark ? "#4A4A4A" : "#D1D1D1");
             r["Track"] = B(dark ? "#444444" : "#E1E1E1");
             r["NavSel"] = B(dark ? "#333333" : "#E6E6E6");
+            // капсула з числами на картці магазину: «піднята» — колір картки з тінню; у темній трохи світліша (як вибраний пункт меню)
+            r["StatsTab"] = B(dark ? "#333333" : "#FFFFFF");
             r["Ok"] = B(dark ? "#6CCB6C" : "#107C10");
             r["Err"] = B(dark ? "#FF8A80" : "#B3261E");
             r["Field"] = B(dark ? "#323232" : "#FFFFFF");
