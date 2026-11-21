@@ -130,6 +130,20 @@ namespace BandFace.Creator
                 }
                 popup.VerticalOffset = 2;
             };
+            // вікно програми перемістили чи змінили розмір — віконце лишається на своєму місці під кнопкою
+            // (Popup сам за вікном не рухається): переставляємо його
+            Window host = null;
+            EventHandler follow = (s, e) => { if (popup.IsOpen) { popup.HorizontalOffset += 0.01; popup.HorizontalOffset -= 0.01; } };
+            SizeChangedEventHandler followSize = (s, e) => follow(s, e);
+            popup.Opened += (s, e) =>
+            {
+                host = Window.GetWindow(target);
+                if (host != null) { host.LocationChanged += follow; host.SizeChanged += followSize; }
+            };
+            popup.Closed += (s, e) =>
+            {
+                if (host != null) { host.LocationChanged -= follow; host.SizeChanged -= followSize; host = null; }
+            };
             hide.Tick += (s, e) => { hide.Stop(); popup.IsOpen = false; };
             spin.Tick += (s, e) =>
             {
@@ -200,7 +214,7 @@ namespace BandFace.Creator
                     fill.SetResourceReference(Border.BackgroundProperty, "Err");
                     fill.Width = Math.Max(6, w * u.Fraction);
                     info.Text = S.Get("instUnchanged");
-                    action.Text = S.Get("instRetry");
+                    action.Text = Retry != null ? S.Get("instRetry") : "";   // без дії повтору — без «Повторити»
                     break;
                 case InstallUpdate.Kind.Cancelled:
                     popup.IsOpen = false;
