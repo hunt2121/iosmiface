@@ -182,6 +182,8 @@ struct StoreView: View, Equatable {
     /// reversed — протилежний до звичного напрямок
     @State private var sortKey = StoreSort.date.rawValue
     @State private var sortReversed = false
+    /// Перегляди й завантаження всіх записів (з сервера) — для сортування; без мережі порожньо
+    @State private var stats: [String: StoreServer.FaceStats] = [:]
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
@@ -198,7 +200,7 @@ struct StoreView: View, Equatable {
             default: return f.kindKeys.contains(filter)
             }
         }
-        return (StoreSort(rawValue: sortKey) ?? .date).sorted(filtered, reversed: sortReversed)
+        return (StoreSort(rawValue: sortKey) ?? .date).sorted(filtered, reversed: sortReversed, stats: stats)
     }
 
     private func state(_ f: StoreFace) -> StoreAction {
@@ -232,13 +234,14 @@ struct StoreView: View, Equatable {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .refreshable { await onRefresh() }
+            .refreshable { await onRefresh(); await loadStats() }
+            .task { await loadStats() }
             .background(Color(.systemGroupedBackground))
             // Без фільтра — «Магазин», з фільтром — його назва («Платні», «Безкоштовні», «Цифровий»…)
             .navigationTitle(filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
-            // Під заголовком — поточне сортування («Спочатку нові», «А–Я»…), з iOS 26
+            // Під заголовком — поточне сортування («Спочатку нові», «Спочатку більше»…), з iOS 26
             .modifier(NavigationSubtitle(text: StoreSort(rawValue: sortKey)?.direction(reversed: sortReversed) ?? StoreSort.date.direction(reversed: false)))
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.storeKey == id }) {
@@ -280,6 +283,11 @@ struct StoreView: View, Equatable {
                 Button("OK", role: .cancel) {}
             }
         }
+    }
+
+    /// Числа для сортування за переглядами й завантаженнями
+    private func loadStats() async {
+        if let all = await StoreServer.stats() { stats = all }
     }
 
     /// Пункти фільтра: (ідентифікатор, назва)
@@ -746,39 +754,42 @@ struct StoreDetailView: View {
     }
 }
 
-/// Сортування магазину (порядок у меню). Звичний напрямок: дата — спочатку нові, назва — від А до Я.
-/// «Перегляди» й «Завантаження» поки не працюють: для них потрібна статистика з сервера.
+/// Сортування магазину (порядок у меню). Звичний напрямок: дата — спочатку нові,
+/// перегляди й завантаження — спочатку більше (числа з сервера; при рівних — новіші вище).
 enum StoreSort: String, CaseIterable {
-    case date, views, downloads, name
+    case date, views, downloads
 
     var title: String {
         switch self {
         case .date: return String(localized: "Дата")
-        case .name: return String(localized: "Назва")
-        case .downloads: return String(localized: "Завантаження")
         case .views: return String(localized: "Перегляди")
+        case .downloads: return String(localized: "Завантаження")
         }
     }
-
-    var isAvailable: Bool { self == .date || self == .name }
 
     func direction(reversed: Bool) -> String {
         switch self {
         case .date: return reversed ? String(localized: "Спочатку старі") : String(localized: "Спочатку нові")
-        case .name: return reversed ? String(localized: "Від Я до А") : String(localized: "Від А до Я")
-        case .downloads, .views: return ""
+        case .views, .downloads: return reversed ? String(localized: "Спочатку менше") : String(localized: "Спочатку більше")
         }
     }
 
-    func sorted(_ faces: [StoreFace], reversed: Bool) -> [StoreFace] {
+    func sorted(_ faces: [StoreFace], reversed: Bool, stats: [String: StoreServer.FaceStats]) -> [StoreFace] {
+        let byDate = faces.sorted { ($0.added ?? .distantPast) > ($1.added ?? .distantPast) }
         let result: [StoreFace]
         switch self {
         case .date:
-            result = faces.sorted { ($0.added ?? .distantPast) > ($1.added ?? .distantPast) }
-        case .name:
-            result = faces.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        case .downloads, .views:
-            return faces
+            result = byDate
+        case .views, .downloads:
+            func count(_ f: StoreFace) -> Int {
+                guard let s = stats[f.storeKey] else { return 0 }
+                return self == .views ? s.views : s.downloads
+            }
+            // стабільне сортування поверх дати: при рівних числах новіші лишаються вище
+            result = byDate.enumerated().sorted { a, b in
+                let (x, y) = (count(a.element), count(b.element))
+                return x != y ? x > y : a.offset < b.offset
+            }.map(\.element)
         }
         return reversed ? result.reversed() : result
     }
@@ -826,11 +837,9 @@ private struct FilterSortMenuButton: UIViewRepresentable {
         }
         let sorts = StoreSort.allCases.map { sort -> UIAction in
             let selected = sort.rawValue == sortKey
-            // Напрямок — лише під вибраним пунктом; «Перегляди» й «Завантаження» просто сірі
-            let subtitle = selected && sort.isAvailable ? sort.direction(reversed: sortReversed) : nil
-            var attributes: UIMenuElement.Attributes = [.keepsMenuPresented]
-            if !sort.isAvailable { attributes.insert(.disabled) }
-            let action = UIAction(title: sort.title, subtitle: subtitle, attributes: attributes,
+            // Напрямок — лише під вибраним пунктом
+            let subtitle = selected ? sort.direction(reversed: sortReversed) : nil
+            let action = UIAction(title: sort.title, subtitle: subtitle, attributes: [.keepsMenuPresented],
                                   state: selected ? .on : .off) { _ in
                 if selected { sortReversed.toggle() } else { sortKey = sort.rawValue; sortReversed = false }
             }
