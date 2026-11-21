@@ -5314,25 +5314,25 @@
         }
       }
     },
-    "Картинка розтягується на весь екран і стає найнижчим шаром.": {
+    "Картинка розтягується на весь екран і стає найнижчим шаром. Частини за межами екрана в циферблат не потрапляють: під час збирання їх обрізано. У редакторі картинку видно цілою — її можна рухати й масштабувати без втрат.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The picture fills the whole screen and becomes the bottom layer."
+            "value": "The picture fills the whole screen and becomes the bottom layer. Parts outside the screen are not included in the watch face: they are cropped when building. In the editor the whole image stays visible, so you can move and scale it without losing anything."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картинка растягивается на весь экран и становится самым нижним слоем."
+            "value": "Картинка растягивается на весь экран и становится самым нижним слоем. Части за пределами экрана в циферблат не попадают: при сборке они обрезаются. В редакторе картинка видна целиком — её можно двигать и масштабировать без потерь."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картинка розтягується на весь екран і стає найнижчим шаром."
+            "value": "Картинка розтягується на весь екран і стає найнижчим шаром. Частини за межами екрана в циферблат не потрапляють: під час збирання їх обрізано. У редакторі картинку видно цілою — її можна рухати й масштабувати без втрат."
           }
         }
       }

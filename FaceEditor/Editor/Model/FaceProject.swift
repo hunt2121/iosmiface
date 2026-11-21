@@ -488,6 +488,7 @@ final class FaceProject: ObservableObject, Identifiable {
         // при виборі кольору (перевірено на Smart Band 10, збірка 235)
         let st = needsPreview ? storageWithFreshPreviews() : storage()
         if ColorVariants.isEnabled(self) { addBackgroundFill(st) }
+        cropBackgrounds(st)
         // Band 10/11 знає лише indexed8: картинки інших форматів (фото, циферблати від інших браслетів) — у 256 кольорів (Б-1)
         Band10.fixImages(st)
         let data = try WatchfaceCompiler.build(from: st, log: log)
@@ -524,6 +525,46 @@ final class FaceProject: ObservableObject, Identifiable {
             theme.kids.insert(l, at: idx)
         }
         st.files["manifest.xml"] = Data(XML.print(root))
+    }
+
+    /// Фонові картинки (ресурси «background…»), що виходять за екран: у циферблат — лише частина в межах екрана
+    /// (менший файл; у редакторі картинку видно цілою, її можна рухати без втрат). Проєкт не змінюється.
+    private func cropBackgrounds(_ st: MemoryStorage) {
+        guard let xml = st.files["manifest.xml"], let root = try? XML.parse([UInt8](xml)), let res = root.first("Resources") else { return }
+        let W = meta.device.width, H = meta.device.height
+        var used = Set(res.elements.compactMap { $0.string("name") })
+        var changed = false
+        for theme in root.all("Theme") {
+            for l in theme.all("Layout") {
+                guard let ref = l.string("ref"), ref.count > 1, ref.dropFirst().hasPrefix("background") else { continue }
+                let base = String(ref.dropFirst())
+                guard let img = res.elements.first(where: { $0.tag == "Image" && $0.string("name") == base }),
+                      let src = img.string("src"), let d = st.files[MemoryStorage.normalizedPath(src)],
+                      let png = PNG.decode([UInt8](d)) else { continue }
+                let x = Int(l.int("x")), y = Int(l.int("y"))
+                let x0 = max(0, x), y0 = max(0, y), x1 = min(W, x + png.w), y1 = min(H, y + png.h)
+                if x0 == x, y0 == y, x1 == x + png.w, y1 == y + png.h { continue }   // уся в межах екрана
+                changed = true
+                if x1 <= x0 || y1 <= y0 { theme.kids.removeAll { $0 === l }; continue }   // зовсім за екраном
+                let cw = x1 - x0, ch = y1 - y0
+                var px = [UInt8](repeating: 0, count: cw * ch * 4)
+                for row in 0..<ch {
+                    let from = ((y0 - y + row) * png.w + (x0 - x)) * 4
+                    px.replaceSubrange(row * cw * 4 ..< (row + 1) * cw * 4, with: png.rgba[from ..< from + cw * 4])
+                }
+                let cropped = RGBAImage(w: cw, h: ch, px: px)
+                var name = base + "_screen"
+                var i = 2
+                while used.contains(name) { name = base + "_screen\(i)"; i += 1 }
+                used.insert(name)
+                st.files["\(name).png"] = cropped.png
+                let e = img.copy()
+                e.set("name", name).set("src", "\(name).png").set("format", cropped.bestFormat)
+                res.kids.append(e)
+                l.set("ref", "@" + name).set("x", int: x0).set("y", int: y0)
+            }
+        }
+        if changed { st.files["manifest.xml"] = Data(XML.print(root)) }
     }
 
     /// Шар — непрозора картинка на весь екран у точці 0,0
