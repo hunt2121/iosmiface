@@ -485,10 +485,9 @@ struct StoreDetailView: View {
                 // Кілька варіантів (мови, 12/24 год) — вибір; за замовчуванням підібрано під телефон
                 if item.variantOptions.count > 1 {
                     HStack {
-                        // назва варіанта — завжди в один рядок («Англійська (США)»); підпис ліворуч стискається, якщо тісно
+                        // назва варіанта — завжди в один рядок («Англійська (США)»)
                         Text("Мова циферблата")
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
                         Spacer(minLength: 8)
                         Picker("Мова циферблата", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
                             ForEach(item.variantOptions, id: \.key) { Text($0.label).tag($0.key) }
