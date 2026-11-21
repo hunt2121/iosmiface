@@ -242,8 +242,8 @@ struct StoreStatsRow: View {
         // око — заввишки з цифри, трохи товще за текст
         let eyeFont = Self.iconFont("eye", font, 1)
         let eye = InkMetrics.symbol("eye", font: eyeFont)
-        // стрілка своя: завширшки з око, на піксель вища й нижча за цифри, лінії такої ж товщини, як в ока
-        let arrow = (image: Self.arrowImage(width: inkWidth(eye), height: Self.digitHeight(font) + Self.onePixel * 2,
+        // стрілка своя: на піксель вужча за око з кожного боку, на піксель вища й нижча за цифри, лінії такої ж товщини, як в ока
+        let arrow = (image: Self.arrowImage(width: inkWidth(eye) - Self.onePixel * 2, height: Self.digitHeight(font) + Self.onePixel * 2,
                                             line: InkMetrics.strokeTop("eye", font: eyeFont)), left: CGFloat(0), right: CGFloat(0))
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
