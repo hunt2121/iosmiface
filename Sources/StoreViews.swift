@@ -195,6 +195,16 @@ struct StoreStatsRow: View {
     /// Найменший проміжок між парами (до масштабу шрифту): 14 — сторінка циферблата, 18 — картка магазину
     var minGap: CGFloat = 14
 
+    init(downloads: String, views: String, font: UIFont, roomy: Bool = false,
+         gapBasis: (String, String)? = nil, minGap: CGFloat = 14) {
+        self.downloads = downloads
+        self.views = views
+        self.font = font
+        self.roomy = roomy
+        self.gapBasis = gapBasis
+        self.minGap = minGap
+    }
+
     /// Відстань між штрихами: значок → число
     private static let iconGap: CGFloat = 3
 
@@ -275,7 +285,7 @@ struct StoreStatsRow: View {
     }
 
     /// Звичайний шрифт стилю (як «102 КБ · v2.0» поруч) з цифрами однакової ширини (числа змінюються — сусіди не зсуваються)
-    static func font(_ style: UIFont.TextStyle) -> UIFont {
+    static func textFont(_ style: UIFont.TextStyle) -> UIFont {
         UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: style).pointSize, weight: .regular)
     }
 }
@@ -286,7 +296,7 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.font(.caption), roomy: true, minGap: 18)
+                      font: StoreStatsRow.textFont(.caption), roomy: true, minGap: 18)
             .frame(height: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
@@ -301,7 +311,7 @@ struct StoreStatsLine: View {
     var body: some View {
         let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
         StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
-                      font: StoreStatsRow.font(.footnote), roomy: true, gapBasis: (d, v))
+                      font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v))
             .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
