@@ -36,6 +36,8 @@ namespace BandFace.Store
     sealed class StoreVariant
     {
         public string Key, FaceId, Sha256, Download, Clock;
+        /// <summary>Порядок дати на циферблаті: "dmy", "mdy" (США) або null — не важливо</summary>
+        public string Date;
         public int Size;
         public List<string> Langs = new List<string>();
         public List<int> Bands;      // null — усі пристрої запису
@@ -131,7 +133,7 @@ namespace BandFace.Store
                         if (!(kv.Value is Dictionary<string, object> v)) continue;
                         var variant = new StoreVariant
                         {
-                            Key = kv.Key, FaceId = Str(v, "faceId"), Sha256 = Str(v, "sha256"), Download = Str(v, "download"), Clock = Str(v, "clock"),
+                            Key = kv.Key, FaceId = Str(v, "faceId"), Sha256 = Str(v, "sha256"), Download = Str(v, "download"), Clock = Str(v, "clock"), Date = Str(v, "date"),
                             Size = int.TryParse(Str(v, "size"), out var n) ? n : 0,
                             Langs = List(v, "langs").OfType<string>().ToList(),
                             Bands = v.TryGetValue("bands", out var b) && b is List<object> bl ? Ints(bl) : null,
@@ -336,6 +338,17 @@ namespace BandFace.Store
         /// <summary>12- чи 24-годинний час у регіональних параметрах Windows</summary>
         public static string Clock => CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains("h") ? "12h" : "24h";
 
+        /// <summary>Порядок дати в регіональних параметрах Windows: "mdy" (місяць перед днем, як у США) або "dmy"</summary>
+        public static string DateOrder
+        {
+            get
+            {
+                var p = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+                int m = p.IndexOf('M'), d = p.IndexOf('d');
+                return m >= 0 && d >= 0 && m < d ? "mdy" : "dmy";
+            }
+        }
+
         public static Dictionary<string, StoreVariant> ForBand(StoreEntry e, int band)
         {
             var fit = e.Variants.Where(kv => kv.Value.Bands == null || kv.Value.Bands.Contains(band)).ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -345,9 +358,15 @@ namespace BandFace.Store
         public static string Choose(StoreEntry e, int band)
         {
             var variants = ForBand(e, band);
-            var clock = Clock;
-            Func<List<string>, string> best = keys =>
-                keys.FirstOrDefault(k => variants[k].Clock == clock) ?? keys.FirstOrDefault(k => variants[k].Clock == null) ?? keys.FirstOrDefault();
+            string clock = Clock, date = DateOrder;
+            // серед варіантів мови: збігаються і час, і порядок дати → лише час → лише дата → будь-який (як в iOS)
+            Func<string, int> score = k =>
+            {
+                var v = variants[k];
+                int c = v.Clock == clock ? 2 : v.Clock == null ? 1 : 0, d = v.Date == date ? 2 : v.Date == null ? 1 : 0;
+                return (c > 0 ? 100 : 0) + (d > 0 ? 10 : 0) + 2 * (c + d) + (d == 2 ? 1 : 0);
+            };
+            Func<List<string>, string> best = keys => keys.OrderByDescending(score).ThenBy(k => k, StringComparer.Ordinal).FirstOrDefault();
             var all = variants.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList();
             foreach (var lang in Languages)
             {
@@ -357,16 +376,13 @@ namespace BandFace.Store
             return best(all.Where(k => variants[k].Langs.Contains("*")).ToList()) ?? best(all);
         }
 
-        /// <summary>«Англійська · 12 год» — назва мовою інтерфейсу</summary>
+        /// <summary>«Англійська · 12 год»; англійська з датою місяць/день — «Англійська (США)» — назва мовою інтерфейсу</summary>
         public static string Label(StoreVariant v)
         {
             var code = v.Key.Length >= 2 ? v.Key.Substring(0, 2) : v.Key;
-            // англійська з AM/PM — це англійська для США
-            if (code == "en" && v.Clock == "12h")
-            {
-                return LanguageName("en") + " (" + S.Get("usShort") + ")";   // «Англійська (США)», а не «(Сполучені Штати)»
-            }
             var title = LanguageName(code);
+            // англійська з датою місяць/день — «Англійська (США)», коротко, а не «(Сполучені Штати)»
+            if (code == "en" && v.Date == "mdy") title += " (" + S.Get("usShort") + ")";
             return v.Clock == "12h" ? title + " · " + S.Get("clock12short") : v.Clock == "24h" ? title + " · " + S.Get("clock24short") : title;
         }
 
@@ -387,9 +403,9 @@ namespace BandFace.Store
         {
             if (dict == null) return "";
             var order = Languages.Concat(v?.Langs.Where(l => l != "*") ?? Enumerable.Empty<string>()).Concat(new[] { "en", "uk" }).ToList();
-            // англійська з AM/PM (США) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
+            // англійська США (дата місяць/день) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
             int en = order.IndexOf("en");
-            if (v != null && v.Clock == "12h" && v.Langs.Contains("en") && en >= 0) order.Insert(en, "en-US");
+            if (v != null && v.Date == "mdy" && v.Langs.Contains("en") && en >= 0) order.Insert(en, "en-US");
             foreach (var l in order) if (dict.TryGetValue(l, out var s) && !string.IsNullOrEmpty(s)) return s;
             return dict.Values.FirstOrDefault(s => !string.IsNullOrEmpty(s)) ?? "";
         }
