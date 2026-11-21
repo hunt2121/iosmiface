@@ -167,6 +167,7 @@ struct InfoCaption: View {
         let font = InfoFont.caption
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             InfoIcon(kind: icon)
+                .offset(y: icon.nudge)
                 .alignmentGuide(.firstTextBaseline) { d in d.height / 2 + font.capHeight / 2 }
             Text(text.uppercased(with: Locale.current))
                 .font(Font(font as CTFont))
@@ -229,6 +230,7 @@ struct InfoIcon: View {
         }
     }
     private var height: CGFloat { kind == .band ? 15 : 11 }
+
 
     var body: some View {
         let b = box, h = height, s = h / b.height
@@ -328,5 +330,16 @@ struct InfoFlow: Layout {
             x += size.width + spacing
         }
         return rows
+    }
+}
+
+extension InfoIcon.Kind {
+    /// Оптичне підрівнювання значка по вертикалі (pt): «−» — вгору, «+» — вниз
+    var nudge: CGFloat {
+        switch self {
+        case .band, .calendar: return -0.5
+        case .globe, .tag: return 0.5
+        default: return 0
+        }
     }
 }
