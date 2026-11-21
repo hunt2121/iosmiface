@@ -148,7 +148,7 @@ namespace BandFace
             ["storeVersion"] = new[] { "Версія", "Version", "Версия" },
             ["storeSize"] = new[] { "Розмір", "Size", "Размер" },
             ["storeDevices"] = new[] { "Пристрої", "Devices", "Устройства" },
-            ["storeFaceLang"] = new[] { "Мова циферблата", "Watch face language", "Язык циферблата" },
+            ["storeFaceLang"] = new[] { "Мова", "Language", "Язык" },
             ["storeWhatsNew"] = new[] { "Що нового у версії {0}", "What's new in version {0}", "Что нового в версии {0}" },
             ["storeNormal"] = new[] { "Звичайний", "Normal", "Обычный" },
             ["storeAod"] = new[] { "Завжди на екрані", "Always on display", "Всегда на экране" },
