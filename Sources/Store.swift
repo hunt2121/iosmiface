@@ -312,7 +312,7 @@ struct StoreView: View, Equatable {
                 .padding(.top, 12)
                 .padding(.bottom, Self.capsuleToName)
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 0) {
                 // кольори циферблата — кружечки праворуч від назви
                 HStack(spacing: 6) {
                     Text(item.name)
@@ -321,9 +321,8 @@ struct StoreView: View, Equatable {
                     Spacer(minLength: 0)
                     ColorDots(colors: item.colors)
                 }
-                .frame(height: 20)
                 // розмір і версія — завжди; кількість стилів — праворуч
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Text(verbatim: infoText(item))
                     Spacer(minLength: 0)
                     if item.styles.count > 1 { Text(verbatim: StoreText.styles(item.styles.count)) }
@@ -358,8 +357,7 @@ struct StoreView: View, Equatable {
     /// над великими літерами в рамці тексту — ascender − capHeight
     private static let capsuleToName: CGFloat = {
         let f = UIFont.systemFont(ofSize: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .semibold)
-        let inset = (20 - f.lineHeight) / 2 + (f.ascender - f.capHeight)
-        return max(0, 22 - inset)
+        return max(0, 22 - (f.ascender - f.capHeight))   // як у редакторі: рядок назви — заввишки з текст
     }()
 
     /// «1,2 MB · v1.1», для оновлення — «1,2 MB · v1.0 → 1.1»
