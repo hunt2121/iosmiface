@@ -372,7 +372,7 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: Self.font, roomy: true, minGap: 18, maxGap: 37)
+                      font: Self.font, roomy: true, minGap: 18, maxGap: 44)
             .frame(height: Self.font.lineHeight)
             .padding(.top, Self.insets.top)
             .padding(.bottom, Self.insets.bottom)
