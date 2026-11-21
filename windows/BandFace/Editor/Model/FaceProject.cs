@@ -332,6 +332,7 @@ namespace BandFace.Creator
             // кольорові варіанти — з копіями незмінних картинок, як у exe: без них браслет перезавантажується
             var st = needsPreview ? StorageWithFreshPreviews() : Storage();
             if (ColorVariants.IsEnabled(this)) AddBackgroundFill(st);
+            CropBackgrounds(st);
             // Band 10/11 знає лише indexed8: картинки інших форматів (фото, циферблати від інших браслетів) — у 256 кольорів (Б-1)
             Band10.FixImages(st);
             var data = WatchfaceCompiler.Build(st, null, log);
@@ -368,6 +369,49 @@ namespace BandFace.Creator
                 theme.Kids.Insert(idx < 0 ? theme.Kids.Count : idx, l);
             }
             st.Files["manifest.xml"] = Xml.Print(root);
+        }
+
+        /// <summary>Фонові картинки (ресурси «background…»), що виходять за екран: у циферблат — лише частина в межах екрана
+        /// (менший файл; у редакторі картинку видно цілою, її можна рухати без втрат). Проєкт не змінюється.</summary>
+        void CropBackgrounds(MemoryStorage st)
+        {
+            var root = Xml.Parse(st.Files["manifest.xml"]);
+            var res = root?.First("Resources");
+            if (res == null) return;
+            int W = Meta.Device.Width, H = Meta.Device.Height;
+            var used = new HashSet<string>(res.Elements.Select(e => e.Str("name")).Where(n => n != null));
+            bool changed = false;
+            foreach (var theme in root.All("Theme"))
+                foreach (var l in theme.All("Layout").ToList())
+                {
+                    var r = l.Str("ref");
+                    if (r == null || r.Length < 2 || !r.Substring(1).StartsWith("background", StringComparison.Ordinal)) continue;
+                    var img = res.Elements.FirstOrDefault(e => e.Tag == "Image" && e.Str("name") == r.Substring(1));
+                    var src = img?.Str("src");
+                    var d = src == null ? null : st.Read(src);
+                    var png = d == null ? null : Faces.Png.Decode(d);
+                    if (png == null) continue;
+                    int x = l.Int("x"), y = l.Int("y");
+                    int x0 = Math.Max(0, x), y0 = Math.Max(0, y), x1 = Math.Min(W, x + png.W), y1 = Math.Min(H, y + png.H);
+                    if (x0 == x && y0 == y && x1 == x + png.W && y1 == y + png.H) continue;   // уся в межах екрана
+                    changed = true;
+                    if (x1 <= x0 || y1 <= y0) { theme.Kids.Remove(l); continue; }        // зовсім за екраном
+                    int cw = x1 - x0, ch = y1 - y0;
+                    var px = new byte[cw * ch * 4];
+                    for (int row = 0; row < ch; row++)
+                        Buffer.BlockCopy(png.Px, ((y0 - y + row) * png.W + (x0 - x)) * 4, px, row * cw * 4, cw * 4);
+                    var cropped = new Faces.RgbaImage(cw, ch, px);
+                    var name = r.Substring(1) + "_screen";
+                    int i = 2;
+                    while (used.Contains(name)) name = r.Substring(1) + "_screen" + i++;
+                    used.Add(name);
+                    st.Files[name + ".png"] = cropped.Png();
+                    var e = img.Copy();
+                    e.Set("name", name).Set("src", name + ".png").Set("format", cropped.BestFormat());
+                    res.Kids.Add(e);
+                    l.Set("ref", "@" + name).Set("x", x0).Set("y", y0);
+                }
+            if (changed) st.Files["manifest.xml"] = Xml.Print(root);
         }
 
         /// <summary>Шар — непрозора картинка на весь екран у точці 0,0</summary>

@@ -119,6 +119,7 @@ namespace BandFace.Creator
             var th = project.Theme(theme);
             Add(Ui.ColorRow(S.Get("bgColor"), th?.Str("bgColor") ?? "#000000", h => project.Edit(p => p.Theme(theme)?.Set("bgColor", h))));
             Add(Ui.Button(S.Get("bgImage") + "…", AddBackground));
+            Add(Ui.Note(S.Get("bgCropHint")));
 
             Add(Ui.Header(S.Get("screens")));
             if (project.Themes.Count < 2)
