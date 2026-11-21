@@ -21,8 +21,8 @@ namespace BandFace.Store
 
         public string Downloads = "0";
         public string Views = "0";
-        /// <summary>Коротко («1.2k»), якщо повні слова не вміщаються (дуже великі числа)</summary>
-        public string DownloadsShort, ViewsShort;
+        /// <summary>Числа без слів — проміжок між парами (Spread) рахуємо за ними, щоб слова його не змінювали</summary>
+        public string GapDownloads, GapViews;
         public double TextSize = 12;
         public bool Spread;
 
@@ -50,12 +50,6 @@ namespace BandFace.Store
             if (w <= 0) return;
             var d = Outline(Downloads, Text, TextSize);
             var v = Outline(Views, Text, TextSize);
-            // повні слова ширші за елемент (без 12 px з кожного боку) — коротко
-            if (DownloadsShort != null && ViewsShort != null && d.Bounds.Width + v.Bounds.Width + 2 * (TextSize + IconGap) + PairGap > w - 24)
-            {
-                d = Outline(DownloadsShort, Text, TextSize);
-                v = Outline(ViewsShort, Text, TextSize);
-            }
             // вертикаль: центр висоти цифр (у слів можуть бути виносні елементи — по них не центруємо)
             var digits = Outline("0", Text, TextSize).Bounds;
             // значки такого розміру, щоб стрілка була рівно заввишки з цифри; око — у тому ж масштабі
@@ -72,7 +66,13 @@ namespace BandFace.Store
             double k = TextSize / 10.5, gap = PairGap;
             if (Spread)
             {
-                double t = Math.Min(1, Math.Max(0, (64 * k - (w1 + w2)) / (28 * k)));
+                double b1 = w1, b2 = w2;
+                if (GapDownloads != null && GapViews != null)
+                {
+                    b1 = ra.Width + IconGap + Ink(Outline(GapDownloads, Text, TextSize)).Width;
+                    b2 = re.Width + IconGap + Ink(Outline(GapViews, Text, TextSize)).Width;
+                }
+                double t = Math.Min(1, Math.Max(0, (64 * k - (b1 + b2)) / (28 * k)));
                 gap = (14 + 10 * t) * k;
             }
             double x1 = (w - (w1 + gap + w2)) / 2, x2 = x1 + w1 + gap;
