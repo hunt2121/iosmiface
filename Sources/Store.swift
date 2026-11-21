@@ -335,16 +335,16 @@ struct StoreView: View, Equatable {
             .padding(.horizontal, 2)
             .padding(.bottom, 8)
 
-            // завантаження й перегляди — капсула з-за кнопки (кнопка намальована поверх), завжди;
-            // ще не відкривали чи чисел немає зовсім — 0
-            // під час встановлення смужка прогресу прозора — капсулу ховаємо, місце лишаємо (картка не стрибає)
-            VStack(spacing: -StoreStatsTab.under) {
-                StoreStatsTab(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
-                    .opacity(state(item) == .installing ? 0 : 1)
-                FaceActionButton(state: state(item), price: item.buyText, busy: busy,
-                                 progress: progress, progressText: progressText) {
-                    onInstall(item)
-                }
+            // перегляди й завантаження — під тонкою лінією, рівно посередині між нею і кнопкою; завжди
+            // (ще не відкривали чи чисел немає зовсім — 0). Під час встановлення смужка прогресу прозора —
+            // рядок ховаємо, місце лишаємо (картка не стрибає)
+            Divider().padding(.horizontal, 2)
+            StoreStatsCardRow(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
+                .padding(.vertical, 9)
+                .opacity(state(item) == .installing ? 0 : 1)
+            FaceActionButton(state: state(item), price: item.buyText, busy: busy,
+                             progress: progress, progressText: progressText) {
+                onInstall(item)
             }
         }
         .padding(10)

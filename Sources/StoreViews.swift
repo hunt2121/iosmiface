@@ -182,9 +182,9 @@ extension InkMetrics {
     }
 }
 
-/// «↓ 1.1k  👁 4.8k» — вирівняно за чорнилом: від значка до числа рівно 3 pt, уся група точно по центру.
-/// Між парами 14 pt; з roomy (картка магазину) малі числа трохи розсунуті: чим коротші пари, тим більший проміжок —
-/// від 14 (від «1.1k  4.8k» і довших) до 24 (для «0  0»), у масштабі шрифту
+/// «👁 4.8k  ↓ 1.1k» — спершу перегляди, потім завантаження; вирівняно за чорнилом: від значка до числа рівно 3 pt,
+/// уся група точно по центру. Між парами minGap (14 pt); з roomy малі числа трохи розсунуті: чим коротші пари,
+/// тим більший проміжок — від minGap (від «4.8k  1.1k» і довших) до minGap + 10 (для «0  0»), у масштабі шрифту
 struct StoreStatsRow: View {
     let downloads: String
     let views: String
@@ -192,6 +192,8 @@ struct StoreStatsRow: View {
     var roomy = false
     /// Числа без слів («1.2k», «3.4k») — проміжок між парами рахуємо за ними, щоб слова його не змінювали
     var gapBasis: (String, String)? = nil
+    /// Найменший проміжок між парами (до масштабу шрифту): 14 — сторінка циферблата, 18 — картка магазину
+    var minGap: CGFloat = 14
 
     /// Відстань між штрихами: значок → число
     private static let iconGap: CGFloat = 3
@@ -204,18 +206,18 @@ struct StoreStatsRow: View {
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
         let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(gd, InkMetrics.bearings(gd, font: font))
-                                   + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font) : 14
+                                   + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font, min: minGap) : minGap
 
         HStack(spacing: 0) {
-            pair(arrow, downloads, dInk, dy: Self.iconShift("arrow.down.to.line", arrowFont, text: font))
             pair(eye, views, vInk, dy: Self.iconShift("eye", eyeFont, text: font))
-                .padding(.leading, gap - dInk.right - eye.left)
+            pair(arrow, downloads, dInk, dy: Self.iconShift("arrow.down.to.line", arrowFont, text: font))
+                .padding(.leading, gap - vInk.right - arrow.left)
         }
         .font(Font(font as CTFont))
         .foregroundStyle(.secondary)
         .fixedSize()
         // поля по краях групи різні (у стрілки й у цифр) — зсуваємо, щоб по центру було саме чорнило
-        .offset(x: (vInk.right - arrow.left) / 2)
+        .offset(x: (dInk.right - eye.left) / 2)
         .frame(maxWidth: .infinity)
     }
 
@@ -245,11 +247,11 @@ struct StoreStatsRow: View {
         return digitsCenter - inkCenter
     }
 
-    /// Проміжок між парами за шириною чорнила обох пар: ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
-    static func gap(_ pairs: CGFloat, font: UIFont) -> CGFloat {
+    /// Проміжок між парами за шириною чорнила обох пар: ≤ 36 (×масштаб) — min + 10, ≥ 64 — min, між ними плавно
+    static func gap(_ pairs: CGFloat, font: UIFont, min minGap: CGFloat = 14) -> CGFloat {
         let k = font.pointSize / 10.5
         let t = min(1, max(0, (64 * k - pairs) / (28 * k)))
-        return (14 + 10 * t) * k
+        return (minGap + 10 * t) * k
     }
 
     /// Значок і число: від чорнила значка до чорнила числа — 3 pt
@@ -278,35 +280,20 @@ struct StoreStatsRow: View {
     }
 }
 
-/// Капсула з числами на картці магазину: визирає з-за кнопки «Встановити» (нижні 11 pt під кнопкою);
-/// «піднята» — колір картки з м'якою тінню
-struct StoreStatsTab: View {
+/// Рядок на картці магазину над кнопкою: «👁 4.8k   ↓ 1.1k» (числа коротко, без слів), малі числа трохи розсунуті
+struct StoreStatsCardRow: View {
     let stats: StoreServer.FaceStats
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.font(.caption), roomy: true)
-            .frame(height: 22)
-            .padding(.bottom, Self.under)
-            // «піднята»: колір картки з м'якою тінню (у темній темі трохи світліша за картку — тінь на темному не видно)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Self.fill)
-                .shadow(color: Self.shadow, radius: 3, y: 1))
-            .padding(.horizontal, 16)
+                      font: StoreStatsRow.font(.caption), roomy: true, minGap: 18)
+            .frame(height: 18)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
+            .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
     }
-
-    /// Скільки капсули ховається під кнопкою
-    static let under: CGFloat = 11
-
-    /// Світла тема — колір картки; темна — #242426 (посередині між #2C2C2E і карткою #1C1C1E)
-    static let fill = Color(UIColor { t in
-        t.userInterfaceStyle == .dark ? UIColor(red: 0x24 / 255, green: 0x24 / 255, blue: 0x26 / 255, alpha: 1) : .secondarySystemGroupedBackground
-    })
-    static let shadow = Color(UIColor { t in UIColor.black.withAlphaComponent(t.userInterfaceStyle == .dark ? 0.6 : 0.22) })
 }
 
-/// Рядок у плашці «Розмір · Версія · Пристрої» на сторінці циферблата: «↓ 1.2k завантажень   👁 3.4k переглядів» —
+/// Рядок у плашці «Розмір · Версія · Пристрої» на сторінці циферблата: «👁 3.4k переглядів   ↓ 1.2k завантажень» —
 /// числа коротко, як на картці, слово завжди «завантажень» / «переглядів»; проміжок — за правилом картки
 struct StoreStatsLine: View {
     let stats: StoreServer.FaceStats
@@ -317,6 +304,6 @@ struct StoreStatsLine: View {
                       font: StoreStatsRow.font(.footnote), roomy: true, gapBasis: (d, v))
             .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
+            .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
     }
 }
