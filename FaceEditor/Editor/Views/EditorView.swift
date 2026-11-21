@@ -236,14 +236,27 @@ struct EditorView: View {
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
-    /// Знімок поточного екрана циферблата (з вибраним кольором) у 2× і стандартне вікно «Поділитися», як в інших застосунках:
+    /// Знімок поточного екрана циферблата (з вибраним кольором) у 2×, із закругленими кутами й прозорістю, і стандартне вікно «Поділитися», як в інших застосунках:
     /// картинка (а не файл), тож є «Зберегти зображення» в Фото; назва й мініатюра — з циферблата.
     private func shareShot() {
         let rd = FaceRenderer(project)
         rd.colorVariant = variant
         let (img, _) = rd.render(theme: theme, scale: 2)
-        guard let png = img.pngData(), let pic = UIImage(data: png) else { return }
+        guard let png = Self.rounded(img, project.meta.device).pngData(), let pic = UIImage(data: png) else { return }
         ShotShare.present(ShotShare(image: pic, title: project.displayName.isEmpty ? loc("Знімок циферблата") : project.displayName))
+    }
+
+    /// Знімок як екран браслета: закруглені кути (як на превʼю), поза ними — прозорість; PNG
+    static func rounded(_ img: UIImage, _ device: DeviceProfile) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = img.scale
+        format.opaque = false
+        let size = img.size
+        let r = CGFloat(device.corner) * size.width / CGFloat(device.width)
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: r).addClip()
+            img.draw(in: CGRect(origin: .zero, size: size))
+        }
     }
 
     private var zoomChips: some View {
