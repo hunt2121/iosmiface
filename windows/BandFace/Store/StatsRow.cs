@@ -21,6 +21,8 @@ namespace BandFace.Store
 
         public string Downloads = "0";
         public string Views = "0";
+        /// <summary>Коротко («1.2k»), якщо повні слова не вміщаються (дуже великі числа)</summary>
+        public string DownloadsShort, ViewsShort;
         public double TextSize = 12;
         public bool Spread;
 
@@ -48,6 +50,12 @@ namespace BandFace.Store
             if (w <= 0) return;
             var d = Outline(Downloads, Text, TextSize);
             var v = Outline(Views, Text, TextSize);
+            // повні слова ширші за елемент (без 12 px з кожного боку) — коротко
+            if (DownloadsShort != null && ViewsShort != null && d.Bounds.Width + v.Bounds.Width + 2 * (TextSize + IconGap) + PairGap > w - 24)
+            {
+                d = Outline(DownloadsShort, Text, TextSize);
+                v = Outline(ViewsShort, Text, TextSize);
+            }
             // вертикаль: центр висоти цифр (у слів можуть бути виносні елементи — по них не центруємо)
             var digits = Outline("0", Text, TextSize).Bounds;
             // значки такого розміру, щоб стрілка була рівно заввишки з цифри; око — у тому ж масштабі

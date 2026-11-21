@@ -377,6 +377,8 @@ namespace BandFace.Store
             {
                 Downloads = PluralText(st.Item2, "storeDl1", "storeDl2", "storeDl5", N(st.Item2)),
                 Views = PluralText(st.Item1, "storeView1", "storeView2", "storeView5", N(st.Item1)),
+                DownloadsShort = Short(st.Item2),
+                ViewsShort = Short(st.Item1),
                 TextSize = 13,
             };
             return new Border { Height = 30, CornerRadius = new CornerRadius(15), Background = BrushOf("Card"), BorderBrush = BrushOf("CardBorder"),
