@@ -399,7 +399,7 @@ struct StoreStatsLine: View {
     var body: some View {
         let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
         StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
-                      font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v), maxGap: 40)
+                      font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v), maxGap: 44)
             .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
