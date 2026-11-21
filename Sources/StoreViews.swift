@@ -209,8 +209,8 @@ struct StoreStatsRow: View {
     private static let iconGap: CGFloat = 3
 
     var body: some View {
-        // стрілка — на піксель вища й нижча за цифри, око — 90% їх висоти; обидва трохи товщі за текст
-        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1, extra: Self.onePixel * 2), eyeFont = Self.iconFont("eye", font, 0.9)
+        // стрілка — на піксель вища й нижча за цифри, око — заввишки з цифри; обидва трохи товщі за текст
+        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1, extra: Self.onePixel * 2), eyeFont = Self.iconFont("eye", font, 1)
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: arrowFont)
         let eye = InkMetrics.symbol("eye", font: eyeFont)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
