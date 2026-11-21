@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -85,8 +86,9 @@ namespace BandFace.Store
             finally { _loading = false; }
             Render();
             // числа для сортування за переглядами й завантаженнями
-            var all = await StoreClient.StatsAsync();
-            if (all != null) { _stats = all; if (_open == null && _sort != "date") RenderList(); }
+            // свіжі числа (або збережені, якщо сервер не відповів) — у капсулах і для сортування
+            _stats = await StoreClient.StatsAsync();
+            Render();
         }
 
         /// <summary>Змінився браслет, список циферблатів на ньому або йде встановлення — перемалювати</summary>
@@ -286,10 +288,7 @@ namespace BandFace.Store
             meta.Children.Add(Sub(SizeText(v.Size) + " · v" + e.Version, 12));
             sp.Children.Add(meta);
 
-            var btn = ActionButton(e, compact: true);
-            btn.Margin = new Thickness(0, 12, 0, 0);
-            btn.Height = 32;
-            sp.Children.Add(btn);
+            sp.Children.Add(CardButton(e, ActionButton(e, compact: true)));
 
             var card = new Border { Style = StyleOf("CardBox"), Padding = new Thickness(14), Margin = new Thickness(0, 0, 12, 12), Child = sp, Cursor = Cursors.Hand };
             card.MouseLeftButtonUp += (s, ev) => { if (!(ev.OriginalSource is DependencyObject o && IsInButton(o))) Open(e); };
@@ -342,34 +341,63 @@ namespace BandFace.Store
         }
 
         /// <summary>Перегляди й завантаження (з сервера): відкриття сторінки — +1 перегляд, потім числа</summary>
-        Dictionary<string, Tuple<int, int>> _stats;
+        Dictionary<string, Tuple<int, int>> _stats = StoreClient.CachedStats();
 
         async Task LoadStatsAsync(StoreEntry e)
         {
             await StoreClient.SendViewAsync(e.Id);
-            var all = await StoreClient.StatsAsync();
-            if (all == null) return;
-            _stats = all;
+            _stats = await StoreClient.StatsAsync();
             if (_open == e) RenderPage();
         }
 
-        /// <summary>«↓ 1 240 завантажень   👁 3 400 переглядів» — під кнопками, по центру</summary>
-        FrameworkElement StatsLine(Tuple<int, int> st)
+        /// <summary>Перегляди й завантаження запису (Item1 — перегляди, Item2 — завантаження); ще немає — нулі</summary>
+        Tuple<int, int> StatsOf(StoreEntry e) =>
+            _stats != null && _stats.TryGetValue(e.Id, out var st) ? st : Tuple.Create(0, 0);
+
+        /// <summary>Коротко для картки: до 999 — повністю; далі 1.1k, 15.5k, 120k, 1.2M (один знак до 100, округлення вниз)</summary>
+        static string Short(int n)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 14) };
-            Func<string, string, FrameworkElement> item = (glyph, text) =>
+            if (n < 1000) return n.ToString(CultureInfo.InvariantCulture);
+            string Cut(double v, string suffix)
             {
-                var p = new StackPanel { Orientation = Orientation.Horizontal };
-                p.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = BrushOf("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 6, 0) });
-                p.Children.Add(new TextBlock { Text = text, FontSize = 12, Foreground = BrushOf("Sub"), VerticalAlignment = VerticalAlignment.Center });
-                return p;
+                if (v >= 100) return Math.Floor(v).ToString(CultureInfo.InvariantCulture) + suffix;
+                double t = Math.Floor(v * 10) / 10;
+                return t.ToString("0.#", CultureInfo.InvariantCulture) + suffix;
+            }
+            return n < 1000000 ? Cut(n / 1000.0, "k") : Cut(n / 1000000.0, "M");
+        }
+
+        /// <summary>Капсула на сторінці циферблата — окремо над кнопками: «↓ 1 240 завантажень   👁 3 400 переглядів»,
+        /// вужча за кнопки на заокруглення, колір плашок</summary>
+        FrameworkElement StatsCapsule(StoreEntry e)
+        {
+            var st = StatsOf(e);
+            string N(int n) => n.ToString("N0", CultureInfo.CurrentUICulture);
+            var row = new StatsRow
+            {
+                Downloads = PluralText(st.Item2, "storeDl1", "storeDl2", "storeDl5", N(st.Item2)),
+                Views = PluralText(st.Item1, "storeView1", "storeView2", "storeView5", N(st.Item1)),
+                TextSize = 13,
             };
-            string N(int n) => n.ToString("N0", System.Globalization.CultureInfo.CurrentUICulture);
-            row.Children.Add(item("\uE896", PluralText(st.Item2, "storeDl1", "storeDl2", "storeDl5", N(st.Item2))));
-            var views = item("\uE890", PluralText(st.Item1, "storeView1", "storeView2", "storeView5", N(st.Item1)));
-            ((FrameworkElement)views).Margin = new Thickness(16, 0, 0, 0);
-            row.Children.Add(views);
-            return row;
+            return new Border { Height = 30, CornerRadius = new CornerRadius(15), Background = BrushOf("Card"), BorderBrush = BrushOf("CardBorder"),
+                BorderThickness = new Thickness(1), Margin = new Thickness(20, 0, 20, 12), Child = row };
+        }
+
+        /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), колір фону сторінки;
+        /// пари розведені (StatsRow.Spread)</summary>
+        FrameworkElement CardButton(StoreEntry e, Button btn)
+        {
+            var st = StatsOf(e);
+            const double visible = 22, under = 8;
+            var g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+            var tab = new Border { Height = visible + under, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(12, 0, 12, 0),
+                CornerRadius = new CornerRadius(6), Background = BrushOf("Bg"),
+                Child = new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, Height = visible, VerticalAlignment = VerticalAlignment.Top } };
+            g.Children.Add(tab);
+            // під кнопкою — непрозора підкладка кольору картки: вимкнена кнопка напівпрозора, капсула крізь неї не просвічує
+            btn.Height = 32;
+            g.Children.Add(new Border { Margin = new Thickness(0, visible, 0, 0), CornerRadius = new CornerRadius(5), Background = BrushOf("Card"), Child = btn });
+            return g;
         }
 
         static string PluralText(int n, string one, string few, string many, string shown)
@@ -571,9 +599,9 @@ namespace BandFace.Store
                 sp.Children.Add(new Border { Style = StyleOf("CardBox"), Padding = new Thickness(16, 10, 10, 10), Child = row });
             }
 
-            // кнопки або прогрес встановлення
+            // перегляди й завантаження — окрема капсула над кнопками (однакова в усіх станах); далі кнопки або прогрес
+            sp.Children.Add(StatsCapsule(e));
             sp.Children.Add(Actions(e, v));
-            if (_stats != null && _stats.TryGetValue(e.Id, out var st)) sp.Children.Add(StatsLine(st));
             if (_actionError != null)
                 sp.Children.Add(new TextBlock { Text = _actionError, FontSize = 12, Foreground = BrushOf("Err"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, -4, 0, 12) });
 

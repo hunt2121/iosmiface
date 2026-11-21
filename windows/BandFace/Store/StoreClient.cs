@@ -187,7 +187,7 @@ namespace BandFace.Store
         /// <summary>Видаляє з диска превʼю, яких уже немає в каталозі</summary>
         static void Prune(StoreCatalog c)
         {
-            var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Path.GetFileName(CatalogFile) };
+            var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Path.GetFileName(CatalogFile), Path.GetFileName(StatsFile) };
             foreach (var e in c.Faces)
                 foreach (var v in e.Variants.Values)
                     foreach (var s in v.Styles)
@@ -238,20 +238,40 @@ namespace BandFace.Store
             catch (Exception) { }
         }
 
-        /// <summary>Перегляди й завантаження всіх записів (усі мови разом); null — без мережі або без лічильників на сервері</summary>
+        /// <summary>Останні отримані числа — на диску, щоб без мережі показувати хоч застарілі</summary>
+        static string StatsFile => Path.Combine(Dir, "stats.json");
+
+        /// <summary>Числа з диска (порожньо, якщо ще жодного разу не отримали)</summary>
+        public static Dictionary<string, Tuple<int, int>> CachedStats()
+        {
+            try { return File.Exists(StatsFile) ? ParseStats(File.ReadAllText(StatsFile, Encoding.UTF8)) ?? new Dictionary<string, Tuple<int, int>>() : new Dictionary<string, Tuple<int, int>>(); }
+            catch (Exception) { return new Dictionary<string, Tuple<int, int>>(); }
+        }
+
+        /// <summary>Свіжі перегляди й завантаження всіх записів (Item1 — перегляди, Item2 — завантаження) і на диск;
+        /// сервер не відповів — останні збережені</summary>
         public static async Task<Dictionary<string, Tuple<int, int>>> StatsAsync()
         {
             try
             {
-                var root = MiniJson.Parse(await Http.GetStringAsync(BaseUrl + "stats.json").ConfigureAwait(false)) as Dictionary<string, object>;
-                if (root == null || !(root.TryGetValue("stats", out var o) && o is Dictionary<string, object> all)) return null;
-                var r = new Dictionary<string, Tuple<int, int>>();
-                foreach (var kv in all)
-                    if (kv.Value is Dictionary<string, object> d)
-                        r[kv.Key] = Tuple.Create(ToInt(d, "views"), ToInt(d, "downloads"));
+                var text = await Http.GetStringAsync(BaseUrl + "stats.json").ConfigureAwait(false);
+                var r = ParseStats(text);
+                if (r == null) return CachedStats();
+                try { File.WriteAllText(StatsFile, text, Encoding.UTF8); } catch (Exception) { }
                 return r;
             }
-            catch (Exception) { return null; }
+            catch (Exception) { return CachedStats(); }
+        }
+
+        static Dictionary<string, Tuple<int, int>> ParseStats(string text)
+        {
+            var root = MiniJson.Parse(text) as Dictionary<string, object>;
+            if (root == null || !(root.TryGetValue("stats", out var o) && o is Dictionary<string, object> all)) return null;
+            var r = new Dictionary<string, Tuple<int, int>>();
+            foreach (var kv in all)
+                if (kv.Value is Dictionary<string, object> d)
+                    r[kv.Key] = Tuple.Create(ToInt(d, "views"), ToInt(d, "downloads"));
+            return r;
         }
 
         static int ToInt(Dictionary<string, object> d, string k) =>
