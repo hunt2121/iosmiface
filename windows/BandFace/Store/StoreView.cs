@@ -378,7 +378,7 @@ namespace BandFace.Store
                 Downloads = S.Get("storeDl5", d),
                 Views = S.Get("storeView5", vw),
                 GapDownloads = d, GapViews = vw,
-                Spread = true, MaxGap = 37,
+                Spread = true, MaxGap = 40,
                 TextSize = 13,
                 Height = 20,
                 Margin = new Thickness(16, 10, 16, 10),   // цифри (їх центр — по центру рядка) рівно посередині між лінією й низом плашки
