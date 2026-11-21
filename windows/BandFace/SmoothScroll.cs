@@ -31,9 +31,16 @@ namespace BandFace
             var sv = Find(e.OriginalSource as DependencyObject, e.Delta);
             if (sv == null) return;
             var st = States.GetOrCreateValue(sv);
+            // списки, що гортаються цілими пунктами (шари, зображення, галереї), переводимо на пікселі — плавно, як решта
+            if (ItemUnits(sv) && sv.ScrollInfo is VirtualizingPanel vp && ItemsControl.GetItemsOwner(vp) is ItemsControl owner)
+            {
+                VirtualizingPanel.SetScrollUnit(owner, ScrollUnit.Pixel);
+                sv.UpdateLayout();   // зміщення одразу в пікселях — далі рахуємо від нього
+                st.Running = false;
+            }
             if (!st.Running) st.Target = sv.VerticalOffset;
-            // списки з віртуалізацією рахують прокрутку в пунктах, а не в пікселях: тоді ~1,5 пункту на клацання
-            double step = sv.CanContentScroll ? 1.5 : Step;
+            // у пунктах (якщо не вдалося перевести) — ~1,5 пункту на клацання; у пікселях (і XML-редактор) — 56 px
+            double step = ItemUnits(sv) ? 1.5 : Step;
             st.Target = Math.Max(0, Math.Min(sv.ScrollableHeight, st.Target - e.Delta / 120.0 * step));
             e.Handled = true;
             if (st.Running) return;
@@ -52,6 +59,20 @@ namespace BandFace
                 sv.ScrollToVerticalOffset(sv.VerticalOffset + d * 0.25);
             };
             CompositionTarget.Rendering += tick;
+        }
+
+        /// <summary>Прокрутка в пунктах, а не в пікселях: лише віртуалізовані списки з ScrollUnit=Item і StackPanel
+        /// з логічною прокруткою. Інші IScrollInfo (текст XML-редактора AvalonEdit) рахують у пікселях — раніше їм
+        /// діставалося 1,5 «пункту» = 1,5 px на клацання, звідси повільна прокрутка</summary>
+        static bool ItemUnits(ScrollViewer sv)
+        {
+            if (!sv.CanContentScroll) return false;
+            if (sv.ScrollInfo is VirtualizingPanel vp)
+            {
+                var owner = ItemsControl.GetItemsOwner(vp);
+                return owner == null || VirtualizingPanel.GetScrollUnit(owner) == ScrollUnit.Item;
+            }
+            return sv.ScrollInfo is StackPanel;
         }
 
         /// <summary>Найближчий ScrollViewer угору по дереву, що може прокрутитися в бік delta.</summary>
