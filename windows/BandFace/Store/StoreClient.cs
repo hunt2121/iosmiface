@@ -386,7 +386,10 @@ namespace BandFace.Store
         public static string Text(Dictionary<string, string> dict, StoreVariant v)
         {
             if (dict == null) return "";
-            var order = Languages.Concat(v?.Langs.Where(l => l != "*") ?? Enumerable.Empty<string>()).Concat(new[] { "en", "uk" });
+            var order = Languages.Concat(v?.Langs.Where(l => l != "*") ?? Enumerable.Empty<string>()).Concat(new[] { "en", "uk" }).ToList();
+            // англійська з AM/PM (США) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
+            int en = order.IndexOf("en");
+            if (v != null && v.Clock == "12h" && v.Langs.Contains("en") && en >= 0) order.Insert(en, "en-US");
             foreach (var l in order) if (dict.TryGetValue(l, out var s) && !string.IsNullOrEmpty(s)) return s;
             return dict.Values.FirstOrDefault(s => !string.IsNullOrEmpty(s)) ?? "";
         }
