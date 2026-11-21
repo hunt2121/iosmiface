@@ -296,7 +296,7 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.textFont(.caption), roomy: true, minGap: 18)
+                      font: StoreStatsRow.textFont(.caption1), roomy: true, minGap: 18)
             .frame(height: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
