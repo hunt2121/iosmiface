@@ -29,7 +29,7 @@ namespace BandFace.Store
         /// <summary>Segoe MDL2 Assets: «Завантажити» і «Переглянути»</summary>
         const string ArrowGlyph = "\uE896", EyeGlyph = "\uE890";
         const double IconGap = 3, PairGap = 14;
-        static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+        static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);   // як підписи поруч
         static readonly Typeface Icons = new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
         public StatsRow()

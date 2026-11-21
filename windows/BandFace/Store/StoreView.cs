@@ -367,24 +367,22 @@ namespace BandFace.Store
             return n < 1000000 ? Cut(n / 1000.0, "k") : Cut(n / 1000000.0, "M");
         }
 
-        /// <summary>Капсула на сторінці циферблата — окремо над кнопками: «↓ 1.2k завантажень   👁 3.4k переглядів»,
-        /// вужча за кнопки на заокруглення, колір плашок</summary>
-        FrameworkElement StatsCapsule(StoreEntry e)
+        /// <summary>Рядок у плашці «Розмір · Версія · Пристрої»: «↓ 1.2k завантажень   👁 3.4k переглядів» —
+        /// числа коротко, як на картці, слово завжди «завантажень» / «переглядів»; проміжок — за правилом картки</summary>
+        FrameworkElement StatsLine(StoreEntry e)
         {
-            // числа коротко, як на картці магазину, а слово завжди «завантажень» / «переглядів»;
-            // проміжок між парами — за тим самим правилом, що на картці (за самими числами)
             var st = StatsOf(e);
             string d = Short(st.Item2), vw = Short(st.Item1);
-            var row = new StatsRow
+            return new StatsRow
             {
                 Downloads = S.Get("storeDl5", d),
                 Views = S.Get("storeView5", vw),
                 GapDownloads = d, GapViews = vw,
                 Spread = true,
                 TextSize = 13,
+                Height = 20,
+                Margin = new Thickness(16, 10, 16, 11),
             };
-            return new Border { Height = 30, CornerRadius = new CornerRadius(15), Background = BrushOf("Card"), BorderBrush = BrushOf("CardBorder"),
-                BorderThickness = new Thickness(1), Margin = new Thickness(20, 0, 20, 12), Child = row };
         }
 
         /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), «піднята»: колір картки з м'якою тінню;
@@ -569,7 +567,12 @@ namespace BandFace.Store
                 Grid.SetColumn(cell, i);
                 strip.Children.Add(cell);
             }
-            sp.Children.Add(new Border { Style = StyleOf("CardBox"), Padding = new Thickness(0, 14, 0, 14), Child = strip });
+            // «Розмір · Версія · Пристрої», під лінією — завантаження й перегляди (та сама плашка, як на iPhone)
+            var stripBox = new StackPanel();
+            stripBox.Children.Add(strip);
+            stripBox.Children.Add(new Border { Height = 1, Background = BrushOf("CardBorder"), Margin = new Thickness(16, 14, 16, 0) });
+            stripBox.Children.Add(StatsLine(e));
+            sp.Children.Add(new Border { Style = StyleOf("CardBox"), Padding = new Thickness(0, 14, 0, 0), Child = stripBox });
 
             // мова циферблата: кілька варіантів для цього браслета
             var options = StoreVariants.ForBand(e, Host?.BandModel ?? 10);
@@ -599,7 +602,6 @@ namespace BandFace.Store
             }
 
             // перегляди й завантаження — окрема капсула над кнопками (однакова в усіх станах); далі кнопки або прогрес
-            sp.Children.Add(StatsCapsule(e));
             sp.Children.Add(Actions(e, v));
             if (_actionError != null)
                 sp.Children.Add(new TextBlock { Text = _actionError, FontSize = 12, Foreground = BrushOf("Err"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, -4, 0, 12) });
