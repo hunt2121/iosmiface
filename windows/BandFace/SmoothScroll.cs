@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -32,7 +33,7 @@ namespace BandFace
             if (sv == null) return;
             var st = States.GetOrCreateValue(sv);
             // списки, що гортаються цілими пунктами (шари, зображення, галереї), переводимо на пікселі — плавно, як решта
-            if (ItemUnits(sv) && sv.ScrollInfo is VirtualizingPanel vp && ItemsControl.GetItemsOwner(vp) is ItemsControl owner)
+            if (ItemUnits(sv) && ScrollInfo(sv) is VirtualizingPanel vp && ItemsControl.GetItemsOwner(vp) is ItemsControl owner)
             {
                 VirtualizingPanel.SetScrollUnit(owner, ScrollUnit.Pixel);
                 sv.UpdateLayout();   // зміщення одразу в пікселях — далі рахуємо від нього
@@ -67,12 +68,32 @@ namespace BandFace
         static bool ItemUnits(ScrollViewer sv)
         {
             if (!sv.CanContentScroll) return false;
-            if (sv.ScrollInfo is VirtualizingPanel vp)
+            var info = ScrollInfo(sv);
+            if (info is VirtualizingPanel vp)
             {
                 var owner = ItemsControl.GetItemsOwner(vp);
                 return owner == null || VirtualizingPanel.GetScrollUnit(owner) == ScrollUnit.Item;
             }
-            return sv.ScrollInfo is StackPanel;
+            return info is StackPanel;
+        }
+
+        /// <summary>Хто прокручує вміст ScrollViewer (ScrollViewer.ScrollInfo — внутрішня властивість): перший IScrollInfo
+        /// у шаблоні, чий ScrollOwner — цей ScrollViewer (панель списку або ScrollContentPresenter)</summary>
+        static IScrollInfo ScrollInfo(ScrollViewer sv)
+        {
+            var queue = new System.Collections.Generic.Queue<DependencyObject>();
+            queue.Enqueue(sv);
+            for (int n = 0; queue.Count > 0 && n < 200; n++)
+            {
+                var d = queue.Dequeue();
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+                {
+                    var c = VisualTreeHelper.GetChild(d, i);
+                    if (c is IScrollInfo si && si.ScrollOwner == sv) return si;
+                    if (!(c is ScrollViewer)) queue.Enqueue(c);
+                }
+            }
+            return null;
         }
 
         /// <summary>Найближчий ScrollViewer угору по дереву, що може прокрутитися в бік delta.</summary>
