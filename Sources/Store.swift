@@ -484,19 +484,19 @@ struct StoreDetailView: View {
 
                 // Кілька варіантів (мови, 12/24 год) — вибір; за замовчуванням підібрано під телефон
                 if item.variantOptions.count > 1 {
-                    HStack {
-                        // назва варіанта — завжди в один рядок («Англійська (США)»)
+                    HStack(spacing: 0) {
+                        // назва варіанта — завжди в один рядок; якщо тісно — обрізається трикрапкою лише вона
                         Text("Мова")
-                            .lineLimit(1)
-                        Spacer(minLength: 23)   // безпечний відступ до назви варіанта
+                            .fixedSize()
+                        Spacer(minLength: 15)   // безпечний відступ до назви варіанта
                         Picker("Мова", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
                             ForEach(item.variantOptions, id: \.key) { Text($0.label).tag($0.key) }
                         }
                         .pickerStyle(.menu)
                         .labelsHidden()
                         .disabled(state == .installing)
-                        .fixedSize()
-                        .layoutPriority(1)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     }
                     .padding(.leading, 16)
                     .padding(.trailing, 6)
