@@ -42,6 +42,7 @@ namespace BandFace
             ["logEmpty"] = new[] { "Журнал порожній", "The log is empty", "Журнал пуст" },
             ["doneNew"] = new[] { "Циферблат встановлено й активовано", "Watch face installed and activated", "Циферблат установлен и активирован" },
             ["doneOld"] = new[] { "Циферблат уже був на пристрої, його активовано", "The watch face was already on the device and has been activated", "Циферблат уже был на устройстве, он активирован" },
+            ["keyRejected"] = new[] { "Ключ не підходить до цього браслета — його видалено. Вкажіть новий ключ", "The key doesn't match this band — it was removed. Enter a new key", "Ключ не подходит к этому браслету — он удалён. Укажите новый ключ" },
             ["errAuth"] = new[] { "Автентифікація не вдалася: перевірте auth key", "Authentication failed: check the auth key", "Аутентификация не удалась: проверьте auth key" },
             ["errTimeout"] = new[] { "Пристрій не відповів", "The device did not respond", "Устройство не ответило" },
             ["errConnect"] = new[] { "Спочатку підключіть пристрій", "Connect to the device first", "Сначала подключите устройство" },
