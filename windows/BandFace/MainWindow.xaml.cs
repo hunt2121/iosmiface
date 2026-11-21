@@ -684,14 +684,8 @@ namespace BandFace
 
         async Task InstallFromEditorCore(byte[] bin, string name)
         {
-            if (!EditorTab.EditorShown)
-            {
-                // з меню картки у списку — звичним шляхом вкладки «Циферблати»
-                NavFaces.IsChecked = true;
-                if (!LoadFace(bin, name + ".bin")) return;
-                await InstallAsync();
-                return;
-            }
+            // і з редактора, і зі списку циферблатів редактора — лишаємося на місці; прогрес у віконці
+            // у верхньому правому куті (CreatorView.ShowInstall), без переходу на вкладку «Циферблати»
             if (!LoadFace(bin, name + ".bin")) return;
             await InstallAsync(u => EditorTab.ShowInstall(u), name);
         }
