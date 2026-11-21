@@ -367,18 +367,20 @@ namespace BandFace.Store
             return n < 1000000 ? Cut(n / 1000.0, "k") : Cut(n / 1000000.0, "M");
         }
 
-        /// <summary>Капсула на сторінці циферблата — окремо над кнопками: «↓ 1 240 завантажень   👁 3 400 переглядів»,
+        /// <summary>Капсула на сторінці циферблата — окремо над кнопками: «↓ 1.2k завантажень   👁 3.4k переглядів»,
         /// вужча за кнопки на заокруглення, колір плашок</summary>
         FrameworkElement StatsCapsule(StoreEntry e)
         {
+            // числа коротко, як на картці магазину, а слово завжди «завантажень» / «переглядів»;
+            // проміжок між парами — за тим самим правилом, що на картці (за самими числами)
             var st = StatsOf(e);
-            string N(int n) => n.ToString("N0", CultureInfo.CurrentUICulture);
+            string d = Short(st.Item2), vw = Short(st.Item1);
             var row = new StatsRow
             {
-                Downloads = PluralText(st.Item2, "storeDl1", "storeDl2", "storeDl5", N(st.Item2)),
-                Views = PluralText(st.Item1, "storeView1", "storeView2", "storeView5", N(st.Item1)),
-                DownloadsShort = Short(st.Item2),
-                ViewsShort = Short(st.Item1),
+                Downloads = S.Get("storeDl5", d),
+                Views = S.Get("storeView5", vw),
+                GapDownloads = d, GapViews = vw,
+                Spread = true,
                 TextSize = 13,
             };
             return new Border { Height = 30, CornerRadius = new CornerRadius(15), Background = BrushOf("Card"), BorderBrush = BrushOf("CardBorder"),
@@ -400,13 +402,6 @@ namespace BandFace.Store
             btn.Height = 32;
             g.Children.Add(new Border { Margin = new Thickness(0, visible, 0, 0), CornerRadius = new CornerRadius(5), Background = BrushOf("Card"), Child = btn });
             return g;
-        }
-
-        static string PluralText(int n, string one, string few, string many, string shown)
-        {
-            int a = n % 10, b = n % 100;
-            var key = a == 1 && b != 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many;
-            return S.Get(key, shown);
         }
 
         /// <summary>Сторінка запису за ID (для знімків екрана на збірковому сервері)</summary>
