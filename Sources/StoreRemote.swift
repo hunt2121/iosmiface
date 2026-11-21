@@ -259,7 +259,9 @@ enum StoreVariants {
 
     /// Текст мовою телефона, інакше першою мовою варіанта, інакше англійською чи українською
     static func text(_ dict: [String: String], variant: RemoteCatalog.Variant?) -> String {
-        let order = phoneLanguages + (variant?.langs.filter { $0 != "*" } ?? []) + ["en", "uk"]
+        var order = phoneLanguages + (variant?.langs.filter { $0 != "*" } ?? []) + ["en", "uk"]
+        // англійська з AM/PM (США) — свій опис «en-US», якщо автор його написав; стоїть перед звичайною англійською
+        if variant?.clock == "12h", variant?.langs.contains("en") == true, let i = order.firstIndex(of: "en") { order.insert("en-US", at: i) }
         for l in order { if let s = dict[l], !s.isEmpty { return s } }
         return dict.values.first { !$0.isEmpty } ?? ""
     }
