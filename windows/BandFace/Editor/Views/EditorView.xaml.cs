@@ -465,7 +465,7 @@ namespace BandFace.Creator
         Point? panFrom;
         double panH, panV;
 
-        /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× — одразу вибір, куди зберегти</summary>
+        /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× із закругленими кутами й прозорістю — одразу вибір, куди зберегти</summary>
         void Shot_Click(object sender, RoutedEventArgs e)
         {
             if (project == null) return;
@@ -476,8 +476,20 @@ namespace BandFace.Creator
             {
                 var rd = new FaceRenderer(project) { ColorVariant = variant };
                 var img = rd.Render(theme, 2).Image;
+                // як екран браслета: закруглені кути (як на превʼю), поза ними — прозорість
+                int w = img.PixelWidth, h = img.PixelHeight;
+                double r = project.Meta.Device.Corner * w / project.Meta.Device.Width;
+                var dv = new DrawingVisual();
+                using (var dc = dv.RenderOpen())
+                {
+                    dc.PushClip(new RectangleGeometry(new Rect(0, 0, w, h), r, r));
+                    dc.DrawImage(img, new Rect(0, 0, w, h));
+                    dc.Pop();
+                }
+                var shot = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+                shot.Render(dv);
                 var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(img));
+                enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(shot));
                 using (var f = File.Create(dlg.FileName)) enc.Save(f);
             }
             catch (Exception ex) { MessageBox.Show(Window.GetWindow(this), ex.Message, "BandFace", MessageBoxButton.OK, MessageBoxImage.Error); }
