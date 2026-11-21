@@ -5,7 +5,8 @@
   <!-- Вкладка «Редактор» BandFace: список циферблатів (проєктів), редактор, бібліотека шрифтів -->
   <Grid>
     <!-- Циферблати (проєкти) -->
-    <ScrollViewer x:Name="PageFaces" VerticalScrollBarVisibility="Auto" Margin="26,6,26,0">
+    <!-- поля як у сторінок головного вікна (зліва 26, праворуч 36 усередині) — картки такі самі, як у магазині -->
+    <ScrollViewer x:Name="PageFaces" VerticalScrollBarVisibility="Auto" Margin="26,6,0,0" Padding="0,0,36,0">
       <StackPanel Margin="0,0,0,24">
         <Grid Margin="0,0,0,18">
           <TextBlock x:Name="TitleFaces" FontSize="28" FontWeight="SemiBold"/>
@@ -17,7 +18,8 @@
           </StackPanel>
         </Grid>
         <TextBlock x:Name="FacesHint" FontSize="12" Foreground="{DynamicResource Sub}" Margin="0,0,0,14" TextWrapping="Wrap"/>
-        <WrapPanel x:Name="ProjectsPanel"/>
+        <!-- сітка як у магазині: колонки за шириною, у карток відступ праворуч 12 — сітка ширша на нього -->
+        <UniformGrid x:Name="ProjectsPanel" Margin="0,0,-12,0" VerticalAlignment="Top"/>
         <Border x:Name="EmptyCard" Style="{StaticResource CardBox}" Visibility="Collapsed" Padding="24">
           <StackPanel>
             <TextBlock x:Name="EmptyTitle" FontSize="16" FontWeight="SemiBold"/>

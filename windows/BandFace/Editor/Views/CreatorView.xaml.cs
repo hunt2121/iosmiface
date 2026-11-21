@@ -60,6 +60,8 @@ namespace BandFace.Creator
             Editor.InstallRequested += (bin, name) => InstallRequested?.Invoke(bin, name);
             Editor.CancelInstallRequested += () => CancelInstallRequested?.Invoke();
             RefreshProjects();
+            // ширина вікна змінилась — лише кількість колонок (картки не перебудовуємо)
+            PageFaces.SizeChanged += (s, e) => { if (e.WidthChanged) ProjectsPanel.Columns = GridColumns(); };
         }
 
         void ApplyTexts()
@@ -133,8 +135,16 @@ namespace BandFace.Creator
         void RefreshProjects()
         {
             ProjectsPanel.Children.Clear();
+            ProjectsPanel.Columns = GridColumns();
             foreach (var p in store.Projects) ProjectsPanel.Children.Add(Card(p));
             EmptyCard.Visibility = store.Projects.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>Колонок карток — як у магазині (StoreView.RenderList): картка не вужча за 218 px, від 2 до 6 в ряд</summary>
+        int GridColumns()
+        {
+            double w = Math.Max(400, PageFaces.ActualWidth - 36);
+            return Math.Max(2, Math.Min(6, (int)((w + 12) / 230)));
         }
 
         /// <summary>Вага готового .bin за ключем мініатюри (рахується у фоні разом з нею)</summary>
@@ -143,7 +153,7 @@ namespace BandFace.Creator
         /// <summary>Новий дизайн — картка як у магазині: капсула, назва й кольори праворуч, «вага · дата», стилі, кнопка всередині</summary>
         FrameworkElement StoreCard(FaceProject p)
         {
-            const double iw = 96, ih = 236;
+            const double iw = 144, ih = 354;   // як капсула в картці магазину
             var img = new Image { Stretch = Stretch.UniformToFill };
             RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
             var inner = new Grid { Width = iw, Height = ih, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, iw, ih), iw / 2, iw / 2) };
@@ -199,7 +209,7 @@ namespace BandFace.Creator
             inst.Click += (s, e) => { var bin = Actions.Build(Owner, p); if (bin != null) InstallRequested?.Invoke(bin, p.DisplayName); };
             sp.Children.Add(inst);
 
-            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName, Width = 222 };
+            var card = new Border { Style = (Style)FindResource("CardBox"), Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(14), Child = sp, Cursor = Cursors.Hand, ToolTip = p.DisplayName };
             card.MouseLeftButtonUp += (s, e) => { if (!(e.OriginalSource is DependencyObject o && InButton(o))) OpenProject(p); };
             card.ContextMenu = CardMenu(p);
 
