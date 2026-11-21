@@ -10788,6 +10788,29 @@
         }
       }
     },
+    "США": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "США"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "США"
+          }
+        }
+      }
+    },
     "Своя картинка стрілки": {
       "extractionState": "manual",
       "localizations": {

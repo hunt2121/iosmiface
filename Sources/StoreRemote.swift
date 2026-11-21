@@ -243,8 +243,10 @@ enum StoreVariants {
     static func label(_ key: String, _ v: RemoteCatalog.Variant) -> String {
         let code = String(key.prefix(2))
         // англійська з AM/PM — це англійська для США
-        if code == "en", v.clock == "12h", let us = Locale.current.localizedString(forIdentifier: "en_US") {
-            return us.prefix(1).uppercased() + us.dropFirst()
+        // «Англійська (США)» — коротко, а не «(Сполучені Штати)»
+        if code == "en", v.clock == "12h" {
+            let en = Locale.current.localizedString(forLanguageCode: "en") ?? "English"
+            return en.prefix(1).uppercased() + en.dropFirst() + " (" + String(localized: "США") + ")"
         }
         let name = Locale.current.localizedString(forLanguageCode: code) ?? code
         let title = name.prefix(1).uppercased() + name.dropFirst()
