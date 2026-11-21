@@ -231,9 +231,9 @@ struct StoreStatsRow: View {
         (text as NSString).size(withAttributes: [.font: font]).width - ink.left - ink.right
     }
 
-    /// Напівжирний шрифт стилю з цифрами однакової ширини (числа змінюються — сусіди не зсуваються)
+    /// Звичайний шрифт стилю (як «102 КБ · v2.0» поруч) з цифрами однакової ширини (числа змінюються — сусіди не зсуваються)
     static func font(_ style: UIFont.TextStyle) -> UIFont {
-        UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: style).pointSize, weight: .semibold)
+        UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: style).pointSize, weight: .regular)
     }
 }
 
@@ -244,7 +244,7 @@ struct StoreStatsTab: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.font(.caption2), roomy: true)
+                      font: StoreStatsRow.font(.caption), roomy: true)
             .frame(height: 22)
             .padding(.bottom, Self.under)
             // «піднята»: колір картки з м'якою тінню (у темній темі трохи світліша за картку — тінь на темному не видно)
@@ -265,20 +265,16 @@ struct StoreStatsTab: View {
     static let shadow = Color(UIColor { t in UIColor.black.withAlphaComponent(t.userInterfaceStyle == .dark ? 0.6 : 0.22) })
 }
 
-/// Капсула над кнопками на сторінці циферблата: «↓ 1 240 завантажень  👁 3 400 переглядів»;
-/// уже кнопки на заокруглення з кожного боку, колір — як у плашок сторінки
-struct StoreStatsCapsule: View {
+/// Рядок у плашці «Розмір · Версія · Пристрої» на сторінці циферблата: «↓ 1.2k завантажень   👁 3.4k переглядів» —
+/// числа коротко, як на картці, слово завжди «завантажень» / «переглядів»; проміжок — за правилом картки
+struct StoreStatsLine: View {
     let stats: StoreServer.FaceStats
 
     var body: some View {
-        // числа коротко, як на картці магазину, а слово завжди «завантажень» / «переглядів»;
-        // проміжок між парами — за тим самим правилом, що на картці (за самими числами)
         let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
         StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
                       font: StoreStatsRow.font(.footnote), roomy: true, gapBasis: (d, v))
-            .frame(height: 26)
-            .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
-            .padding(.horizontal, 26)
+            .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
     }

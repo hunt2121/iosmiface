@@ -467,14 +467,20 @@ struct StoreDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 previews
 
-                HStack(spacing: 0) {
-                    infoColumn("Розмір", item.sizeText)
-                    Divider().frame(height: 34)
-                    infoColumn("Версія", item.version)
-                    Divider().frame(height: 34)
-                    infoColumn("Пристрої", item.bandsText)
+                // «Розмір · Версія · Пристрої», під лінією — завантаження й перегляди (та сама плашка)
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        infoColumn("Розмір", item.sizeText)
+                        Divider().frame(height: 34)
+                        infoColumn("Версія", item.version)
+                        Divider().frame(height: 34)
+                        infoColumn("Пристрої", item.bandsText)
+                    }
+                    .padding(.vertical, 16)
+                    Divider().padding(.horizontal, 8)
+                    StoreStatsLine(stats: stats ?? StoreServer.FaceStats(views: 0, downloads: 0))
+                        .padding(.vertical, 12)
                 }
-                .padding(.vertical, 16)
                 .padding(.horizontal, 8)
                 .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(Color(.secondarySystemGroupedBackground)))
@@ -497,9 +503,6 @@ struct StoreDetailView: View {
                     .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
                         .fill(Color(.secondarySystemGroupedBackground)))
                 }
-
-                // перегляди й завантаження — окрема капсула над кнопками (у всіх станах однакова)
-                StoreStatsCapsule(stats: stats ?? StoreServer.FaceStats(views: 0, downloads: 0))
 
                 actions
 
