@@ -224,15 +224,18 @@ struct StoreStatsRow: View {
     var gapBasis: (String, String)? = nil
     /// Найменший проміжок між парами (до масштабу шрифту): 14 — сторінка циферблата, 18 — картка магазину
     var minGap: CGFloat = 14
+    /// Найбільший проміжок (для зовсім малих чисел): типово minGap + 10; картка магазину — 37
+    var maxGap: CGFloat? = nil
 
     init(downloads: String, views: String, font: UIFont, roomy: Bool = false,
-         gapBasis: (String, String)? = nil, minGap: CGFloat = 14) {
+         gapBasis: (String, String)? = nil, minGap: CGFloat = 14, maxGap: CGFloat? = nil) {
         self.downloads = downloads
         self.views = views
         self.font = font
         self.roomy = roomy
         self.gapBasis = gapBasis
         self.minGap = minGap
+        self.maxGap = maxGap
     }
 
     /// Відстань між штрихами: значок → число
@@ -247,12 +250,12 @@ struct StoreStatsRow: View {
                                             line: InkMetrics.strokeTop("eye", font: eyeFont)), left: CGFloat(0), right: CGFloat(0))
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
-        let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(gd, InkMetrics.bearings(gd, font: font))
-                                   + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font, min: minGap) : minGap
+        let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + Self.onePixel + textInk(gd, InkMetrics.bearings(gd, font: font))
+                                   + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font, min: minGap, max: maxGap) : minGap
 
         HStack(spacing: 0) {
             pair(eye, views, vInk, dy: Self.iconShift("eye", eyeFont, text: font))
-            pair(arrow, downloads, dInk, dy: font.ascender - Self.digitHeight(font) / 2 - font.lineHeight / 2)
+            pair(arrow, downloads, dInk, dy: font.ascender - Self.digitHeight(font) / 2 - font.lineHeight / 2, extra: Self.onePixel)
                 .padding(.leading, gap - vInk.right - arrow.left)
         }
         .font(Font(font as CTFont))
@@ -331,19 +334,19 @@ struct StoreStatsRow: View {
     }
 
     /// Проміжок між парами за шириною чорнила обох пар: ≤ 36 (×масштаб) — min + 10, ≥ 64 — min, між ними плавно
-    static func gap(_ pairs: CGFloat, font: UIFont, min minGap: CGFloat = 14) -> CGFloat {
+    static func gap(_ pairs: CGFloat, font: UIFont, min minGap: CGFloat = 14, max maxGap: CGFloat? = nil) -> CGFloat {
         let k = font.pointSize / 10.5
         let t = min(1, max(0, (64 * k - pairs) / (28 * k)))
-        return (minGap + 10 * t) * k
+        return (minGap + ((maxGap ?? minGap + 10) - minGap) * t) * k
     }
 
     /// Значок і число: від чорнила значка до чорнила числа — 3 pt
     private func pair(_ icon: (image: UIImage, left: CGFloat, right: CGFloat), _ text: String,
-                      _ ink: (left: CGFloat, right: CGFloat), dy: CGFloat = 0) -> some View {
+                      _ ink: (left: CGFloat, right: CGFloat), dy: CGFloat = 0, extra: CGFloat = 0) -> some View {
         HStack(spacing: 0) {
             Image(uiImage: icon.image).renderingMode(.template).offset(y: dy)
             Text(verbatim: text)
-                .padding(.leading, Self.iconGap - icon.right - ink.left)
+                .padding(.leading, Self.iconGap + extra - icon.right - ink.left)
         }
         .lineLimit(1)
         .fixedSize()
@@ -369,7 +372,7 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: Self.font, roomy: true, minGap: 18)
+                      font: Self.font, roomy: true, minGap: 18, maxGap: 37)
             .frame(height: Self.font.lineHeight)
             .padding(.top, Self.insets.top)
             .padding(.bottom, Self.insets.bottom)
