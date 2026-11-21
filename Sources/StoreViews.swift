@@ -219,12 +219,21 @@ struct StoreStatsRow: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Висота чорнила цифри «1» над базовою лінією — справжня висота плоских цифр (capHeight шрифту від неї трохи відрізняється)
+    static func digitHeight(_ font: UIFont) -> CGFloat {
+        var ch: UniChar = 0x31, g: CGGlyph = 0
+        guard CTFontGetGlyphsForCharacters(font as CTFont, &ch, &g, 1) else { return font.capHeight }
+        var r = CGRect.zero
+        CTFontGetBoundingRectsForGlyphs(font as CTFont, .horizontal, &g, &r, 1)
+        return r.maxY > 0 ? r.maxY : font.capHeight
+    }
+
     /// Шрифт для значка: його чорнило заввишки ratio × висота цифр (висота великих літер шрифту)
     static func iconFont(_ name: String, _ font: UIFont, _ ratio: CGFloat) -> UIFont {
         let v = InkMetrics.symbolVertical(name, font: font)
         let ink = InkMetrics.symbol(name, font: font).image.size.height - v.top - v.bottom
         guard ink > 0 else { return font }
-        return font.withSize(font.pointSize * font.capHeight * ratio / ink)
+        return font.withSize(font.pointSize * digitHeight(font) * ratio / ink)
     }
 
     /// Зсув значка по вертикалі: центр його чорнила — на центрі цифр (а не центр картинки на центрі рядка тексту)
@@ -232,7 +241,7 @@ struct StoreStatsRow: View {
         let img = InkMetrics.symbol(name, font: iconFont).image
         let v = InkMetrics.symbolVertical(name, font: iconFont)
         let inkCenter = v.top + (img.size.height - v.top - v.bottom) / 2 - img.size.height / 2   // від центру картинки
-        let digitsCenter = font.ascender - font.capHeight / 2 - font.lineHeight / 2              // від центру рядка
+        let digitsCenter = font.ascender - digitHeight(font) / 2 - font.lineHeight / 2              // від центру рядка
         return digitsCenter - inkCenter
     }
 
