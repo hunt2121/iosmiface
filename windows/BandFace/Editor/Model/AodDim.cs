@@ -11,7 +11,6 @@ namespace BandFace.Creator
 {
     static class AodDim
     {
-        public const int AodTheme = 1;
         sealed class Box { public int Alpha; }
         static readonly ConditionalWeakTable<byte[], Box> cache = new ConditionalWeakTable<byte[], Box>();
 
@@ -43,31 +42,35 @@ namespace BandFace.Creator
         }
 
         /// <summary>Службові шари, яких не видно серед шарів і які не вибираються: приглушення AOD і фігура під числом</summary>
-        public static bool Is(FaceProject p, XNode layout, int theme) => NumberBadge.IsBadge(layout) || (theme == AodTheme && AlphaOf(p, layout) > 0);
+        public static bool Is(FaceProject p, XNode layout, int theme) => NumberBadge.IsBadge(layout) || (p.IsAod(theme) && AlphaOf(p, layout) > 0);
 
-        /// <summary>Шар-приглушення в AOD (верхній з таких) або null</summary>
-        public static XNode Find(FaceProject p)
+        /// <summary>Шар-приглушення в AOD (верхній з таких) або null; у кожного стилю свій AOD і своє приглушення</summary>
+        public static XNode Find(FaceProject p, int aod)
         {
-            if (p.Themes.Count < 2) return null;
-            return p.Layouts(AodTheme).LastOrDefault(l => AlphaOf(p, l) > 0);
+            if (!p.IsAod(aod)) return null;
+            return p.Layouts(aod).LastOrDefault(l => AlphaOf(p, l) > 0);
         }
 
+        /// <summary>Шари-приглушення всіх AOD</summary>
+        public static System.Collections.Generic.List<XNode> All(FaceProject p) =>
+            p.AodThemes().Select(a => Find(p, a)).Where(x => x != null).ToList();
+
         /// <summary>Сила приглушення у відсотках (0 — немає)</summary>
-        public static int Percent(FaceProject p)
+        public static int Percent(FaceProject p, int aod)
         {
-            var l = Find(p);
+            var l = Find(p, aod);
             return l == null ? 0 : (int)Math.Round(AlphaOf(p, l) * 100 / 255.0);
         }
 
         /// <summary>Ставить приглушення (0 — прибирає шар)</summary>
-        public static void Set(FaceProject p, int percent)
+        public static void Set(FaceProject p, int aod, int percent)
         {
-            var th = p.Theme(AodTheme);
-            if (th == null) return;
-            var cur = Find(p);
+            var th = p.Theme(aod);
+            if (th == null || !p.IsAod(aod)) return;
+            var cur = Find(p, aod);
             if (percent <= 0)
             {
-                if (cur != null) ElementFactory.Delete(p, cur, AodTheme);
+                if (cur != null) ElementFactory.Delete(p, cur, aod);
                 return;
             }
             int alpha = Math.Max(1, Math.Min(254, (int)Math.Round(percent * 255 / 100.0)));
@@ -78,7 +81,7 @@ namespace BandFace.Creator
             if (cur != null)
             {
                 var res = p.ElementOf(cur);
-                if (ElementFactory.LayoutsOf(p, res).Count > 1) { ElementFactory.Delete(p, cur, AodTheme); cur = null; }
+                if (ElementFactory.LayoutsOf(p, res).Count > 1) { ElementFactory.Delete(p, cur, aod); cur = null; }
                 else ElementFactory.ReplaceImage(p, res, img);
             }
             if (cur == null)
@@ -88,7 +91,7 @@ namespace BandFace.Creator
                 cur.Set("ref", "@" + name).Set("x", 0).Set("y", 0);
                 th.Kids.Add(cur);
             }
-            KeepOnTop(p);
+            KeepOnTop(p, aod);
         }
 
         /// <summary>Позначка шару AOD «над приглушенням» (лише для редактора; компілятор читає в Layout тільки ref, x, y)</summary>
@@ -106,8 +109,13 @@ namespace BandFace.Creator
         /// <summary>Порядок AOD: звичайні шари, потім приглушення, потім шари «над приглушенням» (фігура під числом — разом із числом)</summary>
         public static void KeepOnTop(FaceProject p)
         {
-            var th = p.Theme(AodTheme);
-            var dim = Find(p);
+            foreach (var a in p.AodThemes()) KeepOnTop(p, a);
+        }
+
+        static void KeepOnTop(FaceProject p, int aod)
+        {
+            var th = p.Theme(aod);
+            var dim = Find(p, aod);
             if (th == null || dim == null) return;
             var lays = th.Kids.Where(k => !k.IsComment && k.Tag == "Layout" && k != dim).ToList();
             var above = new System.Collections.Generic.List<XNode>();
@@ -127,8 +135,13 @@ namespace BandFace.Creator
         /// <summary>Відкритий .bin / старий проєкт: шари, що стоять вище за приглушення, позначаються «над приглушенням»</summary>
         public static void MarkFromOrder(FaceProject p)
         {
-            var th = p.Theme(AodTheme);
-            var dim = Find(p);
+            foreach (var a in p.AodThemes()) MarkFromOrder(p, a);
+        }
+
+        static void MarkFromOrder(FaceProject p, int aod)
+        {
+            var th = p.Theme(aod);
+            var dim = Find(p, aod);
             if (th == null || dim == null) return;
             var lays = th.Kids.Where(k => !k.IsComment && k.Tag == "Layout").ToList();
             if (lays.Any(IsAbove)) return;

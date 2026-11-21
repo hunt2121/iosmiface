@@ -121,40 +121,71 @@ namespace BandFace.Creator
             Add(Ui.Button(S.Get("bgImage") + "…", AddBackground));
             Add(Ui.Note(S.Get("bgCropHint")));
 
-            Add(Ui.Header(S.Get("screens")));
-            if (project.Themes.Count < 2)
+            // Стилі: у кожного — звичайний екран і, за бажанням, свій «Завжди на екрані» з власним приглушенням.
+            // Копія стилю використовує ті самі картинки — файли не дублюються.
+            Add(Ui.Header(S.Get("styles")));
+            int cur = project.StyleOf(theme);
+            foreach (var st0 in project.StyleThemes())
             {
-                Add(Ui.Note(S.Get("aodHint")));
-                Add(Ui.Button(S.Get("addAod"), () =>
+                int st = st0, aod = project.AodOf(st);
+                var box = new StackPanel();
+                box.Children.Add(new TextBlock { Text = project.StyleTitle(st), FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
+                var nameBox = new TextBox { Text = project.Theme(st)?.Str("name") ?? "", VerticalContentAlignment = VerticalAlignment.Center };
+                void CommitStyleName()
                 {
-                    project.Edit(p =>
+                    var t = nameBox.Text.Trim();
+                    if (t != (project.Theme(st)?.Str("name") ?? "")) project.Edit(p => p.Theme(st)?.Set("name", t));
+                }
+                nameBox.LostKeyboardFocus += (s2, e2) => CommitStyleName();
+                nameBox.KeyDown += (s2, e2) => { if (e2.Key == System.Windows.Input.Key.Enter) CommitStyleName(); };
+                box.Children.Add(Ui.Row(S.Get("styleName"), nameBox));
+                // перемикач екранів стилю: звичайний / «Завжди на екрані»
+                var screens = new List<KeyValuePair<string, string>> { Ui.P("n", S.Get("normalScreen")) };
+                if (aod >= 0) screens.Add(Ui.P("a", S.Get("aodScreen")));
+                box.Children.Add(Ui.Chips(null, screens, theme == st ? "n" : theme == aod ? "a" : "", k => ShowTheme(k == "a" ? aod : st)));
+                if (aod >= 0)
+                {
+                    // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
+                    box.Children.Add(Ui.Slider(S.Get("aodDim") + ", %", AodDim.Percent(project, aod), 0, 90, 1, v =>
                     {
-                        var t = p.Root.Add("Theme");
-                        t.Set("type", "AOD").Set("name", "").Set("bgColor", "#000000");
-                        // у режимі «завжди на екрані» — лише час, без секундних і кольорових деталей
-                        foreach (var l in p.Layouts(0)) if (Elements.Of(p.ElementOf(l)) == ElementKind.Digits) t.Kids.Add(l.Copy());
-                    });
-                    ShowTheme(1);
-                }));
+                        int pc = (int)Math.Round(v);
+                        if (pc != AodDim.Percent(project, aod)) project.Edit(p => AodDim.Set(p, aod, pc));
+                    }));
+                    box.Children.Add(Ui.Button(S.Get("deleteAod"), () =>
+                    {
+                        if (MessageBox.Show(Owner, S.Get("deleteAodAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                        theme = st;
+                        project.Edit(p => ElementFactory.DeleteTheme(p, aod));
+                    }, "DangerBtn"));
+                }
+                else
+                    box.Children.Add(Ui.Button(S.Get("addAod"), () =>
+                    {
+                        int t = st;
+                        project.Edit(p => t = Styles.AddAod(p, st));
+                        ShowTheme(t);
+                    }));
+                if (project.StyleThemes().Count > 1)
+                    box.Children.Add(Ui.Button(S.Get("deleteStyle"), () =>
+                    {
+                        if (MessageBox.Show(Owner, S.Get("deleteStyleAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                        theme = 0;
+                        project.Edit(p => Styles.DeleteStyle(p, st));
+                        ShowTheme(0);
+                    }, "DangerBtn"));
+                foreach (FrameworkElement c in box.Children) if (c is Button) c.Margin = new Thickness(0, 6, 0, 0);
+                var card = new Border { Child = box, Padding = new Thickness(12), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 10) };
+                card.SetResourceReference(Border.BorderBrushProperty, "CardBorder");
+                if (st == cur) card.SetResourceReference(Border.BackgroundProperty, "NavSel");   // поточний стиль підсвічено
+                Add(card);
             }
-            else
+            Add(Ui.ButtonsRow(new[] { "＋ " + S.Get("copyStyle"), "＋ " + S.Get("emptyStyle") }, i =>
             {
-                Add(Ui.Note(theme == 0 ? S.Get("nowMain") : S.Get("nowAod")));
-                Add(Ui.Button(theme == 0 ? S.Get("goAod") : S.Get("goMain"), () => ShowTheme(theme == 0 ? 1 : 0)));
-                // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
-                Add(Ui.Slider(S.Get("aodDim") + ", %", AodDim.Percent(project), 0, 90, 1, v =>
-                {
-                    int pc = (int)Math.Round(v);
-                    if (pc != AodDim.Percent(project)) project.Edit(p => AodDim.Set(p, pc));
-                }));
-                Add(Ui.Note(S.Get("aodDimHint")));
-                Add(Ui.Button(S.Get("deleteAod"), () =>
-                {
-                    if (MessageBox.Show(Owner, S.Get("deleteAodAsk"), "BandFace", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-                    theme = 0;
-                    project.Edit(p => ElementFactory.DeleteTheme(p, 1));
-                }, "DangerBtn"));
-            }
+                int t = theme;
+                project.Edit(p => t = Styles.AddStyle(p, i == 0 ? project.StyleOf(theme) : -1));
+                ShowTheme(t);
+            }));
+            Add(Ui.Note(S.Get("stylesHint")));
 
             BuildColorVariants();
 
@@ -757,7 +788,7 @@ namespace BandFace.Creator
             A(S.Get("alVCenter"), () => null, () => (int)Math.Round((dev.Height - box.Height) / 2));
             A(S.Get("alBottom"), () => null, () => dev.Height - (int)Math.Round(box.Height));
             Add(al);
-            if (theme == AodDim.AodTheme && AodDim.Find(project) != null)   // AOD з приглушенням: шар можна підняти над чорним шаром — тоді він не тьмяніє
+            if (AodDim.Find(project, theme) != null)   // AOD з приглушенням: шар можна підняти над чорним шаром — тоді він не тьмяніє
                 Add(Ui.Switch(S.Get("aboveDim"), AodDim.IsAbove(layout), v => project.Edit(p => AodDim.SetAbove(p, layout, v))));
             Add(Ui.Note(S.Get("nudgeHint")));
         }
