@@ -40,6 +40,11 @@ namespace BandFace.Store
         StoreCatalog _catalog;
         string _filter = "all";
         string _sort = "date";
+        /// <summary>Сортування (порядок у меню): ключ → рядок назви. Числа — з сервера, спочатку більше</summary>
+        static readonly Dictionary<string, string> SortTitles = new Dictionary<string, string>
+        {
+            ["date"] = "storeSortNew", ["views"] = "storeSortViews", ["downloads"] = "storeSortDownloads",
+        };
         string _error;
         bool _loading;
         readonly Dictionary<string, string> _variantOverride = new Dictionary<string, string>();
@@ -74,6 +79,9 @@ namespace BandFace.Store
             catch (Exception) { if (_catalog == null) _error = S.Get("storeNoNetwork"); }
             finally { _loading = false; }
             Render();
+            // числа для сортування за переглядами й завантаженнями
+            var all = await StoreClient.StatsAsync();
+            if (all != null) { _stats = all; if (_open == null && _sort != "date") RenderList(); }
         }
 
         /// <summary>Змінився браслет, список циферблатів на ньому або йде встановлення — перемалювати</summary>
@@ -170,11 +178,14 @@ namespace BandFace.Store
             // нижній відступ 10 + 8 під кожною капсулою = 18 до карток
             var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 10), LastChildFill = false };
             // висота як у плиток категорій — один рівний ряд
-            var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = S.Get(_sort == "name" ? "storeSortName" : "storeSortNew") + "  " };
+            var sort = new Button { Style = StyleOf("Btn"), Height = 32, VerticalAlignment = VerticalAlignment.Top, Content = S.Get(SortTitles[_sort]) + "  " };
             sort.FontFamily = new FontFamily("Segoe UI, Segoe MDL2 Assets");
             var menu = new ContextMenu();
-            Creator.Ui.MenuAdd(menu, S.Get("storeSortNew"), _sort == "date" ? "" : null, () => { _sort = "date"; RenderList(); });
-            Creator.Ui.MenuAdd(menu, S.Get("storeSortName"), _sort == "name" ? "" : null, () => { _sort = "name"; RenderList(); });
+            foreach (var kv in SortTitles)
+            {
+                var key = kv.Key;
+                Creator.Ui.MenuAdd(menu, S.Get(kv.Value), _sort == key ? "" : null, () => { _sort = key; RenderList(); });
+            }
             sort.Click += (s, e) => { menu.PlacementTarget = sort; menu.Placement = PlacementMode.Bottom; menu.IsOpen = true; };
             DockPanel.SetDock(sort, Dock.Right);
             bar.Children.Add(sort);
@@ -222,9 +233,11 @@ namespace BandFace.Store
 
             IEnumerable<StoreEntry> faces = _catalog.Faces.Where(f =>
                 _filter == "all" || (_filter == "free" && f.Price == null) || (_filter == "paid" && f.Price != null) || f.Kinds.Contains(_filter));
-            faces = _sort == "name"
-                ? faces.OrderBy(f => StoreVariants.Text(f.Name, Variant(f)), StringComparer.CurrentCultureIgnoreCase)
-                : faces.OrderByDescending(f => Day(f.Added ?? f.Updated) ?? DateTime.MinValue);
+            // за числами — спочатку більше, при рівних новіші вище; без статистики — 0
+            int Count(StoreEntry f) => _stats != null && _stats.TryGetValue(f.Id, out var st) ? (_sort == "views" ? st.Item1 : st.Item2) : 0;
+            faces = _sort == "date"
+                ? faces.OrderByDescending(f => Day(f.Added ?? f.Updated) ?? DateTime.MinValue)
+                : faces.OrderByDescending(Count).ThenByDescending(f => Day(f.Added ?? f.Updated) ?? DateTime.MinValue);
             var list = faces.ToList();
             if (list.Count == 0)
             {
