@@ -9,9 +9,8 @@ namespace BandFace.Store
     /// «↓ 1.1k   👁 4.8k» — значки й числа малюються як контури й ставляться за чорнилом (межами самих штрихів),
     /// а не за рамками тексту, у яких різні порожні поля:
     /// від значка до числа рівно 3 px, стрілка заввишки з цифри, по вертикалі всі по центру висоти цифр, а та — по центру елемента.
-    /// Разом (Spread = false): між парами 14 px, уся група по центру.
-    /// Розведено (Spread = true, картка магазину): центри пар на 28% ширини від середини, між парами не менше 16 px
-    /// і не менше 8 px від країв — малі числа не злипаються посередині, великі не налазять на краї (як на iPhone).
+    /// Пари разом, уся група по центру; між парами 14 px.
+    /// Spread = true (картка магазину): малі числа трохи розсунуті — проміжок від 24 до 14 зі зростанням чисел (у масштабі шрифту).
     /// </summary>
     sealed class StatsRow : FrameworkElement
     {
@@ -27,7 +26,7 @@ namespace BandFace.Store
 
         /// <summary>Segoe MDL2 Assets: «Завантажити» і «Переглянути»</summary>
         const string ArrowGlyph = "\uE896", EyeGlyph = "\uE890";
-        const double IconGap = 3, PairGap = 14, MinPairGap = 16, SpreadShare = 0.28, Edge = 8;
+        const double IconGap = 3, PairGap = 14;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
         static readonly Typeface Icons = new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
@@ -60,24 +59,15 @@ namespace BandFace.Store
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
             double w1 = ra.Width + IconGap + rd.Width, w2 = re.Width + IconGap + rv.Width;
-            double x1, x2;
+            // між парами 14; з Spread (картка магазину) малі числа трохи розсунуті — як на iPhone:
+            // ширина чорнила обох пар ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
+            double k = TextSize / 10.5, gap = PairGap;
             if (Spread)
             {
-                double c = w / 2, off = w * SpreadShare;
-                x1 = c - off - w1 / 2;
-                x2 = c + off - w2 / 2;
-                double gap = x2 - (x1 + w1);
-                if (gap < MinPairGap) { x1 -= (MinPairGap - gap) / 2; x2 += (MinPairGap - gap) / 2; }
-                if (x1 < Edge) x1 = Edge;
-                if (x2 + w2 > w - Edge) x2 = w - Edge - w2;
-                // зовсім не вміщається — разом по центру
-                if (x2 - (x1 + w1) < MinPairGap) { x1 = (w - (w1 + MinPairGap + w2)) / 2; x2 = x1 + w1 + MinPairGap; }
+                double t = Math.Min(1, Math.Max(0, (64 * k - (w1 + w2)) / (28 * k)));
+                gap = (14 + 10 * t) * k;
             }
-            else
-            {
-                x1 = (w - (w1 + PairGap + w2)) / 2;
-                x2 = x1 + w1 + PairGap;
-            }
+            double x1 = (w - (w1 + gap + w2)) / 2, x2 = x1 + w1 + gap;
 
             Draw(dc, arrow, x1 - ra.Left, cy - (ra.Top + ra.Bottom) / 2);
             Draw(dc, d, x1 + ra.Width + IconGap - rd.Left, textDy);

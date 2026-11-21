@@ -384,7 +384,7 @@ namespace BandFace.Store
         }
 
         /// <summary>Капсула на картці магазину — визирає з-за кнопки (нижні 8 px під кнопкою), колір фону сторінки;
-        /// пари розведені (StatsRow.Spread)</summary>
+        /// пари разом по центру, малі числа трохи розсунуті (StatsRow.Spread)</summary>
         FrameworkElement CardButton(StoreEntry e, Button btn)
         {
             var st = StatsOf(e);
