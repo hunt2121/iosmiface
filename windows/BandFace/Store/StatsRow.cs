@@ -27,6 +27,8 @@ namespace BandFace.Store
         public bool Spread;
         /// <summary>Найменший проміжок між парами: 14 — сторінка запису, 18 — картка</summary>
         public double MinGap = 14;
+        /// <summary>Найбільший проміжок для зовсім малих чисел (null — MinGap + 10); картка магазину — 37</summary>
+        public double? MaxGap;
 
         const double IconGap = 3;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);   // як підписи поруч
@@ -107,7 +109,8 @@ namespace BandFace.Store
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
-            double w1 = ra.Width + IconGap + rd.Width, w2 = re.Width + IconGap + rv.Width;
+            double dlGap = IconGap + px;   // від лотка до числа — на піксель більше, ніж від ока
+            double w1 = ra.Width + dlGap + rd.Width, w2 = re.Width + IconGap + rv.Width;
             // між парами 14; з Spread (картка магазину) малі числа трохи розсунуті — як на iPhone:
             // ширина чорнила обох пар ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
             double k = TextSize / 10.5, gap = MinGap;
@@ -116,11 +119,11 @@ namespace BandFace.Store
                 double b1 = w1, b2 = w2;
                 if (GapDownloads != null && GapViews != null)
                 {
-                    b1 = ra.Width + IconGap + Ink(Outline(GapDownloads, Text, TextSize)).Width;
+                    b1 = ra.Width + dlGap + Ink(Outline(GapDownloads, Text, TextSize)).Width;
                     b2 = re.Width + IconGap + Ink(Outline(GapViews, Text, TextSize)).Width;
                 }
                 double t = Math.Min(1, Math.Max(0, (64 * k - (b1 + b2)) / (28 * k)));
-                gap = (MinGap + 10 * t) * k;
+                gap = (MinGap + ((MaxGap ?? MinGap + 10) - MinGap) * t) * k;
             }
             // спершу перегляди (око), потім завантаження (стрілка)
             double x1 = (w - (w2 + gap + w1)) / 2, x2 = x1 + w2 + gap;
@@ -128,7 +131,7 @@ namespace BandFace.Store
             Draw(dc, eye, x1 - re.Left, cy - (re.Top + re.Bottom) / 2);
             Draw(dc, v, x1 + re.Width + IconGap - rv.Left, textDy);
             Draw(dc, arrow, x2 - ra.Left, cy - (ra.Top + ra.Bottom) / 2);
-            Draw(dc, d, x2 + ra.Width + IconGap - rd.Left, textDy);
+            Draw(dc, d, x2 + ra.Width + dlGap - rd.Left, textDy);
         }
 
         /// <summary>Висота плоскої цифри «1» (від базової лінії до верху) у Segoe UI розміру size</summary>
