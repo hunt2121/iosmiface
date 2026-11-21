@@ -154,6 +154,36 @@ extension InkMetrics {
     }
 
     /// Малюємо значок чорним у 8× і шукаємо крайні стовпчики з чорнилом
+    private static var strokes: [String: CGFloat] = [:]
+
+    /// Товщина лінії значка: перший відрізок чорнила зверху в середньому стовпчику (для ока — верхня дуга)
+    static func strokeTop(_ name: String, font: UIFont) -> CGFloat {
+        let key = "\(name)|\(font.pointSize)|\(font.fontName)"
+        if let hit = strokes[key] { return hit }
+        let image = symbol(name, font: font).image
+        let size = image.size, scale: CGFloat = 8
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = false
+        let rendered = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            image.withTintColor(.black, renderingMode: .alwaysOriginal).draw(at: .zero)
+        }
+        var run = 0
+        if let cg = rendered.cgImage, let data = cg.dataProvider?.data, let bytes = CFDataGetBytePtr(data) {
+            let bpp = cg.bitsPerPixel / 8, row = cg.bytesPerRow, x = cg.width / 2
+            var started = false
+            for y in 0..<cg.height {
+                let p = y * row + x * bpp
+                var alpha = 0
+                for b in 0..<bpp { alpha = max(alpha, Int(bytes[p + b])) }
+                if alpha > 127 { started = true; run += 1 } else if started { break }
+            }
+        }
+        let w = max(1, CGFloat(run) / scale)
+        strokes[key] = w
+        return w
+    }
+
     private static func scan(_ image: UIImage) -> (CGFloat, CGFloat, CGFloat, CGFloat) {
         let size = image.size
         guard size.width > 0, size.height > 0 else { return (0, 0, 0, 0) }
@@ -209,10 +239,12 @@ struct StoreStatsRow: View {
     private static let iconGap: CGFloat = 3
 
     var body: some View {
-        // стрілка — на піксель вища й нижча за цифри, око — заввишки з цифри; обидва трохи товщі за текст
-        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1, extra: Self.onePixel * 2), eyeFont = Self.iconFont("eye", font, 1)
-        let arrow = InkMetrics.symbol("arrow.down.to.line", font: arrowFont)
+        // око — заввишки з цифри, трохи товще за текст
+        let eyeFont = Self.iconFont("eye", font, 1)
         let eye = InkMetrics.symbol("eye", font: eyeFont)
+        // стрілка своя: завширшки з око, на піксель вища й нижча за цифри, лінії такої ж товщини, як в ока
+        let arrow = (image: Self.arrowImage(width: inkWidth(eye), height: Self.digitHeight(font) + Self.onePixel * 2,
+                                            line: InkMetrics.strokeTop("eye", font: eyeFont)), left: CGFloat(0), right: CGFloat(0))
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
         let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(gd, InkMetrics.bearings(gd, font: font))
@@ -220,7 +252,7 @@ struct StoreStatsRow: View {
 
         HStack(spacing: 0) {
             pair(eye, views, vInk, dy: Self.iconShift("eye", eyeFont, text: font))
-            pair(arrow, downloads, dInk, dy: Self.iconShift("arrow.down.to.line", arrowFont, text: font))
+            pair(arrow, downloads, dInk, dy: font.ascender - Self.digitHeight(font) / 2 - font.lineHeight / 2)
                 .padding(.leading, gap - vInk.right - arrow.left)
         }
         .font(Font(font as CTFont))
@@ -241,6 +273,31 @@ struct StoreStatsRow: View {
     }
 
     /// Шрифт для значка: його чорнило заввишки ratio × висота цифр (висота великих літер шрифту)
+    private static var arrows: [String: UIImage] = [:]
+
+    /// Стрілка до риски, малюнок рівно по чорнилу (без полів): риска внизу на всю ширину, наконечник, лінії line
+    static func arrowImage(width: CGFloat, height: CGFloat, line: CGFloat) -> UIImage {
+        let key = "\(width)|\(height)|\(line)"
+        if let hit = arrows[key] { return hit }
+        let span = height - line, cx = width / 2, top = line / 2
+        let tip = top + span * 0.714, arm = span * 0.343
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        let image = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: cx, y: top)); p.addLine(to: CGPoint(x: cx, y: tip))
+            p.move(to: CGPoint(x: cx - arm, y: tip - arm)); p.addLine(to: CGPoint(x: cx, y: tip)); p.addLine(to: CGPoint(x: cx + arm, y: tip - arm))
+            p.move(to: CGPoint(x: line / 2, y: height - line / 2)); p.addLine(to: CGPoint(x: width - line / 2, y: height - line / 2))
+            p.lineWidth = line
+            p.lineCapStyle = .round
+            p.lineJoinStyle = .round
+            UIColor.black.setStroke()
+            p.stroke()
+        }.withRenderingMode(.alwaysTemplate)
+        arrows[key] = image
+        return image
+    }
+
     /// Один піксель екрана в точках
     static var onePixel: CGFloat { 1 / max(1, UIScreen.main.scale) }
 
