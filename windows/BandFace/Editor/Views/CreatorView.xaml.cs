@@ -47,7 +47,17 @@ namespace BandFace.Creator
         }
 
         /// <summary>Прогрес встановлення з редактора — у віконце під кнопкою</summary>
-        public void ShowInstall(InstallUpdate u) => Editor.ShowInstall(u);
+        /// <summary>Прогрес встановлення: у редакторі — під його кнопкою «Встановити»; у списку циферблатів — так само
+        /// у верхньому правому куті, під кнопкою «Новий циферблат» (кнопка редактора тоді прихована, і віконце без місця «гуляло»)</summary>
+        public void ShowInstall(InstallUpdate u)
+        {
+            if (Editor.Visibility == Visibility.Visible) { listPopup?.Close(); Editor.ShowInstall(u); return; }
+            if (listPopup == null)
+                listPopup = new InstallPopup(NewBtn) { Cancel = () => CancelInstallRequested?.Invoke(), Retry = null };
+            listPopup.Show(u, listPopup.IsOpen || u.State == InstallUpdate.Kind.Connecting || u.State == InstallUpdate.Kind.Done || u.State == InstallUpdate.Kind.Failed);
+        }
+
+        InstallPopup listPopup;
 
         public bool EditorShown => Editor.Visibility == Visibility.Visible;
         Window Owner => Window.GetWindow(this);
