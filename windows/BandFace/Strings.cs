@@ -165,6 +165,7 @@ namespace BandFace
             ["storeClock24"] = new[] { "24-годинний формат", "24-hour format", "24-часовой формат" },
             ["storeAnyClock"] = new[] { "Будь-який формат часу", "Any time format", "Любой формат времени" },
             ["clock12short"] = new[] { "12 год", "12 h", "12 ч" },
+            ["usShort"] = new[] { "США", "US", "США" },
             ["clock24short"] = new[] { "24 год", "24 h", "24 ч" },
             ["storeEdit"] = new[] { "Змінити в редакторі", "Edit in the editor", "Изменить в редакторе" },
             ["storeEditHint"] = new[] { "Буде створено копію — оригінал не зміниться", "A copy will be created — the original stays as is", "Будет создана копия — оригинал не изменится" },
