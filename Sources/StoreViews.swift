@@ -209,8 +209,8 @@ struct StoreStatsRow: View {
     private static let iconGap: CGFloat = 3
 
     var body: some View {
-        // стрілка рівно заввишки з цифри, око — 80% її висоти
-        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1), eyeFont = Self.iconFont("eye", font, 0.8)
+        // стрілка — на піксель вища й нижча за цифри, око — 90% їх висоти; обидва трохи товщі за текст
+        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1, extra: Self.onePixel * 2), eyeFont = Self.iconFont("eye", font, 0.9)
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: arrowFont)
         let eye = InkMetrics.symbol("eye", font: eyeFont)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
@@ -241,11 +241,16 @@ struct StoreStatsRow: View {
     }
 
     /// Шрифт для значка: його чорнило заввишки ratio × висота цифр (висота великих літер шрифту)
-    static func iconFont(_ name: String, _ font: UIFont, _ ratio: CGFloat) -> UIFont {
-        let v = InkMetrics.symbolVertical(name, font: font)
-        let ink = InkMetrics.symbol(name, font: font).image.size.height - v.top - v.bottom
-        guard ink > 0 else { return font }
-        return font.withSize(font.pointSize * digitHeight(font) * ratio / ink)
+    /// Один піксель екрана в точках
+    static var onePixel: CGFloat { 1 / max(1, UIScreen.main.scale) }
+
+    /// Шрифт для значка (напівжирніший за текст — значок трохи товщий): чорнило заввишки ratio × висота цифр + extra
+    static func iconFont(_ name: String, _ font: UIFont, _ ratio: CGFloat, extra: CGFloat = 0) -> UIFont {
+        let base = UIFont.systemFont(ofSize: font.pointSize, weight: .medium)
+        let v = InkMetrics.symbolVertical(name, font: base)
+        let ink = InkMetrics.symbol(name, font: base).image.size.height - v.top - v.bottom
+        guard ink > 0 else { return base }
+        return base.withSize(base.pointSize * (digitHeight(font) * ratio + extra) / ink)
     }
 
     /// Зсув значка по вертикалі: центр його чорнила — на центрі цифр (а не центр картинки на центрі рядка тексту)

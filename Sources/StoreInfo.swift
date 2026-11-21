@@ -337,8 +337,8 @@ extension InfoIcon.Kind {
     /// Оптичне підрівнювання значка по вертикалі (pt): «−» — вгору, «+» — вниз
     var nudge: CGFloat {
         switch self {
-        case .band, .calendar: return -0.5
-        case .globe, .tag: return 0.5
+        case .band, .calendar, .globe: return -0.5
+        case .tag: return 0.5
         default: return 0
         }
     }
