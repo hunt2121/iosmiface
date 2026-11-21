@@ -242,8 +242,8 @@ struct StoreStatsRow: View {
         // око — заввишки з цифри, трохи товще за текст
         let eyeFont = Self.iconFont("eye", font, 1)
         let eye = InkMetrics.symbol("eye", font: eyeFont)
-        // стрілка своя: на піксель вужча за око з кожного боку, на піксель вища й нижча за цифри, лінії такої ж товщини, як в ока
-        let arrow = (image: Self.arrowImage(width: inkWidth(eye) - Self.onePixel * 2, height: Self.digitHeight(font) + Self.onePixel * 2,
+        // значок завантажень — лоток зі стрілкою: на 3 пікселі вужчий за око, на піксель вища й нижча за цифри, лінії такої ж товщини, як в ока
+        let arrow = (image: Self.arrowImage(width: inkWidth(eye) - Self.onePixel * 3, height: Self.digitHeight(font) + Self.onePixel * 2,
                                             line: InkMetrics.strokeTop("eye", font: eyeFont)), left: CGFloat(0), right: CGFloat(0))
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
@@ -275,19 +275,30 @@ struct StoreStatsRow: View {
     /// Шрифт для значка: його чорнило заввишки ratio × висота цифр (висота великих літер шрифту)
     private static var arrows: [String: UIImage] = [:]
 
-    /// Стрілка до риски, малюнок рівно по чорнилу (без полів): риска внизу на всю ширину, наконечник, лінії line
+    /// Лоток зі стрілкою вниз, малюнок рівно по чорнилу (без полів) width × height; лінії line, круглі кінці
     static func arrowImage(width: CGFloat, height: CGFloat, line: CGFloat) -> UIImage {
         let key = "\(width)|\(height)|\(line)"
         if let hit = arrows[key] { return hit }
-        let span = height - line, cx = width / 2, top = line / 2
-        let tip = top + span * 0.714, arm = span * 0.343
+        let W = width, H = height, r = line / 2
         let format = UIGraphicsImageRendererFormat()
         format.opaque = false
-        let image = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
+        let image = UIGraphicsImageRenderer(size: CGSize(width: W, height: H), format: format).image { _ in
             let p = UIBezierPath()
-            p.move(to: CGPoint(x: cx, y: top)); p.addLine(to: CGPoint(x: cx, y: tip))
+            // стрілка
+            let cx = W / 2, tip = H * 0.50, arm = H * 0.24
+            p.move(to: CGPoint(x: cx, y: r)); p.addLine(to: CGPoint(x: cx, y: tip))
             p.move(to: CGPoint(x: cx - arm, y: tip - arm)); p.addLine(to: CGPoint(x: cx, y: tip)); p.addLine(to: CGPoint(x: cx + arm, y: tip - arm))
-            p.move(to: CGPoint(x: line / 2, y: height - line / 2)); p.addLine(to: CGPoint(x: width - line / 2, y: height - line / 2))
+            // лоток: боки й дно з заокругленими кутами
+            let l = r, rr = W - r, b = H - r, rim = H * 0.58, rad = H * 0.12
+            p.move(to: CGPoint(x: l, y: rim)); p.addLine(to: CGPoint(x: l, y: b - rad))
+            p.addQuadCurve(to: CGPoint(x: l + rad, y: b), controlPoint: CGPoint(x: l, y: b))
+            p.addLine(to: CGPoint(x: rr - rad, y: b))
+            p.addQuadCurve(to: CGPoint(x: rr, y: b - rad), controlPoint: CGPoint(x: rr, y: b))
+            p.addLine(to: CGPoint(x: rr, y: rim))
+            // обідок з виїмкою посередині
+            p.move(to: CGPoint(x: l, y: rim)); p.addLine(to: CGPoint(x: W * 0.30, y: rim))
+            p.addLine(to: CGPoint(x: W * 0.36, y: H * 0.74)); p.addLine(to: CGPoint(x: W * 0.64, y: H * 0.74))
+            p.addLine(to: CGPoint(x: W * 0.70, y: rim)); p.addLine(to: CGPoint(x: rr, y: rim))
             p.lineWidth = line
             p.lineCapStyle = .round
             p.lineJoinStyle = .round
