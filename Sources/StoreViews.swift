@@ -197,10 +197,10 @@ struct StoreStatsRow: View {
     private static let iconGap: CGFloat = 3
 
     var body: some View {
-        // стрілка рівно заввишки з цифри (у шрифті вона вища й виглядала завеликою); око — як у шрифті
-        let arrowFont = Self.arrowFont(font)
+        // стрілка рівно заввишки з цифри, око — 80% її висоти
+        let arrowFont = Self.iconFont("arrow.down.to.line", font, 1), eyeFont = Self.iconFont("eye", font, 0.8)
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: arrowFont)
-        let eye = InkMetrics.symbol("eye", font: font)
+        let eye = InkMetrics.symbol("eye", font: eyeFont)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
         let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(gd, InkMetrics.bearings(gd, font: font))
@@ -208,7 +208,7 @@ struct StoreStatsRow: View {
 
         HStack(spacing: 0) {
             pair(arrow, downloads, dInk, dy: Self.iconShift("arrow.down.to.line", arrowFont, text: font))
-            pair(eye, views, vInk, dy: Self.iconShift("eye", font, text: font))
+            pair(eye, views, vInk, dy: Self.iconShift("eye", eyeFont, text: font))
                 .padding(.leading, gap - dInk.right - eye.left)
         }
         .font(Font(font as CTFont))
@@ -219,12 +219,12 @@ struct StoreStatsRow: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// Шрифт для стрілки: чорнило стрілки заввишки з цифри (висота великих літер шрифту)
-    static func arrowFont(_ font: UIFont) -> UIFont {
-        let v = InkMetrics.symbolVertical("arrow.down.to.line", font: font)
-        let ink = InkMetrics.symbol("arrow.down.to.line", font: font).image.size.height - v.top - v.bottom
+    /// Шрифт для значка: його чорнило заввишки ratio × висота цифр (висота великих літер шрифту)
+    static func iconFont(_ name: String, _ font: UIFont, _ ratio: CGFloat) -> UIFont {
+        let v = InkMetrics.symbolVertical(name, font: font)
+        let ink = InkMetrics.symbol(name, font: font).image.size.height - v.top - v.bottom
         guard ink > 0 else { return font }
-        return font.withSize(font.pointSize * font.capHeight / ink)
+        return font.withSize(font.pointSize * font.capHeight * ratio / ink)
     }
 
     /// Зсув значка по вертикалі: центр його чорнила — на центрі цифр (а не центр картинки на центрі рядка тексту)
