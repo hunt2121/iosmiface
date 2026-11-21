@@ -93,12 +93,12 @@ namespace BandFace.Store
             // вертикаль і розмір — за плоскою цифрою «1» (від базової лінії до висоти великих літер);
             // кругла «0» виступає вгору й униз, і стрілка за нею виходила більшою й нижчою
             var digits = Outline("1", Text, TextSize).Bounds;
-            // як в iOS: око заввишки з цифри; стрілка завширшки з око, на піксель вища й нижча за цифри, лінії як в ока
+            // як в iOS: око заввишки з цифри; стрілка на піксель вужча за око з кожного боку, на піксель вища й нижча за цифри, лінії як в ока
             double px = 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
             var eyeRaw = EyeShape();
             var eye = Scaled(eyeRaw, digits.Height);
             double eyeLine = EyeStroke * digits.Height / eyeRaw.Bounds.Height;
-            var arrow = ArrowShape(Ink(eye).Width, digits.Height + 2 * px, eyeLine);
+            var arrow = ArrowShape(Ink(eye).Width - 2 * px, digits.Height + 2 * px, eyeLine);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
