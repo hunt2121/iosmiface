@@ -381,7 +381,7 @@ namespace BandFace.Store
                 Spread = true,
                 TextSize = 13,
                 Height = 20,
-                Margin = new Thickness(16, 10, 16, 11),
+                Margin = new Thickness(16, 10, 16, 10),   // цифри (їх центр — по центру рядка) рівно посередині між лінією й низом плашки
             };
         }
 
