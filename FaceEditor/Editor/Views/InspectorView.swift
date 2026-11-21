@@ -392,7 +392,7 @@ struct PositionPane: View {
                 nudgePad
             }
             VStack(spacing: 0) {
-                if theme == AodDim.aodTheme && AodDim.find(project) != nil {
+                if AodDim.find(project, aod: theme) != nil {
                     // AOD з приглушенням: шар можна підняти над чорним шаром — тоді він не тьмяніє
                     Toggle("Над приглушенням AOD", isOn: Binding(get: { AodDim.isAbove(layout) },
                                                                  set: { v in let l = layout; project.edit { AodDim.setAbove($0, l, v) } }))

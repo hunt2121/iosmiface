@@ -6,7 +6,6 @@ import Foundation
 import FaceCompiler
 
 enum AodDim {
-    static let aodTheme = 1
     private static var cache: [String: Int] = [:]
 
     /// Прозорість (1…254) шару-приглушення або 0, якщо шар — не приглушення
@@ -36,27 +35,30 @@ enum AodDim {
 
     /// Службові шари, яких не видно серед шарів і які не вибираються: приглушення AOD і фігура під числом
     static func isDim(_ p: FaceProject, _ layout: XNode, theme: Int) -> Bool {
-        NumberBadge.isBadge(layout) || (theme == aodTheme && alpha(p, layout) > 0)
+        NumberBadge.isBadge(layout) || (p.isAOD(theme) && alpha(p, layout) > 0)
     }
 
-    /// Шар-приглушення в AOD (верхній з таких) або nil
-    static func find(_ p: FaceProject) -> XNode? {
-        guard p.themes.count > 1 else { return nil }
-        return p.layouts(aodTheme).last { alpha(p, $0) > 0 }
+    /// Шар-приглушення в AOD (верхній з таких) або nil; у кожного стилю свій AOD і своє приглушення
+    static func find(_ p: FaceProject, aod: Int) -> XNode? {
+        guard p.isAOD(aod) else { return nil }
+        return p.layouts(aod).last { alpha(p, $0) > 0 }
     }
+
+    /// Шари-приглушення всіх AOD
+    static func all(_ p: FaceProject) -> [XNode] { p.aodThemes.compactMap { find(p, aod: $0) } }
 
     /// Сила приглушення у відсотках (0 — немає)
-    static func percent(_ p: FaceProject) -> Int {
-        guard let l = find(p) else { return 0 }
+    static func percent(_ p: FaceProject, aod: Int) -> Int {
+        guard let l = find(p, aod: aod) else { return 0 }
         return Int((Double(alpha(p, l)) * 100 / 255).rounded())
     }
 
-    /// Ставить приглушення (0 — прибирає шар)
-    static func set(_ p: FaceProject, percent: Int) {
-        guard let th = p.theme(aodTheme) else { return }
-        var cur = find(p)
+    /// Ставить приглушення AOD (0 — прибирає шар)
+    static func set(_ p: FaceProject, aod: Int, percent: Int) {
+        guard p.isAOD(aod), let th = p.theme(aod) else { return }
+        var cur = find(p, aod: aod)
         if percent <= 0 {
-            if let c = cur { ElementFactory.delete(p, layout: c, theme: aodTheme) }
+            if let c = cur { ElementFactory.delete(p, layout: c, theme: aod) }
             return
         }
         let alpha = UInt8(max(1, min(254, Int((Double(percent) * 255 / 100).rounded()))))
@@ -66,7 +68,7 @@ enum AodDim {
         while i < px.count { px[i] = alpha; i += 4 }
         let img = RGBAImage(w: w, h: h, px: px)
         if let c = cur, let res = p.element(of: c) {
-            if ElementFactory.layouts(of: res, in: p).count > 1 { ElementFactory.delete(p, layout: c, theme: aodTheme); cur = nil }
+            if ElementFactory.layouts(of: res, in: p).count > 1 { ElementFactory.delete(p, layout: c, theme: aod); cur = nil }
             else { ElementFactory.replaceImage(p, res, img) }
         }
         if cur == nil {
@@ -75,7 +77,7 @@ enum AodDim {
             l.set("ref", "@" + name).set("x", int: 0).set("y", int: 0)
             th.kids.append(l)
         }
-        keepOnTop(p)
+        keepOnTop(p, aod: aod)
     }
 
     /// Позначка шару AOD «над приглушенням» (лише для редактора; компілятор читає в Layout тільки ref, x, y)
@@ -91,7 +93,11 @@ enum AodDim {
 
     /// Порядок AOD: звичайні шари, потім приглушення, потім шари «над приглушенням» (фігура під числом — разом із числом)
     static func keepOnTop(_ p: FaceProject) {
-        guard let th = p.theme(aodTheme), let dim = find(p) else { return }
+        for a in p.aodThemes { keepOnTop(p, aod: a) }
+    }
+
+    static func keepOnTop(_ p: FaceProject, aod: Int) {
+        guard let th = p.theme(aod), let dim = find(p, aod: aod) else { return }
         let lays = th.kids.filter { !$0.isComment && $0.tag == "Layout" && $0 !== dim }
         var above: [XNode] = []
         for (i, l) in lays.enumerated() {
@@ -107,7 +113,11 @@ enum AodDim {
 
     /// Відкритий .bin / старий проєкт: шари, що стоять вище за приглушення, позначаються «над приглушенням»
     static func markFromOrder(_ p: FaceProject) {
-        guard let th = p.theme(aodTheme), let dim = find(p) else { return }
+        for a in p.aodThemes { markFromOrder(p, aod: a) }
+    }
+
+    private static func markFromOrder(_ p: FaceProject, aod: Int) {
+        guard let th = p.theme(aod), let dim = find(p, aod: aod) else { return }
         let lays = th.kids.filter { !$0.isComment && $0.tag == "Layout" }
         guard !lays.contains(where: isAbove), let i = lays.firstIndex(where: { $0 === dim }) else { return }
         for l in lays[(i + 1)...] where !NumberBadge.isBadge(l) && alpha(p, l) == 0 { l.set(aboveKey, "true") }

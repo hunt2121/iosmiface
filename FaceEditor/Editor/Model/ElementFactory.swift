@@ -332,6 +332,20 @@ enum ElementFactory {
         let copy = res.copy()
         let name = p.uniqueName(res.string("name") ?? "copy")
         copy.set("name", name)
+        // свої файли картинок у копії: інакше видалення однієї копії стирало спільний файл, а зміна — обидві
+        var n = 0
+        func ownFiles(_ node: XNode) {
+            if let src = node.string("src"), let data = p.file(src) {
+                let ext = (src as NSString).pathExtension
+                var path = "\(name)\(n == 0 ? "" : "_\(n)").\(ext.isEmpty ? "png" : ext)"
+                while p.file(path) != nil { n += 1; path = "\(name)_\(n).\(ext.isEmpty ? "png" : ext)" }
+                n += 1
+                p.setFile(path, data)
+                node.set("src", path)
+            }
+            for c in node.elements { ownFiles(c) }
+        }
+        ownFiles(copy)
         p.resources.kids.append(copy)
         let l = layout.copy()
         l.set("ref", "@" + name)

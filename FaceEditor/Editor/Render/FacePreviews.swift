@@ -115,7 +115,7 @@ enum FacePreviews {
             return UIImage(data: d, scale: 1)
         }
         guard let main = png(0, "main.png") else { return nil }
-        let aod = project.themes.count > 1 && !project.layouts(1).isEmpty ? png(1, "aod.png") : nil
+        let aod = project.aodTheme(forStyle: 0).flatMap { project.layouts($0).isEmpty ? nil : png($0, "aod.png") }
         let gif = animation(project, renderer)
         if let gif { try? gif.write(to: url(k, "anim.gif")) }
         else { FileManager.default.createFile(atPath: url(k, "noanim").path, contents: Data()) }

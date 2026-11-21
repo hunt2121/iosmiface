@@ -1703,6 +1703,29 @@
         }
       }
     },
+    "Видалити стиль разом з його «Завжди на екрані»?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the style together with its Always on display?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить стиль вместе с его «Всегда на экране»?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити стиль разом з його «Завжди на екрані»?"
+          }
+        }
+      }
+    },
     "Видалити цей колір": {
       "extractionState": "manual",
       "localizations": {
@@ -3382,6 +3405,29 @@
         }
       }
     },
+    "Додати «Завжди на екрані»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Always on display"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить «Всегда на экране»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати «Завжди на екрані»"
+          }
+        }
+      }
+    },
     "Додати екран «Завжди на екрані»": {
       "extractionState": "manual",
       "localizations": {
@@ -3677,29 +3723,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Екран"
-          }
-        }
-      }
-    },
-    "Екрани": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Screens"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Экраны"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Екрани"
           }
         }
       }
@@ -4785,6 +4808,29 @@
         }
       }
     },
+    "Звичайний екран": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обычный экран"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звичайний екран"
+          }
+        }
+      }
+    },
     "Здоров'я": {
       "extractionState": "manual",
       "localizations": {
@@ -5379,6 +5425,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Картинки шару «%@»"
+          }
+        }
+      }
+    },
+    "Картинки, які використовують інші стилі, лишаються.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images used by other styles are kept."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки, которые используют другие стили, остаются."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картинки, які використовують інші стилі, лишаються."
           }
         }
       }
@@ -5981,6 +6050,29 @@
         }
       }
     },
+    "Копіювати поточний стиль": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy current style"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копировать текущий стиль"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копіювати поточний стиль"
+          }
+        }
+      }
+    },
     "Копія": {
       "extractionState": "manual",
       "localizations": {
@@ -6000,6 +6092,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Копія"
+          }
+        }
+      }
+    },
+    "Копія стилю використовує ті самі картинки — файли не дублюються. «Приглушення AOD» — чорний напівпрозорий шар поверх «Завжди на екрані»: картинки спільні зі звичайним екраном, а в AOD виглядають тьмяніше. На браслеті стиль вибирається довгим натисканням на циферблат.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A style copy uses the same images — no files are duplicated. “AOD dimming” is a black translucent layer on top of Always on display: images are shared with the normal screen but look dimmer in AOD. On the band, choose the style by long-pressing the watch face."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копия стиля использует те же картинки — файлы не дублируются. «Приглушение AOD» — чёрный полупрозрачный слой поверх «Всегда на экране»: картинки общие с обычным экраном, а в AOD выглядят тусклее. На браслете стиль выбирается долгим нажатием на циферблат."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копія стилю використовує ті самі картинки — файли не дублюються. «Приглушення AOD» — чорний напівпрозорий шар поверх «Завжди на екрані»: картинки спільні зі звичайним екраном, а в AOD виглядають тьмяніше. На браслеті стиль вибирається довгим натисканням на циферблат."
           }
         }
       }
@@ -7131,6 +7246,29 @@
         }
       }
     },
+    "Налаштування стилів": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки стилей"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Налаштування стилів"
+          }
+        }
+      }
+    },
     "Намалювати": {
       "extractionState": "manual",
       "localizations": {
@@ -7568,6 +7706,29 @@
         }
       }
     },
+    "Новий порожній стиль": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New empty style"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый пустой стиль"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новий порожній стиль"
+          }
+        }
+      }
+    },
     "Новий циферблат": {
       "extractionState": "manual",
       "localizations": {
@@ -7932,29 +8093,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Основний"
-          }
-        }
-      }
-    },
-    "Основний екран": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Main screen"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Основной экран"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Основний екран"
           }
         }
       }
@@ -11524,6 +11662,29 @@
         }
       }
     },
+    "Стиль %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стиль %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стиль %d"
+          }
+        }
+      }
+    },
     "Стиль %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -11566,6 +11727,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стиль і колір вибираються на браслеті\nпісля встановлення"
+          }
+        }
+      }
+    },
+    "Стилі, зараз %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Styles, current: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стили, сейчас %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стилі, зараз %@"
           }
         }
       }

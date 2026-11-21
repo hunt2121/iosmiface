@@ -89,7 +89,7 @@ enum ImageSets {
         for u in usersFast(p, arr) {
             for (t, l) in ix.layouts[ObjectIdentifier(u)] ?? [] where l !== except {
                 let n = u.string("source").map { SampleData.title($0) } ?? ElementKind.of(u, in: p).title
-                let s = n + (t == 1 ? " (AOD)" : "")
+                let s = n + (p.isAOD(t) ? " (AOD)" + (p.styleThemes.count > 1 ? " \(p.styleNumber(of: t))" : "") : "")
                 if !names.contains(s) { names.append(s) }
             }
         }

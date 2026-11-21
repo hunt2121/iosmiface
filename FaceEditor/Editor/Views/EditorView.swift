@@ -43,6 +43,8 @@ struct EditorView: View {
     var body: some View {
         // полотно й панель не рухаються, коли відкривається клавіатура; текст вводиться в полі над нею
         editor.inputBarHost()
+            // стиль чи AOD зник (видалили, «Скасувати») — на перший стиль
+            .onChange(of: project.themes.count) { n in if theme >= n { theme = 0; selected = nil } }
     }
 
     private var editor: some View {
@@ -182,8 +184,11 @@ struct EditorView: View {
             roundButton("arrow.uturn.forward", "Повторити") { project.redo(); dropMissingSelection() }
                 .disabled(!project.canRedo)
             roundButton("eye", "Попередній перегляд") { showPreview = true }
-            if project.themes.count > 1 {
-                roundButton(theme == 0 ? "sun.max" : "moon", "Тема") { theme = (theme + 1) % project.themes.count; selected = nil }
+            styleMenu
+            // звичайний екран ↔ «Завжди на екрані» поточного стилю (якщо в нього є AOD)
+            let style = project.styleTheme(of: theme)
+            if let aod = project.aodTheme(forStyle: style) {
+                roundButton(project.isAOD(theme) ? "moon" : "sun.max", "Тема") { theme = project.isAOD(theme) ? style : aod; selected = nil }
             }
             Button { locked.toggle() } label: {
                 Image(systemName: locked ? "lock.fill" : "lock.open").font(.system(size: 16, weight: .semibold))
@@ -194,6 +199,40 @@ struct EditorView: View {
             .accessibilityLabel(Text(loc(locked ? "Розблокувати переміщення елементів" : "Заблокувати переміщення елементів")))
         }
         .padding(12)
+    }
+
+    /// Меню стилів (системне, як «Готово»): вибір стилю, копія поточного, новий порожній, налаштування стилів
+    private var styleMenu: some View {
+        let current = project.styleTheme(of: theme)
+        return Menu {
+            Section(loc("Стиль")) {
+                ForEach(project.styleThemes, id: \.self) { s in
+                    Button {
+                        theme = s; selected = nil
+                    } label: {
+                        if s == current { Label(project.styleTitle(s), systemImage: "checkmark") } else { Text(project.styleTitle(s)) }
+                    }
+                }
+            }
+            Section {
+                Button {
+                    var t = current
+                    project.edit { t = ElementFactory.addStyle($0, copyOf: current) }
+                    theme = t; selected = nil
+                } label: { Label(loc("Копіювати поточний стиль"), systemImage: "square.on.square") }
+                Button {
+                    var t = current
+                    project.edit { t = ElementFactory.addStyle($0, copyOf: nil) }
+                    theme = t; selected = nil
+                } label: { Label(loc("Новий порожній стиль"), systemImage: "plus") }
+            }
+            Section {
+                Button { sheet = .properties } label: { Label(loc("Налаштування стилів"), systemImage: "slider.horizontal.3") }
+            }
+        } label: {
+            StyleButtonLabel(number: project.styleNumber(of: theme))
+        }
+        .accessibilityLabel(Text(String(format: loc("Стилі, зараз %@"), project.styleTitle(current))))
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
@@ -295,15 +334,13 @@ struct EditorView: View {
             Text("Циферблат").font(.title3.weight(.bold))
             Text("Торкніться елемента на полотні, щоб змінити його, або перетягніть, щоб пересунути. «Елемент» додає час, дату, кроки, пульс, погоду та інше.")
                 .font(.subheadline).foregroundStyle(.secondary)
-            if project.themes.count < 2 {
+            if project.aodTheme(forStyle: project.styleTheme(of: theme)) == nil {
                 Button {
-                    project.edit { p in
-                        let t = p.root.add("Theme")
-                        t.set("type", "AOD").set("name", "").set("bgColor", "#000000")
-                        // у режимі «завжди на екрані» — лише час, без секундних і кольорових деталей
-                        for l in p.layouts(0) where ElementKind.of(p.element(of: l)) == .digits { t.kids.append(l.copy()) }
-                    }
-                    theme = 1; selected = nil
+                    // у режимі «завжди на екрані» — лише час стилю, без секундних і кольорових деталей
+                    let style = project.styleTheme(of: theme)
+                    var t = style
+                    project.edit { t = ElementFactory.addAod($0, style: style) }
+                    theme = t; selected = nil
                 } label: {
                     Label("Додати екран «Завжди на екрані»", systemImage: "moon")
                         .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 44)
@@ -311,7 +348,9 @@ struct EditorView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Text(loc(theme == 0 ? "Зараз: основний екран" : "Зараз: «Завжди на екрані»")).font(.footnote).foregroundStyle(.secondary)
+                Text(loc(project.isAOD(theme) ? "Зараз: «Завжди на екрані»" : "Зараз: основний екран")
+                     + (project.styleThemes.count > 1 ? " · " + project.styleTitle(project.styleTheme(of: theme)) : ""))
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             ColorVariantsPanel(project: project, variant: $variant)
                 .padding(.top, 6)

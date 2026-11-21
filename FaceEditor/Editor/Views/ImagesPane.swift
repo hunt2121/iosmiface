@@ -25,7 +25,8 @@ enum ProjectImages {
             for c in n.elements { walk(owner, c) }
         }
         for r in p.resources.elements { walk(r, r) }
-        if let dim = AodDim.find(p), let ds = p.element(of: dim)?.string("src") {
+        for dim in AodDim.all(p) {
+            guard let ds = p.element(of: dim)?.string("src") else { continue }
             let k = MemoryStorage.normalizedPath(ds)
             out.removeAll { MemoryStorage.normalizedPath($0.src) == k }
         }

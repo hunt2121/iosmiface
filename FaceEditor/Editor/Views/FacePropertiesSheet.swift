@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Властивості циферблата: назва, ID, екрани (основний і «Завжди на екрані»), розмір файла.
+// Властивості циферблата: назва, ID, стилі (у кожного — звичайний екран і свій «Завжди на екрані»), розмір файла.
 
 import SwiftUI
 import FaceCompiler
@@ -10,7 +10,9 @@ struct FacePropertiesSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var size: Int?
-    @State private var askDeleteAOD = false
+    /// Підтвердження: видалити AOD (номер теми) / стиль (номер теми)
+    @State private var askDeleteAOD: Int?
+    @State private var askDeleteStyle: Int?
     @State private var idText = ""
     @State private var idInvalid = false
 
@@ -61,29 +63,53 @@ struct FacePropertiesSheet: View {
                     Text("Браслет розрізняє циферблати за ID: циферблат із тим самим ID замінює встановлений. Новий ID — щоб поставити його поруч.")
                 }
 
-                Section("Екрани") {
-                    Button { theme = 0; dismiss() } label: {
-                        row(loc("Основний екран"), selected: theme == 0)
-                    }
-                    if project.themes.count > 1 {
-                        Button { theme = 1; dismiss() } label: {
-                            row(loc("Завжди на екрані"), selected: theme == 1)
+                // Стилі: у кожного — звичайний екран і, за бажанням, свій «Завжди на екрані» з власним приглушенням
+                ForEach(project.styleThemes, id: \.self) { st in
+                    Section {
+                        InputRow(title: "Назва стилю", value: project.theme(st)?.string("name") ?? "", placeholder: "Без назви") { t in
+                            if t != (project.theme(st)?.string("name") ?? "") { project.edit { $0.theme(st)?.set("name", t) } }
                         }
-                        Button(role: .destructive) { askDeleteAOD = true } label: {
-                            Text("Видалити «Завжди на екрані»")
+                        Button { theme = st; dismiss() } label: {
+                            row(loc("Звичайний екран"), selected: theme == st)
                         }
+                        if let aod = project.aodTheme(forStyle: st) {
+                            Button { theme = aod; dismiss() } label: {
+                                row(loc("Завжди на екрані"), selected: theme == aod)
+                            }
+                            // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
+                            CommitSlider(title: "Приглушення AOD, %", value: Double(AodDim.percent(project, aod: aod)), range: 0...90, step: 1) { v in
+                                let pc = Int(v.rounded())
+                                if pc != AodDim.percent(project, aod: aod) { project.edit { AodDim.set($0, aod: aod, percent: pc) } }
+                            }
+                            Button(role: .destructive) { askDeleteAOD = aod } label: { Text("Видалити «Завжди на екрані»") }
+                        } else {
+                            Button {
+                                var t = st
+                                project.edit { t = ElementFactory.addAod($0, style: st) }
+                                theme = t; dismiss()
+                            } label: { Text("Додати «Завжди на екрані»") }
+                        }
+                        if project.styleThemes.count > 1 {
+                            Button(role: .destructive) { askDeleteStyle = st } label: { Text("Видалити стиль") }
+                        }
+                    } header: {
+                        Text(project.styleTitle(st))
                     }
                 }
-                if project.themes.count > 1 {
-                    Section {
-                        // приглушення всього екрана AOD — чорний напівпрозорий шар поверх
-                        CommitSlider(title: "Приглушення AOD, %", value: Double(AodDim.percent(project)), range: 0...90, step: 1) { v in
-                            let pc = Int(v.rounded())
-                            if pc != AodDim.percent(project) { project.edit { AodDim.set($0, percent: pc) } }
-                        }
-                    } footer: {
-                        Text("Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення.")
-                    }
+                Section {
+                    Button {
+                        var t = theme
+                        let cur = project.styleTheme(of: theme)
+                        project.edit { t = ElementFactory.addStyle($0, copyOf: cur) }
+                        theme = t; dismiss()
+                    } label: { Label("Копіювати поточний стиль", systemImage: "square.on.square") }
+                    Button {
+                        var t = theme
+                        project.edit { t = ElementFactory.addStyle($0, copyOf: nil) }
+                        theme = t; dismiss()
+                    } label: { Label("Новий порожній стиль", systemImage: "plus") }
+                } footer: {
+                    Text("Копія стилю використовує ті самі картинки — файли не дублюються. «Приглушення AOD» — чорний напівпрозорий шар поверх «Завжди на екрані»: картинки спільні зі звичайним екраном, а в AOD виглядають тьмяніше. На браслеті стиль вибирається довгим натисканням на циферблат.")
                 }
 
                 Section {
@@ -113,12 +139,29 @@ struct FacePropertiesSheet: View {
                         .disabled(bytes > Self.maxBytes)
                 }
             }
-            .confirmationDialog("Видалити екран «Завжди на екрані»?", isPresented: $askDeleteAOD, titleVisibility: .visible) {
+            .confirmationDialog("Видалити екран «Завжди на екрані»?",
+                                isPresented: Binding(get: { askDeleteAOD != nil }, set: { if !$0 { askDeleteAOD = nil } }),
+                                titleVisibility: .visible) {
                 Button("Видалити", role: .destructive) {
-                    theme = 0
-                    project.edit { ElementFactory.deleteTheme($0, index: 1) }
+                    if let a = askDeleteAOD {
+                        theme = project.styleTheme(of: a)
+                        project.edit { ElementFactory.deleteTheme($0, index: a) }
+                    }
                 }
                 Button("Скасувати", role: .cancel) {}
+            }
+            .confirmationDialog("Видалити стиль разом з його «Завжди на екрані»?",
+                                isPresented: Binding(get: { askDeleteStyle != nil }, set: { if !$0 { askDeleteStyle = nil } }),
+                                titleVisibility: .visible) {
+                Button("Видалити", role: .destructive) {
+                    if let st = askDeleteStyle {
+                        theme = 0
+                        project.edit { ElementFactory.deleteStyle($0, style: st) }
+                    }
+                }
+                Button("Скасувати", role: .cancel) {}
+            } message: {
+                Text("Картинки, які використовують інші стилі, лишаються.")
             }
         }
         .onAppear {
