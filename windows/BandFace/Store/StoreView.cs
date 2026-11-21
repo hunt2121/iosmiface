@@ -378,7 +378,7 @@ namespace BandFace.Store
                 Downloads = S.Get("storeDl5", d),
                 Views = S.Get("storeView5", vw),
                 GapDownloads = d, GapViews = vw,
-                Spread = true, MaxGap = 44,
+                Spread = true, MinGap = 27, MaxGap = 44,
                 TextSize = 13,
                 Height = 20,
                 Margin = new Thickness(16, 10, 16, 10),   // цифри (їх центр — по центру рядка) рівно посередині між лінією й низом плашки
@@ -396,7 +396,7 @@ namespace BandFace.Store
             double gap = 10 + (ff.LineSpacing - ff.Baseline) * 12, dh = StatsRow.DigitHeight(12), rowH = 18, m = gap - (rowH - dh) / 2;
             var sp = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
             sp.Children.Add(new Border { Height = 1, Background = BrushOf("CardBorder") });
-            sp.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, MinGap = 18, MaxGap = 44, Height = rowH,
+            sp.Children.Add(new StatsRow { Downloads = Short(st.Item2), Views = Short(st.Item1), TextSize = 12, Spread = true, MinGap = 27, MaxGap = 44, Height = rowH,
                 Margin = new Thickness(0, m, 0, m) });
             btn.Height = 32;
             sp.Children.Add(btn);
