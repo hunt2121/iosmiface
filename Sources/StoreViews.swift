@@ -73,6 +73,14 @@ enum StoreText {
         return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
+    /// Слово до короткого числа в капсулі сторінки — завжди однакове: «1.2k завантажень», «7 переглядів»
+    static var downloadsWord: String {
+        switch lang { case "uk": return "завантажень"; case "ru": return "загрузок"; default: return "downloads" }
+    }
+    static var viewsWord: String {
+        switch lang { case "uk": return "переглядів"; case "ru": return "просмотров"; default: return "views" }
+    }
+
     /// Коротко для картки: до 999 — повністю; далі 1.1k, 15.5k, 120k, 1.2M (один знак до 100, округлення вниз)
     static func short(_ n: Int) -> String {
         if n < 1000 { return "\(n)" }
@@ -169,6 +177,8 @@ struct StoreStatsRow: View {
     let views: String
     let font: UIFont
     var roomy = false
+    /// Числа без слів («1.2k», «3.4k») — проміжок між парами рахуємо за ними, щоб слова його не змінювали
+    var gapBasis: (String, String)? = nil
 
     /// Відстань між штрихами: значок → число
     private static let iconGap: CGFloat = 3
@@ -177,8 +187,9 @@ struct StoreStatsRow: View {
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: font)
         let eye = InkMetrics.symbol("eye", font: font)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
-        let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(downloads, dInk)
-                                   + inkWidth(eye) + Self.iconGap + textInk(views, vInk), font: font) : 14
+        let (gd, gv) = gapBasis ?? (downloads, views)
+        let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(gd, InkMetrics.bearings(gd, font: font))
+                                   + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font) : 14
 
         HStack(spacing: 0) {
             pair(arrow, downloads, dInk)
@@ -252,13 +263,11 @@ struct StoreStatsCapsule: View {
     let stats: StoreServer.FaceStats
 
     var body: some View {
-        let font = StoreStatsRow.font(.footnote)
-        // великий системний шрифт — слова не вміщаються: тоді коротко (1.2k)
-        ViewThatFits(in: .horizontal) {
-            StoreStatsRow(downloads: StoreText.downloads(stats.downloads), views: StoreText.views(stats.views), font: font)
-                .padding(.horizontal, 12)
-            StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views), font: font)
-        }
+        // числа коротко, як на картці магазину, а слово завжди «завантажень» / «переглядів»;
+        // проміжок між парами — за тим самим правилом, що на картці (за самими числами)
+        let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
+        StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
+                      font: StoreStatsRow.font(.footnote), roomy: true, gapBasis: (d, v))
             .frame(height: 26)
             .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
             .padding(.horizontal, 26)
