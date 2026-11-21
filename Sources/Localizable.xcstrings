@@ -6625,29 +6625,6 @@
         }
       }
     },
-    "Мова циферблата": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch face language"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Язык циферблата"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Мова циферблата"
-          }
-        }
-      }
-    },
     "Можливо, стара версія цього циферблата зараз активна (перемкніть інший), власних циферблатів забагато (ліміт ≈10) або файл не для цього пристрою": {
       "extractionState": "manual",
       "localizations": {

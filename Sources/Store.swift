@@ -486,10 +486,10 @@ struct StoreDetailView: View {
                 if item.variantOptions.count > 1 {
                     HStack {
                         // назва варіанта — завжди в один рядок («Англійська (США)»)
-                        Text("Мова циферблата")
+                        Text("Мова")
                             .lineLimit(1)
-                        Spacer(minLength: 8)
-                        Picker("Мова циферблата", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
+                        Spacer(minLength: 23)   // безпечний відступ до назви варіанта
+                        Picker("Мова", selection: Binding(get: { item.variantKey ?? "" }, set: { onVariant($0) })) {
                             ForEach(item.variantOptions, id: \.key) { Text($0.label).tag($0.key) }
                         }
                         .pickerStyle(.menu)
