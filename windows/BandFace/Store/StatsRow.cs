@@ -8,7 +8,7 @@ namespace BandFace.Store
     /// <summary>
     /// «↓ 1.1k   👁 4.8k» — значки й числа малюються як контури й ставляться за чорнилом (межами самих штрихів),
     /// а не за рамками тексту, у яких різні порожні поля:
-    /// від значка до числа рівно 3 px, стрілка заввишки з цифри, по вертикалі всі по центру висоти цифр, а та — по центру елемента.
+    /// від значка до числа рівно 3 px, стрілка заввишки з цифри (значки — як в iOS), по вертикалі центр чорнила значків — на центрі цифр, а та — по центру елемента.
     /// Пари разом, уся група по центру; між парами 14 px.
     /// Spread = true (картка магазину): малі числа трохи розсунуті — проміжок від 24 до 14 зі зростанням чисел (у масштабі шрифту).
     /// </summary>
@@ -26,11 +26,35 @@ namespace BandFace.Store
         public double TextSize = 12;
         public bool Spread;
 
-        /// <summary>Segoe MDL2 Assets: «Завантажити» і «Переглянути»</summary>
-        const string ArrowGlyph = "\uE896", EyeGlyph = "\uE890";
         const double IconGap = 3, PairGap = 14;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);   // як підписи поруч
-        static readonly Typeface Icons = new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+
+        // Значки як в iOS (SF Symbols arrow.down.to.line і eye), у полі 24×24: лінії, що потім «товщають» пером
+        static readonly Geometry ArrowLines = Geometry.Parse("M12,3 L12,15.5 M6.5,10 L12,15.5 L17.5,10 M5,20.5 L19,20.5");
+        static readonly Geometry EyeLine = Geometry.Parse("M1.8,12 C4,7.7 7.7,5.2 12,5.2 C16.3,5.2 20,7.7 22.2,12 C20,16.3 16.3,18.8 12,18.8 C7.7,18.8 4,16.3 1.8,12 Z");
+
+        /// <summary>Стрілка до риски: штрих 2.1, круглі кінці</summary>
+        static Geometry ArrowShape() =>
+            ArrowLines.GetWidenedPathGeometry(new Pen(Brushes.Black, 2.1) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round });
+
+        /// <summary>Око: контур і суцільна зіниця</summary>
+        static Geometry EyeShape()
+        {
+            var g = new GeometryGroup { FillRule = FillRule.Nonzero };
+            g.Children.Add(EyeLine.GetWidenedPathGeometry(new Pen(Brushes.Black, 1.9) { LineJoin = PenLineJoin.Round }));
+            g.Children.Add(new EllipseGeometry(new Point(12, 12), 3.5, 3.5));
+            return g;
+        }
+
+        /// <summary>Значок у масштабі: чорнило заввишки height</summary>
+        static Geometry Scaled(Geometry g, double height)
+        {
+            var b = g.Bounds;
+            double k = b.Height > 0 ? height / b.Height : 1;
+            var c = g.Clone();
+            c.Transform = new ScaleTransform(k, k);
+            return c.GetFlattenedPathGeometry();
+        }
 
         public StatsRow()
         {
@@ -52,11 +76,9 @@ namespace BandFace.Store
             var v = Outline(Views, Text, TextSize);
             // вертикаль: центр висоти цифр (у слів можуть бути виносні елементи — по них не центруємо)
             var digits = Outline("0", Text, TextSize).Bounds;
-            // значки такого розміру, щоб стрілка була рівно заввишки з цифри; око — у тому ж масштабі
-            double probe = Outline(ArrowGlyph, Icons, TextSize).Bounds.Height;
-            double iconSize = probe > 0 ? TextSize * digits.Height / probe : TextSize;
-            var arrow = Outline(ArrowGlyph, Icons, iconSize);
-            var eye = Outline(EyeGlyph, Icons, iconSize);
+            // стрілка й око — рівно заввишки з цифри (як в iOS)
+            var arrow = Scaled(ArrowShape(), digits.Height);
+            var eye = Scaled(EyeShape(), digits.Height);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
