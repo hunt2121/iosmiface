@@ -242,8 +242,8 @@ struct StoreView: View, Equatable {
             .navigationTitle(filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .navigationBarTitleDisplayMode(.large)
-            // Під заголовком — поточне сортування («Спочатку нові», «Спочатку більше переглядів»…), з iOS 26
-            .modifier(NavigationSubtitle(text: (StoreSort(rawValue: sortKey) ?? .date).subtitle(reversed: StoreSort(rawValue: sortKey) == nil ? false : sortReversed)))
+            // Під заголовком — поточне сортування («Спочатку нові», «Більше переглядів»…), з iOS 26
+            .modifier(NavigationSubtitle(text: (StoreSort(rawValue: sortKey) ?? .date).direction(reversed: StoreSort(rawValue: sortKey) == nil ? false : sortReversed)))
             .navigationDestination(for: String.self) { id in
                 if let item = faces.first(where: { $0.storeKey == id }) {
                     StoreDetailView(item: item,
@@ -781,16 +781,8 @@ enum StoreSort: String, CaseIterable {
     func direction(reversed: Bool) -> String {
         switch self {
         case .date: return reversed ? String(localized: "Спочатку старі") : String(localized: "Спочатку нові")
-        case .views, .downloads: return reversed ? String(localized: "Спочатку менше") : String(localized: "Спочатку більше")
-        }
-    }
-
-    /// Під заголовком магазину — разом із тим, що саме більше чи менше
-    func subtitle(reversed: Bool) -> String {
-        switch self {
-        case .date: return direction(reversed: reversed)
-        case .views: return reversed ? String(localized: "Спочатку менше переглядів") : String(localized: "Спочатку більше переглядів")
-        case .downloads: return reversed ? String(localized: "Спочатку менше завантажень") : String(localized: "Спочатку більше завантажень")
+        case .views: return reversed ? String(localized: "Менше переглядів") : String(localized: "Більше переглядів")
+        case .downloads: return reversed ? String(localized: "Менше завантажень") : String(localized: "Більше завантажень")
         }
     }
 
