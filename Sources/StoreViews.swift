@@ -129,22 +129,34 @@ enum StoreText {
 
 /// Поля значків SF Symbols до «чорнила» (поля тексту — `InkMetrics.bearings` у StoreInfo.swift)
 extension InkMetrics {
-    private static var symbols: [String: (UIImage, CGFloat, CGFloat)] = [:]
+    private static var symbols: [String: (UIImage, CGFloat, CGFloat, CGFloat, CGFloat)] = [:]
 
     /// Значок, як його й показуємо, та поля від краю картинки до чорнила зліва й справа
     static func symbol(_ name: String, font: UIFont) -> (image: UIImage, left: CGFloat, right: CGFloat) {
+        let s = scanned(name, font)
+        return (s.0, s.1, s.2)
+    }
+
+    /// Поля до чорнила зверху й знизу (для вертикального вирівнювання за чорнилом)
+    static func symbolVertical(_ name: String, font: UIFont) -> (top: CGFloat, bottom: CGFloat) {
+        let s = scanned(name, font)
+        return (s.3, s.4)
+    }
+
+    private static func scanned(_ name: String, _ font: UIFont) -> (UIImage, CGFloat, CGFloat, CGFloat, CGFloat) {
         let key = "\(name)|\(font.pointSize)|\(font.fontName)"
-        if let hit = symbols[key] { return (hit.0, hit.1, hit.2) }
+        if let hit = symbols[key] { return hit }
         let image = UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(font: font)) ?? UIImage()
-        let (left, right) = scan(image)
-        symbols[key] = (image, left, right)
-        return (image, left, right)
+        let e = scan(image)
+        let r = (image, e.0, e.1, e.2, e.3)
+        symbols[key] = r
+        return r
     }
 
     /// Малюємо значок чорним у 8× і шукаємо крайні стовпчики з чорнилом
-    private static func scan(_ image: UIImage) -> (CGFloat, CGFloat) {
+    private static func scan(_ image: UIImage) -> (CGFloat, CGFloat, CGFloat, CGFloat) {
         let size = image.size
-        guard size.width > 0, size.height > 0 else { return (0, 0) }
+        guard size.width > 0, size.height > 0 else { return (0, 0, 0, 0) }
         let scale: CGFloat = 8
         let format = UIGraphicsImageRendererFormat()
         format.scale = scale
@@ -152,20 +164,21 @@ extension InkMetrics {
         let rendered = UIGraphicsImageRenderer(size: size, format: format).image { _ in
             image.withTintColor(.black, renderingMode: .alwaysOriginal).draw(at: .zero)
         }
-        guard let cg = rendered.cgImage, let data = cg.dataProvider?.data, let bytes = CFDataGetBytePtr(data) else { return (0, 0) }
+        guard let cg = rendered.cgImage, let data = cg.dataProvider?.data, let bytes = CFDataGetBytePtr(data) else { return (0, 0, 0, 0) }
         let bpp = cg.bitsPerPixel / 8, row = cg.bytesPerRow
-        var minX = Int.max, maxX = -1
+        var minX = Int.max, maxX = -1, minY = Int.max, maxY = -1
         for y in 0..<cg.height {
             for x in 0..<cg.width {
                 let p = y * row + x * bpp
                 // чорне на прозорому: усе, крім прозорого тла, має ненульовий байт (альфа)
                 var ink = false
                 for b in 0..<bpp where bytes[p + b] > 24 { ink = true; break }
-                if ink { minX = min(minX, x); maxX = max(maxX, x) }
+                if ink { minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y) }
             }
         }
-        guard maxX >= 0 else { return (0, 0) }
-        return (CGFloat(minX) / scale, size.width - CGFloat(maxX + 1) / scale)
+        guard maxX >= 0 else { return (0, 0, 0, 0) }
+        return (CGFloat(minX) / scale, size.width - CGFloat(maxX + 1) / scale,
+                CGFloat(minY) / scale, size.height - CGFloat(maxY + 1) / scale)
     }
 }
 
@@ -184,7 +197,9 @@ struct StoreStatsRow: View {
     private static let iconGap: CGFloat = 3
 
     var body: some View {
-        let arrow = InkMetrics.symbol("arrow.down.to.line", font: font)
+        // стрілка рівно заввишки з цифри (у шрифті вона вища й виглядала завеликою); око — як у шрифті
+        let arrowFont = Self.arrowFont(font)
+        let arrow = InkMetrics.symbol("arrow.down.to.line", font: arrowFont)
         let eye = InkMetrics.symbol("eye", font: font)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
         let (gd, gv) = gapBasis ?? (downloads, views)
@@ -192,8 +207,8 @@ struct StoreStatsRow: View {
                                    + inkWidth(eye) + Self.iconGap + textInk(gv, InkMetrics.bearings(gv, font: font)), font: font) : 14
 
         HStack(spacing: 0) {
-            pair(arrow, downloads, dInk)
-            pair(eye, views, vInk)
+            pair(arrow, downloads, dInk, dy: Self.iconShift("arrow.down.to.line", arrowFont, text: font))
+            pair(eye, views, vInk, dy: Self.iconShift("eye", font, text: font))
                 .padding(.leading, gap - dInk.right - eye.left)
         }
         .font(Font(font as CTFont))
@@ -202,6 +217,23 @@ struct StoreStatsRow: View {
         // поля по краях групи різні (у стрілки й у цифр) — зсуваємо, щоб по центру було саме чорнило
         .offset(x: (vInk.right - arrow.left) / 2)
         .frame(maxWidth: .infinity)
+    }
+
+    /// Шрифт для стрілки: чорнило стрілки заввишки з цифри (висота великих літер шрифту)
+    static func arrowFont(_ font: UIFont) -> UIFont {
+        let v = InkMetrics.symbolVertical("arrow.down.to.line", font: font)
+        let ink = InkMetrics.symbol("arrow.down.to.line", font: font).image.size.height - v.top - v.bottom
+        guard ink > 0 else { return font }
+        return font.withSize(font.pointSize * font.capHeight / ink)
+    }
+
+    /// Зсув значка по вертикалі: центр його чорнила — на центрі цифр (а не центр картинки на центрі рядка тексту)
+    static func iconShift(_ name: String, _ iconFont: UIFont, text font: UIFont) -> CGFloat {
+        let img = InkMetrics.symbol(name, font: iconFont).image
+        let v = InkMetrics.symbolVertical(name, font: iconFont)
+        let inkCenter = v.top + (img.size.height - v.top - v.bottom) / 2 - img.size.height / 2   // від центру картинки
+        let digitsCenter = font.ascender - font.capHeight / 2 - font.lineHeight / 2              // від центру рядка
+        return digitsCenter - inkCenter
     }
 
     /// Проміжок між парами за шириною чорнила обох пар: ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
@@ -213,9 +245,9 @@ struct StoreStatsRow: View {
 
     /// Значок і число: від чорнила значка до чорнила числа — 3 pt
     private func pair(_ icon: (image: UIImage, left: CGFloat, right: CGFloat), _ text: String,
-                      _ ink: (left: CGFloat, right: CGFloat)) -> some View {
+                      _ ink: (left: CGFloat, right: CGFloat), dy: CGFloat = 0) -> some View {
         HStack(spacing: 0) {
-            Image(uiImage: icon.image).renderingMode(.template)
+            Image(uiImage: icon.image).renderingMode(.template).offset(y: dy)
             Text(verbatim: text)
                 .padding(.leading, Self.iconGap - icon.right - ink.left)
         }
