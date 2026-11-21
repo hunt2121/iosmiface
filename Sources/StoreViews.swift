@@ -161,55 +161,43 @@ extension InkMetrics {
     }
 }
 
-/// «↓ 1.1k  👁 4.8k» — вирівняно за чорнилом: від значка до числа рівно 3 pt.
-/// Разом (spread = false): між парами 14 pt, уся група точно по центру.
-/// Розведено (spread = true, картка магазину): центри пар на 28% ширини від середини — малі числа не злипаються;
-/// між парами не менше 16 pt і не менше 8 pt від країв — великі не налазять на краї (як у Windows)
+/// «↓ 1.1k  👁 4.8k» — вирівняно за чорнилом: від значка до числа рівно 3 pt, уся група точно по центру.
+/// Між парами 14 pt; з roomy (картка магазину) малі числа трохи розсунуті: чим коротші пари, тим більший проміжок —
+/// від 14 (від «1.1k  4.8k» і довших) до 24 (для «0  0»), у масштабі шрифту
 struct StoreStatsRow: View {
     let downloads: String
     let views: String
     let font: UIFont
-    var spread = false
+    var roomy = false
 
-    /// Відстані між штрихами: значок → число і число → наступний значок
+    /// Відстань між штрихами: значок → число
     private static let iconGap: CGFloat = 3
-    private static let pairGap: CGFloat = 14
-    private static let spreadShare: CGFloat = 0.28
-    private static let minPairGap: CGFloat = 16
-    private static let edge: CGFloat = 8
 
     var body: some View {
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: font)
         let eye = InkMetrics.symbol("eye", font: font)
         let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
+        let gap = roomy ? Self.gap(inkWidth(arrow) + Self.iconGap + textInk(downloads, dInk)
+                                   + inkWidth(eye) + Self.iconGap + textInk(views, vInk), font: font) : 14
 
-        if spread {
-            GeometryReader { geo in
-                let w = geo.size.width
-                // ширина чорнила пари: значок без полів + 3 + число без полів
-                let w1 = inkWidth(arrow) + Self.iconGap + textInk(downloads, dInk)
-                let w2 = inkWidth(eye) + Self.iconGap + textInk(views, vInk)
-                let x = Self.place(width: w, w1, w2)
-                ZStack(alignment: .leading) {
-                    pair(arrow, downloads, dInk).offset(x: x.0 - arrow.left)
-                    pair(eye, views, vInk).offset(x: x.1 - eye.left)
-                }
-                .frame(width: w, height: geo.size.height, alignment: .leading)
-            }
-            .font(Font(font as CTFont))
-            .foregroundStyle(.secondary)
-        } else {
-            HStack(spacing: 0) {
-                pair(arrow, downloads, dInk)
-                pair(eye, views, vInk)
-                    .padding(.leading, Self.pairGap - dInk.right - eye.left)
-            }
-            .font(Font(font as CTFont))
-            .foregroundStyle(.secondary)
-            .fixedSize()
-            .offset(x: (vInk.right - arrow.left) / 2)
-            .frame(maxWidth: .infinity)
+        HStack(spacing: 0) {
+            pair(arrow, downloads, dInk)
+            pair(eye, views, vInk)
+                .padding(.leading, gap - dInk.right - eye.left)
         }
+        .font(Font(font as CTFont))
+        .foregroundStyle(.secondary)
+        .fixedSize()
+        // поля по краях групи різні (у стрілки й у цифр) — зсуваємо, щоб по центру було саме чорнило
+        .offset(x: (vInk.right - arrow.left) / 2)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Проміжок між парами за шириною чорнила обох пар: ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
+    static func gap(_ pairs: CGFloat, font: UIFont) -> CGFloat {
+        let k = font.pointSize / 10.5
+        let t = min(1, max(0, (64 * k - pairs) / (28 * k)))
+        return (14 + 10 * t) * k
     }
 
     /// Значок і число: від чорнила значка до чорнила числа — 3 pt
@@ -232,21 +220,6 @@ struct StoreStatsRow: View {
         (text as NSString).size(withAttributes: [.font: font]).width - ink.left - ink.right
     }
 
-    /// Ліві краї чорнила пар: центри на 28% від середини; між парами ≥ 16, від країв ≥ 8; не вміщається — разом по центру
-    static func place(width w: CGFloat, _ w1: CGFloat, _ w2: CGFloat) -> (CGFloat, CGFloat) {
-        let c = w / 2, off = w * spreadShare
-        var x1 = c - off - w1 / 2, x2 = c + off - w2 / 2
-        let gap = x2 - (x1 + w1)
-        if gap < minPairGap { x1 -= (minPairGap - gap) / 2; x2 += (minPairGap - gap) / 2 }
-        if x1 < edge { x1 = edge }
-        if x2 + w2 > w - edge { x2 = w - edge - w2 }
-        if x2 - (x1 + w1) < minPairGap {
-            x1 = (w - (w1 + minPairGap + w2)) / 2
-            x2 = x1 + w1 + minPairGap
-        }
-        return (x1, x2)
-    }
-
     /// Напівжирний шрифт стилю з цифрами однакової ширини (числа змінюються — сусіди не зсуваються)
     static func font(_ style: UIFont.TextStyle) -> UIFont {
         UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: style).pointSize, weight: .semibold)
@@ -260,7 +233,7 @@ struct StoreStatsTab: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: StoreStatsRow.font(.caption2), spread: true)
+                      font: StoreStatsRow.font(.caption2), roomy: true)
             .frame(height: 22)
             .padding(.bottom, Self.under)
             .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color(.systemGroupedBackground)))
