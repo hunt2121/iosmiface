@@ -238,7 +238,7 @@ struct StoreStatsRow: View {
 }
 
 /// Капсула з числами на картці магазину: визирає з-за кнопки «Встановити» (нижні 11 pt під кнопкою);
-/// колір — фон сторінки (на білій картці)
+/// «піднята» — колір картки з м'якою тінню
 struct StoreStatsTab: View {
     let stats: StoreServer.FaceStats
 
@@ -247,7 +247,9 @@ struct StoreStatsTab: View {
                       font: StoreStatsRow.font(.caption2), roomy: true)
             .frame(height: 22)
             .padding(.bottom, Self.under)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color(.systemGroupedBackground)))
+            // «піднята»: колір картки з м'якою тінню (у темній темі трохи світліша за картку — тінь на темному не видно)
+            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Self.fill)
+                .shadow(color: Self.shadow, radius: 3, y: 1))
             .padding(.horizontal, 16)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
@@ -255,6 +257,12 @@ struct StoreStatsTab: View {
 
     /// Скільки капсули ховається під кнопкою
     static let under: CGFloat = 11
+
+    /// Світла тема — колір картки; темна — #242426 (посередині між #2C2C2E і карткою #1C1C1E)
+    static let fill = Color(UIColor { t in
+        t.userInterfaceStyle == .dark ? UIColor(red: 0x24 / 255, green: 0x24 / 255, blue: 0x26 / 255, alpha: 1) : .secondarySystemGroupedBackground
+    })
+    static let shadow = Color(UIColor { t in UIColor.black.withAlphaComponent(t.userInterfaceStyle == .dark ? 0.6 : 0.22) })
 }
 
 /// Капсула над кнопками на сторінці циферблата: «↓ 1 240 завантажень  👁 3 400 переглядів»;
