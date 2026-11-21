@@ -498,12 +498,10 @@ struct StoreDetailView: View {
                         .fill(Color(.secondarySystemGroupedBackground)))
                 }
 
-                actions
+                // перегляди й завантаження — окрема капсула над кнопками (у всіх станах однакова)
+                StoreStatsCapsule(stats: stats ?? StoreServer.FaceStats(views: 0, downloads: 0))
 
-                // перегляди й завантаження — тонкий рядок під кнопкою; без лічильників на сервері його немає
-                if let stats {
-                    StoreStatsLine(stats: stats)
-                }
+                actions
 
                 if let error {
                     Text(error)

@@ -119,31 +119,6 @@ enum StoreText {
     }
 }
 
-/// Рядок під «Встановити» на сторінці циферблата: «↓ 1 240 завантажень   👁 3 400 переглядів».
-/// Системні значки стоять на базовій лінії тексту й сумірні з цифрами; по центру кнопки.
-struct StoreStatsLine: View {
-    let stats: StoreServer.FaceStats
-
-    var body: some View {
-        HStack(spacing: 16) {
-            item("arrow.down.to.line", StoreText.downloads(stats.downloads))
-            item("eye", StoreText.views(stats.views))
-        }
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-        .lineLimit(1)
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func item(_ symbol: String, _ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 5.5) {
-            Image(systemName: symbol)
-            Text(verbatim: text)
-        }
-    }
-}
-
 /// Поля значків SF Symbols до «чорнила» (поля тексту — `InkMetrics.bearings` у StoreInfo.swift)
 extension InkMetrics {
     private static var symbols: [String: (UIImage, CGFloat, CGFloat)] = [:]
@@ -186,48 +161,82 @@ extension InkMetrics {
     }
 }
 
-/// Капсула з числами на картці магазину: визирає з-за кнопки «Встановити» (нижні 11 pt під кнопкою).
-/// «↓ 1.1k  👁 4.8k» по центру — вирівняно за чорнилом: від значка до числа рівно 3 pt, між парами 14 pt,
-/// і від лівого краю капсули до стрілки стільки ж, скільки від останньої цифри до правого краю
-struct StoreStatsTab: View {
-    let stats: StoreServer.FaceStats
+/// «↓ 1.1k  👁 4.8k» — вирівняно за чорнилом: від значка до числа рівно 3 pt, між парами 14 pt,
+/// і чорнило всієї групи точно по центру (поля по краях у стрілки й у цифр різні — зсуваємо)
+struct StoreStatsRow: View {
+    let downloads: String
+    let views: String
+    let font: UIFont
 
     /// Відстані між штрихами: значок → число і число → наступний значок
     private static let iconGap: CGFloat = 3
     private static let pairGap: CGFloat = 14
 
     var body: some View {
-        let font = UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .caption2).pointSize,
-                                                    weight: .semibold)
         let arrow = InkMetrics.symbol("arrow.down.to.line", font: font)
         let eye = InkMetrics.symbol("eye", font: font)
-        let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
-        let dInk = InkMetrics.bearings(d, font: font), vInk = InkMetrics.bearings(v, font: font)
+        let dInk = InkMetrics.bearings(downloads, font: font), vInk = InkMetrics.bearings(views, font: font)
 
         HStack(spacing: 0) {
             Image(uiImage: arrow.image).renderingMode(.template)
-            Text(verbatim: d)
+            Text(verbatim: downloads)
                 .padding(.leading, Self.iconGap - arrow.right - dInk.left)
             Image(uiImage: eye.image).renderingMode(.template)
                 .padding(.leading, Self.pairGap - dInk.right - eye.left)
-            Text(verbatim: v)
+            Text(verbatim: views)
                 .padding(.leading, Self.iconGap - eye.right - vInk.left)
         }
         .font(Font(font as CTFont))
         .foregroundStyle(.secondary)
         .lineLimit(1)
         .fixedSize()
-        // поля по краях групи різні (у стрілки й у цифр) — зсуваємо, щоб по центру було саме чорнило
         .offset(x: (vInk.right - arrow.left) / 2)
         .frame(maxWidth: .infinity)
-        .frame(height: 22)
-        .padding(.bottom, Self.under)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color(.tertiarySystemFill)))
-        .padding(.horizontal, 16)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
+    }
+
+    /// Напівжирний шрифт стилю з цифрами однакової ширини (числа змінюються — сусіди не зсуваються)
+    static func font(_ style: UIFont.TextStyle) -> UIFont {
+        UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: style).pointSize, weight: .semibold)
+    }
+}
+
+/// Капсула з числами на картці магазину: визирає з-за кнопки «Встановити» (нижні 11 pt під кнопкою);
+/// колір — фон сторінки (на білій картці)
+struct StoreStatsTab: View {
+    let stats: StoreServer.FaceStats
+
+    var body: some View {
+        StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
+                      font: StoreStatsRow.font(.caption2))
+            .frame(height: 22)
+            .padding(.bottom, Self.under)
+            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color(.systemGroupedBackground)))
+            .padding(.horizontal, 16)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
     }
 
     /// Скільки капсули ховається під кнопкою
     static let under: CGFloat = 11
+}
+
+/// Капсула над кнопками на сторінці циферблата: «↓ 1 240 завантажень  👁 3 400 переглядів»;
+/// уже кнопки на заокруглення з кожного боку, колір — як у плашок сторінки
+struct StoreStatsCapsule: View {
+    let stats: StoreServer.FaceStats
+
+    var body: some View {
+        let font = StoreStatsRow.font(.footnote)
+        // великий системний шрифт — слова не вміщаються: тоді коротко (1.2k)
+        ViewThatFits(in: .horizontal) {
+            StoreStatsRow(downloads: StoreText.downloads(stats.downloads), views: StoreText.views(stats.views), font: font)
+                .padding(.horizontal, 12)
+            StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views), font: font)
+        }
+            .frame(height: 26)
+            .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+            .padding(.horizontal, 26)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
+    }
 }
