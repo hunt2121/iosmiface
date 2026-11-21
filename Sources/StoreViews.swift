@@ -71,6 +71,18 @@ enum StoreText {
         return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
+    /// Коротко для картки: до 999 — повністю; далі 1.1k, 15.5k, 120k, 1.2M (один знак до 100, округлення вниз)
+    static func short(_ n: Int) -> String {
+        if n < 1000 { return "\(n)" }
+        func cut(_ v: Double, _ suffix: String) -> String {
+            if v >= 100 { return "\(Int(v))\(suffix)" }
+            let t = (v * 10).rounded(.down) / 10
+            return (t == t.rounded(.down) ? "\(Int(t))" : String(format: "%.1f", t)) + suffix
+        }
+        if n < 1_000_000 { return cut(Double(n) / 1000, "k") }
+        return cut(Double(n) / 1_000_000, "M")
+    }
+
     private static func pluralWord(_ n: Int, _ one: String, _ few: String, _ many: String) -> String {
         let a = n % 10, b = n % 100
         if a == 1 && b != 11 { return one }
@@ -126,6 +138,41 @@ struct StoreStatsLine: View {
         HStack(alignment: .firstTextBaseline, spacing: 5.5) {
             Image(systemName: symbol)
             Text(verbatim: text)
+        }
+    }
+}
+
+/// Капсула з числами на картці магазину: визирає з-за кнопки «Встановити» (нижні 11 pt під кнопкою),
+/// «↓ 1.1k  👁 4.8k» разом по центру
+struct StoreStatsTab: View {
+    let stats: StoreServer.FaceStats
+
+    var body: some View {
+        HStack(spacing: 14) {
+            item("arrow.down.to.line", stats.downloads)
+            item("eye", stats.views)
+        }
+        .font(.caption2.weight(.semibold))
+        .monospacedDigit()
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .frame(maxWidth: .infinity)
+        .frame(height: 22)
+        .padding(.bottom, Self.under)
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color(.tertiarySystemFill)))
+        .padding(.horizontal, 16)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: StoreText.downloads(stats.downloads) + ", " + StoreText.views(stats.views)))
+    }
+
+    /// Скільки капсули ховається під кнопкою
+    static let under: CGFloat = 11
+
+    private func item(_ symbol: String, _ n: Int) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol)
+            Text(verbatim: StoreText.short(n))
         }
     }
 }

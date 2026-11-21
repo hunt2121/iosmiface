@@ -182,7 +182,7 @@ struct StoreView: View, Equatable {
     /// reversed — протилежний до звичного напрямок
     @State private var sortKey = StoreSort.date.rawValue
     @State private var sortReversed = false
-    /// Перегляди й завантаження всіх записів (з сервера) — для сортування; без мережі порожньо
+    /// Перегляди й завантаження всіх записів (з сервера) — для сортування й капсули на картці; без мережі порожньо
     @State private var stats: [String: StoreServer.FaceStats] = [:]
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
@@ -304,7 +304,8 @@ struct StoreView: View, Equatable {
     }
 
     private func card(_ item: StoreFace) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let showStats = !stats.isEmpty
+        return VStack(alignment: .leading, spacing: 0) {
             // від капсули до букв назви — стільки ж, скільки від верху картки до капсули (12 + 10 відступу картки)
             FaceCapsule(image: item.preview, active: item.id == activeID, animation: item.animation)
                 .frame(maxWidth: .infinity)
@@ -332,11 +333,19 @@ struct StoreView: View, Equatable {
                 .lineLimit(1)
             }
             .padding(.horizontal, 2)
-            .padding(.bottom, 10)
+            .padding(.bottom, showStats ? 8 : 10)
 
-            FaceActionButton(state: state(item), price: item.buyText, busy: busy,
-                             progress: progress, progressText: progressText) {
-                onInstall(item)
+            // завантаження й перегляди — капсула з-за кнопки (кнопка намальована поверх);
+            // під час встановлення смужка прогресу прозора — капсулу ховаємо, місце лишаємо (картка не стрибає)
+            VStack(spacing: -StoreStatsTab.under) {
+                if showStats {
+                    StoreStatsTab(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
+                        .opacity(state(item) == .installing ? 0 : 1)
+                }
+                FaceActionButton(state: state(item), price: item.buyText, busy: busy,
+                                 progress: progress, progressText: progressText) {
+                    onInstall(item)
+                }
             }
         }
         .padding(10)
