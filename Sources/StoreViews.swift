@@ -372,7 +372,7 @@ struct StoreStatsCardRow: View {
 
     var body: some View {
         StoreStatsRow(downloads: StoreText.short(stats.downloads), views: StoreText.short(stats.views),
-                      font: Self.font, roomy: true, minGap: 18, maxGap: 44)
+                      font: Self.font, roomy: true, minGap: 27, maxGap: 44)
             .frame(height: Self.font.lineHeight)
             .padding(.top, Self.insets.top)
             .padding(.bottom, Self.insets.bottom)
@@ -399,7 +399,7 @@ struct StoreStatsLine: View {
     var body: some View {
         let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
         StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
-                      font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v), maxGap: 44)
+                      font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v), minGap: 27, maxGap: 44)
             .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: StoreText.views(stats.views) + ", " + StoreText.downloads(stats.downloads)))
