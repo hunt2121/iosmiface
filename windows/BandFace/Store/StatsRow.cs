@@ -6,11 +6,11 @@ using System.Windows.Media;
 namespace BandFace.Store
 {
     /// <summary>
-    /// «↓ 1.1k   👁 4.8k» — значки й числа малюються як контури й ставляться за чорнилом (межами самих штрихів),
+    /// «👁 4.8k   ↓ 1.1k» (спершу перегляди, потім завантаження) — значки й числа малюються як контури й ставляться за чорнилом (межами самих штрихів),
     /// а не за рамками тексту, у яких різні порожні поля:
     /// від значка до числа рівно 3 px, стрілка заввишки з цифри, око — 80% (значки — як в iOS), по вертикалі центр чорнила значків — на центрі цифр, а та — по центру елемента.
-    /// Пари разом, уся група по центру; між парами 14 px.
-    /// Spread = true (картка магазину): малі числа трохи розсунуті — проміжок від 24 до 14 зі зростанням чисел (у масштабі шрифту).
+    /// Пари разом, уся група по центру; між парами MinGap (14 px).
+    /// Spread = true: малі числа трохи розсунуті — проміжок від MinGap + 10 до MinGap зі зростанням чисел (у масштабі шрифту).
     /// </summary>
     sealed class StatsRow : FrameworkElement
     {
@@ -25,8 +25,10 @@ namespace BandFace.Store
         public string GapDownloads, GapViews;
         public double TextSize = 12;
         public bool Spread;
+        /// <summary>Найменший проміжок між парами: 14 — сторінка запису, 18 — картка</summary>
+        public double MinGap = 14;
 
-        const double IconGap = 3, PairGap = 14;
+        const double IconGap = 3;
         static readonly Typeface Text = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);   // як підписи поруч
 
         // Значки як в iOS (SF Symbols arrow.down.to.line і eye), у полі 24×24: лінії, що потім «товщають» пером
@@ -86,7 +88,7 @@ namespace BandFace.Store
             double w1 = ra.Width + IconGap + rd.Width, w2 = re.Width + IconGap + rv.Width;
             // між парами 14; з Spread (картка магазину) малі числа трохи розсунуті — як на iPhone:
             // ширина чорнила обох пар ≤ 36 (×масштаб) — 24, ≥ 64 — 14, між ними плавно
-            double k = TextSize / 10.5, gap = PairGap;
+            double k = TextSize / 10.5, gap = MinGap;
             if (Spread)
             {
                 double b1 = w1, b2 = w2;
@@ -96,14 +98,15 @@ namespace BandFace.Store
                     b2 = re.Width + IconGap + Ink(Outline(GapViews, Text, TextSize)).Width;
                 }
                 double t = Math.Min(1, Math.Max(0, (64 * k - (b1 + b2)) / (28 * k)));
-                gap = (14 + 10 * t) * k;
+                gap = (MinGap + 10 * t) * k;
             }
-            double x1 = (w - (w1 + gap + w2)) / 2, x2 = x1 + w1 + gap;
+            // спершу перегляди (око), потім завантаження (стрілка)
+            double x1 = (w - (w2 + gap + w1)) / 2, x2 = x1 + w2 + gap;
 
-            Draw(dc, arrow, x1 - ra.Left, cy - (ra.Top + ra.Bottom) / 2);
-            Draw(dc, d, x1 + ra.Width + IconGap - rd.Left, textDy);
-            Draw(dc, eye, x2 - re.Left, cy - (re.Top + re.Bottom) / 2);
-            Draw(dc, v, x2 + re.Width + IconGap - rv.Left, textDy);
+            Draw(dc, eye, x1 - re.Left, cy - (re.Top + re.Bottom) / 2);
+            Draw(dc, v, x1 + re.Width + IconGap - rv.Left, textDy);
+            Draw(dc, arrow, x2 - ra.Left, cy - (ra.Top + ra.Bottom) / 2);
+            Draw(dc, d, x2 + ra.Width + IconGap - rd.Left, textDy);
         }
 
         static Rect Ink(Geometry g) => g.Bounds.IsEmpty ? new Rect(0, 0, 0, 0) : g.Bounds;
