@@ -36,20 +36,25 @@ namespace BandFace.Store
 
         const double EyeStroke = 2.3;
 
-        /// <summary>Стрілка до риски рівно по чорнилу width × height: риска внизу на всю ширину, наконечник; лінії line (як в ока)</summary>
+        /// <summary>Лоток зі стрілкою вниз рівно по чорнилу width × height; лінії line (як в ока), круглі кінці — як в iOS</summary>
         static Geometry ArrowShape(double width, double height, double line)
         {
-            double span = height - line, cx = width / 2, top = line / 2, tip = top + span * 0.714, arm = span * 0.343;
+            double W = width, H = height, r = line / 2;
             var g = new PathGeometry();
-            void Line(params Point[] pts)
-            {
-                var f = new PathFigure { StartPoint = pts[0], IsClosed = false };
-                for (int i = 1; i < pts.Length; i++) f.Segments.Add(new LineSegment(pts[i], true));
-                g.Figures.Add(f);
-            }
-            Line(new Point(cx, top), new Point(cx, tip));
-            Line(new Point(cx - arm, tip - arm), new Point(cx, tip), new Point(cx + arm, tip - arm));
-            Line(new Point(line / 2, height - line / 2), new Point(width - line / 2, height - line / 2));
+            PathFigure Fig(Point start) { var f = new PathFigure { StartPoint = start, IsClosed = false }; g.Figures.Add(f); return f; }
+            void To(PathFigure f, double x, double y) => f.Segments.Add(new LineSegment(new Point(x, y), true));
+            void Quad(PathFigure f, double cx, double cy, double x, double y) => f.Segments.Add(new QuadraticBezierSegment(new Point(cx, cy), new Point(x, y), true));
+            // стрілка
+            double cxm = W / 2, tip = H * 0.50, arm = H * 0.24;
+            To(Fig(new Point(cxm, r)), cxm, tip);
+            var head = Fig(new Point(cxm - arm, tip - arm)); To(head, cxm, tip); To(head, cxm + arm, tip - arm);
+            // лоток: боки й дно з заокругленими кутами
+            double l = r, rr = W - r, b = H - r, rim = H * 0.58, rad = H * 0.12;
+            var tray = Fig(new Point(l, rim));
+            To(tray, l, b - rad); Quad(tray, l, b, l + rad, b); To(tray, rr - rad, b); Quad(tray, rr, b, rr, b - rad); To(tray, rr, rim);
+            // обідок з виїмкою посередині
+            var lip = Fig(new Point(l, rim));
+            To(lip, W * 0.30, rim); To(lip, W * 0.36, H * 0.74); To(lip, W * 0.64, H * 0.74); To(lip, W * 0.70, rim); To(lip, rr, rim);
             return g.GetWidenedPathGeometry(new Pen(Brushes.Black, line) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }).GetFlattenedPathGeometry();
         }
 
@@ -93,12 +98,12 @@ namespace BandFace.Store
             // вертикаль і розмір — за плоскою цифрою «1» (від базової лінії до висоти великих літер);
             // кругла «0» виступає вгору й униз, і стрілка за нею виходила більшою й нижчою
             var digits = Outline("1", Text, TextSize).Bounds;
-            // як в iOS: око заввишки з цифри; стрілка на піксель вужча за око з кожного боку, на піксель вища й нижча за цифри, лінії як в ока
+            // як в iOS: око заввишки з цифри; лоток зі стрілкою на 3 пікселі вужчий за око, на піксель вища й нижча за цифри, лінії як в ока
             double px = 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
             var eyeRaw = EyeShape();
             var eye = Scaled(eyeRaw, digits.Height);
             double eyeLine = EyeStroke * digits.Height / eyeRaw.Bounds.Height;
-            var arrow = ArrowShape(Ink(eye).Width - 2 * px, digits.Height + 2 * px, eyeLine);
+            var arrow = ArrowShape(Ink(eye).Width - 3 * px, digits.Height + 2 * px, eyeLine);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
