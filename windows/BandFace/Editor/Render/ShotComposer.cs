@@ -231,6 +231,7 @@ namespace BandFace.Creator
 
         public static BitmapSource Compose(FaceProject p, ShotSet s)
         {
+            s = s.Effective(p);
             var list = Items(s);
             if (list.Count == 0) return null;
             var bgc = BackgroundColors(p, s.Background);

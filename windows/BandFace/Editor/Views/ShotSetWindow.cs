@@ -122,7 +122,7 @@ namespace BandFace.Creator
 
         void ScreensBlock()
         {
-            panel.Children.Add(Ui.Header(S.Get("shotScreensN", s.Count)));
+            panel.Children.Add(Ui.Header(S.Get("shotScreensN", s.Effective(p).Count)));
 
             var wrap = new WrapPanel();
             foreach (var sc in s.Screens) wrap.Children.Add(Card(sc));
@@ -134,7 +134,7 @@ namespace BandFace.Creator
         BitmapSource Thumb(ShotScreen sc)
         {
             var t = ShotComposer.Theme(p, sc);
-            int st = sc.Bluetooth ? 1 : sc.Battery ? 2 : 0;
+            int st = sc.Bluetooth && p.UsesSource("bluetooth", t) ? 1 : sc.Battery && p.UsesSource("battery", t) ? 2 : 0;
             var key = t + "-" + sc.Color + "-" + st + "-" + string.Join(",", sc.Widgets.OrderBy(kv => kv.Key).Select(kv => kv.Key + "=" + kv.Value));
             if (thumbs.TryGetValue(key, out var b)) return b;
             var r = new FaceRenderer(p) { ColorVariant = sc.Color, SlotChoice = sc.Widgets, BluetoothOff = st == 1, LowBattery = st == 2 };
@@ -172,7 +172,8 @@ namespace BandFace.Creator
             var cs = ColorsList;
             if (cs.Count > 0) line.Children.Add(new Ellipse { Width = 11, Height = 11, Fill = Imaging.Brush(cs[Math.Min(sc.Color, cs.Count - 1)]), VerticalAlignment = VerticalAlignment.Center });
             if (line.Children.Count > 0) col.Children.Add(line);
-            bool bt = p.UsesSource("bluetooth"), bat = p.UsesSource("battery");
+            int sth = ShotComposer.Theme(p, sc);
+            bool bt = p.UsesSource("bluetooth", sth), bat = p.UsesSource("battery", sth);
             if (bt || bat)
             {
                 var chips = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };

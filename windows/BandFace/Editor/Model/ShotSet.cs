@@ -81,6 +81,19 @@ namespace BandFace.Creator
         /// <summary>Скільки екранів буде на картинці (зі станами)</summary>
         public int Count => Screens.Sum(s => s.Bluetooth && s.Battery ? 2 : 1);
 
+        /// <summary>Без станів, яких екран не показує (стиль без Bluetooth чи заряду — такий стан нічого не змінить)</summary>
+        public ShotSet Effective(FaceProject p)
+        {
+            var s = Copy();
+            foreach (var sc in s.Screens)
+            {
+                int t = ShotComposer.Theme(p, sc);
+                if (sc.Bluetooth && !p.UsesSource("bluetooth", t)) sc.Bluetooth = false;
+                if (sc.Battery && !p.UsesSource("battery", t)) sc.Battery = false;
+            }
+            return s;
+        }
+
         public Dictionary<string, object> ToJson()
         {
             var d = new Dictionary<string, object>
@@ -119,11 +132,25 @@ namespace BandFace.Creator
         public static List<XNode> Slots(this FaceProject p, int theme) =>
             p.Layouts(theme).Select(l => p.ResourceRef(l.Str("ref"))).Where(r => r != null && r.Tag == "Slot").ToList();
 
-        /// <summary>Є елемент, що показує стан Bluetooth / заряд (тоді є сенс у знімках із цими станами)</summary>
-        public static bool UsesSource(this FaceProject p, string key)
+        /// <summary>На цьому екрані (темі) є елемент, що показує стан Bluetooth / заряд — тоді є сенс у знімку з цим станом</summary>
+        public static bool UsesSource(this FaceProject p, string key, int theme)
         {
-            bool Scan(XNode n) => (n.Str("source")?.ToLowerInvariant().Contains(key) ?? false) || n.Kids.Any(Scan);
-            return Scan(p.Root);
+            var t = p.Theme(theme);
+            if (t == null) return false;
+            var seen = new HashSet<XNode>();
+            bool Scan(XNode n)
+            {
+                if (!seen.Add(n)) return false;
+                if (n.Str("source")?.ToLowerInvariant().Contains(key) ?? false) return true;
+                // шари й складені елементи посилаються на ресурси «@ім'я»
+                foreach (var a in n.Attrs)
+                {
+                    var v = System.Text.Encoding.UTF8.GetString(a.Value);
+                    if (v.StartsWith("@") && p.ResourceRef(v) is XNode res && Scan(res)) return true;
+                }
+                return n.Kids.Any(Scan);
+            }
+            return Scan(t);
         }
     }
 }
