@@ -171,11 +171,11 @@ private struct ShotSetContent: View {
 
     private func chip(_ state: Int, on: Binding<Bool>, label: String, enabled: Bool) -> some View {
         let isOn = enabled && on.wrappedValue
-        let fg: UIColor = isOn ? .white : enabled ? .label : .tertiaryLabel
+        let fg: UIColor = isOn ? .white : enabled ? .label : .tertiaryLabel  // недоступна — та сама підкладка, сірий значок
         return Button { on.wrappedValue.toggle() } label: {
             Image(uiImage: ShotComposer.stateIcon(state, size: 20, color: fg, low: isOn ? .white : enabled ? .systemRed : .tertiaryLabel))
                 .frame(width: 32, height: 32)
-                .background(Circle().fill(isOn ? Color.accentColor : enabled ? Color(.tertiarySystemFill) : Color(.quaternarySystemFill)))
+                .background(Circle().fill(isOn ? Color.accentColor : Color(.tertiarySystemFill)))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
