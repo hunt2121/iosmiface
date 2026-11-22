@@ -397,10 +397,10 @@ struct PositionPane: View {
                     Toggle("Над приглушенням AOD", isOn: Binding(get: { AodDim.isAbove(layout) },
                                                                  set: { v in let l = layout; project.edit { AodDim.setAbove($0, l, v) } }))
                         .font(.subheadline).padding(.horizontal, 14).frame(height: 44)
-                    Divider().padding(.leading, 14)
+                    Divider().padding(.horizontal, 14)
                 }
                 Toggle("Прив'язка до центру й країв", isOn: $snap).font(.subheadline).padding(.horizontal, 14).frame(height: 44)
-                Divider().padding(.leading, 14)
+                Divider().padding(.horizontal, 14)
                 HStack {
                     Text("Сітка").font(.subheadline)
                     Spacer()
