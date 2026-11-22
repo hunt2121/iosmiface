@@ -137,6 +137,9 @@ namespace BandFace.Creator
             return new Size(w, w * DevH / DevW);
         }
 
+        /// <summary>Найбільша сторона готової картинки, pt (2560 px)</summary>
+        const double MaxSide = 1280;
+
         static int AutoColumns(int n) => n <= 5 ? Math.Max(1, n) : n <= 12 ? (n + 1) / 2 : 6;
 
         static Size? Fixed(string format)
@@ -252,8 +255,27 @@ namespace BandFace.Creator
             }
             else
             {
-                var g = GridSize(s, lay, n, capH);
-                canvas = new Size(Math.Max(g.Width + 2 * padX, 640), g.Height + 2 * padY + header + footer);
+                Size Fit(Layout l)
+                {
+                    var g = GridSize(s, l, n, capH);
+                    return new Size(Math.Max(g.Width + 2 * padX, 640), g.Height + 2 * padY + header + footer);
+                }
+                canvas = Fit(lay);
+                // не більше 2560 px по довшій стороні (1280 pt): більші картинки месенджери однаково зменшують;
+                // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
+                if (Math.Max(canvas.Width, canvas.Height) > MaxSide)
+                {
+                    double lo = 30, hi = lay.W;
+                    for (int k = 0; k < 24; k++)
+                    {
+                        var m = (lo + hi) / 2;
+                        var c = Fit(new Layout { Cols = lay.Cols, W = m });
+                        if (Math.Max(c.Width, c.Height) <= MaxSide) lo = m; else hi = m;
+                    }
+                    lay.W = Math.Floor(lo);
+                    lay.Narrow = lay.W < 90;
+                    canvas = Fit(lay);
+                }
             }
             var grid = GridSize(s, lay, n, capH);
             var body = CellBody(s, lay.W);
