@@ -34,8 +34,20 @@ namespace BandFace.Creator
         public readonly Dictionary<XNode, Point> Overrides = new Dictionary<XNode, Point>();
         /// <summary>Кольоровий варіант: 0 — основний, далі за colorGroupTable</summary>
         public int ColorVariant;
+        /// <summary>Значення для перегляду замість збережених у проєкті (знімки з іншим часом)</summary>
+        public DemoValues Demo;
+        /// <summary>Стани для знімків: Bluetooth від'єднано, низький заряд (15 %)</summary>
+        public bool BluetoothOff, LowBattery;
 
         public FaceRenderer(FaceProject p) { this.p = p; }
+
+        int Val(string src)
+        {
+            var l = (src ?? "").ToLowerInvariant();
+            if (BluetoothOff && l.Contains("bluetooth")) return 0;
+            if (LowBattery && l.Contains("battery")) return 15;
+            return SampleData.Value(src ?? "", Live, Demo ?? p.Meta.Demo);
+        }
 
         /// <summary>Ресурс за посиланням; для картинок — версія вибраного кольорового варіанта, якщо вона є</summary>
         XNode Pick(string r)
@@ -142,7 +154,7 @@ namespace BandFace.Creator
         /// <summary>Рамки шарів теми без малювання — для інспектора й вирівнювання</summary>
         public List<LayerBox> Boxes(int theme) => p.Layouts(theme).Select(l => Box(l, null)).ToList();
 
-        int Value(XNode res) => SampleData.Value(res.Str("source") ?? "", Live, p.Meta.Demo);
+        int Value(XNode res) => Val(res.Str("source"));
 
         static void Put(DrawingContext dc, ImageSource img, Rect r) { if (dc != null) dc.DrawImage(img, r); }
 
@@ -451,7 +463,7 @@ namespace BandFace.Creator
                 if (src == null) continue;
                 int i = s.IndexOf("%s", StringComparison.Ordinal);
                 if (i < 0) i = s.IndexOf("%d", StringComparison.Ordinal);
-                if (i >= 0) s = s.Substring(0, i) + SampleData.Value(src, Live, p.Meta.Demo) + s.Substring(i + 2);
+                if (i >= 0) s = s.Substring(0, i) + Val(src) + s.Substring(i + 2);
             }
             bool arc = (res.Str("style") ?? "normal") != "normal";
             double h0 = Math.Max(res.Int("h"), 1);

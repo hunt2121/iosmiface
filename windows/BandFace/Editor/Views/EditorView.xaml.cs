@@ -465,10 +465,22 @@ namespace BandFace.Creator
         Point? panFrom;
         double panH, panV;
 
-        /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× із закругленими кутами й прозорістю — одразу вибір, куди зберегти</summary>
+        /// <summary>Кнопка знімка: меню, як у кнопки стилів — із закругленими кутами, без них, або набір кількох екранів</summary>
         void Shot_Click(object sender, RoutedEventArgs e)
         {
             if (project == null) return;
+            var m = new ContextMenu();
+            Ui.MenuAdd(m, S.Get("shotWithCorners"), "\uE722", () => SaveShot(true));
+            Ui.MenuAdd(m, S.Get("shotSquare"), "\uE722", () => SaveShot(false));
+            m.Items.Add(new Separator());
+            Ui.MenuAdd(m, S.Get("shotSetMenu"), "\uE8A9", () => ShotSetWindow.Open(Window.GetWindow(this), project, theme, variant));
+            Ui.MenuBelow(m, ShotBtn);
+            m.IsOpen = true;
+        }
+
+        /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× — із закругленими кутами й прозорістю або прямокутний; одразу вибір, куди зберегти</summary>
+        void SaveShot(bool rounded)
+        {
             var name = new string((project.DisplayName ?? "").Select(c => System.IO.Path.GetInvalidFileNameChars().Contains(c) ? '-' : c).ToArray()).Trim();
             var dlg = new SaveFileDialog { Filter = "PNG|*.png", DefaultExt = ".png", FileName = (name.Length > 0 ? name : "watchface") + ".png" };
             if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
@@ -478,7 +490,7 @@ namespace BandFace.Creator
                 var img = rd.Render(theme, 2).Image;
                 // як екран браслета: закруглені кути (як на превʼю), поза ними — прозорість
                 int w = img.PixelWidth, h = img.PixelHeight;
-                double r = project.Meta.Device.Corner * w / project.Meta.Device.Width;
+                double r = rounded ? project.Meta.Device.Corner * w / project.Meta.Device.Width : 0;
                 var dv = new DrawingVisual();
                 using (var dc = dv.RenderOpen())
                 {

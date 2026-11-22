@@ -149,6 +149,8 @@ namespace BandFace.Creator
         public DemoValues Demo = new DemoValues();
         /// <summary>Вигляд рамки вибору на браслеті для кожного слота (за назвою слота)</summary>
         public Dictionary<string, SlotFrame> SlotFrames = new Dictionary<string, SlotFrame>();
+        /// <summary>Запам'ятований «Набір знімків» (лише з «Запам'ятати для циферблата»)</summary>
+        public ShotSet Shots;
 
         public ProjectMeta Copy()
         {
@@ -158,6 +160,7 @@ namespace BandFace.Creator
             m.ColorFollow = new HashSet<string>(ColorFollow);
             m.ManualSize = new HashSet<string>(ManualSize);
             m.SlotFrames = SlotFrames.ToDictionary(kv => kv.Key, kv => kv.Value.Copy());
+            m.Shots = Shots?.Copy();
             return m;
         }
 
@@ -182,6 +185,7 @@ namespace BandFace.Creator
             if (ManualSize.Count > 0) d["manualSize"] = ManualSize.Cast<object>().ToList();
             if (SlotFrames.Count > 0) d["slotFrames"] = SlotFrames.ToDictionary(kv => kv.Key, kv => (object)kv.Value.ToJson());
             if (!Demo.IsEmpty) d["demo"] = Demo.ToJson();
+            if (Shots != null) d["shots"] = Shots.ToJson();
             return Json.Write(d);
         }
 
@@ -207,6 +211,7 @@ namespace BandFace.Creator
                     foreach (var kv in sf)
                         if (kv.Value is Dictionary<string, object> fd) m.SlotFrames[kv.Key] = SlotFrame.FromJson(fd);
                 m.Demo = DemoValues.FromJson(Json.Obj(d, "demo"));
+                m.Shots = ShotSet.FromJson(Json.Obj(d, "shots"));
             }
             catch (Exception) { }
             return m;

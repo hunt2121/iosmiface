@@ -22,6 +22,8 @@
     <!-- редактор XML у редакторі циферблатів: підсвітка, номери рядків (MIT) -->
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
     <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\ShotBandLight.png" />
+    <Resource Include="Assets\ShotBandDark.png" />
     <!-- компілятор циферблатів (спільний з тестами FaceKit.Tests) -->
     <Compile Include="..\FaceKit\*.cs" Link="FaceKit\%(Filename)%(Extension)" />
   </ItemGroup>
