@@ -182,14 +182,24 @@ namespace BandFace.Creator
             public double RowGap => 30 * Ts;
         }
 
+        /// <summary>Ширина місця під екран: сам екран чи браслет і назва (мітка стану може виходити за нього)</summary>
         static double ItemWidth(ShotSet s, Layout l) =>
-            Math.Max(CellBody(s, l.W).Width, s.Captions ? (l.Narrow ? l.W + 18 * l.Ts : Math.Max(l.W + 40 * l.Ts, l.Pill)) : 0);
+            Math.Max(CellBody(s, l.W).Width, s.Captions ? (l.Narrow ? l.W + 18 * l.Ts : l.W + 40 * l.Ts) : 0);
+
+        /// <summary>Найширша мітка стану в повному вигляді (у вузькому режимі мітка — лише значок)</summary>
+        static double PillSpan(ShotSet s, Layout l) => s.Captions && !l.Narrow ? l.Pill : 0;
+
+        /// <summary>Крок між центрами сусідніх екранів — однаковий; сусідні мітки стану не налазять одна на одну</summary>
+        static double Pitch(ShotSet s, Layout l) => Math.Max(ItemWidth(s, l) + l.Gap, PillSpan(s, l) + 14 * l.Ts);
+
+        /// <summary>Ширина ряду з k екранів (з урахуванням міток крайніх екранів)</summary>
+        static double RowWidth(ShotSet s, Layout l, int k) => Math.Max(0, k - 1) * Pitch(s, l) + Math.Max(ItemWidth(s, l), PillSpan(s, l));
 
         static Size GridSize(ShotSet s, Layout l, int n, double capH)
         {
             int rows = (n + l.Cols - 1) / l.Cols;
             var body = CellBody(s, l.W);
-            return new Size(l.Cols * ItemWidth(s, l) + (l.Cols - 1) * l.Gap, rows * (body.Height + capH) + (rows - 1) * l.RowGap);
+            return new Size(RowWidth(s, l, l.Cols), rows * (body.Height + capH) + (rows - 1) * l.RowGap);
         }
 
         /// <summary>Ширина мітки стану в повному вигляді</summary>
@@ -264,7 +274,7 @@ namespace BandFace.Creator
             // ліва колонка 16:9: рядок над назвою у два рядки, назва, капсули, лінія і «Зроблено в BandFace»
             var kicker = new List<(List<(FormattedText, double)> t, double h)>();
             double colW = 0, colH = 0;
-            const double colGap = 40, padL = 60, padR = 48;
+            const double colGap = 32, padL = 52, padR = 40;
             if (wide)
             {
                 if (above.Length > 0)
@@ -347,7 +357,7 @@ namespace BandFace.Creator
             }
             var grid = GridSize(s, lay, n, capH);
             var body = CellBody(s, lay.W);
-            double iw = ItemWidth(s, lay);
+            double pt = Pitch(s, lay), outer = Math.Max(ItemWidth(s, lay), PillSpan(s, lay));
 
             var renderer = new FaceRenderer(p);
             if (s.Time != null) { var d = p.Meta.Demo.Copy(); d.Time = s.Time; d.RealTime = false; renderer.Demo = d; }
@@ -445,11 +455,11 @@ namespace BandFace.Creator
                     var it = list[i];
                     int r = i / lay.Cols, col = i % lay.Cols;
                     int inRow = r == rows - 1 ? n - r * lay.Cols : lay.Cols;
-                    double rowX = gx + (gw - (inRow * iw + (inRow - 1) * lay.Gap)) / 2;
-                    double cx = rowX + col * (iw + lay.Gap) + iw / 2;
+                    double rowX = gx + (gw - RowWidth(s, lay, inRow)) / 2;
+                    double cx = rowX + outer / 2 + col * pt;
                     double top = y + r * (body.Height + capH + lay.RowGap);
                     DrawScreen(dc, p, s, it, renderer, bandImg, pal.Light, new Rect(cx - body.Width / 2, top, body.Width, body.Height));
-                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, ts, cx, iw, top + body.Height + 22 * ts);
+                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, ts, cx, pt - 12 * ts, top + body.Height + 22 * ts);
                 }
                 if (s.Credit && !wide)
                     Credit((canvas.Width - (20 * ts + 8 * ts + creditT.WidthIncludingTrailingWhitespace)) / 2, y + grid.Height + 44 * ts);
