@@ -6,6 +6,8 @@
 
 import UIKit
 import LinkPresentation
+import ImageIO
+import UniformTypeIdentifiers
 
 final class ShotShare: NSObject, UIActivityItemSource {
     let image: UIImage
@@ -24,7 +26,7 @@ final class ShotShare: NSObject, UIActivityItemSource {
 
     /// PNG у тимчасовій теці з назвою циферблата
     private lazy var file: URL? = {
-        guard let data = image.pngData() else { return nil }
+        guard let data = Self.png(image) else { return nil }
         let name = title.replacingOccurrences(of: "/", with: "-").trimmingCharacters(in: .whitespaces)
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("Shot", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -40,6 +42,16 @@ final class ShotShare: NSObject, UIActivityItemSource {
         m.imageProvider = p
         m.iconProvider = p
         return m
+    }
+
+    /// Звичайний PNG (RGBA, без EXIF, як із графічних редакторів): UIImage.pngData() дописує EXIF, і Telegram
+    /// при перетворенні такої картинки на фото заповнював прозорі кути смугами
+    static func png(_ image: UIImage) -> Data? {
+        guard let cg = image.cgImage else { return nil }
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, cg, nil)
+        return CGImageDestinationFinalize(dest) ? data as Data : nil
     }
 
     @MainActor static func present(_ item: ShotShare) { present(items: [item]) }

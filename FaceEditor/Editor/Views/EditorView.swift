@@ -243,7 +243,7 @@ struct EditorView: View {
         let rd = FaceRenderer(project)
         rd.colorVariant = variant
         let (img, _) = rd.render(theme: theme, scale: 2)
-        guard let png = Self.rounded(img, project.meta.device).pngData(), let pic = UIImage(data: png) else { return }
+        guard let png = ShotShare.png(Self.rounded(img, project.meta.device)), let pic = UIImage(data: png) else { return }
         ShotShare.present(ShotShare(image: pic, title: project.displayName.isEmpty ? loc("Знімок циферблата") : project.displayName))
     }
 
@@ -256,6 +256,9 @@ struct EditorView: View {
         let r = CGFloat(device.corner) * size.width / CGFloat(device.width)
         return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: r).addClip()
+            // екран браслета чорний: під картинкою — чорне, щоб усередині не лишалося напівпрозорих пікселів (альфа 254)
+            UIColor.black.setFill()
+            UIRectFill(CGRect(origin: .zero, size: size))
             img.draw(in: CGRect(origin: .zero, size: size))
         }
     }
