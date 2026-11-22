@@ -335,11 +335,9 @@ struct StoreView: View, Equatable {
             .padding(.bottom, 8)
 
             // перегляди й завантаження — під тонкою лінією, рівно посередині між нею і кнопкою; завжди
-            // (ще не відкривали чи чисел немає зовсім — 0). Під час встановлення смужка прогресу прозора —
-            // рядок ховаємо, місце лишаємо (картка не стрибає)
+            // (ще не відкривали чи чисел немає зовсім — 0); і під час встановлення теж
             Divider().padding(.horizontal, 2)
             StoreStatsCardRow(stats: stats[item.storeKey] ?? StoreServer.FaceStats(views: 0, downloads: 0))
-                .opacity(state(item) == .installing ? 0 : 1)
             FaceActionButton(state: state(item), price: item.buyText, busy: busy,
                              progress: progress, progressText: progressText) {
                 onInstall(item)
