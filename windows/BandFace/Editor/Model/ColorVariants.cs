@@ -271,7 +271,12 @@ namespace BandFace.Creator
                         default: images = new List<RgbaImage>(); break;
                     }
                 }
-                else images = src.Select(f => Tint(f, c)).Where(f => f != null).ToList();
+                else
+                {
+                    // якщо хоч один кадр кольоровий лише частково — сірі частини лишаються в усіх кадрах (порожня шкала теж)
+                    bool keep = src.Any(f => TintPlan(f, out bool co) != null && co);
+                    images = src.Select(f => Tint(f, c, keep)).Where(f => f != null).ToList();
+                }
                 if (images.Count == 0 || (images.Count != src.Count && b.Tag != "ImageArray")) continue;
                 var tag = c.Substring(1).ToLowerInvariant();
                 var v = new XNode(b.Tag);
@@ -313,31 +318,47 @@ namespace BandFace.Creator
         // MARK: Перефарбування
 
         /// <summary>Колір одноколірної картинки (найяскравіший піксель), якщо всі видимі пікселі — його відтінки</summary>
-        static int[] TintBase(RgbaImage img)
+        static int[] TintBase(RgbaImage img) => TintPlan(img, out _);
+
+        /// <summary>Сірий / білий / чорний піксель (без відтінку)</summary>
+        static bool Neutral(int r, int g, int b) => Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) <= 24;
+
+        /// <summary>Як перефарбувати картинку: усю (одноколірна) або лише кольорову частину (один колір + сірі / білі / чорні частини,
+        /// наприклад зелена шкала з сірими поділками — перефарбовується тільки зелене)</summary>
+        static int[] TintPlan(RgbaImage img, out bool chromaOnly)
         {
             var px = img.Px;
-            int[] best = { 0, 0, 0 };
-            int bestL = -1;
+            chromaOnly = false;
+            bool Check(int[] best, int bestL, bool allowNeutral)
+            {
+                for (int i = 0; i < px.Length; i += 4)
+                {
+                    if (px[i + 3] <= 32) continue;
+                    int r = px[i], g = px[i + 1], b = px[i + 2];
+                    if (allowNeutral && Neutral(r, g, b)) continue;
+                    double k = (double)(r + g + b) / bestL;
+                    if (Math.Abs(best[0] * k - r) > 28 || Math.Abs(best[1] * k - g) > 28 || Math.Abs(best[2] * k - b) > 28) return false;
+                }
+                return true;
+            }
+            int[] bestAll = { 0, 0, 0 }, chroma = { 0, 0, 0 };
+            int bestL = -1, chromaL = -1;
             for (int i = 0; i < px.Length; i += 4)
             {
                 if (px[i + 3] <= 32) continue;
-                int l = px[i] + px[i + 1] + px[i + 2];
-                if (l > bestL) { bestL = l; best = new[] { (int)px[i], px[i + 1], px[i + 2] }; }
+                int r = px[i], g = px[i + 1], b = px[i + 2], l = r + g + b;
+                if (l > bestL) { bestL = l; bestAll = new[] { r, g, b }; }
+                if (!Neutral(r, g, b) && l > chromaL) { chromaL = l; chroma = new[] { r, g, b }; }
             }
-            if (bestL <= 30) return null;
-            for (int i = 0; i < px.Length; i += 4)
-            {
-                if (px[i + 3] <= 32) continue;
-                int r = px[i], g = px[i + 1], b = px[i + 2];
-                double k = (double)(r + g + b) / bestL;
-                if (Math.Abs(best[0] * k - r) > 28 || Math.Abs(best[1] * k - g) > 28 || Math.Abs(best[2] * k - b) > 28) return null;
-            }
-            return best;
+            if (bestL <= 30) return null;   // порожня або майже чорна картинка
+            if (Check(bestAll, bestL, false)) return bestAll;
+            if (chromaL > 30 && Check(chroma, chromaL, true)) { chromaOnly = true; return chroma; }
+            return null;
         }
 
-        public static RgbaImage Tint(RgbaImage img, string hex)
+        public static RgbaImage Tint(RgbaImage img, string hex, bool keepNeutral = false)
         {
-            var b = TintBase(img);
+            var b = TintPlan(img, out bool chromaOnly);
             if (b == null) return null;
             var c = Imaging.ParseColor(hex);
             double baseL = b[0] + b[1] + b[2];
@@ -345,6 +366,7 @@ namespace BandFace.Creator
             for (int i = 0; i < o.Length; i += 4)
             {
                 if (o[i + 3] == 0) continue;
+                if ((chromaOnly || keepNeutral) && Neutral(o[i], o[i + 1], o[i + 2])) continue;   // сірі частини — без змін
                 double k = Math.Min(1, (o[i] + o[i + 1] + o[i + 2]) / baseL);
                 o[i] = (byte)Math.Min(255, Math.Round(c.R * k));
                 o[i + 1] = (byte)Math.Min(255, Math.Round(c.G * k));
