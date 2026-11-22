@@ -162,20 +162,29 @@ public final class FaceBuilder {
             }
         }
         var blobs: [[UInt8]] = []
-        for ti in themes {
+        // однакові блоки даних (картинки кольорових копій тощо) — один раз у межах теми; записи вказують на спільний блок.
+        // Між темами (звичайна / AOD) спільних блоків немає: інакше AOD на браслеті порожній.
+        var shared = [[[UInt8]: Int]](repeating: [:], count: themes.count)
+        func place(_ t: Int, _ d: [UInt8]) -> Int {
+            if let at = shared[t][d] { return at }
+            shared[t][d] = off; blobs.append(d)
+            defer { off += d.count }
+            return off
+        }
+        for (t, ti) in themes.enumerated() {
             if let p = ti.preview {
                 let d = try p.serialize()
-                put32(&ti.entry, 4, UInt32(off)); blobs.append(d); off += d.count
+                put32(&ti.entry, 4, UInt32(place(t, d)))
             }
         }
         put32(&header, 0x20, get32(themes[0].entry, 4))
         var recs = ByteWriter()
-        for ti in themes {
+        for (t, ti) in themes.enumerated() {
             for ty in 0..<10 {
                 for it in ti.tables[ty] {
                     let d = try it.serialize()
-                    recs.u32(it.realId); recs.u32(0); recs.u32(off); recs.u32(d.count)
-                    blobs.append(d); off += d.count
+                    let at = place(t, d)
+                    recs.u32(it.realId); recs.u32(0); recs.u32(UInt32(at)); recs.u32(UInt32(d.count))
                 }
             }
         }
