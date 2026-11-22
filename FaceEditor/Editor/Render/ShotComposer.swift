@@ -116,6 +116,9 @@ enum ShotComposer {
         return CGSize(width: w, height: w * devH / devW)
     }
 
+    /// Найбільша сторона готової картинки, pt (2560 px)
+    static let maxSide: CGFloat = 1280
+
     /// Стовпців: до 5 — один ряд, до 12 — два, далі по 6
     static func autoColumns(_ n: Int) -> Int { n <= 5 ? max(1, n) : n <= 12 ? (n + 1) / 2 : 6 }
 
@@ -217,8 +220,24 @@ enum ShotComposer {
             lay = best
             canvas = fx
         } else {
-            let g = gridSize(s, lay, n: n, capH: capH)
-            canvas = CGSize(width: max(g.width + 2 * pad.width, 640), height: g.height + 2 * pad.height + header + footer)
+            func fit(_ l: Layout) -> CGSize {
+                let g = gridSize(s, l, n: n, capH: capH)
+                return CGSize(width: max(g.width + 2 * pad.width, 640), height: g.height + 2 * pad.height + header + footer)
+            }
+            canvas = fit(lay)
+            // не більше 2560 px по довшій стороні (1280 pt): більші картинки месенджери однаково зменшують;
+            // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
+            if max(canvas.width, canvas.height) > maxSide {
+                var lo: CGFloat = 30, hi = lay.w
+                for _ in 0..<24 {
+                    let m = (lo + hi) / 2
+                    let c = fit(Layout(cols: lay.cols, w: m, narrow: false))
+                    if max(c.width, c.height) <= maxSide { lo = m } else { hi = m }
+                }
+                lay.w = floor(lo)
+                lay.narrow = lay.w < 90
+                canvas = fit(lay)
+            }
         }
         let grid = gridSize(s, lay, n: n, capH: capH)
         let body = cellBody(s, w: lay.w)
