@@ -521,19 +521,29 @@ private struct ShotZoomView: View {
         }
         .statusBarHidden()
         .background(ClearCoverBackground())
+        .modifier(ClearPresentation())
+    }
+}
+
+/// iOS 16.4+: прозоре тло аркуша засобами SwiftUI
+private struct ClearPresentation: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) { content.presentationBackground(.clear) } else { content }
     }
 }
 
 /// Прозоре тло повноекранного аркуша: під час змахування видно набір, як у «Фото»
 private struct ClearCoverBackground: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let v = UIView()
-        DispatchQueue.main.async {
-            var p = v.superview
-            while let x = p, !(x is UIWindow) { x.backgroundColor = .clear; p = x.superview }
+    final class V: UIView {
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            DispatchQueue.main.async { [weak self] in
+                var p = self?.superview
+                while let x = p, !(x is UIWindow) { x.backgroundColor = .clear; p = x.superview }
+            }
         }
-        return v
     }
+    func makeUIView(context: Context) -> UIView { V() }
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
@@ -604,23 +614,28 @@ private struct ZoomableImage: UIViewRepresentable {
             return s.zoomScale <= s.minimumZoomScale * 1.01 && abs(v.y) > abs(v.x)
         }
 
+        /// Масштаб картинки до змахування: зсув додається до нього, а не замінює (інакше губиться масштаб)
+        private var base = CGAffineTransform.identity
+
         @objc func pan(_ g: UIPanGestureRecognizer) {
             guard let s = g.view as? UIScrollView, let iv = imageView else { return }
             let ty = g.translation(in: s).y
             switch g.state {
+            case .began:
+                base = iv.transform
             case .changed:
-                iv.transform = CGAffineTransform(translationX: 0, y: ty)
+                iv.transform = base.concatenating(CGAffineTransform(translationX: 0, y: ty))
                 s.backgroundColor = UIColor.black.withAlphaComponent(max(0.3, 1 - abs(ty) / 400))
             case .ended, .cancelled:
                 let v = g.velocity(in: s).y
                 if abs(ty) > 120 || abs(v) > 900 {
                     UIView.animate(withDuration: 0.2, animations: {
-                        iv.transform = CGAffineTransform(translationX: 0, y: ty > 0 || v > 0 ? s.bounds.height : -s.bounds.height)
+                        iv.transform = self.base.concatenating(CGAffineTransform(translationX: 0, y: ty > 0 || v > 0 ? s.bounds.height : -s.bounds.height))
                         s.backgroundColor = .clear
                     }, completion: { _ in self.onClose() })
                 } else {
                     UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0) {
-                        iv.transform = .identity
+                        iv.transform = self.base
                         s.backgroundColor = .black
                     }
                 }
