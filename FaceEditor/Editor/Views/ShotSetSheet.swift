@@ -44,6 +44,7 @@ private struct ShotSetContent: View {
                     Text(loc("Наступного разу набір відкриється з цими екранами й налаштуваннями."))
                 }
             }
+            .modifier(TightTop())
             .navigationTitle(loc("Набір знімків"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -664,5 +665,12 @@ private struct ZoomableImage: UIViewRepresentable {
             let size = CGSize(width: s.bounds.width / z, height: s.bounds.height / z)
             s.zoom(to: CGRect(x: p.x - size.width / 2, y: p.y - size.height / 2, width: size.width, height: size.height), animated: true)
         }
+    }
+}
+
+/// Менший відступ над першим розділом (перегляд одразу під заголовком)
+private struct TightTop: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) { content.contentMargins(.top, 4, for: .scrollContent) } else { content }
     }
 }

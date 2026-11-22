@@ -159,9 +159,22 @@ enum ShotComposer {
         var rowGap: CGFloat { 30 * ts }
     }
 
-    /// Ширина місця під екран: сам екран чи браслет, назва, мітка стану (у вузькому режимі мітка — лише значок)
+    /// Ширина місця під екран: сам екран чи браслет і назва (мітка стану може виходити за нього)
     static func itemWidth(_ s: ShotSet, _ l: Layout) -> CGFloat {
-        max(cellBody(s, w: l.w).width, s.captions ? (l.narrow ? l.w + 18 * l.ts : max(l.w + 40 * l.ts, l.pill)) : 0)
+        max(cellBody(s, w: l.w).width, s.captions ? (l.narrow ? l.w + 18 * l.ts : l.w + 40 * l.ts) : 0)
+    }
+
+    /// Найширша мітка стану в повному вигляді (у вузькому режимі мітка — лише значок)
+    private static func pillSpan(_ s: ShotSet, _ l: Layout) -> CGFloat { s.captions && !l.narrow ? l.pill : 0 }
+
+    /// Крок між центрами сусідніх екранів — однаковий; сусідні мітки стану не налазять одна на одну
+    static func pitch(_ s: ShotSet, _ l: Layout) -> CGFloat {
+        max(itemWidth(s, l) + l.gap, pillSpan(s, l) + 14 * l.ts)
+    }
+
+    /// Ширина ряду з k екранів (з урахуванням міток крайніх екранів)
+    static func rowWidth(_ s: ShotSet, _ l: Layout, _ k: Int) -> CGFloat {
+        CGFloat(max(0, k - 1)) * pitch(s, l) + max(itemWidth(s, l), pillSpan(s, l))
     }
 
     static func captionHeight(_ s: ShotSet, items: [Item], ts: CGFloat) -> CGFloat {
@@ -171,7 +184,7 @@ enum ShotComposer {
 
     static func gridSize(_ s: ShotSet, _ l: Layout, n: Int, capH: CGFloat) -> CGSize {
         let rows = (n + l.cols - 1) / l.cols, body = cellBody(s, w: l.w)
-        return CGSize(width: CGFloat(l.cols) * itemWidth(s, l) + CGFloat(l.cols - 1) * l.gap,
+        return CGSize(width: rowWidth(s, l, l.cols),
                       height: CGFloat(rows) * (body.height + capH) + CGFloat(rows - 1) * l.rowGap)
     }
 
@@ -235,7 +248,7 @@ enum ShotComposer {
         // ліва колонка 16:9: рядок над назвою у два рядки, назва, капсули, лінія і «Зроблено в BandFace»
         var kickerA: [NSAttributedString] = []
         var colW: CGFloat = 0, colH: CGFloat = 0
-        let colGap: CGFloat = 40, padL: CGFloat = 60, padR: CGFloat = 48
+        let colGap: CGFloat = 32, padL: CGFloat = 52, padR: CGFloat = 40
         if wide {
             func kick(_ t: String) -> NSAttributedString {
                 NSAttributedString(string: t, attributes: [.font: UIFont.systemFont(ofSize: 17.2 * ts, weight: .semibold), .foregroundColor: pal.sub, .kern: 2.8 * ts])
@@ -307,7 +320,7 @@ enum ShotComposer {
         }
         let grid = gridSize(s, lay, n: n, capH: capH)
         let body = cellBody(s, w: lay.w)
-        let iw = itemWidth(s, lay)
+        let pt = pitch(s, lay), outer = max(itemWidth(s, lay), s.captions && !lay.narrow ? lay.pill : 0)
 
         let fmt = UIGraphicsImageRendererFormat()
         fmt.scale = 2
@@ -404,12 +417,12 @@ enum ShotComposer {
             for (i, it) in list.enumerated() {
                 let r = i / lay.cols, col = i % lay.cols
                 let inRow = r == rows - 1 ? n - r * lay.cols : lay.cols
-                let rowX = gx + (gw - (CGFloat(inRow) * iw + CGFloat(inRow - 1) * lay.gap)) / 2
-                let cx = rowX + CGFloat(col) * (iw + lay.gap) + iw / 2
+                let rowX = gx + (gw - rowWidth(s, lay, inRow)) / 2
+                let cx = rowX + outer / 2 + CGFloat(col) * pt
                 let top = y + CGFloat(r) * (body.height + capH + lay.rowGap)
                 drawScreen(p, s, it, renderer: renderer, band: bandImage, light: pal.light,
                            rect: CGRect(x: cx - body.width / 2, y: top, width: body.width, height: body.height), in: c)
-                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, ts: ts, centerX: cx, width: iw, top: top + body.height + 22 * ts) }
+                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, ts: ts, centerX: cx, width: pt - 12 * ts, top: top + body.height + 22 * ts) }
             }
             if s.credit && !wide {
                 let cy = y + grid.height + 44 * ts
