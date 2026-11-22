@@ -351,8 +351,12 @@
       <DockPanel x:Name="SidebarPanel" Margin="10,8">
         <TextBlock x:Name="VersionText" DockPanel.Dock="Bottom" FontSize="12" Margin="12,0,0,6" Foreground="{DynamicResource Sub}"/>
         <StackPanel>
-          <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Content="&#xE700;" Width="40" Height="36" BorderThickness="0" Background="Transparent"
-                  HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click"/>
+          <Button x:Name="MenuBtn" Style="{StaticResource IconBtn}" Width="40" Height="36" BorderThickness="0" Background="Transparent"
+                  HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="Collapsed" Click="Menu_Click">
+            <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
+              <Path Data="{StaticResource MenuGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+            </Canvas></Viewbox>
+          </Button>
           <RadioButton x:Name="NavFaces" Style="{StaticResource Nav}" IsChecked="True" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
               <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">

@@ -108,10 +108,11 @@
       </Border>
 
       <!-- Полотно -->
-      <Border Grid.Column="1" Margin="14,0" CornerRadius="8" Background="{DynamicResource Workspace}">
+      <Border x:Name="CanvasCard" Grid.Column="1" Margin="14,0" CornerRadius="8" Background="{DynamicResource Workspace}">
         <Grid>
           <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <ScrollViewer x:Name="Workspace" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+          <!-- полотно на всю висоту: нижня смуга лежить поверх нього (циферблат видно й під нею) -->
+          <ScrollViewer x:Name="Workspace" Grid.RowSpan="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                         PreviewMouseWheel="Workspace_Wheel" SizeChanged="Workspace_SizeChanged">
             <Grid x:Name="StageHost" MinWidth="{Binding ViewportWidth, ElementName=Workspace}" MinHeight="{Binding ViewportHeight, ElementName=Workspace}"
                   Background="Transparent" MouseLeftButtonDown="Stage_Down" MouseMove="Stage_Move" MouseLeftButtonUp="Stage_Up">
@@ -128,7 +129,11 @@
           </ScrollViewer>
           <!-- Нижня смуга полотна: колір, масштаб, прив'язка -->
           <!-- у вузькому вікні групи переносяться на другий рядок, нічого не обрізається -->
-          <WrapPanel Grid.Row="1" Margin="12,6,12,10" HorizontalAlignment="Center">
+          <!-- без підкладки; тонке обведення кольором полотна — щоб читалося поверх циферблата -->
+          <WrapPanel x:Name="BottomBar" Grid.Row="1" Margin="12,6,12,10" HorizontalAlignment="Center" SizeChanged="Workspace_SizeChanged">
+            <WrapPanel.Effect>
+              <DropShadowEffect ShadowDepth="0" BlurRadius="5" Opacity="1" Color="{Binding Background.Color, ElementName=CanvasCard}"/>
+            </WrapPanel.Effect>
             <!-- кольорові варіанти теж переносяться (раніше в один рядок — у вузькому вікні обрізалися разом із сусідами) -->
             <WrapPanel x:Name="Swatches" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,12,2"/>
             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,16,2">

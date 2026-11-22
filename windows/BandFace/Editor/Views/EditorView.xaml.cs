@@ -313,14 +313,19 @@ namespace BandFace.Creator
         {
             var dev = project.Meta.Device;
             double vw = Workspace.ViewportWidth > 0 ? Workspace.ViewportWidth : Workspace.ActualWidth;
-            double vh = Workspace.ViewportHeight > 0 ? Workspace.ViewportHeight : Workspace.ActualHeight;
+            // нижня смуга лежить поверх полотна — «Вмістити» ставить циферблат над нею
+            double vh = (Workspace.ViewportHeight > 0 ? Workspace.ViewportHeight : Workspace.ActualHeight) - BarHeight;
             if (vw <= 0 || vh <= 0) return 1;
             return Math.Max(0.4, Math.Min(6, Math.Min((vw - 40) / dev.Width, (vh - 40) / dev.Height)));
         }
 
+        double BarHeight => BottomBar.ActualHeight + BottomBar.Margin.Top + BottomBar.Margin.Bottom;
+
         public void Redraw()
         {
             if (project == null) return;
+            // місце під нижньою смугою: циферблат по центру видимої частини, а не під смугою
+            Stage.Margin = new Thickness(16, 16, 16, 16 + BarHeight);
             if (fit) zoom = FitZoom();
             var dev = project.Meta.Device;
             renderer.ColorVariant = variant;

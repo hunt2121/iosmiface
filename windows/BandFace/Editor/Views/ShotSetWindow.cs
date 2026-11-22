@@ -53,10 +53,12 @@ namespace BandFace.Creator
             DockPanel.SetDock(sizeText, Dock.Bottom);
             sizeText.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
             left.Children.Add(sizeText);
-            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12), Child = preview, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = S.Get("shotZoom") };
-            frame.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
-            frame.SetResourceReference(Border.BackgroundProperty, "Card");
-            left.Children.Add(frame);
+            // без підкладки: картинка сама по собі по центру, з легкою тінню; клік — на весь екран
+            preview.HorizontalAlignment = HorizontalAlignment.Center; preview.VerticalAlignment = VerticalAlignment.Center;
+            preview.Cursor = System.Windows.Input.Cursors.Hand; preview.ToolTip = S.Get("shotZoom");
+            preview.Effect = new System.Windows.Media.Effects.DropShadowEffect { ShadowDepth = 6, BlurRadius = 24, Opacity = 0.45, Color = Colors.Black, Direction = 270 };
+            preview.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
+            left.Children.Add(preview);
             root.Children.Add(left);
 
             scroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -143,7 +145,7 @@ namespace BandFace.Creator
 
         static Brush Res(string k) => (Brush)Application.Current.Resources[k];
 
-        /// <summary>Кнопка без системного підсвічування (синього прямокутника) — лише сам вміст, при наведенні трохи світліший</summary>
+        /// <summary>Кнопка без системного підсвічування (синього прямокутника) — лише сам вміст (наведення — шар на капсулі)</summary>
         static Style bare;
         static Style Bare
         {
@@ -157,9 +159,6 @@ namespace BandFace.Creator
                 bd.SetValue(Border.BackgroundProperty, Brushes.Transparent);
                 bd.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
                 t.VisualTree = bd;
-                var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-                hover.Setters.Add(new Setter(UIElement.OpacityProperty, 0.85, "c"));
-                t.Triggers.Add(hover);
                 bare = new Style(typeof(Button));
                 bare.Setters.Add(new Setter(Control.TemplateProperty, t));
                 bare.Setters.Add(new Setter(Control.FocusVisualStyleProperty, null));
@@ -172,6 +171,7 @@ namespace BandFace.Creator
             if (dashed)
             {
                 var g = new Grid { Width = 58, Height = 135 };
+                g.Children.Add(Hover(g, 29));
                 g.Children.Add(new Rectangle { RadiusX = 29, RadiusY = 29, StrokeThickness = 2, StrokeDashArray = new DoubleCollection { 3, 2 }, Stroke = Res("Sub") });
                 g.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 20, Foreground = Res("Accent"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
                 return g;
@@ -181,7 +181,20 @@ namespace BandFace.Creator
             RenderOptions.SetBitmapScalingMode(im, BitmapScalingMode.HighQuality);
             inner.Child = im;
             inner.Clip = new RectangleGeometry(new Rect(0, 0, 53, 130), 26.5, 26.5);
-            return new Border { CornerRadius = new CornerRadius(29), Padding = new Thickness(2.5), Background = Res("Accent"), Child = inner };
+            var cap = new Grid();
+            cap.Children.Add(new Border { CornerRadius = new CornerRadius(29), Padding = new Thickness(2.5), Background = Res("Accent"), Child = inner });
+            cap.Children.Add(Hover(cap, 29));
+            return cap;
+        }
+
+        /// <summary>Наведення мишки: дуже прозорий білий шар точно по формі капсули</summary>
+        static Border Hover(Grid host, double radius)
+        {
+            var h = new Border { CornerRadius = new CornerRadius(radius), Background = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)), Visibility = Visibility.Hidden, IsHitTestVisible = false };
+            host.Background = Brushes.Transparent;   // наведення ловиться всією капсулою, і порожньою теж
+            host.MouseEnter += (o, e) => h.Visibility = Visibility.Visible;
+            host.MouseLeave += (o, e) => h.Visibility = Visibility.Hidden;
+            return h;
         }
 
         FrameworkElement Card(ShotScreen sc)
