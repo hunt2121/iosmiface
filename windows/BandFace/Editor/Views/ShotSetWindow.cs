@@ -185,15 +185,16 @@ namespace BandFace.Creator
         FrameworkElement Chip(int state, bool on, string tip, Action<bool> set, bool enabled)
         {
             on = on && enabled;
-            var fg = on ? Brushes.White : (Brush)Application.Current.Resources["Text"];
+            // недоступна — та сама підкладка, сірий значок
+            var fg = on ? Brushes.White : enabled ? (Brush)Application.Current.Resources["Text"] : Brushes.Gray;
             var t = new ToggleButton
             {
                 Width = 30, Height = 30, Margin = new Thickness(2, 0, 2, 0), IsChecked = on, ToolTip = tip,
                 Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : enabled ? Brushes.Red : fg) },
                 Style = (Style)Application.Current.Resources["Chip"],
-                IsEnabled = enabled, Opacity = enabled ? 1 : 0.35,
+                // недоступна не через IsEnabled — стиль тоді блідне цілком; просто не реагує на мишу
+                IsHitTestVisible = enabled, Focusable = enabled,
             };
-            ToolTipService.SetShowOnDisabled(t, true);
             t.Click += (o, e) => set(t.IsChecked == true);
             return t;
         }
