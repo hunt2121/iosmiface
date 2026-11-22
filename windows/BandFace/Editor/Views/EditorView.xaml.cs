@@ -483,6 +483,8 @@ namespace BandFace.Creator
                 using (var dc = dv.RenderOpen())
                 {
                     dc.PushClip(new RectangleGeometry(new Rect(0, 0, w, h), r, r));
+                    // екран браслета чорний: під картинкою — чорне, щоб усередині не лишалося напівпрозорих пікселів
+                    dc.DrawRectangle(Brushes.Black, null, new Rect(0, 0, w, h));
                     dc.DrawImage(img, new Rect(0, 0, w, h));
                     dc.Pop();
                 }
