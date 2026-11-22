@@ -108,7 +108,7 @@ namespace BandFace.Creator
             ["shotCount"] = new[] { "на картинці: {0}", "in image: {0}", "на картинке: {0}" },
             ["shotScreensNote"] = new[] { "Клацніть екран: назва, стиль, колір, дублювати, прибрати. Значки під ним вмикають стан на цьому екрані: Bluetooth від'єднано, заряд 15 %; обидва — два окремі екрани.", "Click a screen: name, style, colour, duplicate, remove. The icons below it turn on a state on this screen: Bluetooth disconnected, battery 15%; both — two separate screens.", "Щёлкните экран: название, стиль, цвет, дублировать, убрать. Значки под ним включают состояние на этом экране: Bluetooth отключён, заряд 15 %; оба — два отдельных экрана." },
             ["shotBtOff"] = new[] { "Bluetooth від'єднано", "Bluetooth disconnected", "Bluetooth отключён" },
-            ["shotLowBattery"] = new[] { "Заряд 15 %", "Battery 15%", "Заряд 15 %" },
+            ["shotLowBattery"] = new[] { "Низький заряд", "Low battery", "Низкий заряд" },
             ["shotName"] = new[] { "Назва екрана…", "Screen name…", "Название экрана…" },
             ["shotNameNote"] = new[] { "Підпис під цим екраном на картинці", "Caption under this screen in the image", "Подпись под этим экраном на картинке" },
             ["shotNameReset"] = new[] { "Підпис стилем і кольором", "Caption with style and colour", "Подпись стилем и цветом" },
