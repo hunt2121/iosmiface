@@ -4,3 +4,5 @@ build/
 windows/**/bin/
 windows/**/obj/
 windows/out/
+__pycache__/
+*.pyc

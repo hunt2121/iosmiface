@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
@@ -99,13 +100,9 @@ namespace BandFace.Store
             var v = Outline(Views, Text, TextSize);
             // вертикаль і розмір — за плоскою цифрою «1» (від базової лінії до висоти великих літер);
             // кругла «0» виступає вгору й униз, і стрілка за нею виходила більшою й нижчою
-            var digits = Outline("1", Text, TextSize).Bounds;
             // як в iOS: око заввишки з цифри; лоток зі стрілкою на 3 пікселі вужчий за око, на піксель вища й нижча за цифри, лінії як в ока
             double px = 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
-            var eyeRaw = EyeShape();
-            var eye = Scaled(eyeRaw, digits.Height);
-            double eyeLine = EyeStroke * digits.Height / eyeRaw.Bounds.Height;
-            var arrow = ArrowShape(Ink(eye).Width - 3 * px, digits.Height + 2 * px, eyeLine);
+            var (digits, eye, arrow) = Icons(TextSize, px);
             double textDy = cy - (digits.Top + digits.Bottom) / 2;
 
             Rect ra = Ink(arrow), re = Ink(eye), rd = Ink(d), rv = Ink(v);
@@ -137,6 +134,23 @@ namespace BandFace.Store
         /// <summary>Висота плоскої цифри «1» (від базової лінії до верху) у Segoe UI розміру size</summary>
         public static double DigitHeight(double size) =>
             new FormattedText("1", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, Text, size, Brushes.Black, 1).BuildGeometry(new Point(0, 0)).Bounds.Height;
+
+        /// <summary>Межі цифри «1» і готові значки для розміру шрифту й пікселя — рахуються один раз (у магазині десятки карток)</summary>
+        static readonly Dictionary<(double, double), (Rect, Geometry, Geometry)> IconCache = new Dictionary<(double, double), (Rect, Geometry, Geometry)>();
+
+        static (Rect digits, Geometry eye, Geometry arrow) Icons(double size, double px)
+        {
+            if (IconCache.TryGetValue((size, px), out var hit)) return hit;
+            var digits = new FormattedText("1", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, Text, size, Brushes.Black, 1).BuildGeometry(new Point(0, 0)).Bounds;
+            var eyeRaw = EyeShape();
+            var eye = Scaled(eyeRaw, digits.Height);
+            double eyeLine = EyeStroke * digits.Height / eyeRaw.Bounds.Height;
+            var arrow = ArrowShape(Ink(eye).Width - 3 * px, digits.Height + 2 * px, eyeLine);
+            eye.Freeze(); arrow.Freeze();
+            var r = (digits, eye, arrow);
+            IconCache[(size, px)] = r;
+            return r;
+        }
 
         static Rect Ink(Geometry g) => g.Bounds.IsEmpty ? new Rect(0, 0, 0, 0) : g.Bounds;
 
