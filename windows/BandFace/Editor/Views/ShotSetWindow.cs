@@ -139,9 +139,9 @@ namespace BandFace.Creator
         BitmapSource Thumb(ShotScreen sc)
         {
             var t = ShotComposer.Theme(p, sc);
-            var key = t + "-" + sc.Color;
+            var key = t + "-" + sc.Color + "-" + string.Join(",", sc.Widgets.OrderBy(kv => kv.Key).Select(kv => kv.Key + "=" + kv.Value));
             if (thumbs.TryGetValue(key, out var b)) return b;
-            var r = new FaceRenderer(p) { ColorVariant = sc.Color };
+            var r = new FaceRenderer(p) { ColorVariant = sc.Color, SlotChoice = sc.Widgets };
             return thumbs[key] = r.Render(t, 1).Image;
         }
 
@@ -239,6 +239,28 @@ namespace BandFace.Creator
                     cm.Items.Add(it);
                 }
                 m.Items.Add(cm);
+            }
+            var slots = p.Slots(ShotComposer.Theme(p, sc));
+            if (slots.Count > 0)
+            {
+                var wm = new MenuItem { Header = S.Get("shotWidgets"), Icon = new TextBlock { Text = "\uF0E2", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14 } };
+                for (int n = 0; n < slots.Count; n++)
+                {
+                    var slot = slots[n];
+                    var name = slot.Str("name") ?? "";
+                    var ws = WidgetSlots.Widgets(p, slot);
+                    int cur = Math.Min(sc.Widgets.TryGetValue(name, out var ci) ? ci : WidgetSlots.Shown(p, slot), Math.Max(0, ws.Count - 1));
+                    if (n > 0) wm.Items.Add(new Separator());
+                    wm.Items.Add(new MenuItem { Header = S.Get("shotSlotN", n + 1), IsEnabled = false });
+                    for (int i = 0; i < ws.Count; i++)
+                    {
+                        int k = i;
+                        var it = new MenuItem { Header = ws[i].Str("widgetName") ?? S.Get("shotWidget"), IsCheckable = true, IsChecked = i == cur };
+                        it.Click += (o, e) => { sc.Widgets[name] = k; Changed(); };
+                        wm.Items.Add(it);
+                    }
+                }
+                m.Items.Add(wm);
             }
             if (p.AodOf(st[Math.Min(sc.Style, st.Count - 1)]) >= 0)
             {

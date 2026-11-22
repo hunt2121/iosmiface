@@ -293,6 +293,7 @@ namespace BandFace.Creator
             renderer.ColorVariant = it.Screen.Color;
             renderer.BluetoothOff = it.State == 1;
             renderer.LowBattery = it.State == 2;
+            renderer.SlotChoice = it.Screen.Widgets;
             var dev = p.Meta.Device;
             var img = renderer.Render(Theme(p, it.Screen), Math.Max(1, Math.Ceiling(screen.Width * 2 / DevW))).Image;
             double r = band != null || s.Rounded ? dev.Corner * screen.Width / dev.Width : 0;

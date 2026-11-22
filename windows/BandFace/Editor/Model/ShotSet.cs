@@ -22,15 +22,26 @@ namespace BandFace.Creator
         public string Name = "";
         /// <summary>Ще екран цього стилю з від'єднаним Bluetooth / із зарядом 15 %</summary>
         public bool Bluetooth, Battery;
+        /// <summary>Віджети в слотах: назва слота → номер віджета (без запису — як у редакторі)</summary>
+        public Dictionary<string, int> Widgets = new Dictionary<string, int>();
 
-        public ShotScreen Copy() => (ShotScreen)MemberwiseClone();
+        public ShotScreen Copy() { var c = (ShotScreen)MemberwiseClone(); c.Widgets = new Dictionary<string, int>(Widgets); return c; }
 
         public Dictionary<string, object> ToJson() => new Dictionary<string, object>
         {
             ["id"] = Id, ["style"] = Style, ["aod"] = Aod, ["color"] = Color, ["name"] = Name, ["bluetooth"] = Bluetooth, ["battery"] = Battery,
+            ["widgets"] = Widgets.ToDictionary(kv => kv.Key, kv => (object)kv.Value),
         };
 
-        public static ShotScreen FromJson(Dictionary<string, object> d) => new ShotScreen
+        public static ShotScreen FromJson(Dictionary<string, object> d)
+        {
+            var r = Make(d);
+            var w = Json.Obj(d, "widgets");
+            if (w != null) foreach (var kv in w) if (kv.Value is double n) r.Widgets[kv.Key] = (int)n;
+            return r;
+        }
+
+        static ShotScreen Make(Dictionary<string, object> d) => new ShotScreen
         {
             Id = Json.Str(d, "id", Guid.NewGuid().ToString().ToUpperInvariant()),
             Style = (int)Json.Num(d, "style", 0), Aod = Json.Bool(d, "aod", false), Color = (int)Json.Num(d, "color", 0),
@@ -104,6 +115,10 @@ namespace BandFace.Creator
 
     static class ShotSources
     {
+        /// <summary>Слоти теми (місця, де віджет вибирають на браслеті) у порядку шарів</summary>
+        public static List<XNode> Slots(this FaceProject p, int theme) =>
+            p.Layouts(theme).Select(l => p.ResourceRef(l.Str("ref"))).Where(r => r != null && r.Tag == "Slot").ToList();
+
         /// <summary>Є елемент, що показує стан Bluetooth / заряд (тоді є сенс у знімках із цими станами)</summary>
         public static bool UsesSource(this FaceProject p, string key)
         {

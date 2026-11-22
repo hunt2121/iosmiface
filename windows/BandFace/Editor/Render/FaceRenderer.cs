@@ -38,6 +38,8 @@ namespace BandFace.Creator
         public DemoValues Demo;
         /// <summary>Стани для знімків: Bluetooth від'єднано, низький заряд (15 %)</summary>
         public bool BluetoothOff, LowBattery;
+        /// <summary>Який віджет показати в слоті (назва слота → номер віджета); без запису — як у редакторі</summary>
+        public Dictionary<string, int> SlotChoice = new Dictionary<string, int>();
 
         public FaceRenderer(FaceProject p) { this.p = p; }
 
@@ -224,7 +226,8 @@ namespace BandFace.Creator
                     // у редакторі показуємо вибраний віджет слота (типово — перший)
                     var items = res.All("Item");
                     if (items.Count == 0) return null;
-                    var it = items[Math.Min(Math.Max(0, WidgetSlots.Shown(p, res)), items.Count - 1)];
+                    var choice = SlotChoice.TryGetValue(res.Str("name") ?? "", out var ci) ? ci : WidgetSlots.Shown(p, res);
+                    var it = items[Math.Min(Math.Max(0, choice), items.Count - 1)];
                     return Draw(Pick(it.Str("ref")), o, dc, depth + 1);
                 }
                 default: return null;
