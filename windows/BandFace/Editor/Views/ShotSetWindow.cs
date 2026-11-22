@@ -329,7 +329,9 @@ namespace BandFace.Creator
         void ScreenLookBlock()
         {
             panel.Children.Add(Ui.Header(S.Get("shotScreens")));
-            panel.Children.Add(Ui.Chips(S.Get("shotSize"), new[] { Ui.P("0", S.Get("shotLarge")), Ui.P("1", S.Get("shotMedium")), Ui.P("2", S.Get("shotSmall")) },
+            // у 1:1 і 16:9 екрани заповнюють картинку — розмір лише для «Авто»
+            if (s.Format != "square" && s.Format != "wide")
+                panel.Children.Add(Ui.Chips(S.Get("shotSize"), new[] { Ui.P("0", S.Get("shotLarge")), Ui.P("1", S.Get("shotMedium")), Ui.P("2", S.Get("shotSmall")) },
                 s.Size.ToString(), v => { s.Size = int.Parse(v); Changed(); }));
             panel.Children.Add(Ui.Chips(S.Get("shotFrame"), new[] { Ui.P("capsule", S.Get("shotCapsule")), Ui.P("band", S.Get("shotBand")) },
                 s.Band ? "band" : "capsule", v => { s.Band = v == "band"; Changed(); }));

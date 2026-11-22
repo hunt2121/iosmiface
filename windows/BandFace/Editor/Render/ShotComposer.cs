@@ -153,6 +153,23 @@ namespace BandFace.Creator
             }
         }
 
+        /// <summary>Рядок над назвою у два рядки (для 16:9): розрив ближче до середини, «10 • 11» не розривається</summary>
+        static string[] SplitKicker(string text, Func<string, double> width)
+        {
+            var words = new List<string>();
+            foreach (var w in text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                if (words.Count > 0 && (w == "•" || words[words.Count - 1].EndsWith("•"))) words[words.Count - 1] += " " + w; else words.Add(w);
+            if (words.Count < 2) return new[] { text };
+            string[] best = { text }; double bw = double.MaxValue;
+            for (int i = 1; i < words.Count; i++)
+            {
+                string a = string.Join(" ", words.Take(i)), b = string.Join(" ", words.Skip(i));
+                double m = Math.Max(width(a), width(b));
+                if (m < bw) { bw = m; best = new[] { a, b }; }
+            }
+            return best;
+        }
+
         /// <summary>Розкладка сітки: стовпці, ширина екрана, вузький режим (дрібніші підписи, стани — лише значком)</summary>
         struct Layout
         {
@@ -219,14 +236,17 @@ namespace BandFace.Creator
             var bgc = BackgroundColors(p, s.Background);
             var pal = new Palette { Light = IsLight(bgc) };
             var fixedSize = Fixed(s.Format);
-            const double padX = 56, padY = 48;
+            // 16:9: назва ліворуч, екрани праворуч на всю висоту
+            bool wide = fixedSize != null && s.Format == "wide";
+            const double padX = 56;
+            double padY = fixedSize == null ? 48 : 40;
 
             // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
             string above = s.Above ?? AutoAbove(p), title = s.Title ?? AutoTitle(p), below = s.Below ?? AutoBelow(p);
-            double titleBase = fixedSize == null ? 70 : s.Format == "wide" ? 48 : 53;
+            double titleBase = fixedSize == null ? 70 : wide ? 75 : 60;
             Spaced(above.ToUpperInvariant(), 18.4, pal.Sub, 3.4, out double aw1, out _);
             double need = Math.Max(above.Length == 0 ? 0 : aw1 + 2 * 58, title.Length == 0 ? 0 : Text(title, titleBase, FontWeights.ExtraBold, pal.Fg).WidthIncludingTrailingWhitespace);
-            double ts = fixedSize is Size f0 ? Math.Min(1, (f0.Width - 2 * padX) / Math.Max(1, need)) : 1;
+            double ts = wide ? 0.8 : fixedSize is Size f0 ? Math.Min(1, (f0.Width - 2 * padX) / Math.Max(1, need)) : 1;
             var titleT = Text(title, titleBase * ts, FontWeights.ExtraBold, pal.Fg);
             var spaced = Spaced(above.ToUpperInvariant(), 18.4 * ts, pal.Sub, 3.4 * ts, out double sw, out double sh);
             var chips = below.Split(new[] { " · " }, StringSplitOptions.RemoveEmptyEntries);
@@ -240,6 +260,30 @@ namespace BandFace.Creator
             var creditT = Text(S.Get("shotCredit"), 19.2 * ts, FontWeights.Medium, pal.SubSoft);
             double footer = s.Credit ? 44 * ts + creditT.Height : 0;
 
+            // ліва колонка 16:9: рядок над назвою у два рядки, назва, капсули, лінія і «Зроблено в BandFace»
+            var kicker = new List<(List<(FormattedText, double)> t, double h)>();
+            double colW = 0, colH = 0;
+            const double colGap = 40, padL = 60, padR = 48;
+            if (wide)
+            {
+                if (above.Length > 0)
+                    foreach (var line in SplitKicker(above.ToUpperInvariant(), t => { Spaced(t, 17.2 * ts, pal.Sub, 2.8 * ts, out double w1, out _); return w1; }))
+                    {
+                        var sp = Spaced(line, 17.2 * ts, pal.Sub, 2.8 * ts, out double lw, out double lh);
+                        kicker.Add((sp, lh)); colW = Math.Max(colW, lw);
+                    }
+                double chipsW = chipT.Sum(t => t.WidthIncludingTrailingWhitespace + 30 * ts) + Math.Max(0, chips.Length - 1) * 8 * ts;
+                colW = Math.Min(300, Math.Max(Math.Max(colW, chipsW), Math.Max(s.Credit ? creditT.WidthIncludingTrailingWhitespace + 28 * ts : 0, 180)));
+                if (titleT.WidthIncludingTrailingWhitespace > colW)
+                    titleT = Text(title, titleBase * ts * colW / titleT.WidthIncludingTrailingWhitespace, FontWeights.ExtraBold, pal.Fg);
+                colW = Math.Max(colW, titleT.WidthIncludingTrailingWhitespace);
+                colH = kicker.Sum(k => k.h * 1.15);
+                if (title.Length > 0) colH += (colH > 0 ? 12 * ts : 0) + titleT.Height;
+                if (chips.Length > 0) colH += (colH > 0 ? 18 * ts : 0) + chipH;
+                if (s.Credit) colH += (colH > 0 ? 30 * ts : 0) + 20 * ts + creditT.Height;
+                header = 0; footer = 0;
+            }
+
             int n = list.Count;
             double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) * ts : 0;
             double pill = list.Select(StateText).Where(t => t != null).Select(t => PillWidth(t, ts)).DefaultIfEmpty(0).Max();
@@ -248,7 +292,8 @@ namespace BandFace.Creator
             Size canvas;
             if (fixedSize is Size fx)
             {
-                var area = new Size(fx.Width - 2 * padX, fx.Height - 2 * padY - header - footer);
+                var area = wide ? new Size(fx.Width - padL - colW - colGap - padR, fx.Height - 2 * padY)
+                    : new Size(fx.Width - 2 * padX, fx.Height - 2 * padY - header - footer);
                 var best = L(1, 10, false);
                 foreach (var narrow in new[] { false, true })
                 {
@@ -266,7 +311,8 @@ namespace BandFace.Creator
                     // вузький режим — лише коли звичайний дає зовсім дрібні екрани
                     if (best.W >= 90 * ts) break;
                 }
-                best.W = Math.Min(Math.Floor(best.W * new[] { 1, 0.9, 0.78 }[Math.Max(0, Math.Min(2, s.Size))]), 300);
+                // заданий формат заповнюється повністю (розмір екранів — лише для «Авто»)
+                best.W = Math.Min(Math.Floor(best.W), 300);
                 lay = best;
                 canvas = fx;
             }
@@ -322,7 +368,44 @@ namespace BandFace.Creator
                 dc.DrawRectangle(glow, null, new Rect(canvas));
 
                 double total = header + grid.Height + footer;
-                double y0 = (canvas.Height - total) / 2, y = y0;
+                double y0 = (canvas.Height - total) / 2, y = wide ? (canvas.Height - grid.Height) / 2 : y0;
+                // місце під екрани по ширині
+                double gx = wide ? padL + colW + colGap : 0, gw = wide ? canvas.Width - gx - padR : canvas.Width;
+                void Credit(double x0, double cy)
+                {
+                    double icon = 20 * ts;
+                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - icon) / 2));
+                    dc.PushTransform(new ScaleTransform(icon / 26.0, icon / 26.0));
+                    dc.DrawGeometry(pal.SubSoft, null, (Geometry)Application.Current.Resources["BandGeometry"]);
+                    dc.Pop(); dc.Pop();
+                    dc.DrawText(creditT, new Point(x0 + icon + 8 * ts, cy));
+                }
+                if (wide)
+                {
+                    double cy = (canvas.Height - colH) / 2, start = cy;
+                    foreach (var (sp, h) in kicker) { foreach (var (t, dx) in sp) dc.DrawText(t, new Point(padL + dx, cy)); cy += h * 1.15; }
+                    if (title.Length > 0) { if (cy > start) cy += 12 * ts; dc.DrawText(titleT, new Point(padL - 2 * ts, cy)); cy += titleT.Height; }
+                    if (chips.Length > 0)
+                    {
+                        if (cy > start) cy += 18 * ts;
+                        double x = padL;
+                        var pen = new Pen(pal.Line, 1); pen.Freeze();
+                        foreach (var t in chipT)
+                        {
+                            double w = t.WidthIncludingTrailingWhitespace + 30 * ts;
+                            dc.DrawRoundedRectangle(null, pen, new Rect(x + 0.5, cy + 0.5, w - 1, chipH - 1), chipH / 2, chipH / 2);
+                            dc.DrawText(t, new Point(x + 15 * ts, cy + (chipH - t.Height) / 2));
+                            x += w + 8 * ts;
+                        }
+                        cy += chipH;
+                    }
+                    if (s.Credit)
+                    {
+                        if (cy > start) { cy += 30 * ts; dc.DrawRectangle(pal.Line, null, new Rect(padL, cy, colW, 1)); }
+                        cy += 20 * ts;
+                        Credit(padL, cy);
+                    }
+                }
                 void Center(FormattedText t, double yy) => dc.DrawText(t, new Point((canvas.Width - t.WidthIncludingTrailingWhitespace) / 2, yy));
                 if (header > 0)
                 {
@@ -361,22 +444,14 @@ namespace BandFace.Creator
                     var it = list[i];
                     int r = i / lay.Cols, col = i % lay.Cols;
                     int inRow = r == rows - 1 ? n - r * lay.Cols : lay.Cols;
-                    double rowX = (canvas.Width - (inRow * iw + (inRow - 1) * lay.Gap)) / 2;
+                    double rowX = gx + (gw - (inRow * iw + (inRow - 1) * lay.Gap)) / 2;
                     double cx = rowX + col * (iw + lay.Gap) + iw / 2;
                     double top = y + r * (body.Height + capH + lay.RowGap);
                     DrawScreen(dc, p, s, it, renderer, bandImg, pal.Light, new Rect(cx - body.Width / 2, top, body.Width, body.Height));
                     if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, ts, cx, iw, top + body.Height + 22 * ts);
                 }
-                if (s.Credit)
-                {
-                    double cy = y + grid.Height + 44 * ts, icon = 20 * ts;
-                    double tw = creditT.WidthIncludingTrailingWhitespace, x0 = (canvas.Width - (icon + 8 * ts + tw)) / 2;
-                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - icon) / 2));
-                    dc.PushTransform(new ScaleTransform(icon / 26.0, icon / 26.0));
-                    dc.DrawGeometry(pal.SubSoft, null, (Geometry)Application.Current.Resources["BandGeometry"]);
-                    dc.Pop(); dc.Pop();
-                    dc.DrawText(creditT, new Point(x0 + icon + 8 * ts, cy));
-                }
+                if (s.Credit && !wide)
+                    Credit((canvas.Width - (20 * ts + 8 * ts + creditT.WidthIncludingTrailingWhitespace)) / 2, y + grid.Height + 44 * ts);
             }
             var rtb = new RenderTargetBitmap((int)Math.Round(canvas.Width * 2), (int)Math.Round(canvas.Height * 2), 192, 192, PixelFormats.Pbgra32);
             rtb.Render(dv);
