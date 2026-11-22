@@ -166,17 +166,12 @@ namespace BandFace.Creator
             var btn = new Button { Content = Capsule(Thumb(sc), false), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Center, ToolTip = ShotComposer.Name(p, sc) };
             btn.Click += (o, e) => { var m = CardMenu(sc); Ui.MenuBelow(m, btn); m.IsOpen = true; };
             col.Children.Add(btn);
-            col.Children.Add(new TextBlock { Text = ShotComposer.Name(p, sc), FontSize = 12, FontWeight = FontWeights.Medium, TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) });
+            // AOD — у назві (і видно по мініатюрі); під назвою — лише кружечок кольору
+            col.Children.Add(new TextBlock { Text = ShotComposer.Name(p, sc) + (sc.Aod && string.IsNullOrEmpty(sc.Name) ? " · AOD" : ""), FontSize = 12, FontWeight = FontWeights.Medium, TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) });
             var line = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Height = 14, Margin = new Thickness(0, 3, 0, 0) };
             var cs = ColorsList;
             if (cs.Count > 0) line.Children.Add(new Ellipse { Width = 11, Height = 11, Fill = Imaging.Brush(cs[Math.Min(sc.Color, cs.Count - 1)]), VerticalAlignment = VerticalAlignment.Center });
-            if (sc.Aod)
-            {
-                var tag = new Border { CornerRadius = new CornerRadius(3), Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(5, 0, 0, 0), Child = new TextBlock { Text = "AOD", FontSize = 9, FontWeight = FontWeights.Bold } };
-                tag.SetResourceReference(Border.BackgroundProperty, "NavSel");
-                line.Children.Add(tag);
-            }
-            col.Children.Add(line);
+            if (line.Children.Count > 0) col.Children.Add(line);
             bool bt = p.UsesSource("bluetooth"), bat = p.UsesSource("battery");
             if (bt || bat)
             {
