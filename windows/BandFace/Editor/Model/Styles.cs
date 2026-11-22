@@ -82,11 +82,42 @@ namespace BandFace.Creator
             if (a >= 0) return a;
             var st = p.Theme(style);
             if (st == null) return style;
-            var t = new XNode("Theme");
-            t.Set("type", "AOD").Set("name", "").Set("bgColor", "#000000");
-            foreach (var l in p.Layouts(style)) if (Elements.Of(p.ElementOf(l)) == ElementKind.Digits) t.Kids.Add(l.Copy());
+            XNode t;
+            int src = AodSource(p, style);
+            if (src >= 0 && p.Theme(src) != null)
+            {
+                // AOD стилю, з якого цей скопійовано (або першого) — повна копія: усі шари, фон, приглушення; ті самі ресурси
+                t = p.Theme(src).Copy();
+                t.Remove("preview");
+                t.Set("type", "AOD").Set("name", "");
+            }
+            else
+            {
+                // AOD ще ніде немає — як перший: лише цифри часу стилю
+                t = new XNode("Theme");
+                t.Set("type", "AOD").Set("name", "").Set("bgColor", "#000000");
+                foreach (var l in p.Layouts(style)) if (Elements.Of(p.ElementOf(l)) == ElementKind.Digits) t.Kids.Add(l.Copy());
+            }
             p.Root.Kids.Insert(p.Root.Kids.IndexOf(st) + 1, t);
             return style + 1;
+        }
+
+        /// <summary>AOD для копіювання: інший стиль з AOD і найбільшою кількістю спільних шарів, інакше AOD першого стилю; -1 — AOD ще ніде немає</summary>
+        static int AodSource(FaceProject p, int style)
+        {
+            var mine = new HashSet<string>(p.Layouts(style).Select(l => l.Str("ref")).Where(r => r != null));
+            int best = -1, bestShared = 0;
+            foreach (int o in p.StyleThemes())
+            {
+                if (o == style) continue;
+                int a = p.AodOf(o);
+                if (a < 0) continue;
+                int shared = p.Layouts(o).Count(l => l.Str("ref") != null && mine.Contains(l.Str("ref")));
+                if (best < 0 || shared > bestShared) { best = a; bestShared = shared; }
+            }
+            if (best >= 0 && bestShared > 0) return best;
+            var styles = p.StyleThemes();
+            return styles.Count > 0 ? p.AodOf(styles[0]) : -1;
         }
 
         /// <summary>Видаляє стиль разом з його AOD (останній стиль лишається завжди)</summary>
