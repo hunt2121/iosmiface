@@ -79,7 +79,7 @@ namespace BandFace.Creator
             new ShotSet { Screens = new List<ShotScreen> { new ShotScreen { Style = style, Color = color, Aod = aod } } };
 
         /// <summary>Скільки екранів буде на картинці (зі станами)</summary>
-        public int Count => Screens.Sum(s => 1 + (s.Bluetooth ? 1 : 0) + (s.Battery ? 1 : 0));
+        public int Count => Screens.Sum(s => s.Bluetooth && s.Battery ? 2 : 1);
 
         public Dictionary<string, object> ToJson()
         {

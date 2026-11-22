@@ -27,9 +27,9 @@ namespace BandFace.Creator
             var r = new List<Item>();
             foreach (var sc in s.Screens)
             {
-                r.Add(new Item { Screen = sc });
-                if (sc.Bluetooth) r.Add(new Item { Screen = sc, State = 1 });
-                if (sc.Battery) r.Add(new Item { Screen = sc, State = 2 });
+                // стан — на самому екрані; обидва стани — два окремі екрани
+                if (sc.Bluetooth && sc.Battery) { r.Add(new Item { Screen = sc, State = 1 }); r.Add(new Item { Screen = sc, State = 2 }); }
+                else r.Add(new Item { Screen = sc, State = sc.Bluetooth ? 1 : sc.Battery ? 2 : 0 });
             }
             return r;
         }
@@ -137,8 +137,8 @@ namespace BandFace.Creator
             return new Size(w, w * DevH / DevW);
         }
 
-        /// <summary>Найбільша сторона готової картинки, pt (2560 px)</summary>
-        const double MaxSide = 1280;
+        /// <summary>Найбільша сторона готової картинки, pt (1920 px)</summary>
+        const double MaxSide = 960;
 
         static int AutoColumns(int n) => n <= 5 ? Math.Max(1, n) : n <= 12 ? (n + 1) / 2 : 6;
 
@@ -170,15 +170,18 @@ namespace BandFace.Creator
             return new Size(l.Cols * ItemWidth(s, l) + (l.Cols - 1) * l.Gap, rows * (body.Height + capH) + (rows - 1) * Layout.RowGap);
         }
 
+        static readonly BitmapImage[] bands = new BitmapImage[2];
         static BitmapImage BandImage(bool dark)
         {
+            int i = dark ? 1 : 0;
+            if (bands[i] != null) return bands[i];
             var b = new BitmapImage();
             b.BeginInit();
             b.UriSource = new Uri("pack://application:,,,/Assets/" + (dark ? "ShotBandDark.png" : "ShotBandLight.png"));
             b.CacheOption = BitmapCacheOption.OnLoad;
             b.EndInit();
             b.Freeze();
-            return b;
+            return bands[i] = b;
         }
 
         static FormattedText Text(string s, double size, FontWeight w, Brush b) =>
@@ -210,22 +213,22 @@ namespace BandFace.Creator
             var fixedSize = Fixed(s.Format);
 
             string above = s.Above ?? AutoAbove(p), title = s.Title ?? AutoTitle(p), below = s.Below ?? AutoBelow(p);
-            double titleSize = fixedSize == null ? 64 : s.Format == "wide" ? 44 : 48;
-            var aboveT = Text(above.ToUpperInvariant(), 11.5, FontWeights.SemiBold, pal.Sub);
+            double titleSize = fixedSize == null ? 70 : s.Format == "wide" ? 48 : 53;
+            var aboveT = Text(above.ToUpperInvariant(), 18.4, FontWeights.SemiBold, pal.Sub);
             var titleT = Text(title, titleSize, FontWeights.ExtraBold, pal.Fg);
             var chips = below.Split(new[] { " · " }, StringSplitOptions.RemoveEmptyEntries);
-            var chipT = chips.Select(c => Text(c, 12.5, FontWeights.Medium, pal.Sub)).ToList();
-            const double chipH = 24;
+            var chipT = chips.Select(c => Text(c, 19.5, FontWeights.Medium, pal.Sub)).ToList();
+            const double chipH = 36;
             double header = 0;
             if (above.Length > 0) header += aboveT.Height;
-            if (title.Length > 0) header += (header > 0 ? 12 : 0) + titleT.Height;
-            if (chips.Length > 0) header += (header > 0 ? 14 : 0) + chipH;
-            if (header > 0) header += 42;
-            var creditT = Text(S.Get("shotCredit"), 12, FontWeights.Medium, pal.SubSoft);
-            double footer = s.Credit ? 40 + creditT.Height : 0;
+            if (title.Length > 0) header += (header > 0 ? 14 : 0) + titleT.Height;
+            if (chips.Length > 0) header += (header > 0 ? 16 : 0) + chipH;
+            if (header > 0) header += 46;
+            var creditT = Text(S.Get("shotCredit"), 19.2, FontWeights.Medium, pal.SubSoft);
+            double footer = s.Credit ? 44 + creditT.Height : 0;
 
             int n = list.Count;
-            double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 66 : 39) : 0;
+            double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) : 0;
             const double padX = 56, padY = 48;
             var lay = new Layout { Cols = AutoColumns(n), W = ScreenWidth(s.Size) };
             Size canvas;
@@ -261,7 +264,7 @@ namespace BandFace.Creator
                     return new Size(Math.Max(g.Width + 2 * padX, 640), g.Height + 2 * padY + header + footer);
                 }
                 canvas = Fit(lay);
-                // не більше 2560 px по довшій стороні (1280 pt): більші картинки месенджери однаково зменшують;
+                // не більше 1920 px по довшій стороні (960 pt): більші картинки месенджери однаково зменшують;
                 // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
                 if (Math.Max(canvas.Width, canvas.Height) > MaxSide)
                 {
@@ -308,31 +311,31 @@ namespace BandFace.Creator
                     if (above.Length > 0)
                     {
                         // розрідження літер: FormattedText його не вміє — рядок збирається з літер із проміжками
-                        var spaced = Spaced(above.ToUpperInvariant(), 11.5, pal.Sub, 2.6, out double sw, out double sh);
+                        var spaced = Spaced(above.ToUpperInvariant(), 18.4, pal.Sub, 3.4, out double sw, out double sh);
                         double x = (canvas.Width - sw) / 2;
                         foreach (var (t, dx) in spaced) dc.DrawText(t, new Point(x + dx, y));
                         double ly = y + sh / 2;
-                        dc.DrawRectangle(pal.Line, null, new Rect(x - 14 - 28, ly, 28, 1));
-                        dc.DrawRectangle(pal.Line, null, new Rect(x + sw + 14, ly, 28, 1));
+                        dc.DrawRectangle(pal.Line, null, new Rect(x - 18 - 40, ly, 40, 1.5));
+                        dc.DrawRectangle(pal.Line, null, new Rect(x + sw + 18, ly, 40, 1.5));
                         y += sh;
                     }
-                    if (title.Length > 0) { if (y > y0) y += 12; Center(titleT, y); y += titleT.Height; }
+                    if (title.Length > 0) { if (y > y0) y += 14; Center(titleT, y); y += titleT.Height; }
                     if (chips.Length > 0)
                     {
-                        if (y > y0) y += 14;
-                        var widths = chipT.Select(t => t.WidthIncludingTrailingWhitespace + 22).ToList();
+                        if (y > y0) y += 16;
+                        var widths = chipT.Select(t => t.WidthIncludingTrailingWhitespace + 30).ToList();
                         double x = (canvas.Width - (widths.Sum() + (chips.Length - 1) * 8)) / 2;
                         var pen = new Pen(pal.Line, 1); pen.Freeze();
                         for (int i = 0; i < chipT.Count; i++)
                         {
                             var r = new Rect(x + 0.5, y + 0.5, widths[i] - 1, chipH - 1);
                             dc.DrawRoundedRectangle(null, pen, r, chipH / 2, chipH / 2);
-                            dc.DrawText(chipT[i], new Point(x + 11, y + (chipH - chipT[i].Height) / 2));
+                            dc.DrawText(chipT[i], new Point(x + 15, y + (chipH - chipT[i].Height) / 2));
                             x += widths[i] + 8;
                         }
                         y += chipH;
                     }
-                    y += 42;
+                    y += 46;
                 }
 
                 int rows = (n + lay.Cols - 1) / lay.Cols;
@@ -345,17 +348,17 @@ namespace BandFace.Creator
                     double cx = rowX + col * (iw + lay.Gap) + iw / 2;
                     double top = y + r * (body.Height + capH + Layout.RowGap);
                     DrawScreen(dc, p, s, it, renderer, bandImg, pal.Light, new Rect(cx - body.Width / 2, top, body.Width, body.Height));
-                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, cx, iw, top + body.Height + 20);
+                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, cx, iw, top + body.Height + 22);
                 }
                 if (s.Credit)
                 {
-                    double cy = y + grid.Height + 40;
-                    double tw = creditT.WidthIncludingTrailingWhitespace, x0 = (canvas.Width - (13 + 6 + tw)) / 2;
-                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - 13) / 2));
-                    dc.PushTransform(new ScaleTransform(13 / 26.0, 13 / 26.0));
+                    double cy = y + grid.Height + 44;
+                    double tw = creditT.WidthIncludingTrailingWhitespace, x0 = (canvas.Width - (20 + 8 + tw)) / 2;
+                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - 20) / 2));
+                    dc.PushTransform(new ScaleTransform(20 / 26.0, 20 / 26.0));
                     dc.DrawGeometry(pal.SubSoft, null, (Geometry)Application.Current.Resources["BandGeometry"]);
                     dc.Pop(); dc.Pop();
-                    dc.DrawText(creditT, new Point(x0 + 19, cy));
+                    dc.DrawText(creditT, new Point(x0 + 28, cy));
                 }
             }
             var rtb = new RenderTargetBitmap((int)Math.Round(canvas.Width * 2), (int)Math.Round(canvas.Height * 2), 192, 192, PixelFormats.Pbgra32);
@@ -383,7 +386,7 @@ namespace BandFace.Creator
         /// <summary>Підпис під екраном: назва і мітка стану (кольорова капсула зі значком; у вузькому режимі — лише значок)</summary>
         static void DrawCaption(DrawingContext dc, FaceProject p, Item it, Palette pal, bool narrow, double cx, double width, double top)
         {
-            var nameT = Text(Name(p, it.Screen), narrow ? 12 : 14.5, FontWeights.SemiBold, pal.Fg);
+            var nameT = Text(Name(p, it.Screen), narrow ? 16 : 23, FontWeights.SemiBold, pal.Fg);
             nameT.MaxTextWidth = width; nameT.MaxLineCount = 1; nameT.Trimming = TextTrimming.CharacterEllipsis;
             nameT.TextAlignment = TextAlignment.Center;
             dc.DrawText(nameT, new Point(cx - width / 2, top));
@@ -391,40 +394,91 @@ namespace BandFace.Creator
             if (st == null) return;
             var col = Imaging.ParseColor(pal.State(it));
             var colB = new SolidColorBrush(col); colB.Freeze();
-            double pillY = top + nameT.Height + 7, pillH = 20, iconW = 12;
-            var textT = Text(st, 11.5, FontWeights.Medium, colB);
-            double w = narrow ? 26 : 8 + iconW + 5 + textT.WidthIncludingTrailingWhitespace + 9;
+            double pillY = top + nameT.Height + 9, pillH = 32, iconW = 20;
+            var textT = Text(st, 17.8, FontWeights.Medium, colB);
+            double w = narrow ? 38 : 12 + iconW + 7 + textT.WidthIncludingTrailingWhitespace + 14;
             var bg = new SolidColorBrush(Color.FromArgb((byte)(255 * (pal.Light ? 0.12 : 0.15)), col.R, col.G, col.B)); bg.Freeze();
             dc.DrawRoundedRectangle(bg, null, new Rect(cx - w / 2, pillY, w, pillH), pillH / 2, pillH / 2);
-            var ir = new Rect(narrow ? cx - iconW / 2 : cx - w / 2 + 8, pillY + (pillH - iconW) / 2, iconW, iconW);
-            StateIcon(dc, it, ir, colB);
-            if (!narrow) dc.DrawText(textT, new Point(ir.Right + 5, pillY + (pillH - textT.Height) / 2));
+            var ir = new Rect(narrow ? cx - iconW / 2 : cx - w / 2 + 12, pillY + (pillH - iconW) / 2, iconW, iconW);
+            StateIcon(dc, it.State, ir, colB, null);
+            if (!narrow) dc.DrawText(textT, new Point(ir.Right + 7, pillY + (pillH - textT.Height) / 2));
         }
 
         /// <summary>Значок стану в квадраті r: Bluetooth від'єднано, батарея, місяць (AOD); поле 18×18</summary>
-        static void StateIcon(DrawingContext dc, Item it, Rect r, Brush b)
+        /// <summary>Значок стану в квадраті r (поле 26×26): перекреслений Bluetooth, батарея з низьким зарядом, місяць (AOD).
+        /// low — колір смужки заряду (у кнопках — червоний), null — як значок</summary>
+        public static void StateIcon(DrawingContext dc, int state, Rect r, Brush b, Brush low)
         {
-            double k = r.Width / 18;
+            double k = r.Width / 26;
             dc.PushTransform(new TranslateTransform(r.X, r.Y));
             dc.PushTransform(new ScaleTransform(k, k));
-            if (it.State == 1)
+            if (state == 1)
             {
-                var pen = new Pen(b, 1.9) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }; pen.Freeze();
-                dc.DrawGeometry(null, pen, Geometry.Parse("M5,5.6 L12.4,12 L8.8,15.2 L8.8,2.8 L12.4,6 L5,12.4 M3.2,3.2 L14.8,14.8"));
+                var pen = new Pen(b, 2.3) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }; pen.Freeze();
+                dc.DrawGeometry(null, pen, Geometry.Parse("M8.2,8.6 L17.4,16.6 L12.8,20.8 L12.8,5.2 L17.4,9.4 L8.2,17.4 M5,5 L21,21"));
             }
-            else if (it.State == 2)
+            else if (state == 2)
             {
-                var pen = new Pen(b, 1.6); pen.Freeze();
-                dc.DrawRoundedRectangle(null, pen, new Rect(0.8, 3.8, 14, 10.4), 3, 3);
-                dc.DrawRoundedRectangle(b, null, new Rect(2.8, 5.8, 2.6, 6.4), 1, 1);
-                dc.DrawRoundedRectangle(b, null, new Rect(15.6, 7.2, 1.8, 3.6), 0.9, 0.9);
+                var body = new CombinedGeometry(GeometryCombineMode.Exclude, new RectangleGeometry(new Rect(3, 6.5, 19, 13), 3, 3), new RectangleGeometry(new Rect(5.3, 8.8, 14.4, 8.4), 0.9, 0.9));
+                dc.DrawGeometry(b, null, body);
+                dc.DrawRoundedRectangle(b, null, new Rect(23.2, 10.6, 1.4, 4.8), 0.7, 0.7);
+                dc.DrawRoundedRectangle(low ?? b, null, new Rect(6.8, 10.3, 3.4, 5.4), 1, 1);
             }
             else
             {
-                var moon = new CombinedGeometry(GeometryCombineMode.Exclude, new EllipseGeometry(new Rect(1.5, 1.5, 15, 15)), new EllipseGeometry(new Rect(6.5, -2, 13, 13)));
+                var moon = new CombinedGeometry(GeometryCombineMode.Exclude, new EllipseGeometry(new Rect(3, 3, 20, 20)), new EllipseGeometry(new Rect(9.6, -1.6, 17.4, 17.4)));
                 dc.DrawGeometry(b, null, moon);
             }
             dc.Pop(); dc.Pop();
+        }
+
+        /// <summary>Значки меню знімка (поле 26×26): 0 — із закругленими кутами, 1 — без закруглень, 2 — набір</summary>
+        public static ImageSource MenuIcon(int kind, Brush b)
+        {
+            var dg = new DrawingGroup();
+            using (var dc = dg.Open())
+            {
+                dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, 26, 26));
+                var pen = new Pen(b, 1.8); pen.Freeze();
+                var thin = new Pen(b, 1.6) { }; thin.Freeze();
+                if (kind < 2)
+                {
+                    double rr = kind == 0 ? 5 : 1.6;
+                    dc.DrawRoundedRectangle(null, pen, new Rect(8, 2, 10, 22), rr, rr);
+                    dc.DrawRoundedRectangle(b, null, new Rect(10.6, 8.2, 4.8, 1.8), 0.9, 0.9);
+                    dc.DrawRoundedRectangle(b, null, new Rect(10.6, 11.6, 4.8, 1.8), 0.9, 0.9);
+                    dc.PushOpacity(0.55);
+                    dc.DrawRoundedRectangle(b, null, new Rect(11.6, 15, 2.8, 1.6), 0.8, 0.8);
+                    dc.Pop();
+                }
+                else
+                {
+                    dc.PushOpacity(0.55);
+                    dc.DrawRoundedRectangle(null, thin, new Rect(1.6, 6, 6.4, 14), 3.2, 3.2);
+                    dc.DrawRoundedRectangle(null, thin, new Rect(18, 6, 6.4, 14), 3.2, 3.2);
+                    dc.Pop();
+                    dc.DrawRoundedRectangle(null, pen, new Rect(9, 3, 8, 20), 4, 4);
+                    dc.DrawRoundedRectangle(b, null, new Rect(11.2, 9.4, 3.6, 1.6), 0.8, 0.8);
+                    dc.DrawRoundedRectangle(b, null, new Rect(11.2, 12.4, 3.6, 1.6), 0.8, 0.8);
+                }
+            }
+            dg.Freeze();
+            var img = new DrawingImage(dg); img.Freeze();
+            return img;
+        }
+
+        /// <summary>Значок стану картинкою (кнопки під карткою)</summary>
+        public static ImageSource StateImage(int state, double size, Brush b, Brush low)
+        {
+            var dg = new DrawingGroup();
+            using (var dc = dg.Open())
+            {
+                dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, size, size));
+                StateIcon(dc, state, new Rect(0, 0, size, size), b, low);
+            }
+            dg.Freeze();
+            var img = new DrawingImage(dg); img.Freeze();
+            return img;
         }
 
         static void DrawScreen(DrawingContext dc, FaceProject p, ShotSet s, Item it, FaceRenderer renderer, BitmapSource band, bool light, Rect rect)
@@ -436,8 +490,13 @@ namespace BandFace.Creator
                 screen = new Rect(rect.X + BandScreen.X * k, rect.Y + BandScreen.Y * k, BandScreen.Width * k, BandScreen.Height * k);
             }
             // тінь-овал під екраном, ніби він стоїть на поверхні
-            if (s.Shadow) GroundShadow(dc, rect, band != null ? (light ? 0.35 : 0.7) : (light ? 0.35 : 0.75));
-            if (band != null) dc.DrawImage(band, rect);
+            if (band != null)
+            {
+                // тінь браслета — за його формою: розмита копія силуету, зсунута донизу
+                if (s.Shadow) BandShadow(dc, band, rect, light ? 0.22 : 0.55);
+                dc.DrawImage(band, rect);
+            }
+            else if (s.Shadow) GroundShadow(dc, rect, light ? 0.35 : 0.75);
             renderer.ColorVariant = it.Screen.Color;
             renderer.BluetoothOff = it.State == 1;
             renderer.LowBattery = it.State == 2;
@@ -455,6 +514,31 @@ namespace BandFace.Creator
                 var rr = Math.Max(0, r - 0.5);
                 dc.DrawRoundedRectangle(null, pen, new Rect(screen.X + 0.5, screen.Y + 0.5, screen.Width - 1, screen.Height - 1), rr, rr);
             }
+        }
+
+        static readonly Dictionary<(BitmapSource, double), BitmapSource> shadows = new Dictionary<(BitmapSource, double), BitmapSource>();
+
+        static void BandShadow(DrawingContext dc, BitmapSource band, Rect r, double alpha)
+        {
+            if (!shadows.TryGetValue((band, alpha), out var sh))
+            {
+                // силует браслета чорним, розмитий
+                var dv = new DrawingVisual();
+                int pw = band.PixelWidth / 2 + 40, ph = band.PixelHeight / 2 + 40;
+                using (var c = dv.RenderOpen())
+                {
+                    c.PushOpacityMask(new ImageBrush(band) { Stretch = Stretch.Fill, Viewbox = new Rect(0, 0, 1, 1), Viewport = new Rect(20.0 / pw, 20.0 / ph, (pw - 40.0) / pw, (ph - 40.0) / ph) });
+                    c.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte)(255 * alpha), 0, 0, 0)), null, new Rect(0, 0, pw, ph));
+                    c.Pop();
+                }
+                dv.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 11, KernelType = System.Windows.Media.Effects.KernelType.Gaussian };
+                var rtb = new RenderTargetBitmap(pw, ph, 96, 96, PixelFormats.Pbgra32);
+                rtb.Render(dv);
+                rtb.Freeze();
+                shadows[(band, alpha)] = sh = rtb;
+            }
+            double k = r.Width / (band.PixelWidth / 2.0);
+            dc.DrawImage(sh, new Rect(r.X - 20 * k, r.Y - 20 * k + 14, r.Width + 40 * k, r.Height + 40 * k));
         }
 
         static void GroundShadow(DrawingContext dc, Rect r, double alpha)

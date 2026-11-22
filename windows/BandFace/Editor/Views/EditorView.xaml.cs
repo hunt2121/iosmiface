@@ -470,13 +470,15 @@ namespace BandFace.Creator
         {
             if (project == null) return;
             var m = new ContextMenu();
-            Ui.MenuAdd(m, S.Get("shotWithCorners"), "\uE722", () => SaveShot(true));
-            Ui.MenuAdd(m, S.Get("shotSquare"), "\uE722", () => SaveShot(false));
+            Ui.MenuAdd(m, S.Get("shotWithCorners"), "", () => SaveShot(true)).Icon = ShotIcon(0);
+            Ui.MenuAdd(m, S.Get("shotSquare"), "", () => SaveShot(false)).Icon = ShotIcon(1);
             m.Items.Add(new Separator());
-            Ui.MenuAdd(m, S.Get("shotSetMenu"), "\uE8A9", () => ShotSetWindow.Open(Window.GetWindow(this), project, theme, variant));
+            Ui.MenuAdd(m, S.Get("shotSetMenu"), "", () => ShotSetWindow.Open(Window.GetWindow(this), project, theme, variant)).Icon = ShotIcon(2);
             Ui.MenuBelow(m, ShotBtn);
             m.IsOpen = true;
         }
+
+        static Image ShotIcon(int kind) => new Image { Width = 18, Height = 18, Source = ShotComposer.MenuIcon(kind, (Brush)Application.Current.Resources["Text"]) };
 
         /// <summary>Знімок поточного екрана циферблата (з вибраним кольором) у PNG 2× — із закругленими кутами й прозорістю або прямокутний; одразу вибір, куди зберегти</summary>
         void SaveShot(bool rounded)

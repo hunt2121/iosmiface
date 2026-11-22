@@ -53,7 +53,8 @@ namespace BandFace.Creator
             DockPanel.SetDock(sizeText, Dock.Bottom);
             sizeText.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
             left.Children.Add(sizeText);
-            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12), Child = preview };
+            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12), Child = preview, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = S.Get("shotZoom") };
+            frame.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
             frame.SetResourceReference(Border.BackgroundProperty, "Card");
             left.Children.Add(frame);
             root.Children.Add(left);
@@ -121,13 +122,7 @@ namespace BandFace.Creator
 
         void ScreensBlock()
         {
-            var head = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-            var count = new TextBlock { Text = S.Get("shotCount", s.Count), FontSize = 12, VerticalAlignment = VerticalAlignment.Bottom };
-            count.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
-            DockPanel.SetDock(count, Dock.Right);
-            head.Children.Add(count);
-            head.Children.Add(Ui.Header(S.Get("shotScreens")));
-            panel.Children.Add(head);
+            panel.Children.Add(Ui.Header(S.Get("shotScreensN", s.Count)));
 
             var wrap = new WrapPanel();
             foreach (var sc in s.Screens) wrap.Children.Add(Card(sc));
@@ -139,9 +134,10 @@ namespace BandFace.Creator
         BitmapSource Thumb(ShotScreen sc)
         {
             var t = ShotComposer.Theme(p, sc);
-            var key = t + "-" + sc.Color + "-" + string.Join(",", sc.Widgets.OrderBy(kv => kv.Key).Select(kv => kv.Key + "=" + kv.Value));
+            int st = sc.Bluetooth ? 1 : sc.Battery ? 2 : 0;
+            var key = t + "-" + sc.Color + "-" + st + "-" + string.Join(",", sc.Widgets.OrderBy(kv => kv.Key).Select(kv => kv.Key + "=" + kv.Value));
             if (thumbs.TryGetValue(key, out var b)) return b;
-            var r = new FaceRenderer(p) { ColorVariant = sc.Color, SlotChoice = sc.Widgets };
+            var r = new FaceRenderer(p) { ColorVariant = sc.Color, SlotChoice = sc.Widgets, BluetoothOff = st == 1, LowBattery = st == 2 };
             return thumbs[key] = r.Render(t, 1).Image;
         }
 
@@ -185,19 +181,20 @@ namespace BandFace.Creator
             if (bt || bat)
             {
                 var chips = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };
-                if (bt) chips.Children.Add(Chip("", sc.Bluetooth, S.Get("shotBtOff"), v => { sc.Bluetooth = v; Changed(); }));
-                if (bat) chips.Children.Add(Chip("", sc.Battery, S.Get("shotLowBattery"), v => { sc.Battery = v; Changed(); }));
+                if (bt) chips.Children.Add(Chip(1, sc.Bluetooth, S.Get("shotBtOff"), v => { sc.Bluetooth = v; Changed(); }));
+                if (bat) chips.Children.Add(Chip(2, sc.Battery, S.Get("shotLowBattery"), v => { sc.Battery = v; Changed(); }));
                 col.Children.Add(chips);
             }
             return col;
         }
 
-        FrameworkElement Chip(string glyph, bool on, string tip, Action<bool> set)
+        FrameworkElement Chip(int state, bool on, string tip, Action<bool> set)
         {
+            var fg = on ? Brushes.White : (Brush)Application.Current.Resources["Text"];
             var t = new ToggleButton
             {
                 Width = 30, Height = 30, Margin = new Thickness(2, 0, 2, 0), IsChecked = on, ToolTip = tip,
-                Content = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 13 },
+                Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : Brushes.Red) },
                 Style = (Style)Application.Current.Resources["Chip"],
             };
             t.Click += (o, e) => set(t.IsChecked == true);
@@ -417,6 +414,29 @@ namespace BandFace.Creator
             panel.Children.Add(Ui.Switch(S.Get("shotCaptions"), s.Captions, v => { s.Captions = v; Changed(); }));
             panel.Children.Add(Ui.Switch(S.Get("shotShadow"), s.Shadow, v => { s.Shadow = v; Changed(); }));
             panel.Children.Add(Ui.Switch(S.Get("shotCreditOpt"), s.Credit, v => { s.Credit = v; Changed(); }));
+        }
+
+        /// <summary>Готова картинка в окремому вікні: 100 % пікселів, Ctrl + коліщатко — масштаб, перетягування — прокрутка</summary>
+        void ShowZoom()
+        {
+            var img = new Image { Source = image, Stretch = Stretch.Uniform, Width = image.PixelWidth / 2.0, Height = image.PixelHeight / 2.0 };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            var sv = new ScrollViewer { Content = img, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Background = Brushes.Black };
+            double z = 1;
+            var w = new Window { Title = S.Get("shotSet"), Width = Math.Min(1200, image.PixelWidth / 2.0 + 40), Height = Math.Min(900, image.PixelHeight / 2.0 + 60), Owner = this, Content = sv, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+            sv.PreviewMouseWheel += (o, e) =>
+            {
+                if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) == 0) return;
+                z = Math.Max(0.25, Math.Min(4, z * (e.Delta > 0 ? 1.15 : 1 / 1.15)));
+                img.Width = image.PixelWidth / 2.0 * z; img.Height = image.PixelHeight / 2.0 * z;
+                e.Handled = true;
+            };
+            Point? from = null; double h0 = 0, v0 = 0;
+            img.MouseLeftButtonDown += (o, e) => { from = e.GetPosition(sv); h0 = sv.HorizontalOffset; v0 = sv.VerticalOffset; img.CaptureMouse(); };
+            img.MouseMove += (o, e) => { if (from is Point f) { var q = e.GetPosition(sv); sv.ScrollToHorizontalOffset(h0 - (q.X - f.X)); sv.ScrollToVerticalOffset(v0 - (q.Y - f.Y)); } };
+            img.MouseLeftButtonUp += (o, e) => { from = null; img.ReleaseMouseCapture(); };
+            w.SourceInitialized += (o, e) => Theme.Apply(w);
+            w.ShowDialog();
         }
 
         // ---------- Готово ----------
