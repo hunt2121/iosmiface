@@ -219,7 +219,7 @@ namespace BandFace.Creator
             if (list.Count == 0) return null;
             var bgc = BackgroundColors(p, s.Background);
             var pal = new Palette { Light = IsLight(bgc) };
-            Size? fixedSize = null; // формат завжди автоматичний
+            var fixedSize = Fixed(s.Format);
             const double padX = 56, padY = 48;
 
             // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
