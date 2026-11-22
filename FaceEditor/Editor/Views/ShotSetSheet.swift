@@ -552,15 +552,8 @@ private struct ZoomableImage: UIViewRepresentable {
     /// Змахнули вгору чи вниз (коли картинка не збільшена) — закрити
     var onClose: () -> Void = {}
 
-    /// Підганяє картинку щоразу, коли змінюється розмір (перший розмір під час показу ще не остаточний)
-    final class FitScrollView: UIScrollView {
-        var onLayout: (() -> Void)?
-        override func layoutSubviews() { super.layoutSubviews(); onLayout?() }
-    }
-
     func makeUIView(context: Context) -> UIScrollView {
-        let s = FitScrollView()
-        s.onLayout = { [weak s, weak coordinator = context.coordinator] in if let s { coordinator?.fit(s) } }
+        let s = UIScrollView()
         s.backgroundColor = .black
         s.delegate = context.coordinator
         s.showsHorizontalScrollIndicator = false
@@ -580,7 +573,9 @@ private struct ZoomableImage: UIViewRepresentable {
         return s
     }
 
-    func updateUIView(_ s: UIScrollView, context: Context) {}
+    func updateUIView(_ s: UIScrollView, context: Context) {
+        DispatchQueue.main.async { context.coordinator.fit(s) }
+    }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -601,7 +596,6 @@ private struct ZoomableImage: UIViewRepresentable {
             s.maximumZoomScale = max(minZ * 4, 2)
             s.zoomScale = minZ
             center(s)
-            s.contentOffset = CGPoint(x: -s.contentInset.left, y: -s.contentInset.top)
         }
 
         func viewForZooming(in scrollView: UIScrollView) -> UIView? { imageView }
