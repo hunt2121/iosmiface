@@ -1450,6 +1450,29 @@
         }
       }
     },
+    "Вибрати на полотні": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select on canvas"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать на холсте"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрати на полотні"
+          }
+        }
+      }
+    },
     "Вибрати папку": {
       "extractionState": "manual",
       "localizations": {
@@ -4348,6 +4371,29 @@
         }
       }
     },
+    "Замінити…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заменить…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замінити…"
+          }
+        }
+      }
+    },
     "Заокруглення кутів, px": {
       "extractionState": "manual",
       "localizations": {
@@ -5402,29 +5448,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Картинка змінюється, коли значення досягає порогу."
-          }
-        }
-      }
-    },
-    "Картинка розтягується на весь екран і стає найнижчим шаром. Частини за межами екрана в циферблат не потрапляють: під час збирання їх обрізано. У редакторі картинку видно цілою — її можна рухати й масштабувати без втрат.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The picture fills the whole screen and becomes the bottom layer. Parts outside the screen are not included in the watch face: they are cropped when building. In the editor the whole image stays visible, so you can move and scale it without losing anything."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Картинка растягивается на весь экран и становится самым нижним слоем. Части за пределами экрана в циферблат не попадают: при сборке они обрезаются. В редакторе картинка видна целиком — её можно двигать и масштабировать без потерь."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Картинка розтягується на весь екран і стає найнижчим шаром. Частини за межами екрана в циферблат не потрапляють: під час збирання їх обрізано. У редакторі картинку видно цілою — її можна рухати й масштабувати без втрат."
           }
         }
       }
@@ -7242,6 +7265,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Найбільше значення"
+          }
+        }
+      }
+    },
+    "Найнижчий шар": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bottom layer"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нижний слой"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Найнижчий шар"
           }
         }
       }
@@ -13084,6 +13130,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Формат: .bin або .face"
+          }
+        }
+      }
+    },
+    "Фото закриває весь екран і стає найнижчим шаром. Його можна рухати й масштабувати — частини за межами екрана обрізаються лише під час збирання.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photo covers the whole screen and becomes the bottom layer. You can move and scale it — parts outside the screen are cropped only when building."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото закрывает весь экран и становится нижним слоем. Его можно двигать и масштабировать — части за пределами экрана обрезаются только при сборке."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото закриває весь екран і стає найнижчим шаром. Його можна рухати й масштабувати — частини за межами екрана обрізаються лише під час збирання."
           }
         }
       }

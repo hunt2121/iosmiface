@@ -83,7 +83,7 @@ struct EditorView: View {
                 LayersSheet(project: project, theme: theme, selected: $selected)
                     .presentationDetents([.medium, .large])
             case .background:
-                BackgroundSheet(project: project, theme: theme)
+                BackgroundSheet(project: project, theme: theme, onSelect: { selected = $0 })
                     .presentationDetents([.medium])
             case .properties:
                 FacePropertiesSheet(project: project, theme: $theme)

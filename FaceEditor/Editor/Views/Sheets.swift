@@ -570,8 +570,15 @@ struct LayersSheet: View {
 struct BackgroundSheet: View {
     @ObservedObject var project: FaceProject
     let theme: Int
+    /// «Вибрати на полотні» — виділити шар фону в редакторі
+    var onSelect: (XNode) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     @State private var item: PhotosPickerItem?
+
+    /// Шар фонового фото (ресурс «background…») цього екрана
+    private var bgLayout: XNode? {
+        project.layouts(theme).first { ($0.string("ref") ?? "").dropFirst().hasPrefix("background") }
+    }
 
     var body: some View {
         NavigationStack {
@@ -581,12 +588,52 @@ struct BackgroundSheet: View {
                         project.edit { $0.theme(theme)?.set("bgColor", h) }
                     }
                 }
-                Section {
-                    PhotosPicker(selection: $item, matching: .images) {
-                        Label("Фонове зображення", systemImage: "photo")
+                if let l = bgLayout {
+                    let res = project.resource(ref: l.string("ref"))
+                    let img = res?.string("src").flatMap { ProjectImages.uiImage(project, $0) }
+                    Section {
+                        HStack(spacing: 14) {
+                            Group {
+                                if let img { Image(uiImage: img).resizable().scaledToFill() } else { Color.black }
+                            }
+                            .frame(width: 40, height: 100)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(Color(.systemGray3), lineWidth: 2))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Фонове зображення")
+                                if let img {
+                                    Text(verbatim: loc("Найнижчий шар") + " · \(Int(img.size.width * img.scale)) × \(Int(img.size.height * img.scale))")
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        PhotosPicker(selection: $item, matching: .images) {
+                            Label("Замінити…", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        Button { onSelect(l); dismiss() } label: {
+                            Label("Вибрати на полотні", systemImage: "arrow.up.and.down.and.arrow.left.and.right")
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        Button(role: .destructive) {
+                            project.edit { ElementFactory.delete($0, layout: l, theme: theme) }
+                        } label: {
+                            Label("Видалити", systemImage: "trash")
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                    } footer: {
+                        Text("Фото закриває весь екран і стає найнижчим шаром. Його можна рухати й масштабувати — частини за межами екрана обрізаються лише під час збирання.")
                     }
-                } footer: {
-                    Text("Картинка розтягується на весь екран і стає найнижчим шаром. Частини за межами екрана в циферблат не потрапляють: під час збирання їх обрізано. У редакторі картинку видно цілою — її можна рухати й масштабувати без втрат.")
+                } else {
+                    Section {
+                        PhotosPicker(selection: $item, matching: .images) {
+                            Label("Фонове зображення", systemImage: "photo")
+                        }
+                    } footer: {
+                        Text("Фото закриває весь екран і стає найнижчим шаром. Його можна рухати й масштабувати — частини за межами екрана обрізаються лише під час збирання.")
+                    }
                 }
             }
             .navigationTitle("Фон")
@@ -603,7 +650,10 @@ struct BackgroundSheet: View {
                 let s = max(CGFloat(dev.width) / img.size.width, CGFloat(dev.height) / img.size.height)
                 let w = max(dev.width, Int((img.size.width * s).rounded(.up))), h = max(dev.height, Int((img.size.height * s).rounded(.up)))
                 let rgba = AssetFactory.render(w, h) { _ in img.draw(in: CGRect(x: 0, y: 0, width: w, height: h)) }
+                let old = bgLayout
                 project.edit { p in
+                    // «Замінити…» — нове фото на місці старого, а не другим шаром
+                    if let old { ElementFactory.delete(p, layout: old, theme: theme) }
                     let name = ElementFactory.addImageResource(p, rgba, base: "background")
                     guard let th = p.theme(theme) else { return }
                     let l = XNode("Layout")
@@ -611,6 +661,7 @@ struct BackgroundSheet: View {
                     let first = th.kids.firstIndex { $0.tag == "Layout" } ?? th.kids.count
                     th.kids.insert(l, at: first)
                 }
+                item = nil
                 dismiss()
             }
         }
