@@ -130,6 +130,22 @@ enum ShotComposer {
         }
     }
 
+    /// Рядок над назвою у два рядки (для 16:9): розрив ближче до середини, «10 • 11» не розривається
+    static func splitKicker(_ text: String, width: (String) -> CGFloat) -> [String] {
+        var words: [String] = []
+        for w in text.split(separator: " ").map(String.init) {
+            if let last = words.last, w == "•" || last.hasSuffix("•") { words[words.count - 1] += " " + w } else { words.append(w) }
+        }
+        guard words.count > 1 else { return [text] }
+        var best = [text], bw = CGFloat.infinity
+        for i in 1..<words.count {
+            let a = words[..<i].joined(separator: " "), b = words[i...].joined(separator: " ")
+            let m = max(width(a), width(b))
+            if m < bw { bw = m; best = [a, b] }
+        }
+        return best
+    }
+
     /// Розкладка сітки: стовпці, ширина екрана, вузький режим (дрібніші підписи, стани — лише значком)
     struct Layout {
         var cols: Int, w: CGFloat, narrow: Bool
@@ -187,11 +203,13 @@ enum ShotComposer {
         let bg = background(p, s.background)
         let pal = Palette(light: isLight(bg))
         let fixed = fixedSize(s.format)
-        let pad = CGSize(width: 56, height: 48)
+        // 16:9: назва ліворуч, екрани праворуч на всю висоту
+        let wide = fixed != nil && s.format == .wide
+        let pad = fixed == nil ? CGSize(width: 56, height: 48) : CGSize(width: 56, height: 40)
 
         // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
         let above = s.above ?? autoAbove(p), title = s.title ?? autoTitle(p), below = s.below ?? autoBelow(p)
-        let titleBase: CGFloat = fixed == nil ? 70 : s.format == .wide ? 48 : 53
+        let titleBase: CGFloat = fixed == nil ? 70 : wide ? 75 : 60
         func aboveText(_ ts: CGFloat) -> NSAttributedString {
             NSAttributedString(string: above.uppercased(), attributes: [.font: UIFont.systemFont(ofSize: 18.4 * ts, weight: .semibold), .foregroundColor: pal.sub, .kern: 3.4 * ts])
         }
@@ -199,8 +217,9 @@ enum ShotComposer {
             NSAttributedString(string: title, attributes: [.font: UIFont.systemFont(ofSize: titleBase * ts, weight: .heavy), .foregroundColor: pal.fg, .kern: -1 * ts])
         }
         let need = max(above.isEmpty ? 0 : aboveText(1).size().width + 2 * 58, title.isEmpty ? 0 : titleText(1).size().width)
-        let ts: CGFloat = fixed.map { min(1, ($0.width - 2 * pad.width) / max(1, need)) } ?? 1
-        let aboveA = aboveText(ts), titleA = titleText(ts)
+        let ts: CGFloat = wide ? 0.8 : fixed.map { min(1, ($0.width - 2 * pad.width) / max(1, need)) } ?? 1
+        let aboveA = aboveText(ts)
+        var titleA = titleText(ts)
         let chips = below.components(separatedBy: " · ").filter { !$0.isEmpty }
         let chipA = chips.map { NSAttributedString(string: $0, attributes: [.font: UIFont.systemFont(ofSize: 19.5 * ts, weight: .medium), .foregroundColor: pal.sub]) }
         let chipH: CGFloat = 36 * ts
@@ -210,7 +229,28 @@ enum ShotComposer {
         if !chips.isEmpty { header += (header > 0 ? 16 * ts : 0) + chipH }
         if header > 0 { header += 46 * ts }
         let creditA = NSAttributedString(string: loc("Зроблено в BandFace"), attributes: [.font: UIFont.systemFont(ofSize: 19.2 * ts, weight: .medium), .foregroundColor: pal.sub.withAlphaComponent(0.8)])
-        let footer: CGFloat = s.credit ? 44 * ts + creditA.size().height : 0
+        var footer: CGFloat = s.credit ? 44 * ts + creditA.size().height : 0
+
+        // ліва колонка 16:9: рядок над назвою у два рядки, назва, капсули, лінія і «Зроблено в BandFace»
+        var kickerA: [NSAttributedString] = []
+        var colW: CGFloat = 0, colH: CGFloat = 0
+        let colGap: CGFloat = 40, padL: CGFloat = 60, padR: CGFloat = 48
+        if wide {
+            func kick(_ t: String) -> NSAttributedString {
+                NSAttributedString(string: t, attributes: [.font: UIFont.systemFont(ofSize: 17.2 * ts, weight: .semibold), .foregroundColor: pal.sub, .kern: 2.8 * ts])
+            }
+            if !above.isEmpty { kickerA = splitKicker(above.uppercased()) { kick($0).size().width }.map(kick) }
+            let chipsW = chipA.map { $0.size().width + 30 * ts }.reduce(0, +) + CGFloat(max(0, chips.count - 1)) * 8 * ts
+            colW = max(kickerA.map { $0.size().width }.max() ?? 0, chipsW, s.credit ? creditA.size().width + 28 * ts : 0, 180)
+            colW = min(colW, 300)
+            if titleA.size().width > colW { titleA = NSAttributedString(string: title, attributes: [.font: UIFont.systemFont(ofSize: titleBase * ts * colW / titleA.size().width, weight: .heavy), .foregroundColor: pal.fg, .kern: -1 * ts]) }
+            colW = max(colW, titleA.size().width)
+            colH = kickerA.reduce(0) { $0 + $1.size().height * 1.15 }
+            if !title.isEmpty { colH += (colH > 0 ? 12 * ts : 0) + titleA.size().height }
+            if !chips.isEmpty { colH += (colH > 0 ? 18 * ts : 0) + chipH }
+            if s.credit { colH += (colH > 0 ? 30 * ts : 0) + 20 * ts + creditA.size().height }
+            header = 0; footer = 0
+        }
 
         // сітка
         let n = list.count
@@ -221,7 +261,8 @@ enum ShotComposer {
         var canvas: CGSize
         if let fx = fixed {
             // формат заданий: стовпці й ширина екрана — найбільші, що вміщаються з відступами
-            let area = CGSize(width: fx.width - 2 * pad.width, height: fx.height - 2 * pad.height - header - footer)
+            let area = wide ? CGSize(width: fx.width - padL - colW - colGap - padR, height: fx.height - 2 * pad.height)
+                : CGSize(width: fx.width - 2 * pad.width, height: fx.height - 2 * pad.height - header - footer)
             var best = L(1, 10, false)
             for narrow in [false, true] {
                 for c in 1...n {
@@ -236,7 +277,8 @@ enum ShotComposer {
                 // вузький режим — лише коли звичайний дає зовсім дрібні екрани
                 if best.w >= 90 * ts { break }
             }
-            best.w = min(floor(best.w * [1, 0.9, 0.78][max(0, min(2, s.size))]), 300)
+            // заданий формат заповнюється повністю (розмір екранів — лише для «Авто»)
+            best.w = min(floor(best.w), 300)
             lay = best
             canvas = fx
         } else {
@@ -294,7 +336,40 @@ enum ShotComposer {
 
             let total = header + grid.height + footer
             let y0 = (canvas.height - total) / 2
-            var y = y0
+            var y = wide ? (canvas.height - grid.height) / 2 : y0
+            // місце під екрани по ширині
+            let gx: CGFloat = wide ? padL + colW + colGap : 0
+            let gw: CGFloat = wide ? canvas.width - gx - padR : canvas.width
+            if wide {
+                var cy = (canvas.height - colH) / 2
+                let start = cy
+                for a in kickerA { a.draw(at: CGPoint(x: padL, y: cy)); cy += a.size().height * 1.15 }
+                if !title.isEmpty { if cy > start { cy += 12 * ts }; titleA.draw(at: CGPoint(x: padL - 2 * ts, y: cy)); cy += titleA.size().height }
+                if !chips.isEmpty {
+                    if cy > start { cy += 18 * ts }
+                    var x = padL
+                    for a in chipA {
+                        let w = a.size().width + 30 * ts
+                        let r = CGRect(x: x, y: cy, width: w, height: chipH)
+                        c.setStrokeColor(pal.line.cgColor); c.setLineWidth(1)
+                        c.addPath(UIBezierPath(roundedRect: r.insetBy(dx: 0.5, dy: 0.5), cornerRadius: chipH / 2).cgPath); c.strokePath()
+                        a.draw(at: CGPoint(x: x + 15 * ts, y: cy + (chipH - a.size().height) / 2))
+                        x += w + 8 * ts
+                    }
+                    cy += chipH
+                }
+                if s.credit {
+                    if cy > start {
+                        cy += 30 * ts
+                        c.setFillColor(pal.line.cgColor); c.fill(CGRect(x: padL, y: cy, width: colW, height: 1))
+                    }
+                    cy += 20 * ts
+                    let icon = 20 * ts
+                    pal.sub.withAlphaComponent(0.8).setFill()
+                    Icons.band(in: CGRect(x: padL, y: cy + (creditA.size().height - icon) / 2, width: icon, height: icon)).fill()
+                    creditA.draw(at: CGPoint(x: padL + icon + 8 * ts, y: cy))
+                }
+            }
             func centered(_ a: NSAttributedString, at yy: CGFloat) { a.draw(at: CGPoint(x: (canvas.width - a.size().width) / 2, y: yy)) }
             if header > 0 {
                 if !above.isEmpty {
@@ -328,14 +403,14 @@ enum ShotComposer {
             for (i, it) in list.enumerated() {
                 let r = i / lay.cols, col = i % lay.cols
                 let inRow = r == rows - 1 ? n - r * lay.cols : lay.cols
-                let rowX = (canvas.width - (CGFloat(inRow) * iw + CGFloat(inRow - 1) * lay.gap)) / 2
+                let rowX = gx + (gw - (CGFloat(inRow) * iw + CGFloat(inRow - 1) * lay.gap)) / 2
                 let cx = rowX + CGFloat(col) * (iw + lay.gap) + iw / 2
                 let top = y + CGFloat(r) * (body.height + capH + lay.rowGap)
                 drawScreen(p, s, it, renderer: renderer, band: bandImage, light: pal.light,
                            rect: CGRect(x: cx - body.width / 2, y: top, width: body.width, height: body.height), in: c)
                 if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, ts: ts, centerX: cx, width: iw, top: top + body.height + 22 * ts) }
             }
-            if s.credit {
+            if s.credit && !wide {
                 let cy = y + grid.height + 44 * ts
                 let icon = 20 * ts
                 let tw = creditA.size().width, total = icon + 8 * ts + tw
