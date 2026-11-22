@@ -598,17 +598,16 @@ struct BackgroundSheet: View {
             Task { @MainActor in
                 guard let d = try? await it.loadTransferable(type: Data.self), let img = UIImage(data: d) else { return }
                 let dev = project.meta.device
-                let size = CGSize(width: dev.width, height: dev.height)
-                // заповнення екрана з обрізанням країв
-                let s = max(size.width / img.size.width, size.height / img.size.height)
-                let dr = CGRect(x: (size.width - img.size.width * s) / 2, y: (size.height - img.size.height * s) / 2,
-                                width: img.size.width * s, height: img.size.height * s)
-                let rgba = AssetFactory.render(dev.width, dev.height) { _ in img.draw(in: dr) }
+                // зменшена так, щоб закрити весь екран, але ціла (не обрізана) і по центру — її можна рухати;
+                // те, що за межами екрана, обрізається лише під час збирання
+                let s = max(CGFloat(dev.width) / img.size.width, CGFloat(dev.height) / img.size.height)
+                let w = max(dev.width, Int((img.size.width * s).rounded(.up))), h = max(dev.height, Int((img.size.height * s).rounded(.up)))
+                let rgba = AssetFactory.render(w, h) { _ in img.draw(in: CGRect(x: 0, y: 0, width: w, height: h)) }
                 project.edit { p in
                     let name = ElementFactory.addImageResource(p, rgba, base: "background")
                     guard let th = p.theme(theme) else { return }
                     let l = XNode("Layout")
-                    l.set("ref", "@" + name).set("x", int: 0).set("y", int: 0)
+                    l.set("ref", "@" + name).set("x", int: (dev.width - w) / 2).set("y", int: (dev.height - h) / 2)
                     let first = th.kids.firstIndex { $0.tag == "Layout" } ?? th.kids.count
                     th.kids.insert(l, at: first)
                 }
