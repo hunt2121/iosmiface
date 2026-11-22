@@ -16,9 +16,9 @@ namespace BandFace
 
         static App()
         {
-            // підказки всюди — через секунду; без «швидкого показу» наступної, коли мишу переводять з однієї на іншу
+            // підказки всюди — через пів секунди; без «швидкого показу» наступної, коли мишу переводять з однієї на іншу
             // (інакше нова підказка з'являється миттєво й не там, де зупинилась миша)
-            System.Windows.Controls.ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(1000));
+            System.Windows.Controls.ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(500));
             System.Windows.Controls.ToolTipService.BetweenShowDelayProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(0));
         }
 
