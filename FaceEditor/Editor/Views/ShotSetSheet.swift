@@ -155,28 +155,28 @@ private struct ShotSetContent: View {
                 Circle().fill(ProjectColorDots.color(colors[min(sc.wrappedValue.color, colors.count - 1)])).frame(width: 12, height: 12)
                     .padding(.top, 4)
             }
-            let hasBluetooth = has("bluetooth", sc.wrappedValue), hasBattery = has("battery", sc.wrappedValue)
-            if hasBluetooth || hasBattery {
-                HStack(spacing: 6) {
-                    if hasBluetooth { chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано") }
-                    if hasBattery { chip(2, on: sc.battery, label: "Заряд 15 %") }
-                }
-                .padding(.top, 8)
+            // кнопки станів завжди; якщо екран стану не показує — бліда й не натискається
+            HStack(spacing: 6) {
+                chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано", enabled: has("bluetooth", sc.wrappedValue))
+                chip(2, on: sc.battery, label: "Заряд 15 %", enabled: has("battery", sc.wrappedValue))
             }
+            .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
     }
 
-    private func chip(_ state: Int, on: Binding<Bool>, label: String) -> some View {
-        let isOn = on.wrappedValue
+    private func chip(_ state: Int, on: Binding<Bool>, label: String, enabled: Bool) -> some View {
+        let isOn = enabled && on.wrappedValue
+        let fg: UIColor = isOn ? .white : enabled ? .label : .tertiaryLabel
         return Button { on.wrappedValue.toggle() } label: {
-            Image(uiImage: ShotComposer.stateIcon(state, size: 20, color: isOn ? .white : .label, low: isOn ? .white : .systemRed))
+            Image(uiImage: ShotComposer.stateIcon(state, size: 20, color: fg, low: isOn ? .white : enabled ? .systemRed : .tertiaryLabel))
                 .frame(width: 32, height: 32)
-                .background(Circle().fill(on.wrappedValue ? Color.accentColor : Color(.tertiarySystemFill)))
+                .background(Circle().fill(isOn ? Color.accentColor : enabled ? Color(.tertiarySystemFill) : Color(.quaternarySystemFill)))
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .accessibilityLabel(Text(loc(label)))
-        .accessibilityAddTraits(on.wrappedValue ? .isSelected : [])
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
     @ViewBuilder private func cardMenu(_ sc: Binding<ShotScreen>) -> some View {
