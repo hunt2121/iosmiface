@@ -667,7 +667,10 @@ struct ContentView: View {
                 }
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
+                // не стискається по висоті, коли під карткою стилі й кольори (інакше кнопки й шрифти дрібнішали до 75 %)
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .fixedSize(horizontal: false, vertical: true)
             if let looks = fileLooks {
                 looksRow(looks)
             }
