@@ -233,6 +233,7 @@ struct EditorView: View {
             StyleButtonLabel(number: project.styleNumber(of: theme))
         }
         .accessibilityLabel(Text(String(format: loc("Стилі, зараз %@"), project.styleTitle(current))))
+        .padding(-StyleButtonLabel.pad)   // запас під номер не змінює розташування кнопок
     }
 
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)

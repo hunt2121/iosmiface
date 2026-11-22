@@ -64,18 +64,40 @@ extension ElementFactory {
         return p.themes.count - 1
     }
 
-    /// «Завжди на екрані» для стилю — одразу після нього; спершу там лише цифри часу стилю (ті самі ресурси).
-    /// Повертає номер теми AOD.
+    /// «Завжди на екрані» для стилю — одразу після нього (ті самі ресурси, файли не дублюються).
+    /// Якщо AOD уже є в стилю, з якого цей скопійовано (найбільше спільних шарів), або в першого стилю — повна копія того AOD
+    /// (усі шари, фон, приглушення); інакше — як перший AOD: лише цифри часу стилю. Повертає номер теми AOD.
     @discardableResult
     static func addAod(_ p: FaceProject, style s: Int) -> Int {
         if let a = p.aodTheme(forStyle: s) { return a }
         guard let st = p.theme(s) else { return s }
-        let t = XNode("Theme")
-        t.set("type", "AOD").set("name", "").set("bgColor", "#000000")
-        for l in p.layouts(s) where ElementKind.of(p.element(of: l)) == .digits { t.kids.append(l.copy()) }
+        let t: XNode
+        if let src = aodSource(p, for: s), let aod = p.theme(src) {
+            t = aod.copy()
+            t.remove("preview")
+            t.set("type", "AOD").set("name", "")
+        } else {
+            t = XNode("Theme")
+            t.set("type", "AOD").set("name", "").set("bgColor", "#000000")
+            for l in p.layouts(s) where ElementKind.of(p.element(of: l)) == .digits { t.kids.append(l.copy()) }
+        }
         let at = (p.root.kids.firstIndex { $0 === st } ?? p.root.kids.count - 1) + 1
         p.root.kids.insert(t, at: at)
         return s + 1
+    }
+
+    /// AOD, який копіювати для стилю s: інший стиль з AOD і найбільшою кількістю спільних шарів (з нього скопійовано),
+    /// інакше AOD першого стилю; nil — AOD ще ніде немає
+    private static func aodSource(_ p: FaceProject, for s: Int) -> Int? {
+        let mine = Set(p.layouts(s).compactMap { $0.string("ref") })
+        var best: (aod: Int, shared: Int)?
+        for o in p.styleThemes where o != s {
+            guard let a = p.aodTheme(forStyle: o) else { continue }
+            let shared = p.layouts(o).compactMap { $0.string("ref") }.filter(mine.contains).count
+            if best == nil || shared > best!.shared { best = (a, shared) }
+        }
+        if let best, best.shared > 0 { return best.aod }
+        return p.styleThemes.first.flatMap { p.aodTheme(forStyle: $0) }
     }
 
     /// Видаляє стиль разом з його AOD (останній стиль лишається завжди)

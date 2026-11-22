@@ -125,5 +125,10 @@ struct StyleButtonLabel: View {
                 .offset(x: 18 * 0.70711, y: 18 * 0.70711)
         }
         .frame(width: 36, height: 36)
+        // рамка з запасом під номер: меню при натисканні обрізає мітку по її рамці (зовні запас знімається — див. EditorView)
+        .padding(Self.pad)
+        .contentShape(Rectangle())
     }
+
+    static let pad: CGFloat = 8
 }
