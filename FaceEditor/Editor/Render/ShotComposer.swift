@@ -121,10 +121,11 @@ enum ShotComposer {
     /// Стовпців: до 5 — один ряд, до 12 — два, далі по 6
     static func autoColumns(_ n: Int) -> Int { n <= 5 ? max(1, n) : n <= 12 ? (n + 1) / 2 : 6 }
 
+    /// Задані формати — довша сторона 960 pt (1920 px), як і найбільша «Авто»
     static func fixedSize(_ f: ShotSet.Format) -> CGSize? {
         switch f {
         case .auto: return nil
-        case .square: return CGSize(width: 620, height: 620)
+        case .square: return CGSize(width: 960, height: 960)
         case .story: return CGSize(width: 540, height: 960)
         case .wide: return CGSize(width: 960, height: 540)
         }
@@ -135,17 +136,22 @@ enum ShotComposer {
         var cols: Int, w: CGFloat, narrow: Bool
         /// Скільки екранів на картинці: два-три — розставлені ширше
         var n = 0
-        var gap: CGFloat { narrow ? 18 : n <= 2 ? 72 : n == 3 ? 46 : 30 }
-        let rowGap: CGFloat = 30
+        /// Масштаб текстів (у вузьких форматах тексти менші, щоб уміщалися)
+        var ts: CGFloat = 1
+        /// Найширша мітка стану в повному вигляді (значок і текст)
+        var pill: CGFloat = 0
+        var gap: CGFloat { narrow ? 18 * ts : n <= 2 ? 72 * ts : n == 3 ? 46 * ts : 30 * ts }
+        var rowGap: CGFloat { 30 * ts }
     }
 
+    /// Ширина місця під екран: сам екран чи браслет, назва, мітка стану (у вузькому режимі мітка — лише значок)
     static func itemWidth(_ s: ShotSet, _ l: Layout) -> CGFloat {
-        max(cellBody(s, w: l.w).width, s.captions ? l.w + (l.narrow ? 18 : 40) : 0)
+        max(cellBody(s, w: l.w).width, s.captions ? (l.narrow ? l.w + 18 * l.ts : max(l.w + 40 * l.ts, l.pill)) : 0)
     }
 
-    static func captionHeight(_ s: ShotSet, items: [Item]) -> CGFloat {
+    static func captionHeight(_ s: ShotSet, items: [Item], ts: CGFloat) -> CGFloat {
         guard s.captions else { return 0 }
-        return items.contains { stateText($0) != nil } ? 94 : 52
+        return (items.contains { stateText($0) != nil } ? 94 : 52) * ts
     }
 
     static func gridSize(_ s: ShotSet, _ l: Layout, n: Int, capH: CGFloat) -> CGSize {
@@ -168,6 +174,12 @@ enum ShotComposer {
         }
     }
 
+    /// Ширина мітки стану в повному вигляді
+    private static func pillWidth(_ text: String, ts: CGFloat) -> CGFloat {
+        let a = NSAttributedString(string: text, attributes: [.font: UIFont.systemFont(ofSize: 17.8 * ts, weight: .medium)])
+        return (12 + 20 + 7 + 14) * ts + a.size().width
+    }
+
     // MARK: Складання
 
     static func compose(_ p: FaceProject, _ s: ShotSet) -> UIImage? {
@@ -176,67 +188,78 @@ enum ShotComposer {
         let bg = background(p, s.background)
         let pal = Palette(light: isLight(bg))
         let fixed = fixedSize(s.format)
+        let pad = CGSize(width: 56, height: 48)
 
-        // шапка
+        // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
         let above = s.above ?? autoAbove(p), title = s.title ?? autoTitle(p), below = s.below ?? autoBelow(p)
-        let titleSize: CGFloat = fixed == nil ? 70 : s.format == .wide ? 48 : 53
-        let aboveA = NSAttributedString(string: above.uppercased(), attributes: [.font: UIFont.systemFont(ofSize: 18.4, weight: .semibold), .foregroundColor: pal.sub, .kern: 3.4])
-        let titleA = NSAttributedString(string: title, attributes: [.font: UIFont.systemFont(ofSize: titleSize, weight: .heavy), .foregroundColor: pal.fg, .kern: -1])
+        let titleBase: CGFloat = fixed == nil ? 70 : s.format == .wide ? 48 : 53
+        func aboveText(_ ts: CGFloat) -> NSAttributedString {
+            NSAttributedString(string: above.uppercased(), attributes: [.font: UIFont.systemFont(ofSize: 18.4 * ts, weight: .semibold), .foregroundColor: pal.sub, .kern: 3.4 * ts])
+        }
+        func titleText(_ ts: CGFloat) -> NSAttributedString {
+            NSAttributedString(string: title, attributes: [.font: UIFont.systemFont(ofSize: titleBase * ts, weight: .heavy), .foregroundColor: pal.fg, .kern: -1 * ts])
+        }
+        let need = max(above.isEmpty ? 0 : aboveText(1).size().width + 2 * 58, title.isEmpty ? 0 : titleText(1).size().width)
+        let ts: CGFloat = fixed.map { min(1, ($0.width - 2 * pad.width) / max(1, need)) } ?? 1
+        let aboveA = aboveText(ts), titleA = titleText(ts)
         let chips = below.components(separatedBy: " · ").filter { !$0.isEmpty }
-        let chipFont = UIFont.systemFont(ofSize: 19.5, weight: .medium)
-        let chipA = chips.map { NSAttributedString(string: $0, attributes: [.font: chipFont, .foregroundColor: pal.sub]) }
-        let chipH: CGFloat = 36
+        let chipA = chips.map { NSAttributedString(string: $0, attributes: [.font: UIFont.systemFont(ofSize: 19.5 * ts, weight: .medium), .foregroundColor: pal.sub]) }
+        let chipH: CGFloat = 36 * ts
         var header: CGFloat = 0
         if !above.isEmpty { header += aboveA.size().height }
-        if !title.isEmpty { header += (header > 0 ? 14 : 0) + titleA.size().height }
-        if !chips.isEmpty { header += (header > 0 ? 16 : 0) + chipH }
-        if header > 0 { header += 46 }
-        let creditA = NSAttributedString(string: loc("Зроблено в BandFace"), attributes: [.font: UIFont.systemFont(ofSize: 19.2, weight: .medium), .foregroundColor: pal.sub.withAlphaComponent(0.8)])
-        let footer: CGFloat = s.credit ? 44 + creditA.size().height : 0
+        if !title.isEmpty { header += (header > 0 ? 14 * ts : 0) + titleA.size().height }
+        if !chips.isEmpty { header += (header > 0 ? 16 * ts : 0) + chipH }
+        if header > 0 { header += 46 * ts }
+        let creditA = NSAttributedString(string: loc("Зроблено в BandFace"), attributes: [.font: UIFont.systemFont(ofSize: 19.2 * ts, weight: .medium), .foregroundColor: pal.sub.withAlphaComponent(0.8)])
+        let footer: CGFloat = s.credit ? 44 * ts + creditA.size().height : 0
 
         // сітка
         let n = list.count
-        let capH = captionHeight(s, items: list)
-        let pad = CGSize(width: 56, height: 48)
-        var lay = Layout(cols: autoColumns(n), w: screenWidth(s.size), narrow: false, n: n)
+        let capH = captionHeight(s, items: list, ts: ts)
+        let pill = list.compactMap { stateText($0) }.map { pillWidth($0, ts: ts) }.max() ?? 0
+        func L(_ cols: Int, _ w: CGFloat, _ narrow: Bool) -> Layout { Layout(cols: cols, w: w, narrow: narrow, n: n, ts: ts, pill: pill) }
+        var lay = L(autoColumns(n), screenWidth(s.size), false)
         var canvas: CGSize
         if let fx = fixed {
             // формат заданий: стовпці й ширина екрана — найбільші, що вміщаються з відступами
             let area = CGSize(width: fx.width - 2 * pad.width, height: fx.height - 2 * pad.height - header - footer)
-            var best = Layout(cols: 1, w: 10, narrow: false, n: n)
+            var best = L(1, 10, false)
             for narrow in [false, true] {
                 for c in 1...n {
                     var lo: CGFloat = 10, hi: CGFloat = 400
                     for _ in 0..<24 {
                         let m = (lo + hi) / 2
-                        let g = gridSize(s, Layout(cols: c, w: m, narrow: narrow, n: n), n: n, capH: capH)
+                        let g = gridSize(s, L(c, m, narrow), n: n, capH: capH)
                         if g.width <= area.width && g.height <= area.height { lo = m } else { hi = m }
                     }
-                    if lo > best.w { best = Layout(cols: c, w: lo, narrow: narrow, n: n) }
+                    if lo > best.w { best = L(c, lo, narrow) }
                 }
                 // вузький режим — лише коли звичайний дає зовсім дрібні екрани
-                if best.w >= 90 { break }
+                if best.w >= 90 * ts { break }
             }
-            best.w = min(floor(best.w * [1, 0.9, 0.78][max(0, min(2, s.size))]), 260)
+            best.w = min(floor(best.w * [1, 0.9, 0.78][max(0, min(2, s.size))]), 300)
             lay = best
             canvas = fx
         } else {
+            let minW = max(640, need + 2 * pad.width)
             func fit(_ l: Layout) -> CGSize {
                 let g = gridSize(s, l, n: n, capH: capH)
-                return CGSize(width: max(g.width + 2 * pad.width, 640), height: g.height + 2 * pad.height + header + footer)
+                return CGSize(width: max(g.width + 2 * pad.width, minW), height: g.height + 2 * pad.height + header + footer)
             }
             canvas = fit(lay)
             // не більше 1920 px по довшій стороні (960 pt): більші картинки месенджери однаково зменшують;
             // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
             if max(canvas.width, canvas.height) > maxSide {
-                var lo: CGFloat = 30, hi = lay.w
-                for _ in 0..<24 {
-                    let m = (lo + hi) / 2
-                    let c = fit(Layout(cols: lay.cols, w: m, narrow: false, n: n))
-                    if max(c.width, c.height) <= maxSide { lo = m } else { hi = m }
+                for narrow in [false, true] {
+                    var lo: CGFloat = 30, hi = screenWidth(s.size)
+                    for _ in 0..<24 {
+                        let m = (lo + hi) / 2
+                        let c = fit(L(lay.cols, m, narrow))
+                        if max(c.width, c.height) <= maxSide { lo = m } else { hi = m }
+                    }
+                    lay = L(lay.cols, floor(lo), narrow)
+                    if lo >= 90 { break }
                 }
-                lay.w = floor(lo)
-                lay.narrow = lay.w < 90
                 canvas = fit(lay)
             }
         }
@@ -271,7 +294,8 @@ enum ShotComposer {
             }
 
             let total = header + grid.height + footer
-            var y = (canvas.height - total) / 2
+            let y0 = (canvas.height - total) / 2
+            var y = y0
             func centered(_ a: NSAttributedString, at yy: CGFloat) { a.draw(at: CGPoint(x: (canvas.width - a.size().width) / 2, y: yy)) }
             if header > 0 {
                 if !above.isEmpty {
@@ -280,25 +304,25 @@ enum ShotComposer {
                     // тонкі лінії з обох боків
                     c.setFillColor(pal.line.cgColor)
                     let ly = y + sz.height / 2
-                    c.fill(CGRect(x: (canvas.width - sz.width) / 2 - 18 - 40, y: ly, width: 40, height: 1.5))
-                    c.fill(CGRect(x: (canvas.width + sz.width) / 2 + 18 - 3.4, y: ly, width: 40, height: 1.5))
+                    c.fill(CGRect(x: (canvas.width - sz.width) / 2 - 58 * ts, y: ly, width: 40 * ts, height: 1.5))
+                    c.fill(CGRect(x: (canvas.width + sz.width) / 2 + (18 - 3.4) * ts, y: ly, width: 40 * ts, height: 1.5))
                     y += sz.height
                 }
-                if !title.isEmpty { if y > (canvas.height - total) / 2 { y += 14 }; centered(titleA, at: y); y += titleA.size().height }
+                if !title.isEmpty { if y > y0 { y += 14 * ts }; centered(titleA, at: y); y += titleA.size().height }
                 if !chips.isEmpty {
-                    if y > (canvas.height - total) / 2 { y += 16 }
-                    let widths = chipA.map { $0.size().width + 30 }
-                    var x = (canvas.width - (widths.reduce(0, +) + CGFloat(chips.count - 1) * 8)) / 2
+                    if y > y0 { y += 16 * ts }
+                    let widths = chipA.map { $0.size().width + 30 * ts }
+                    var x = (canvas.width - (widths.reduce(0, +) + CGFloat(chips.count - 1) * 8 * ts)) / 2
                     for (i, a) in chipA.enumerated() {
                         let r = CGRect(x: x, y: y, width: widths[i], height: chipH)
                         c.setStrokeColor(pal.line.cgColor); c.setLineWidth(1)
                         c.addPath(UIBezierPath(roundedRect: r.insetBy(dx: 0.5, dy: 0.5), cornerRadius: chipH / 2).cgPath); c.strokePath()
-                        a.draw(at: CGPoint(x: x + 15, y: y + (chipH - a.size().height) / 2))
-                        x += widths[i] + 8
+                        a.draw(at: CGPoint(x: x + 15 * ts, y: y + (chipH - a.size().height) / 2))
+                        x += widths[i] + 8 * ts
                     }
                     y += chipH
                 }
-                y += 46
+                y += 46 * ts
             }
 
             let rows = (n + lay.cols - 1) / lay.cols
@@ -310,15 +334,16 @@ enum ShotComposer {
                 let top = y + CGFloat(r) * (body.height + capH + lay.rowGap)
                 drawScreen(p, s, it, renderer: renderer, band: bandImage, light: pal.light,
                            rect: CGRect(x: cx - body.width / 2, y: top, width: body.width, height: body.height), in: c)
-                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, centerX: cx, width: iw, top: top + body.height + 22) }
+                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, ts: ts, centerX: cx, width: iw, top: top + body.height + 22 * ts) }
             }
             if s.credit {
-                let cy = y + grid.height + 44
-                let tw = creditA.size().width, total = 20 + 8 + tw
+                let cy = y + grid.height + 44 * ts
+                let icon = 20 * ts
+                let tw = creditA.size().width, total = icon + 8 * ts + tw
                 let x0 = (canvas.width - total) / 2
                 pal.sub.withAlphaComponent(0.8).setFill()
-                Icons.band(in: CGRect(x: x0, y: cy + (creditA.size().height - 20) / 2, width: 20, height: 20)).fill()
-                creditA.draw(at: CGPoint(x: x0 + 28, y: cy))
+                Icons.band(in: CGRect(x: x0, y: cy + (creditA.size().height - icon) / 2, width: icon, height: icon)).fill()
+                creditA.draw(at: CGPoint(x: x0 + icon + 8 * ts, y: cy))
             }
         }
     }
@@ -332,25 +357,25 @@ enum ShotComposer {
     }
 
     /// Підпис під екраном: назва і мітка стану (кольорова капсула зі значком; у вузькому режимі — лише значок)
-    private static func drawCaption(_ p: FaceProject, _ it: Item, pal: Palette, narrow: Bool, centerX cx: CGFloat, width: CGFloat, top: CGFloat) {
+    private static func drawCaption(_ p: FaceProject, _ it: Item, pal: Palette, narrow: Bool, ts: CGFloat, centerX cx: CGFloat, width: CGFloat, top: CGFloat) {
         let para = NSMutableParagraphStyle()
         para.lineBreakMode = .byTruncatingTail
         para.alignment = .center
-        let nameA = NSAttributedString(string: name(p, it.screen), attributes: [.font: UIFont.systemFont(ofSize: narrow ? 16 : 23, weight: .semibold), .foregroundColor: pal.fg, .paragraphStyle: para])
+        let nameA = NSAttributedString(string: name(p, it.screen), attributes: [.font: UIFont.systemFont(ofSize: (narrow ? 16 : 23) * ts, weight: .semibold), .foregroundColor: pal.fg, .paragraphStyle: para])
         let nh = nameA.size().height
         nameA.draw(with: CGRect(x: cx - width / 2, y: top, width: width, height: nh), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
         guard let st = stateText(it) else { return }
         let col = pal.state(it)
-        let pillY = top + nh + 9, pillH: CGFloat = 32, iconW: CGFloat = 20
-        let textA = NSAttributedString(string: st, attributes: [.font: UIFont.systemFont(ofSize: 17.8, weight: .medium), .foregroundColor: col])
-        let w = narrow ? 38 : 12 + iconW + 7 + textA.size().width + 14
+        let pillY = top + nh + 9 * ts, pillH: CGFloat = 32 * ts, iconW: CGFloat = 20 * ts
+        let textA = NSAttributedString(string: st, attributes: [.font: UIFont.systemFont(ofSize: 17.8 * ts, weight: .medium), .foregroundColor: col])
+        let w = narrow ? 38 * ts : pillWidth(st, ts: ts)
         let r = CGRect(x: cx - w / 2, y: pillY, width: w, height: pillH)
         col.withAlphaComponent(pal.light ? 0.12 : 0.15).setFill()
         UIBezierPath(roundedRect: r, cornerRadius: pillH / 2).fill()
-        let ir = CGRect(x: narrow ? cx - iconW / 2 : r.minX + 12, y: pillY + (pillH - iconW) / 2, width: iconW, height: iconW)
+        let ir = CGRect(x: narrow ? cx - iconW / 2 : r.minX + 12 * ts, y: pillY + (pillH - iconW) / 2, width: iconW, height: iconW)
         col.setFill(); col.setStroke()
         Icons.state(it, in: ir)
-        if !narrow { textA.draw(at: CGPoint(x: ir.maxX + 7, y: pillY + (pillH - textA.size().height) / 2)) }
+        if !narrow { textA.draw(at: CGPoint(x: ir.maxX + 7 * ts, y: pillY + (pillH - textA.size().height) / 2)) }
     }
 
     private static func drawScreen(_ p: FaceProject, _ s: ShotSet, _ it: Item, renderer: FaceRenderer, band: UIImage?, light: Bool, rect: CGRect, in c: CGContext) {
