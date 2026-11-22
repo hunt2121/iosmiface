@@ -109,7 +109,6 @@ namespace BandFace.Creator
             double off = scroll.VerticalOffset;
             panel.Children.Clear();
             ScreensBlock();
-            FormatBlock();
             ScreenLookBlock();
             BackgroundBlock();
             TextBlockSection();
@@ -316,14 +315,6 @@ namespace BandFace.Creator
                 sub.Items.Add(it);
             }
             m.Items.Add(sub);
-        }
-
-        void FormatBlock()
-        {
-            panel.Children.Add(Ui.Header(S.Get("shotFormat")));
-            panel.Children.Add(Ui.Chips(null, new[] { Ui.P("auto", S.Get("shotAuto")), Ui.P("square", "1 : 1"), Ui.P("story", "9 : 16"), Ui.P("wide", "16 : 9") },
-                s.Format, v => { s.Format = v; Changed(); }));
-            panel.Children.Add(Ui.Note(S.Get("shotFormatNote")));
         }
 
         void ScreenLookBlock()
