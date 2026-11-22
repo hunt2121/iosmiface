@@ -143,6 +143,30 @@ namespace BandFace.Creator
 
         static Brush Res(string k) => (Brush)Application.Current.Resources[k];
 
+        /// <summary>Кнопка без системного підсвічування (синього прямокутника) — лише сам вміст, при наведенні трохи світліший</summary>
+        static Style bare;
+        static Style Bare
+        {
+            get
+            {
+                if (bare != null) return bare;
+                var t = new ControlTemplate(typeof(Button));
+                // прозоре тло — щоб клік ловився й усередині пунктирної плитки, а не лише по контуру
+                var bd = new FrameworkElementFactory(typeof(Border));
+                bd.Name = "c";
+                bd.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+                bd.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+                t.VisualTree = bd;
+                var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+                hover.Setters.Add(new Setter(UIElement.OpacityProperty, 0.85, "c"));
+                t.Triggers.Add(hover);
+                bare = new Style(typeof(Button));
+                bare.Setters.Add(new Setter(Control.TemplateProperty, t));
+                bare.Setters.Add(new Setter(Control.FocusVisualStyleProperty, null));
+                return bare;
+            }
+        }
+
         FrameworkElement Capsule(BitmapSource img, bool dashed)
         {
             if (dashed)
@@ -163,7 +187,7 @@ namespace BandFace.Creator
         FrameworkElement Card(ShotScreen sc)
         {
             var col = new StackPanel { Width = 96, Margin = new Thickness(0, 0, 4, 14) };
-            var btn = new Button { Content = Capsule(Thumb(sc), false), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Center, ToolTip = ShotComposer.Name(p, sc) };
+            var btn = new Button { Content = Capsule(Thumb(sc), false), Style = Bare, Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Center, ToolTip = ShotComposer.Name(p, sc) };
             btn.Click += (o, e) => { var m = CardMenu(sc); Ui.MenuBelow(m, btn); m.IsOpen = true; };
             col.Children.Add(btn);
             // AOD — у назві (і видно по мініатюрі); під назвою — лише кружечок кольору
@@ -278,7 +302,7 @@ namespace BandFace.Creator
         FrameworkElement AddCard()
         {
             var col = new StackPanel { Width = 96, Margin = new Thickness(0, 0, 4, 14) };
-            var btn = new Button { Content = Capsule(null, true), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Center, ToolTip = S.Get("shotAdd") };
+            var btn = new Button { Content = Capsule(null, true), Style = Bare, Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = HorizontalAlignment.Center };
             btn.Click += (o, e) =>
             {
                 var m = new ContextMenu();
