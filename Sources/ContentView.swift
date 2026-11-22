@@ -629,8 +629,8 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
-            // верх картки — окремий рядок, розкладається так само, як без стилів і кольорів (нічого не зменшується й не зсувається);
-            // стилі й кольори — наступним рядком тієї самої картки, без роздільника
+            // стилі й кольори файла — в тому самому рядку під капсулою, без роздільника, як на сторінці циферблата в магазині
+            VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 18) {
                 // вибрано не основний стиль чи колір — його превʼю (без анімації)
                 FaceCapsule(image: lookImage ?? filePreview, animation: lookImage == nil ? fileAnimation : nil)
@@ -668,16 +668,13 @@ struct ContentView: View {
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-            .listRowSeparator(.hidden, edges: .bottom)
             if let looks = fileLooks {
                 looksRow(looks)
-                    // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули
-                    .padding(.bottom, 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 11, trailing: 16))
-                    .listRowSeparator(.hidden, edges: .top)
             }
+            }
+            .padding(.top, 8)
+            // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули
+            .padding(.bottom, fileLooks == nil ? 8 : 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         }
     }
 
