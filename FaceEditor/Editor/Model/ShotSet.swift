@@ -90,6 +90,17 @@ struct ShotSet: Codable, Equatable {
 
     /// Скільки екранів буде на картинці: стан — на самому екрані, обидва стани — два екрани
     var count: Int { screens.reduce(0) { $0 + ($1.bluetooth && $1.battery ? 2 : 1) } }
+
+    /// Без станів, яких екран не показує (стиль без Bluetooth чи заряду — такий стан нічого не змінить)
+    func effective(_ p: FaceProject) -> ShotSet {
+        var s = self
+        for i in s.screens.indices {
+            let t = ShotComposer.theme(p, s.screens[i])
+            if s.screens[i].bluetooth && !p.usesSource("bluetooth", theme: t) { s.screens[i].bluetooth = false }
+            if s.screens[i].battery && !p.usesSource("battery", theme: t) { s.screens[i].battery = false }
+        }
+        return s
+    }
 }
 
 extension FaceProject {
@@ -98,12 +109,20 @@ extension FaceProject {
         layouts(theme).compactMap { resource(ref: $0.string("ref")) }.filter { $0.tag == "Slot" }
     }
 
-    /// Є елемент, що показує стан Bluetooth / заряд батареї (тоді є сенс у знімках із цими станами)
-    func usesSource(_ key: String) -> Bool {
+    /// На цьому екрані (темі) є елемент, що показує стан Bluetooth / заряд батареї — тоді є сенс у знімку з цим станом
+    func usesSource(_ key: String, theme: Int) -> Bool {
+        guard let t = self.theme(theme) else { return false }
+        var seen = Set<ObjectIdentifier>()
         func scan(_ n: XNode) -> Bool {
+            guard seen.insert(ObjectIdentifier(n)).inserted else { return false }
             if let s = n.string("source"), s.lowercased().contains(key) { return true }
+            // шари й складені елементи посилаються на ресурси «@ім'я»
+            for a in n.attrs {
+                let v = String(decoding: a.1, as: UTF8.self)
+                if v.hasPrefix("@"), let res = resource(ref: v), scan(res) { return true }
+            }
             return n.kids.contains { scan($0) }
         }
-        return scan(root)
+        return scan(t)
     }
 }

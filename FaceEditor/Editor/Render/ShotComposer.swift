@@ -198,6 +198,7 @@ enum ShotComposer {
     // MARK: Складання
 
     static func compose(_ p: FaceProject, _ s: ShotSet) -> UIImage? {
+        let s = s.effective(p)
         let list = Self.items(s)
         guard !list.isEmpty else { return nil }
         let bg = background(p, s.background)

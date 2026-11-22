@@ -104,7 +104,7 @@ private struct ShotSetContent: View {
             }
             .padding(.vertical, 6)
         } header: {
-            Text(String(format: loc("Екрани: %d"), shots.count))
+            Text(String(format: loc("Екрани: %d"), shots.effective(project).count))
         } footer: {
             Text(loc("Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним вмикають стан на цьому екрані: Bluetooth від'єднано, заряд 15 %; обидва — два окремі екрани."))
         }
@@ -112,11 +112,11 @@ private struct ShotSetContent: View {
 
     private var styles: [Int] { project.styleThemes }
     private var colors: [String] { ColorVariants.isEnabled(project) ? ColorVariants.colors(project) : [] }
-    private var hasBluetooth: Bool { project.usesSource("bluetooth") }
-    private var hasBattery: Bool { project.usesSource("battery") }
+    /// Стани, які цей екран справді показує (інакше кнопки стану немає)
+    private func has(_ key: String, _ sc: ShotScreen) -> Bool { project.usesSource(key, theme: ShotComposer.theme(project, sc)) }
 
     private func thumb(_ sc: ShotScreen) -> UIImage? {
-        let st = sc.bluetooth ? 1 : sc.battery ? 2 : 0
+        let st = sc.bluetooth && has("bluetooth", sc) ? 1 : sc.battery && has("battery", sc) ? 2 : 0
         let key = "\(ShotComposer.theme(project, sc))-\(sc.color)-\(st)-\(project.revision)-" + sc.widgets.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         if let t = thumbs[key] { return t }
         let r = FaceRenderer(project)
@@ -155,6 +155,7 @@ private struct ShotSetContent: View {
                 Circle().fill(ProjectColorDots.color(colors[min(sc.wrappedValue.color, colors.count - 1)])).frame(width: 12, height: 12)
                     .padding(.top, 4)
             }
+            let hasBluetooth = has("bluetooth", sc.wrappedValue), hasBattery = has("battery", sc.wrappedValue)
             if hasBluetooth || hasBattery {
                 HStack(spacing: 6) {
                     if hasBluetooth { chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано") }
