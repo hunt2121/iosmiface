@@ -10,12 +10,12 @@ struct ShotSetSheet: View {
     let project: FaceProject
     let initial: ShotSet
     // поле над клавіатурою — для назв екранів, текстів і часу
-    var body: some View { ShotSetContent(project: project, set: initial).inputBarHost() }
+    var body: some View { ShotSetContent(project: project, shots: initial).inputBarHost() }
 }
 
 private struct ShotSetContent: View {
     @ObservedObject var project: FaceProject
-    @State var set: ShotSet
+    @State var shots: ShotSet
     @Environment(\.dismiss) private var dismiss
     @Environment(\.inputBar) private var bar
     @State private var preview: UIImage?
@@ -35,7 +35,7 @@ private struct ShotSetContent: View {
                 textSection
                 lookSection
                 Section {
-                    Toggle(loc("Запам'ятати для циферблата"), isOn: $set.remember)
+                    Toggle(loc("Запам'ятати для циферблата"), isOn: $shots.remember)
                 } header: { Text(loc("Збереження")) } footer: {
                     Text(loc("Наступного разу набір відкриється з цими екранами й налаштуваннями."))
                 }
@@ -49,10 +49,10 @@ private struct ShotSetContent: View {
                 ToolbarItem(placement: .confirmationAction) { doneMenu }
             }
         }
-        .task(id: set) {
+        .task(id: shots) {
             // перегляд — трохи згодом, щоб не малювати на кожен дотик
             try? await Task.sleep(nanoseconds: 250_000_000)
-            preview = ShotComposer.compose(project, set)
+            preview = ShotComposer.compose(project, shots)
         }
     }
 
@@ -84,7 +84,7 @@ private struct ShotSetContent: View {
     private var screensSection: some View {
         Section {
             LazyVGrid(columns: columns, spacing: 16) {
-                ForEach($set.screens) { $sc in card($sc) }
+                ForEach($shots.screens) { $sc in card($sc) }
                 addCard
             }
             .padding(.vertical, 6)
@@ -92,7 +92,7 @@ private struct ShotSetContent: View {
             HStack {
                 Text(loc("Екрани"))
                 Spacer()
-                Text(String(format: loc("на картинці: %d"), set.count)).textCase(nil)
+                Text(String(format: loc("на картинці: %d"), shots.count)).textCase(nil)
             }
         } footer: {
             Text(loc("Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним додають екран зі станом: Bluetooth від'єднано, заряд 15 %."))
@@ -215,10 +215,10 @@ private struct ShotSetContent: View {
         Divider()
         Button {
             var copy = sc.wrappedValue; copy.id = UUID(); copy.name = ""
-            if let i = set.screens.firstIndex(where: { $0.id == sc.wrappedValue.id }) { set.screens.insert(copy, at: i + 1) }
+            if let i = shots.screens.firstIndex(where: { $0.id == sc.wrappedValue.id }) { shots.screens.insert(copy, at: i + 1) }
         } label: { Label(loc("Дублювати екран"), systemImage: "plus.square.on.square") }
         Button(role: .destructive) {
-            set.screens.removeAll { $0.id == sc.wrappedValue.id }
+            shots.screens.removeAll { $0.id == sc.wrappedValue.id }
         } label: { Label(loc("Прибрати екран"), systemImage: "trash") }
     }
 
@@ -247,11 +247,11 @@ private struct ShotSetContent: View {
     @ViewBuilder private func addItem(style i: Int, aod: Bool) -> some View {
         let title = project.styleTitle(styles[i]) + (aod ? " · AOD" : "")
         if colors.isEmpty {
-            Button(title) { set.screens.append(ShotScreen(style: i, aod: aod)) }
+            Button(title) { shots.screens.append(ShotScreen(style: i, aod: aod)) }
         } else {
             Menu(title) {
                 ForEach(colors.indices, id: \.self) { c in
-                    Button { set.screens.append(ShotScreen(style: i, aod: aod, color: c)) } label: {
+                    Button { shots.screens.append(ShotScreen(style: i, aod: aod, color: c)) } label: {
                         Label { Text(ShotComposer.colorName(c)) } icon: { Image(uiImage: Self.dot(colors[c])) }
                     }
                 }
@@ -287,8 +287,8 @@ private struct ShotSetContent: View {
     }
 
     private func formatButton(_ f: ShotSet.Format, _ title: String, _ icon: CGSize) -> some View {
-        let on = set.format == f
-        return Button { set.format = f } label: {
+        let on = shots.format == f
+        return Button { shots.format = f } label: {
             VStack(spacing: 7) {
                 RoundedRectangle(cornerRadius: 3).strokeBorder(on ? Color.accentColor : Color.secondary, lineWidth: 1.8)
                     .frame(width: icon.width, height: icon.height).frame(height: 24)
@@ -305,7 +305,7 @@ private struct ShotSetContent: View {
         Section(loc("Екрани")) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(loc("Розмір"))
-                Picker("", selection: $set.size) {
+                Picker("", selection: $shots.size) {
                     Text(loc("Великі")).tag(0); Text(loc("Середні")).tag(1); Text(loc("Малі")).tag(2)
                 }
                 .pickerStyle(.segmented)
@@ -313,7 +313,7 @@ private struct ShotSetContent: View {
             .padding(.vertical, 4)
             VStack(alignment: .leading, spacing: 10) {
                 Text(loc("Рамка"))
-                Picker("", selection: $set.band) {
+                Picker("", selection: $shots.band) {
                     Text(loc("Капсула")).tag(false); Text(loc("Браслет")).tag(true)
                 }
                 .pickerStyle(.segmented)
@@ -325,16 +325,16 @@ private struct ShotSetContent: View {
                 Button {
                     bar?.begin(loc("Час на екранах"), timeText, numeric: true) { t in
                         let p = t.split(whereSeparator: { ":. ".contains($0) }).compactMap { Int($0) }
-                        if p.count == 2, (0..<24).contains(p[0]), (0..<60).contains(p[1]) { set.time = String(format: "%02d:%02d", p[0], p[1]) }
+                        if p.count == 2, (0..<24).contains(p[0]), (0..<60).contains(p[1]) { shots.time = String(format: "%02d:%02d", p[0], p[1]) }
                     }
                 } label: { Text(verbatim: timeText).foregroundStyle(.secondary) }
                 .buttonStyle(.plain)
             }
-            .swipeActions { if set.time != nil { Button(loc("Як у циферблаті")) { set.time = nil } } }
+            .swipeActions { if shots.time != nil { Button(loc("Як у циферблаті")) { shots.time = nil } } }
         }
     }
 
-    private var timeText: String { set.time ?? project.meta.demo.time ?? "09:55" }
+    private var timeText: String { shots.time ?? project.meta.demo.time ?? "09:55" }
 
     private var backgroundSection: some View {
         Section(loc("Тло")) {
@@ -345,7 +345,7 @@ private struct ShotSetContent: View {
                 VStack(spacing: 6) {
                     ColorPicker("", selection: Binding(get: { customColor }, set: { c in
                         customColor = c
-                        set.background = Self.hex(UIColor(c))
+                        shots.background = Self.hex(UIColor(c))
                     }), supportsOpacity: false).labelsHidden().frame(width: 30, height: 30)
                     Text(loc("Свій")).font(.system(size: 10.5)).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -368,8 +368,8 @@ private struct ShotSetContent: View {
 
     private func swatch(_ key: String, title: String) -> some View {
         let cs = ShotComposer.background(project, key).map { Color($0) }
-        let on = set.background == key
-        return Button { set.background = key } label: {
+        let on = shots.background == key
+        return Button { shots.background = key } label: {
             VStack(spacing: 6) {
                 Circle().fill(LinearGradient(colors: cs.count > 1 ? cs : [cs[0], cs[0]], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .overlay(Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1))
@@ -391,9 +391,9 @@ private struct ShotSetContent: View {
 
     private var textSection: some View {
         Section {
-            textRow("Назва", $set.title, auto: ShotComposer.autoTitle(project))
-            textRow("Над назвою", $set.above, auto: ShotComposer.autoAbove(project))
-            textRow("Під назвою", $set.below, auto: ShotComposer.autoBelow(project))
+            textRow("Назва", $shots.title, auto: ShotComposer.autoTitle(project))
+            textRow("Над назвою", $shots.above, auto: ShotComposer.autoAbove(project))
+            textRow("Під назвою", $shots.below, auto: ShotComposer.autoBelow(project))
         } header: { Text(loc("Текст")) } footer: {
             Text(loc("Змахніть рядок уліво, щоб прибрати його або повернути автоматичний текст."))
         }
@@ -416,10 +416,10 @@ private struct ShotSetContent: View {
 
     private var lookSection: some View {
         Section(loc("Вигляд")) {
-            Toggle(loc("Закруглені кути"), isOn: $set.rounded).disabled(set.band)
-            Toggle(loc("Підписи під екранами"), isOn: $set.captions)
-            Toggle(loc("Тінь під екранами"), isOn: $set.shadow)
-            Toggle(loc("«Зроблено в BandFace»"), isOn: $set.credit)
+            Toggle(loc("Закруглені кути"), isOn: $shots.rounded).disabled(shots.band)
+            Toggle(loc("Підписи під екранами"), isOn: $shots.captions)
+            Toggle(loc("Тінь під екранами"), isOn: $shots.shadow)
+            Toggle(loc("«Зроблено в BandFace»"), isOn: $shots.credit)
         }
     }
 
@@ -435,15 +435,15 @@ private struct ShotSetContent: View {
         } label: {
             Image(systemName: "checkmark")
         }
-        .disabled(set.screens.isEmpty)
+        .disabled(shots.screens.isEmpty)
         .accessibilityLabel(Text(loc("Готово")))
     }
 
-    private var title: String { (set.title ?? ShotComposer.autoTitle(project)).isEmpty ? loc("Набір знімків") : (set.title ?? ShotComposer.autoTitle(project)) }
+    private var title: String { (shots.title ?? ShotComposer.autoTitle(project)).isEmpty ? loc("Набір знімків") : (shots.title ?? ShotComposer.autoTitle(project)) }
 
     /// Картинка PNG (без EXIF, як і звичайний знімок) — у дію; набір запам'ятовується й вікно закривається
     private func finish(_ action: @escaping (UIImage) -> Void) {
-        guard let img = ShotComposer.compose(project, set), let png = ShotShare.png(img), let pic = UIImage(data: png) else { return }
+        guard let img = ShotComposer.compose(project, shots), let png = ShotShare.png(img), let pic = UIImage(data: png) else { return }
         close()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { action(pic) }
     }
@@ -462,7 +462,7 @@ private struct ShotSetContent: View {
     }
 
     private func close() {
-        project.meta.shots = set.remember ? set : nil
+        project.meta.shots = shots.remember ? shots : nil
         project.save()
         dismiss()
     }
