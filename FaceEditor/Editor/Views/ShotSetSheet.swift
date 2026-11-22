@@ -33,7 +33,6 @@ private struct ShotSetContent: View {
             Form {
                 previewSection
                 screensSection
-                formatSection
                 screenLookSection
                 backgroundSection
                 textSection
@@ -287,35 +286,6 @@ private struct ShotSetContent: View {
     }
 
     // MARK: Оформлення
-
-    private var formatSection: some View {
-        Section {
-            HStack(spacing: 10) {
-                formatButton(.auto, "Авто", CGSize(width: 16, height: 22))
-                formatButton(.square, "1 : 1", CGSize(width: 20, height: 20))
-                formatButton(.story, "9 : 16", CGSize(width: 13, height: 22))
-                formatButton(.wide, "16 : 9", CGSize(width: 24, height: 14))
-            }
-            .padding(.vertical, 4)
-        } header: { Text(loc("Формат")) } footer: {
-            Text(loc("Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки."))
-        }
-    }
-
-    private func formatButton(_ f: ShotSet.Format, _ title: String, _ icon: CGSize) -> some View {
-        let on = shots.format == f
-        return Button { shots.format = f } label: {
-            VStack(spacing: 7) {
-                RoundedRectangle(cornerRadius: 3).strokeBorder(on ? Color.accentColor : Color.secondary, lineWidth: 1.8)
-                    .frame(width: icon.width, height: icon.height).frame(height: 24)
-                Text(verbatim: f == .auto ? loc(title) : title).font(.caption.weight(.medium))
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(.tertiarySystemFill)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(on ? Color.accentColor : .clear, lineWidth: 2))
-        }
-        .buttonStyle(.plain)
-    }
 
     private var screenLookSection: some View {
         Section(loc("Екрани")) {
