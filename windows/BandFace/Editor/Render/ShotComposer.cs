@@ -157,7 +157,9 @@ namespace BandFace.Creator
         struct Layout
         {
             public int Cols; public double W; public bool Narrow;
-            public double Gap => Narrow ? 18 : 30;
+            /// <summary>Скільки екранів на картинці: два-три — розставлені ширше</summary>
+            public int N;
+            public double Gap => Narrow ? 18 : N <= 2 ? 72 : N == 3 ? 46 : 30;
             public const double RowGap = 30;
         }
 
@@ -230,12 +232,12 @@ namespace BandFace.Creator
             int n = list.Count;
             double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) : 0;
             const double padX = 56, padY = 48;
-            var lay = new Layout { Cols = AutoColumns(n), W = ScreenWidth(s.Size) };
+            var lay = new Layout { Cols = AutoColumns(n), W = ScreenWidth(s.Size), N = n };
             Size canvas;
             if (fixedSize is Size fx)
             {
                 var area = new Size(fx.Width - 2 * padX, fx.Height - 2 * padY - header - footer);
-                var best = new Layout { Cols = 1, W = 10 };
+                var best = new Layout { Cols = 1, W = 10, N = n };
                 foreach (var narrow in new[] { false, true })
                 {
                     for (int c = 1; c <= n; c++)
@@ -244,10 +246,10 @@ namespace BandFace.Creator
                         for (int k = 0; k < 24; k++)
                         {
                             var m = (lo + hi) / 2;
-                            var g = GridSize(s, new Layout { Cols = c, W = m, Narrow = narrow }, n, capH);
+                            var g = GridSize(s, new Layout { Cols = c, W = m, Narrow = narrow, N = n }, n, capH);
                             if (g.Width <= area.Width && g.Height <= area.Height) lo = m; else hi = m;
                         }
-                        if (lo > best.W) best = new Layout { Cols = c, W = lo, Narrow = narrow };
+                        if (lo > best.W) best = new Layout { Cols = c, W = lo, Narrow = narrow, N = n };
                     }
                     // вузький режим — лише коли звичайний дає зовсім дрібні екрани
                     if (best.W >= 90) break;
@@ -272,7 +274,7 @@ namespace BandFace.Creator
                     for (int k = 0; k < 24; k++)
                     {
                         var m = (lo + hi) / 2;
-                        var c = Fit(new Layout { Cols = lay.Cols, W = m });
+                        var c = Fit(new Layout { Cols = lay.Cols, W = m, N = n });
                         if (Math.Max(c.Width, c.Height) <= MaxSide) lo = m; else hi = m;
                     }
                     lay.W = Math.Floor(lo);
