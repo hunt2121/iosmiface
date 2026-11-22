@@ -257,7 +257,7 @@ enum ShotComposer {
         let capH = captionHeight(s, items: list, ts: ts)
         let pill = list.compactMap { stateText($0) }.map { pillWidth($0, ts: ts) }.max() ?? 0
         func L(_ cols: Int, _ w: CGFloat, _ narrow: Bool) -> Layout { Layout(cols: cols, w: w, narrow: narrow, n: n, ts: ts, pill: pill) }
-        var lay = L(autoColumns(n), screenWidth(s.size), false)
+        var lay = L(autoColumns(n), screenWidth(0), false)
         var canvas: CGSize
         if let fx = fixed {
             // формат заданий: стовпці й ширина екрана — найбільші, що вміщаються з відступами
@@ -292,7 +292,7 @@ enum ShotComposer {
             // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
             if max(canvas.width, canvas.height) > maxSide {
                 for narrow in [false, true] {
-                    var lo: CGFloat = 30, hi = screenWidth(s.size)
+                    var lo: CGFloat = 30, hi = screenWidth(0)
                     for _ in 0..<24 {
                         let m = (lo + hi) / 2
                         let c = fit(L(lay.cols, m, narrow))

@@ -318,17 +318,6 @@ private struct ShotSetContent: View {
 
     private var screenLookSection: some View {
         Section(loc("Екрани")) {
-            // у 1:1 і 16:9 екрани заповнюють картинку — розмір лише для «Авто»
-            if ShotComposer.fixedSize(shots.format) == nil {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(loc("Розмір"))
-                Picker("", selection: $shots.size) {
-                    Text(loc("Великі")).tag(0); Text(loc("Середні")).tag(1); Text(loc("Малі")).tag(2)
-                }
-                .pickerStyle(.segmented)
-            }
-            .padding(.vertical, 4)
-            }
             VStack(alignment: .leading, spacing: 10) {
                 Text(loc("Рамка"))
                 Picker("", selection: $shots.band) {

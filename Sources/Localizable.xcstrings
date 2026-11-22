@@ -1772,29 +1772,6 @@
         }
       }
     },
-    "Великі": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Large"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Большие"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Великі"
-          }
-        }
-      }
-    },
     "Версія": {
       "extractionState": "manual",
       "localizations": {
@@ -7476,29 +7453,6 @@
         }
       }
     },
-    "Малі": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Small"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Маленькие"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Малі"
-          }
-        }
-      }
-    },
     "Менше завантажень": {
       "extractionState": "manual",
       "localizations": {
@@ -12348,29 +12302,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Секундомір"
-          }
-        }
-      }
-    },
-    "Середні": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medium"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Средние"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Середні"
           }
         }
       }
