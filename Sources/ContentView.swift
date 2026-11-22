@@ -680,42 +680,7 @@ struct ContentView: View {
 
     /// Перемикач стилів, кружечки кольорів і підпис — як на сторінці циферблата в магазині
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
-        VStack(spacing: 16) {
-            if looks.styles.count > 1 {
-                Picker("Стиль", selection: $lookStyle) {
-                    ForEach(looks.styles.indices, id: \.self) { i in
-                        Text(looks.styles[i].name.isEmpty ? String(localized: "Стиль \(i + 1)") : looks.styles[i].name).tag(i)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: CGFloat(looks.styles.count) * 110)
-                .frame(maxWidth: .infinity)
-            }
-            if looks.colors.count > 1 {
-                HStack(spacing: 12) {
-                    ForEach(looks.colors.indices, id: \.self) { i in
-                        Button { lookColor = i } label: {
-                            Circle().fill(Color(hex: looks.colors[i]))
-                                .frame(width: 30, height: 30)
-                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
-                                .padding(3)
-                                .overlay(Circle().strokeBorder(i == lookColor ? Color(hex: looks.colors[i]) : .clear, lineWidth: 2.5))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(verbatim: looks.colors[i]))
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
-            // той самий підпис, що на сторінці циферблата в магазині
-            Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
-                .font(.caption).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
-                .padding(.top, -4)
-                .frame(maxWidth: .infinity)
-        }
+        LookPicker(styles: looks.styles.map { $0.name }, colors: looks.colors, style: $lookStyle, color: $lookColor)
         .onChange(of: lookStyle) { _ in renderLook() }
         .onChange(of: lookColor) { _ in renderLook() }
     }

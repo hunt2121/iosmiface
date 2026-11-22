@@ -3,6 +3,56 @@ import UIKit
 import CoreText
 
 /// Кольори циферблата на картці магазину: до 4 кружечків 15 pt внахлест, далі «+N»
+/// Вибір стилю (перемикач, ~110 pt на стиль, по центру), кольорів (кружечки) і підпис — однаково на головній
+/// і на сторінці циферблата в магазині
+struct LookPicker: View {
+    let styles: [String]
+    let colors: [String]
+    @Binding var style: Int
+    @Binding var color: Int
+    /// Відступ перемикача від країв картки
+    var pickerInset: CGFloat = 0
+
+    var body: some View {
+        VStack(spacing: 16) {
+            if styles.count > 1 {
+                Picker("Стиль", selection: $style) {
+                    ForEach(styles.indices, id: \.self) { i in
+                        Text(styles[i].isEmpty ? String(localized: "Стиль \(i + 1)") : styles[i]).tag(i)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: CGFloat(styles.count) * 110)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, pickerInset)
+            }
+            if colors.count > 1 {
+                HStack(spacing: 12) {
+                    ForEach(colors.indices, id: \.self) { i in
+                        Button { color = i } label: {
+                            Circle().fill(Color(hex: colors[i]))
+                                .frame(width: 30, height: 30)
+                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
+                                .padding(3)
+                                .overlay(Circle().strokeBorder(i == color ? Color(hex: colors[i]) : .clear, lineWidth: 2.5))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(verbatim: colors[i]))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
+                .font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                // порожнє місце над великими літерами в рядку тексту — щоб на око відступ був такий самий
+                .padding(.top, -4)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 struct ColorDots: View {
     let colors: [String]
 
