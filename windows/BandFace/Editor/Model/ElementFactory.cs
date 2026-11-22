@@ -336,15 +336,18 @@ namespace BandFace.Creator
             for (int i = 0; i < images.Count; i++) res.Add("Param").Set("value", r[0] + (r[1] - r[0]) * i / Math.Max(1, images.Count));
         }
 
-        /// <summary>Фонове зображення на весь екран найнижчим шаром</summary>
+        /// <summary>Фонове зображення найнижчим шаром: зменшене так, щоб закрити весь екран, але ціле (не обрізане) і по центру —
+        /// його можна рухати; те, що за межами екрана, обрізається лише під час збирання</summary>
         public static void AddBackground(FaceProject p, RgbaImage img, int theme)
         {
             var dev = p.Meta.Device;
-            var name = AddImageResource(p, Imaging.Cover(img, dev.Width, dev.Height), "background");
+            double k = Math.Max((double)dev.Width / img.W, (double)dev.Height / img.H);
+            int w = Math.Max(dev.Width, (int)Math.Ceiling(img.W * k)), h = Math.Max(dev.Height, (int)Math.Ceiling(img.H * k));
+            var name = AddImageResource(p, Imaging.Cover(img, w, h), "background");
             var th = p.Theme(theme);
             if (th == null) return;
             var l = new XNode("Layout");
-            l.Set("ref", "@" + name).Set("x", 0).Set("y", 0);
+            l.Set("ref", "@" + name).Set("x", (dev.Width - w) / 2).Set("y", (dev.Height - h) / 2);
             int first = th.Kids.FindIndex(k => k.Tag == "Layout");
             th.Kids.Insert(first < 0 ? th.Kids.Count : first, l);
         }
