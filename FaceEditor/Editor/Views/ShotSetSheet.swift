@@ -9,16 +9,20 @@ import UniformTypeIdentifiers
 struct ShotSetSheet: View {
     let project: FaceProject
     let initial: ShotSet
-    // поле над клавіатурою — для назв екранів, текстів і часу
-    var body: some View { ShotSetContent(project: project, shots: initial).inputBarHost() }
+    // тексти редагуються прямо в рядках; список сам прокручує поле над клавіатуру
+    var body: some View { ShotSetContent(project: project, shots: initial) }
 }
 
 private struct ShotSetContent: View {
     @ObservedObject var project: FaceProject
     @State var shots: ShotSet
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.inputBar) private var bar
     @State private var preview: UIImage?
+    @State private var zoomed = false
+    /// Поле в фокусі: назва екрана (id картки), рядок тексту чи час
+    enum Field: Hashable { case name(UUID), title, above, below, time }
+    @FocusState private var focus: Field?
+    @State private var timeDraft = ""
     @State private var thumbs: [String: UIImage] = [:]
     @State private var customColor = Color.blue
 
@@ -49,6 +53,7 @@ private struct ShotSetContent: View {
                 ToolbarItem(placement: .confirmationAction) { doneMenu }
             }
         }
+        .fullScreenCover(isPresented: $zoomed) { ShotZoomView(image: preview) }
         .task(id: shots) {
             // перегляд — трохи згодом, щоб не малювати на кожен дотик
             try? await Task.sleep(nanoseconds: 250_000_000)
@@ -58,22 +63,29 @@ private struct ShotSetContent: View {
 
     // MARK: Перегляд
 
+    /// Перегляд на всю ширину екрана; дотик — на весь екран з масштабуванням
     private var previewSection: some View {
-        Section {
+        let w = UIScreen.main.bounds.width
+        return Section {
             ZStack {
                 if let preview {
                     Image(uiImage: preview).resizable().scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .frame(width: w, height: min(w * preview.size.height / max(1, preview.size.width), 520))
+                        .contentShape(Rectangle())
+                        .onTapGesture { zoomed = true }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint(Text(loc("Відкрити на весь екран")))
                 } else {
-                    ProgressView()
+                    ProgressView().frame(width: w, height: 240)
                 }
             }
-            .frame(maxWidth: .infinity).frame(height: 220)
+            // ширше за рядок списку — на всю ширину екрана (рядок не обрізає вміст)
+            .frame(maxWidth: .infinity)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
         } footer: {
             if let preview {
-                Text(verbatim: "\(Int(preview.size.width * preview.scale)) × \(Int(preview.size.height * preview.scale))")
+                Text(verbatim: "\(Int(preview.size.width * preview.scale)) × \(Int(preview.size.height * preview.scale)) · " + loc("торкніться, щоб збільшити"))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -89,13 +101,9 @@ private struct ShotSetContent: View {
             }
             .padding(.vertical, 6)
         } header: {
-            HStack {
-                Text(loc("Екрани"))
-                Spacer()
-                Text(String(format: loc("на картинці: %d"), shots.count)).textCase(nil)
-            }
+            Text(String(format: loc("Екрани: %d"), shots.count))
         } footer: {
-            Text(loc("Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним додають екран зі станом: Bluetooth від'єднано, заряд 15 %."))
+            Text(loc("Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним вмикають стан на цьому екрані: Bluetooth від'єднано, заряд 15 %; обидва — два окремі екрани."))
         }
     }
 
@@ -105,11 +113,14 @@ private struct ShotSetContent: View {
     private var hasBattery: Bool { project.usesSource("battery") }
 
     private func thumb(_ sc: ShotScreen) -> UIImage? {
-        let key = "\(ShotComposer.theme(project, sc))-\(sc.color)-\(project.revision)-" + sc.widgets.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        let st = sc.bluetooth ? 1 : sc.battery ? 2 : 0
+        let key = "\(ShotComposer.theme(project, sc))-\(sc.color)-\(st)-\(project.revision)-" + sc.widgets.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         if let t = thumbs[key] { return t }
         let r = FaceRenderer(project)
         r.colorVariant = sc.color
         r.slotChoice = sc.widgets
+        r.bluetoothOff = st == 1
+        r.lowBattery = st == 2
         let img = r.render(theme: ShotComposer.theme(project, sc), scale: 1).0
         DispatchQueue.main.async { thumbs[key] = img }
         return img
@@ -129,8 +140,13 @@ private struct ShotSetContent: View {
         VStack(spacing: 0) {
             Menu { cardMenu(sc) } label: { capsule(thumb(sc.wrappedValue)) }
                 .accessibilityLabel(Text(ShotComposer.name(project, sc.wrappedValue)))
-            Text(verbatim: ShotComposer.name(project, sc.wrappedValue))
-                .font(.footnote.weight(.medium)).lineLimit(1).padding(.top, 8)
+            TextField(ShotComposer.defaultName(project, sc.wrappedValue), text: sc.name)
+                .font(.footnote.weight(.medium)).lineLimit(1).multilineTextAlignment(.center)
+                .focused($focus, equals: .name(sc.wrappedValue.id))
+                .submitLabel(.done)
+                .padding(.top, 8)
+                // назва за замовчуванням — сірою підказкою; така сама вписана — те саме, що порожня
+                .onSubmit { if sc.wrappedValue.name == ShotComposer.defaultName(project, sc.wrappedValue) { sc.wrappedValue.name = "" } }
             HStack(spacing: 5) {
                 if !colors.isEmpty { Circle().fill(ProjectColorDots.color(colors[min(sc.wrappedValue.color, colors.count - 1)])).frame(width: 12, height: 12) }
                 if sc.wrappedValue.aod {
@@ -141,8 +157,8 @@ private struct ShotSetContent: View {
             .frame(height: 14).padding(.top, 4)
             if hasBluetooth || hasBattery {
                 HStack(spacing: 6) {
-                    if hasBluetooth { chip("bluetooth.slash", on: sc.bluetooth, label: "Bluetooth від'єднано") }
-                    if hasBattery { chip("battery.25percent", on: sc.battery, label: "Заряд 15 %") }
+                    if hasBluetooth { chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано") }
+                    if hasBattery { chip(2, on: sc.battery, label: "Заряд 15 %") }
                 }
                 .padding(.top, 8)
             }
@@ -150,10 +166,10 @@ private struct ShotSetContent: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func chip(_ icon: String, on: Binding<Bool>, label: String) -> some View {
-        Button { on.wrappedValue.toggle() } label: {
-            Image(systemName: icon).font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(on.wrappedValue ? Color.white : Color.secondary)
+    private func chip(_ state: Int, on: Binding<Bool>, label: String) -> some View {
+        let isOn = on.wrappedValue
+        return Button { on.wrappedValue.toggle() } label: {
+            Image(uiImage: ShotComposer.stateIcon(state, size: 20, color: isOn ? .white : .label, low: isOn ? .white : .systemRed))
                 .frame(width: 32, height: 32)
                 .background(Circle().fill(on.wrappedValue ? Color.accentColor : Color(.tertiarySystemFill)))
         }
@@ -164,7 +180,10 @@ private struct ShotSetContent: View {
 
     @ViewBuilder private func cardMenu(_ sc: Binding<ShotScreen>) -> some View {
         Button {
-            bar?.begin(loc("Назва екрана"), sc.wrappedValue.name.isEmpty ? ShotComposer.defaultName(project, sc.wrappedValue) : sc.wrappedValue.name) { sc.wrappedValue.name = $0 }
+            // поле назви під карткою: поточна назва вже в ньому
+            if sc.wrappedValue.name.isEmpty { sc.wrappedValue.name = ShotComposer.defaultName(project, sc.wrappedValue) }
+            let id = sc.wrappedValue.id
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focus = .name(id) }
         } label: { Label(loc("Назва екрана…"), systemImage: "pencil") }
         if !sc.wrappedValue.name.isEmpty {
             Button { sc.wrappedValue.name = "" } label: { Label(loc("Підпис стилем і кольором"), systemImage: "arrow.uturn.backward") }
@@ -322,19 +341,32 @@ private struct ShotSetContent: View {
             HStack {
                 Text(loc("Час на екранах"))
                 Spacer()
-                Button {
-                    bar?.begin(loc("Час на екранах"), timeText, numeric: true) { t in
-                        let p = t.split(whereSeparator: { ":. ".contains($0) }).compactMap { Int($0) }
-                        if p.count == 2, (0..<24).contains(p[0]), (0..<60).contains(p[1]) { shots.time = String(format: "%02d:%02d", p[0], p[1]) }
-                    }
-                } label: { Text(verbatim: timeText).foregroundStyle(.secondary) }
-                .buttonStyle(.plain)
+                TextField("09:55", text: $timeDraft)
+                    .keyboardType(.numbersAndPunctuation)
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(focus == .time ? Color.primary : Color.secondary)
+                    .focused($focus, equals: .time)
+                    .submitLabel(.done)
+                    .onSubmit(commitTime)
+                    .frame(maxWidth: 120)
             }
+            .onAppear { timeDraft = timeText }
+            .onChange(of: focus) { f in if f != .time { commitTime() } }
             .swipeActions { if shots.time != nil { Button(loc("Як у циферблаті")) { shots.time = nil } } }
         }
     }
 
     private var timeText: String { shots.time ?? project.meta.demo.time ?? "09:55" }
+
+    /// Час із поля: «10:08», «10.08», «10 08»; неправильний — повертається попередній
+    private func commitTime() {
+        let p = timeDraft.split(whereSeparator: { ":. ".contains($0) }).compactMap { Int($0) }
+        if p.count == 2, (0..<24).contains(p[0]), (0..<60).contains(p[1]) {
+            let t = String(format: "%02d:%02d", p[0], p[1])
+            if t != timeText { shots.time = t }
+        }
+        timeDraft = timeText
+    }
 
     private var backgroundSection: some View {
         Section(loc("Тло")) {
@@ -391,23 +423,32 @@ private struct ShotSetContent: View {
 
     private var textSection: some View {
         Section {
-            textRow("Назва", $shots.title, auto: ShotComposer.autoTitle(project))
-            textRow("Над назвою", $shots.above, auto: ShotComposer.autoAbove(project))
-            textRow("Під назвою", $shots.below, auto: ShotComposer.autoBelow(project))
+            textRow("Назва", $shots.title, auto: ShotComposer.autoTitle(project), field: .title)
+            textRow("Над назвою", $shots.above, auto: ShotComposer.autoAbove(project), field: .above)
+            textRow("Під назвою", $shots.below, auto: ShotComposer.autoBelow(project), field: .below)
         } header: { Text(loc("Текст")) } footer: {
-            Text(loc("Змахніть рядок уліво, щоб прибрати його або повернути автоматичний текст."))
+            Text(loc("Порожнє поле — без рядка. Змахніть уліво, щоб повернути автоматичний текст."))
         }
     }
 
-    private func textRow(_ title: String, _ value: Binding<String?>, auto: String) -> some View {
-        let v = value.wrappedValue ?? auto
-        return HStack {
+    /// Рядок тексту: редагується прямо в рядку (список сам прокручує його над клавіатуру).
+    /// Такий самий, як автоматичний, — автоматичний; порожній — без рядка
+    private func textRow(_ title: String, _ value: Binding<String?>, auto: String, field: Field) -> some View {
+        HStack {
             Text(loc(title))
             Spacer(minLength: 15)
-            Text(verbatim: v.isEmpty ? "—" : v).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+            TextField(loc("Без рядка"), text: Binding(get: { value.wrappedValue ?? auto },
+                                                      set: { value.wrappedValue = $0 == auto ? nil : $0 }))
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(focus == field ? Color.primary : Color.secondary)
+                .focused($focus, equals: field)
+                .submitLabel(.done)
+            if focus == field, !(value.wrappedValue ?? auto).isEmpty {
+                Button { value.wrappedValue = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(loc("Очистити")))
+            }
         }
-        .contentShape(Rectangle())
-        .onTapGesture { bar?.begin(loc(title), v) { value.wrappedValue = $0 } }
         .swipeActions {
             if value.wrappedValue != "" { Button(loc("Прибрати")) { value.wrappedValue = "" }.tint(.red) }
             if value.wrappedValue != nil { Button(loc("Авто")) { value.wrappedValue = nil } }
@@ -465,5 +506,90 @@ private struct ShotSetContent: View {
         project.meta.shots = shots.remember ? shots : nil
         project.save()
         dismiss()
+    }
+}
+
+/// Готова картинка на весь екран: масштаб пальцями, подвійний дотик — увесь / удвічі
+private struct ShotZoomView: View {
+    let image: UIImage?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color.black.ignoresSafeArea()
+            if let image { ZoomableImage(image: image).ignoresSafeArea() }
+            Button { dismiss() } label: {
+                Image(systemName: "xmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Color.white.opacity(0.18)))
+            }
+            .padding(16)
+            .accessibilityLabel(Text(loc("Закрити")))
+        }
+        .statusBarHidden()
+    }
+}
+
+private struct ZoomableImage: UIViewRepresentable {
+    let image: UIImage
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let s = UIScrollView()
+        s.backgroundColor = .black
+        s.delegate = context.coordinator
+        s.showsHorizontalScrollIndicator = false
+        s.showsVerticalScrollIndicator = false
+        s.contentInsetAdjustmentBehavior = .never
+        let iv = UIImageView(image: image)
+        iv.contentMode = .scaleAspectFit
+        s.addSubview(iv)
+        context.coordinator.imageView = iv
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.doubleTap(_:)))
+        tap.numberOfTapsRequired = 2
+        s.addGestureRecognizer(tap)
+        return s
+    }
+
+    func updateUIView(_ s: UIScrollView, context: Context) {
+        DispatchQueue.main.async { context.coordinator.fit(s) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, UIScrollViewDelegate {
+        weak var imageView: UIImageView?
+        private var fitted = CGSize.zero
+
+        /// Уся картинка в екрані; більше — пальцями (до 100 % пікселів × 2)
+        func fit(_ s: UIScrollView) {
+            guard let iv = imageView, let img = iv.image, s.bounds.width > 0, s.bounds.size != fitted else { return }
+            fitted = s.bounds.size
+            let px = CGSize(width: img.size.width * img.scale / UIScreen.main.scale, height: img.size.height * img.scale / UIScreen.main.scale)
+            iv.frame = CGRect(origin: .zero, size: px)
+            s.contentSize = px
+            let minZ = min(s.bounds.width / px.width, s.bounds.height / px.height)
+            s.minimumZoomScale = minZ
+            s.maximumZoomScale = max(minZ * 4, 2)
+            s.zoomScale = minZ
+            center(s)
+        }
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? { imageView }
+        func scrollViewDidZoom(_ s: UIScrollView) { center(s) }
+
+        private func center(_ s: UIScrollView) {
+            guard let iv = imageView else { return }
+            let dx = max(0, (s.bounds.width - iv.frame.width) / 2), dy = max(0, (s.bounds.height - iv.frame.height) / 2)
+            s.contentInset = UIEdgeInsets(top: dy, left: dx, bottom: dy, right: dx)
+        }
+
+        @objc func doubleTap(_ g: UITapGestureRecognizer) {
+            guard let s = g.view as? UIScrollView else { return }
+            if s.zoomScale > s.minimumZoomScale * 1.01 { s.setZoomScale(s.minimumZoomScale, animated: true); return }
+            let p = g.location(in: imageView)
+            let z = min(s.maximumZoomScale, s.minimumZoomScale * 2.5)
+            let size = CGSize(width: s.bounds.width / z, height: s.bounds.height / z)
+            s.zoom(to: CGRect(x: p.x - size.width / 2, y: p.y - size.height / 2, width: size.width, height: size.height), animated: true)
+        }
     }
 }

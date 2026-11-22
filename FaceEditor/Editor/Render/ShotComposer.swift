@@ -14,11 +14,10 @@ enum ShotComposer {
     }
 
     static func items(_ s: ShotSet) -> [Item] {
+        // стан — на самому екрані; обидва стани — два окремі екрани
         s.screens.flatMap { sc -> [Item] in
-            var r = [Item(screen: sc)]
-            if sc.bluetooth { r.append(Item(screen: sc, state: 1)) }
-            if sc.battery { r.append(Item(screen: sc, state: 2)) }
-            return r
+            if sc.bluetooth && sc.battery { return [Item(screen: sc, state: 1), Item(screen: sc, state: 2)] }
+            return [Item(screen: sc, state: sc.bluetooth ? 1 : sc.battery ? 2 : 0)]
         }
     }
 
@@ -116,8 +115,8 @@ enum ShotComposer {
         return CGSize(width: w, height: w * devH / devW)
     }
 
-    /// Найбільша сторона готової картинки, pt (2560 px)
-    static let maxSide: CGFloat = 1280
+    /// Найбільша сторона готової картинки, pt (1920 px)
+    static let maxSide: CGFloat = 960
 
     /// Стовпців: до 5 — один ряд, до 12 — два, далі по 6
     static func autoColumns(_ n: Int) -> Int { n <= 5 ? max(1, n) : n <= 12 ? (n + 1) / 2 : 6 }
@@ -144,7 +143,7 @@ enum ShotComposer {
 
     static func captionHeight(_ s: ShotSet, items: [Item]) -> CGFloat {
         guard s.captions else { return 0 }
-        return items.contains { stateText($0) != nil } ? 66 : 39
+        return items.contains { stateText($0) != nil } ? 94 : 52
     }
 
     static func gridSize(_ s: ShotSet, _ l: Layout, n: Int, capH: CGFloat) -> CGSize {
@@ -178,20 +177,20 @@ enum ShotComposer {
 
         // шапка
         let above = s.above ?? autoAbove(p), title = s.title ?? autoTitle(p), below = s.below ?? autoBelow(p)
-        let titleSize: CGFloat = fixed == nil ? 64 : s.format == .wide ? 44 : 48
-        let aboveA = NSAttributedString(string: above.uppercased(), attributes: [.font: UIFont.systemFont(ofSize: 11.5, weight: .semibold), .foregroundColor: pal.sub, .kern: 2.6])
+        let titleSize: CGFloat = fixed == nil ? 70 : s.format == .wide ? 48 : 53
+        let aboveA = NSAttributedString(string: above.uppercased(), attributes: [.font: UIFont.systemFont(ofSize: 18.4, weight: .semibold), .foregroundColor: pal.sub, .kern: 3.4])
         let titleA = NSAttributedString(string: title, attributes: [.font: UIFont.systemFont(ofSize: titleSize, weight: .heavy), .foregroundColor: pal.fg, .kern: -1])
         let chips = below.components(separatedBy: " · ").filter { !$0.isEmpty }
-        let chipFont = UIFont.systemFont(ofSize: 12.5, weight: .medium)
+        let chipFont = UIFont.systemFont(ofSize: 19.5, weight: .medium)
         let chipA = chips.map { NSAttributedString(string: $0, attributes: [.font: chipFont, .foregroundColor: pal.sub]) }
-        let chipH: CGFloat = 24
+        let chipH: CGFloat = 36
         var header: CGFloat = 0
         if !above.isEmpty { header += aboveA.size().height }
-        if !title.isEmpty { header += (header > 0 ? 12 : 0) + titleA.size().height }
-        if !chips.isEmpty { header += (header > 0 ? 14 : 0) + chipH }
-        if header > 0 { header += 42 }
-        let creditA = NSAttributedString(string: loc("Зроблено в BandFace"), attributes: [.font: UIFont.systemFont(ofSize: 12, weight: .medium), .foregroundColor: pal.sub.withAlphaComponent(0.8)])
-        let footer: CGFloat = s.credit ? 40 + creditA.size().height : 0
+        if !title.isEmpty { header += (header > 0 ? 14 : 0) + titleA.size().height }
+        if !chips.isEmpty { header += (header > 0 ? 16 : 0) + chipH }
+        if header > 0 { header += 46 }
+        let creditA = NSAttributedString(string: loc("Зроблено в BandFace"), attributes: [.font: UIFont.systemFont(ofSize: 19.2, weight: .medium), .foregroundColor: pal.sub.withAlphaComponent(0.8)])
+        let footer: CGFloat = s.credit ? 44 + creditA.size().height : 0
 
         // сітка
         let n = list.count
@@ -225,7 +224,7 @@ enum ShotComposer {
                 return CGSize(width: max(g.width + 2 * pad.width, 640), height: g.height + 2 * pad.height + header + footer)
             }
             canvas = fit(lay)
-            // не більше 2560 px по довшій стороні (1280 pt): більші картинки месенджери однаково зменшують;
+            // не більше 1920 px по довшій стороні (960 pt): більші картинки месенджери однаково зменшують;
             // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
             if max(canvas.width, canvas.height) > maxSide {
                 var lo: CGFloat = 30, hi = lay.w
@@ -279,25 +278,25 @@ enum ShotComposer {
                     // тонкі лінії з обох боків
                     c.setFillColor(pal.line.cgColor)
                     let ly = y + sz.height / 2
-                    c.fill(CGRect(x: (canvas.width - sz.width) / 2 - 14 - 28, y: ly, width: 28, height: 1))
-                    c.fill(CGRect(x: (canvas.width + sz.width) / 2 + 14 - 2.6, y: ly, width: 28, height: 1))
+                    c.fill(CGRect(x: (canvas.width - sz.width) / 2 - 18 - 40, y: ly, width: 40, height: 1.5))
+                    c.fill(CGRect(x: (canvas.width + sz.width) / 2 + 18 - 3.4, y: ly, width: 40, height: 1.5))
                     y += sz.height
                 }
-                if !title.isEmpty { if y > (canvas.height - total) / 2 { y += 12 }; centered(titleA, at: y); y += titleA.size().height }
+                if !title.isEmpty { if y > (canvas.height - total) / 2 { y += 14 }; centered(titleA, at: y); y += titleA.size().height }
                 if !chips.isEmpty {
-                    if y > (canvas.height - total) / 2 { y += 14 }
-                    let widths = chipA.map { $0.size().width + 22 }
+                    if y > (canvas.height - total) / 2 { y += 16 }
+                    let widths = chipA.map { $0.size().width + 30 }
                     var x = (canvas.width - (widths.reduce(0, +) + CGFloat(chips.count - 1) * 8)) / 2
                     for (i, a) in chipA.enumerated() {
                         let r = CGRect(x: x, y: y, width: widths[i], height: chipH)
                         c.setStrokeColor(pal.line.cgColor); c.setLineWidth(1)
                         c.addPath(UIBezierPath(roundedRect: r.insetBy(dx: 0.5, dy: 0.5), cornerRadius: chipH / 2).cgPath); c.strokePath()
-                        a.draw(at: CGPoint(x: x + 11, y: y + (chipH - a.size().height) / 2))
+                        a.draw(at: CGPoint(x: x + 15, y: y + (chipH - a.size().height) / 2))
                         x += widths[i] + 8
                     }
                     y += chipH
                 }
-                y += 42
+                y += 46
             }
 
             let rows = (n + lay.cols - 1) / lay.cols
@@ -309,17 +308,25 @@ enum ShotComposer {
                 let top = y + CGFloat(r) * (body.height + capH + lay.rowGap)
                 drawScreen(p, s, it, renderer: renderer, band: bandImage, light: pal.light,
                            rect: CGRect(x: cx - body.width / 2, y: top, width: body.width, height: body.height), in: c)
-                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, centerX: cx, width: iw, top: top + body.height + 20) }
+                if s.captions { drawCaption(p, it, pal: pal, narrow: lay.narrow, centerX: cx, width: iw, top: top + body.height + 22) }
             }
             if s.credit {
-                let cy = y + grid.height + 40
-                let tw = creditA.size().width, total = 13 + 6 + tw
+                let cy = y + grid.height + 44
+                let tw = creditA.size().width, total = 20 + 8 + tw
                 let x0 = (canvas.width - total) / 2
                 pal.sub.withAlphaComponent(0.8).setFill()
-                Icons.band(in: CGRect(x: x0, y: cy + (creditA.size().height - 13) / 2, width: 13, height: 13)).fill()
-                creditA.draw(at: CGPoint(x: x0 + 19, y: cy))
+                Icons.band(in: CGRect(x: x0, y: cy + (creditA.size().height - 20) / 2, width: 20, height: 20)).fill()
+                creditA.draw(at: CGPoint(x: x0 + 28, y: cy))
             }
         }
+    }
+
+    /// Значок стану картинкою (для кнопок під карткою): колір — шаблон, смужка заряду — свій колір
+    static func stateIcon(_ state: Int, size: CGFloat, color: UIColor, low: UIColor) -> UIImage {
+        UIGraphicsImageRenderer(size: CGSize(width: size, height: size)).image { _ in
+            color.setFill(); color.setStroke()
+            Icons.draw(state: state, in: CGRect(x: 0, y: 0, width: size, height: size), low: low)
+        }.withRenderingMode(.alwaysOriginal)
     }
 
     /// Підпис під екраном: назва і мітка стану (кольорова капсула зі значком; у вузькому режимі — лише значок)
@@ -327,21 +334,21 @@ enum ShotComposer {
         let para = NSMutableParagraphStyle()
         para.lineBreakMode = .byTruncatingTail
         para.alignment = .center
-        let nameA = NSAttributedString(string: name(p, it.screen), attributes: [.font: UIFont.systemFont(ofSize: narrow ? 12 : 14.5, weight: .semibold), .foregroundColor: pal.fg, .paragraphStyle: para])
+        let nameA = NSAttributedString(string: name(p, it.screen), attributes: [.font: UIFont.systemFont(ofSize: narrow ? 16 : 23, weight: .semibold), .foregroundColor: pal.fg, .paragraphStyle: para])
         let nh = nameA.size().height
         nameA.draw(with: CGRect(x: cx - width / 2, y: top, width: width, height: nh), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
         guard let st = stateText(it) else { return }
         let col = pal.state(it)
-        let pillY = top + nh + 7, pillH: CGFloat = 20, iconW: CGFloat = 12
-        let textA = NSAttributedString(string: st, attributes: [.font: UIFont.systemFont(ofSize: 11.5, weight: .medium), .foregroundColor: col])
-        let w = narrow ? 26 : 8 + iconW + 5 + textA.size().width + 9
+        let pillY = top + nh + 9, pillH: CGFloat = 32, iconW: CGFloat = 20
+        let textA = NSAttributedString(string: st, attributes: [.font: UIFont.systemFont(ofSize: 17.8, weight: .medium), .foregroundColor: col])
+        let w = narrow ? 38 : 12 + iconW + 7 + textA.size().width + 14
         let r = CGRect(x: cx - w / 2, y: pillY, width: w, height: pillH)
         col.withAlphaComponent(pal.light ? 0.12 : 0.15).setFill()
         UIBezierPath(roundedRect: r, cornerRadius: pillH / 2).fill()
-        let ir = CGRect(x: narrow ? cx - iconW / 2 : r.minX + 8, y: pillY + (pillH - iconW) / 2, width: iconW, height: iconW)
+        let ir = CGRect(x: narrow ? cx - iconW / 2 : r.minX + 12, y: pillY + (pillH - iconW) / 2, width: iconW, height: iconW)
         col.setFill(); col.setStroke()
         Icons.state(it, in: ir)
-        if !narrow { textA.draw(at: CGPoint(x: ir.maxX + 5, y: pillY + (pillH - textA.size().height) / 2)) }
+        if !narrow { textA.draw(at: CGPoint(x: ir.maxX + 7, y: pillY + (pillH - textA.size().height) / 2)) }
     }
 
     private static func drawScreen(_ p: FaceProject, _ s: ShotSet, _ it: Item, renderer: FaceRenderer, band: UIImage?, light: Bool, rect: CGRect, in c: CGContext) {
@@ -351,8 +358,15 @@ enum ShotComposer {
             screen = CGRect(x: rect.minX + bandScreen.minX * k, y: rect.minY + bandScreen.minY * k, width: bandScreen.width * k, height: bandScreen.height * k)
         }
         // тінь-овал під екраном, ніби він стоїть на поверхні
-        if s.shadow { groundShadow(c, under: rect, alpha: band != nil ? (light ? 0.35 : 0.7) : (light ? 0.35 : 0.75)) }
-        band?.draw(in: rect)
+        if let band {
+            // тінь браслета — за його формою (м'яка, донизу)
+            c.saveGState()
+            if s.shadow { c.setShadow(offset: CGSize(width: 0, height: 14), blur: 22, color: UIColor.black.withAlphaComponent(light ? 0.22 : 0.55).cgColor) }
+            band.draw(in: rect)
+            c.restoreGState()
+        } else if s.shadow {
+            groundShadow(c, under: rect, alpha: light ? 0.35 : 0.75)
+        }
         renderer.colorVariant = it.screen.color
         renderer.bluetoothOff = it.state == 1
         renderer.lowBattery = it.state == 2
@@ -383,32 +397,42 @@ enum ShotComposer {
     }
 
     /// Значки міток і підпису (малюються самі — у SF Symbols немає значка Bluetooth). Колір — поточний fill/stroke
-    private enum Icons {
-        /// Значок стану в квадраті r: Bluetooth від'єднано, батарея, місяць (AOD)
-        static func state(_ it: Item, in r: CGRect) {
-            let k = r.width / 18
+    enum Icons {
+        /// Значок стану в квадраті r (поле 26×26): перекреслений Bluetooth, батарея з низьким зарядом, місяць (AOD).
+        /// low — колір смужки заряду (у кнопках — червоний)
+        static func state(_ it: Item, in r: CGRect, low: UIColor? = nil) { draw(state: it.state, aod: it.screen.aod, in: r, low: low) }
+
+        static func draw(state: Int, aod: Bool = false, in r: CGRect, low: UIColor? = nil) {
+            let k = r.width / 26
             func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: r.minX + x * k, y: r.minY + y * k) }
-            switch it.state {
+            func rect(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGRect { CGRect(x: r.minX + x * k, y: r.minY + y * k, width: w * k, height: h * k) }
+            switch state {
             case 1:
                 let b = UIBezierPath()
-                b.move(to: pt(5, 5.6)); b.addLine(to: pt(12.4, 12)); b.addLine(to: pt(8.8, 15.2)); b.addLine(to: pt(8.8, 2.8))
-                b.addLine(to: pt(12.4, 6)); b.addLine(to: pt(5, 12.4))
-                b.move(to: pt(3.2, 3.2)); b.addLine(to: pt(14.8, 14.8))
-                b.lineWidth = 1.9 * k; b.lineCapStyle = .round; b.lineJoinStyle = .round
+                b.move(to: pt(8.2, 8.6)); b.addLine(to: pt(17.4, 16.6)); b.addLine(to: pt(12.8, 20.8)); b.addLine(to: pt(12.8, 5.2))
+                b.addLine(to: pt(17.4, 9.4)); b.addLine(to: pt(8.2, 17.4))
+                b.move(to: pt(5, 5)); b.addLine(to: pt(21, 21))
+                b.lineWidth = 2.3 * k; b.lineCapStyle = .round; b.lineJoinStyle = .round
                 b.stroke()
             case 2:
-                let body = UIBezierPath(roundedRect: CGRect(x: r.minX + 0.8 * k, y: r.minY + 3.8 * k, width: 14 * k, height: 10.4 * k), cornerRadius: 3 * k)
-                body.lineWidth = 1.6 * k; body.stroke()
-                UIBezierPath(roundedRect: CGRect(x: r.minX + 2.8 * k, y: r.minY + 5.8 * k, width: 2.6 * k, height: 6.4 * k), cornerRadius: 1 * k).fill()
-                UIBezierPath(roundedRect: CGRect(x: r.minX + 15.6 * k, y: r.minY + 7.2 * k, width: 1.8 * k, height: 3.6 * k), cornerRadius: 0.9 * k).fill()
-            default:
-                // місяць: велике коло мінус зсунуте
-                let m = UIBezierPath(ovalIn: CGRect(x: r.minX + 1.5 * k, y: r.minY + 1.5 * k, width: 15 * k, height: 15 * k))
-                m.append(UIBezierPath(ovalIn: CGRect(x: r.minX + 6.5 * k, y: r.minY - 2 * k, width: 13 * k, height: 13 * k)))
-                m.usesEvenOddFillRule = true
+                let body = UIBezierPath(roundedRect: rect(3, 6.5, 19, 13), cornerRadius: 3 * k)
+                body.append(UIBezierPath(roundedRect: rect(5.3, 8.8, 14.4, 8.4), cornerRadius: 0.9 * k))
+                body.usesEvenOddFillRule = true
+                body.fill()
+                UIBezierPath(roundedRect: rect(23.2, 10.6, 1.4, 4.8), cornerRadius: 0.7 * k).fill()
                 let ctx = UIGraphicsGetCurrentContext()
                 ctx?.saveGState()
-                UIBezierPath(ovalIn: CGRect(x: r.minX + 1.5 * k, y: r.minY + 1.5 * k, width: 15 * k, height: 15 * k)).addClip()
+                if let low { low.setFill() }
+                UIBezierPath(roundedRect: rect(6.8, 10.3, 3.4, 5.4), cornerRadius: 1 * k).fill()
+                ctx?.restoreGState()
+            default:
+                // місяць: велике коло мінус зсунуте
+                let ctx = UIGraphicsGetCurrentContext()
+                ctx?.saveGState()
+                UIBezierPath(ovalIn: rect(3, 3, 20, 20)).addClip()
+                let m = UIBezierPath(ovalIn: rect(3, 3, 20, 20))
+                m.append(UIBezierPath(ovalIn: rect(9.6, -1.6, 17.4, 17.4)))
+                m.usesEvenOddFillRule = true
                 m.fill()
                 ctx?.restoreGState()
             }

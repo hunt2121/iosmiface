@@ -291,12 +291,12 @@ struct EditorView: View {
     private var shotMenu: some View {
         Menu {
             Section(loc("Знімок циферблата")) {
-                Button { shareShot() } label: { Label(loc("Із закругленими кутами"), systemImage: "capsule.portrait") }
-                Button { shareShot(rounded: false) } label: { Label(loc("Без закруглень"), systemImage: "rectangle.portrait") }
+                Button { shareShot() } label: { Label { Text(loc("Із закругленими кутами")) } icon: { Image("IconShotRounded") } }
+                Button { shareShot(rounded: false) } label: { Label { Text(loc("Без закруглень")) } icon: { Image("IconShotSquare") } }
             }
             Section {
                 Button { sheet = .shots } label: {
-                    Label { Text(loc("Набір знімків…")); Text(loc("Кілька екранів на одній картинці")) } icon: { Image(systemName: "rectangle.split.3x1") }
+                    Label { Text(loc("Набір знімків…")); Text(loc("Кілька екранів на одній картинці")) } icon: { Image("IconShotSet") }
                 }
             }
         } label: {

@@ -16,9 +16,8 @@ struct ShotScreen: Codable, Equatable, Identifiable {
     var color = 0
     /// Свій підпис; порожньо — «Стиль 1 · Колір 2»
     var name = ""
-    /// Додати ще екран цього стилю з від'єднаним Bluetooth
+    /// Стани на цьому екрані: Bluetooth від'єднано, заряд 15 % (обидва — два окремі екрани)
     var bluetooth = false
-    /// Додати ще екран цього стилю із зарядом 15 %
     var battery = false
     /// Віджети в слотах: назва слота → номер віджета (без запису — як у редакторі)
     var widgets: [String: Int] = [:]
@@ -89,8 +88,8 @@ struct ShotSet: Codable, Equatable {
         return s
     }
 
-    /// Скільки екранів буде на картинці (зі станами)
-    var count: Int { screens.reduce(0) { $0 + 1 + ($1.bluetooth ? 1 : 0) + ($1.battery ? 1 : 0) } }
+    /// Скільки екранів буде на картинці: стан — на самому екрані, обидва стани — два екрани
+    var count: Int { screens.reduce(0) { $0 + ($1.bluetooth && $1.battery ? 2 : 1) } }
 }
 
 extension FaceProject {

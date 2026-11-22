@@ -1358,6 +1358,29 @@
         }
       }
     },
+    "Без рядка": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No line"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без строки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без рядка"
+          }
+        }
+      }
+    },
     "Безкоштовні": {
       "extractionState": "manual",
       "localizations": {
@@ -2853,6 +2876,29 @@
         }
       }
     },
+    "Відкрити на весь екран": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open full screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть на весь экран"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрити на весь екран"
+          }
+        }
+      }
+    },
     "Відкрити сторінку": {
       "extractionState": "manual",
       "localizations": {
@@ -4275,6 +4321,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Екрани"
+          }
+        }
+      }
+    },
+    "Екрани: %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screens: %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экраны: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Екрани: %d"
           }
         }
       }
@@ -10213,6 +10282,29 @@
         }
       }
     },
+    "Порожнє поле — без рядка. Змахніть уліво, щоб повернути автоматичний текст.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty field — no line. Swipe left to restore the automatic text."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пустое поле — без строки. Смахните влево, чтобы вернуть автоматический текст."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Порожнє поле — без рядка. Змахніть уліво, щоб повернути автоматичний текст."
+          }
+        }
+      }
+    },
     "Порожній документ": {
       "extractionState": "manual",
       "localizations": {
@@ -13686,6 +13778,29 @@
         }
       }
     },
+    "Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним вмикають стан на цьому екрані: Bluetooth від'єднано, заряд 15 %; обидва — два окремі екрани.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a screen: name, style, colour, duplicate, remove. The icons below it turn on a state on this screen: Bluetooth disconnected, battery 15%; both — two separate screens."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коснитесь экрана: название, стиль, цвет, дублировать, убрать. Значки под ним включают состояние на этом экране: Bluetooth отключён, заряд 15 %; оба — два отдельных экрана."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним вмикають стан на цьому екрані: Bluetooth від'єднано, заряд 15 %; обидва — два окремі екрани."
+          }
+        }
+      }
+    },
     "Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним додають екран зі станом: Bluetooth від'єднано, заряд 15 %.": {
       "extractionState": "manual",
       "localizations": {
@@ -16580,6 +16695,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "типовий"
+          }
+        }
+      }
+    },
+    "торкніться, щоб збільшити": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tap to zoom"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "коснитесь, чтобы увеличить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "торкніться, щоб збільшити"
           }
         }
       }
