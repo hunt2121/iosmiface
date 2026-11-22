@@ -174,25 +174,26 @@ namespace BandFace.Creator
             if (line.Children.Count > 0) col.Children.Add(line);
             int sth = ShotComposer.Theme(p, sc);
             bool bt = p.UsesSource("bluetooth", sth), bat = p.UsesSource("battery", sth);
-            if (bt || bat)
-            {
-                var chips = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };
-                if (bt) chips.Children.Add(Chip(1, sc.Bluetooth, S.Get("shotBtOff"), v => { sc.Bluetooth = v; Changed(); }));
-                if (bat) chips.Children.Add(Chip(2, sc.Battery, S.Get("shotLowBattery"), v => { sc.Battery = v; Changed(); }));
-                col.Children.Add(chips);
-            }
+            // кнопки станів завжди; якщо екран стану не показує — бліда й не натискається
+            var chips = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };
+            chips.Children.Add(Chip(1, sc.Bluetooth, S.Get("shotBtOff"), v => { sc.Bluetooth = v; Changed(); }, bt));
+            chips.Children.Add(Chip(2, sc.Battery, S.Get("shotLowBattery"), v => { sc.Battery = v; Changed(); }, bat));
+            col.Children.Add(chips);
             return col;
         }
 
-        FrameworkElement Chip(int state, bool on, string tip, Action<bool> set)
+        FrameworkElement Chip(int state, bool on, string tip, Action<bool> set, bool enabled)
         {
+            on = on && enabled;
             var fg = on ? Brushes.White : (Brush)Application.Current.Resources["Text"];
             var t = new ToggleButton
             {
                 Width = 30, Height = 30, Margin = new Thickness(2, 0, 2, 0), IsChecked = on, ToolTip = tip,
-                Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : Brushes.Red) },
+                Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : enabled ? Brushes.Red : fg) },
                 Style = (Style)Application.Current.Resources["Chip"],
+                IsEnabled = enabled, Opacity = enabled ? 1 : 0.35,
             };
+            ToolTipService.SetShowOnDisabled(t, true);
             t.Click += (o, e) => set(t.IsChecked == true);
             return t;
         }
