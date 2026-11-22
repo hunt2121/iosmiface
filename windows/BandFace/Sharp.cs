@@ -125,4 +125,25 @@ namespace BandFace
             return result;
         }
     }
+
+    /// <summary>Капсула превʼю, як на вкладці «Головна»: обведення 3 px — сіре, зелене для циферблата на екрані браслета;
+    /// картинка (img) обрізана по капсулі. Спільна для магазину й списку редактора</summary>
+    static class PreviewCapsule
+    {
+        static readonly Brush Active = Frozen(Color.FromRgb(0x22, 0xA8, 0x46)), Idle = Frozen(Color.FromRgb(0x7A, 0x7A, 0x7A));
+        static Brush Frozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
+
+        public static Border Make(double w, double h, bool active, out Image img)
+        {
+            img = new Image { Stretch = Stretch.UniformToFill };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            var inner = new Grid { Width = w, Height = h, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, w, h), w / 2, w / 2) };
+            inner.Children.Add(img);
+            return new Border
+            {
+                Width = w + 6, Height = h + 6, CornerRadius = new CornerRadius((w + 6) / 2), Padding = new Thickness(3), Child = inner,
+                HorizontalAlignment = HorizontalAlignment.Center, Background = active ? Active : Idle,
+            };
+        }
+    }
 }

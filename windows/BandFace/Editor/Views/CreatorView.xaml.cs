@@ -164,15 +164,7 @@ namespace BandFace.Creator
         FrameworkElement StoreCard(FaceProject p)
         {
             const double iw = 144, ih = 354;   // як капсула в картці магазину
-            var img = new Image { Stretch = Stretch.UniformToFill };
-            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-            var inner = new Grid { Width = iw, Height = ih, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, iw, ih), iw / 2, iw / 2) };
-            inner.Children.Add(img);
-            var capsule = new Border
-            {
-                Width = iw + 6, Height = ih + 6, CornerRadius = new CornerRadius((iw + 6) / 2), Padding = new Thickness(3), Child = inner, HorizontalAlignment = HorizontalAlignment.Center,
-                Background = new SolidColorBrush(activeFaceId != null && activeFaceId == p.Root.Str("id") ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
-            };
+            var capsule = BandFace.PreviewCapsule.Make(iw, ih, activeFaceId != null && activeFaceId == p.Root.Str("id"), out var img);
             var sp = new StackPanel();
             sp.Children.Add(capsule);
 

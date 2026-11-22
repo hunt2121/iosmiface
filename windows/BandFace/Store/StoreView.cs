@@ -841,16 +841,9 @@ namespace BandFace.Store
         /// <summary>Капсула превʼю, як на вкладці «Циферблати»: сіре обведення 3 px, зелене — циферблат на екрані браслета</summary>
         FrameworkElement Capsule(string path, double w, double h, bool active)
         {
-            var img = new Image { Stretch = Stretch.UniformToFill };
-            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-            var inner = new Grid { Width = w, Height = h, Background = Brushes.Black, Clip = new RectangleGeometry(new Rect(0, 0, w, h), w / 2, w / 2) };
-            inner.Children.Add(img);
+            var capsule = BandFace.PreviewCapsule.Make(w, h, active, out var img);
             _ = LoadImage(img, path);
-            return new Border
-            {
-                Width = w + 6, Height = h + 6, CornerRadius = new CornerRadius((w + 6) / 2), Padding = new Thickness(3), Child = inner, HorizontalAlignment = HorizontalAlignment.Center,
-                Background = new SolidColorBrush(active ? Color.FromRgb(0x22, 0xA8, 0x46) : Color.FromRgb(0x7A, 0x7A, 0x7A)),
-            };
+            return capsule;
         }
 
         static readonly Dictionary<string, BitmapSource> Images = new Dictionary<string, BitmapSource>();
