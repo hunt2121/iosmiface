@@ -124,9 +124,8 @@ enum ShotComposer {
     /// Задані формати — довша сторона 960 pt (1920 px), як і найбільша «Авто»
     static func fixedSize(_ f: ShotSet.Format) -> CGSize? {
         switch f {
-        case .auto: return nil
+        case .auto, .story: return nil  // 9:16 більше не пропонується — як «Авто»
         case .square: return CGSize(width: 960, height: 960)
-        case .story: return CGSize(width: 540, height: 960)
         case .wide: return CGSize(width: 960, height: 540)
         }
     }

@@ -1013,25 +1013,25 @@
         }
       }
     },
-    "Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки.": {
+    "Авто — розмір за кількістю екранів. 1:1 — для Instagram, 16:9 — для обкладинок.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Auto — size depends on the number of screens. Others fit Instagram, Stories, covers."
+            "value": "Auto — size depends on the number of screens. 1:1 fits Instagram, 16:9 fits covers."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Авто — размер по количеству экранов. Остальные — под Instagram, Stories, обложки."
+            "value": "Авто — размер по количеству экранов. 1:1 — для Instagram, 16:9 — для обложек."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки."
+            "value": "Авто — розмір за кількістю екранів. 1:1 — для Instagram, 16:9 — для обкладинок."
           }
         }
       }

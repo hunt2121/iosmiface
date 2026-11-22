@@ -293,12 +293,11 @@ private struct ShotSetContent: View {
             HStack(spacing: 10) {
                 formatButton(.auto, "Авто", CGSize(width: 16, height: 22))
                 formatButton(.square, "1 : 1", CGSize(width: 20, height: 20))
-                formatButton(.story, "9 : 16", CGSize(width: 13, height: 22))
                 formatButton(.wide, "16 : 9", CGSize(width: 24, height: 14))
             }
             .padding(.vertical, 4)
         } header: { Text(loc("Формат")) } footer: {
-            Text(loc("Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки."))
+            Text(loc("Авто — розмір за кількістю екранів. 1:1 — для Instagram, 16:9 — для обкладинок."))
         }
     }
 
