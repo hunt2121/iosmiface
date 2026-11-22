@@ -26,6 +26,8 @@ final class FaceRenderer {
     /// Стани для знімків: Bluetooth від'єднано, низький заряд (15 %)
     var bluetoothOff = false
     var lowBattery = false
+    /// Який віджет показати в слоті (назва слота → номер віджета); без запису — як у редакторі
+    var slotChoice: [String: Int] = [:]
 
     init(_ p: FaceProject) { self.p = p }
 
@@ -180,7 +182,7 @@ final class FaceRenderer {
             // у редакторі показуємо вибраний віджет слота (типово — перший)
             let items = res.all("Item")
             guard !items.isEmpty else { return nil }
-            let it = items[min(max(0, WidgetSlots.shown(p, res)), items.count - 1)]
+            let it = items[min(max(0, slotChoice[res.string("name") ?? ""] ?? WidgetSlots.shown(p, res)), items.count - 1)]
             return draw(pick(it.string("ref")), at: o, in: c, depth: depth + 1)
         default: return nil
         }

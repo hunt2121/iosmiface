@@ -261,6 +261,7 @@ enum ShotComposer {
         renderer.colorVariant = it.screen.color
         renderer.bluetoothOff = it.state == 1
         renderer.lowBattery = it.state == 2
+        renderer.slotChoice = it.screen.widgets
         let (img, _) = renderer.render(theme: theme(p, it.screen), scale: max(1, ceil(screen.width * 2 / devW)))
         let r = band != nil || s.rounded ? CGFloat(p.meta.device.corner) * screen.width / CGFloat(p.meta.device.width) : 0
         let path = UIBezierPath(roundedRect: screen, cornerRadius: r)

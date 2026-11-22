@@ -105,10 +105,11 @@ private struct ShotSetContent: View {
     private var hasBattery: Bool { project.usesSource("battery") }
 
     private func thumb(_ sc: ShotScreen) -> UIImage? {
-        let key = "\(ShotComposer.theme(project, sc))-\(sc.color)-\(project.revision)"
+        let key = "\(ShotComposer.theme(project, sc))-\(sc.color)-\(project.revision)-" + sc.widgets.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         if let t = thumbs[key] { return t }
         let r = FaceRenderer(project)
         r.colorVariant = sc.color
+        r.slotChoice = sc.widgets
         let img = r.render(theme: ShotComposer.theme(project, sc), scale: 1).0
         DispatchQueue.main.async { thumbs[key] = img }
         return img
@@ -189,6 +190,23 @@ private struct ShotSetContent: View {
             } label: {
                 Text(loc("Колір"))
                 Text(ShotComposer.colorName(sc.wrappedValue.color))
+            }
+        }
+        let slots = project.slots(ShotComposer.theme(project, sc.wrappedValue))
+        if !slots.isEmpty {
+            Menu {
+                ForEach(Array(slots.enumerated()), id: \.offset) { n, slot in
+                    let name = slot.string("name") ?? ""
+                    let ws = WidgetSlots.widgets(project, slot)
+                    Section(String(format: loc("Слот %d"), n + 1)) {
+                        Picker("", selection: Binding(get: { min(sc.wrappedValue.widgets[name] ?? WidgetSlots.shown(project, slot), max(0, ws.count - 1)) },
+                                                      set: { sc.wrappedValue.widgets[name] = $0 })) {
+                            ForEach(Array(ws.enumerated()), id: \.offset) { i, w in Text(verbatim: w.string("widgetName") ?? loc("Віджет")).tag(i) }
+                        }
+                    }
+                }
+            } label: {
+                Label { Text(loc("Віджети")); Text(slots.count == 1 ? loc("1 слот") : String(format: loc("Слотів: %d"), slots.count)) } icon: { Image(systemName: "square.grid.2x2") }
             }
         }
         if project.aodTheme(forStyle: styles[min(sc.wrappedValue.style, styles.count - 1)]) != nil {

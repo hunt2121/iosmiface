@@ -20,6 +20,8 @@ struct ShotScreen: Codable, Equatable, Identifiable {
     var bluetooth = false
     /// Додати ще екран цього стилю із зарядом 15 %
     var battery = false
+    /// Віджети в слотах: назва слота → номер віджета (без запису — як у редакторі)
+    var widgets: [String: Int] = [:]
 
     init(style: Int = 0, aod: Bool = false, color: Int = 0) { self.style = style; self.aod = aod; self.color = color }
 
@@ -32,6 +34,7 @@ struct ShotScreen: Codable, Equatable, Identifiable {
         name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? ""
         bluetooth = (try? c.decodeIfPresent(Bool.self, forKey: .bluetooth)) ?? false
         battery = (try? c.decodeIfPresent(Bool.self, forKey: .battery)) ?? false
+        widgets = (try? c.decodeIfPresent([String: Int].self, forKey: .widgets)) ?? [:]
     }
 }
 
@@ -91,6 +94,11 @@ struct ShotSet: Codable, Equatable {
 }
 
 extension FaceProject {
+    /// Слоти теми (місця, де віджет вибирають на браслеті) у порядку шарів
+    func slots(_ theme: Int) -> [XNode] {
+        layouts(theme).compactMap { resource(ref: $0.string("ref")) }.filter { $0.tag == "Slot" }
+    }
+
     /// Є елемент, що показує стан Bluetooth / заряд батареї (тоді є сенс у знімках із цими станами)
     func usesSource(_ key: String) -> Bool {
         func scan(_ n: XNode) -> Bool {

@@ -300,6 +300,29 @@
         }
       }
     },
+    "1 слот": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 slot"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 слот"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 слот"
+          }
+        }
+      }
+    },
     "12 год": {
       "extractionState": "manual",
       "localizations": {
@@ -2642,6 +2665,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Віджет — кілька шарів одним блоком: рухаються разом, спільне натискання. Його можна поставити в слот, щоб вибирати на браслеті."
+          }
+        }
+      }
+    },
+    "Віджети": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widgets"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виджеты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віджети"
           }
         }
       }
@@ -12417,6 +12463,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Слот"
+          }
+        }
+      }
+    },
+    "Слот %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slot %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слот %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слот %d"
+          }
+        }
+      }
+    },
+    "Слотів: %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slots: %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слотов: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слотів: %d"
           }
         }
       }
