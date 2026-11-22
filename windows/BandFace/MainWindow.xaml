@@ -59,14 +59,6 @@
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Margin" Value="2,14,0,8"/>
     </Style>
-    <Style x:Key="NavGlyph" TargetType="TextBlock">
-      <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-      <Setter Property="FontSize" Value="17"/>
-      <Setter Property="Width" Value="20"/>
-      <Setter Property="TextAlignment" Value="Center"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
-    </Style>
     <Style x:Key="NavText" TargetType="TextBlock">
       <Setter Property="Margin" Value="14,0,0,0"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
@@ -372,7 +364,9 @@
           <!-- Магазин (позначка «Незабаром» прихована з появою магазину) -->
           <RadioButton x:Name="NavStore" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
-              <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE719;"/>
+              <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
+                <Path Data="{StaticResource StoreGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+              </Canvas></Viewbox>
               <TextBlock x:Name="NavStoreText" Style="{StaticResource NavText}"/>
               <Border x:Name="StoreChip" Background="{DynamicResource ChipBg}" CornerRadius="9" Padding="7,0" Margin="10,0,0,0" VerticalAlignment="Center">
                 <TextBlock x:Name="StoreChipText" FontSize="11" Foreground="{DynamicResource Sub}"/>
@@ -381,9 +375,8 @@
           </RadioButton>
           <RadioButton x:Name="NavEditor" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
-              <!-- олівець, як в iOS: висота як у браслета на «Головній» -->
               <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
-                <Path Data="M1.00,24.10 L3.68,15.91 L10.09,22.32 L1.90,25.00ZM4.80,14.79 L15.02,4.57 L21.43,10.98 L11.21,21.20ZM16.14,3.45 L17.26,2.33 L18.20,1.60 L19.29,1.15 L20.46,1.00 L21.65,1.15 L22.73,1.60 L23.67,2.33 L24.40,3.27 L24.85,4.35 L25.00,5.54 L24.85,6.71 L24.40,7.80 L23.67,8.74 L22.55,9.86Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                <Path Data="{StaticResource EditorGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
               </Canvas></Viewbox>
               <TextBlock x:Name="NavEditorText" Style="{StaticResource NavText}"/>
             </StackPanel>
@@ -391,7 +384,9 @@
           <RadioButton x:Name="NavSettings" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
               <Grid>
-                <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE713;"/>
+                <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
+                <Path Data="{StaticResource SettingsGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+              </Canvas></Viewbox>
                 <!-- немає ключа — червоний «!» на значку, як в iOS -->
                 <Border x:Name="KeyBadge" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource Err}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0" Visibility="Collapsed">
                   <TextBlock Text="!" FontSize="10" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
