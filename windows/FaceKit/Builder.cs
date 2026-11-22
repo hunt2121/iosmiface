@@ -203,21 +203,27 @@ namespace BandFace.Faces
                     off += 16 * ti.Tables[ty].Count;
                 }
             var blobs = new List<byte[]>();
-            foreach (var ti in themes)
-                if (ti.Preview != null)
-                {
-                    var d = ti.Preview.Serialize();
-                    Bytes.Put32(ti.Entry, 4, (uint)off); blobs.Add(d); off += d.Length;
-                }
+            // однакові блоки даних (картинки кольорових копій тощо) — один раз у межах теми; записи вказують на спільний блок.
+            // Між темами (звичайна / AOD) спільних блоків немає: інакше AOD на браслеті порожній.
+            var shared = themes.Select(_ => new Dictionary<byte[], int>(new BlobEq())).ToList();
+            int Place(int t, byte[] d)
+            {
+                if (shared[t].TryGetValue(d, out var at)) return at;
+                shared[t][d] = off; blobs.Add(d);
+                int r = off; off += d.Length; return r;
+            }
+            for (int t = 0; t < themes.Count; t++)
+                if (themes[t].Preview != null)
+                    Bytes.Put32(themes[t].Entry, 4, (uint)Place(t, themes[t].Preview.Serialize()));
             Bytes.Put32(header, 0x20, Get32(themes[0].Entry, 4));
             var recs = new ByteWriter();
-            foreach (var ti in themes)
+            for (int t = 0; t < themes.Count; t++)
                 for (int ty = 0; ty < 10; ty++)
-                    foreach (var it in ti.Tables[ty])
+                    foreach (var it in themes[t].Tables[ty])
                     {
                         var d = it.Serialize();
-                        recs.U32(it.RealId); recs.U32(0); recs.U32(off); recs.U32(d.Length);
-                        blobs.Add(d); off += d.Length;
+                        int at = Place(t, d);
+                        recs.U32(it.RealId); recs.U32(0); recs.U32(at); recs.U32(d.Length);
                     }
             var o = new List<byte>(off);
             o.AddRange(header);
@@ -227,6 +233,26 @@ namespace BandFace.Faces
             foreach (var bl in blobs) o.AddRange(bl);
             Log.Info("Saved");
             return o.ToArray();
+        }
+    }
+
+    /// <summary>Порівняння блоків даних за вмістом</summary>
+    sealed class BlobEq : IEqualityComparer<byte[]>
+    {
+        public bool Equals(byte[] a, byte[] b)
+        {
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+            return true;
+        }
+        public int GetHashCode(byte[] a)
+        {
+            unchecked
+            {
+                int h = (int)2166136261;
+                for (int i = 0; i < a.Length; i += Math.Max(1, a.Length / 64)) h = (h ^ a[i]) * 16777619;
+                return h ^ a.Length;
+            }
         }
     }
 
