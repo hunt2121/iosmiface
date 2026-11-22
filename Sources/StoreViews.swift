@@ -42,7 +42,10 @@ struct LookPicker: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            Text("Стиль і колір вибираються на браслеті\nпісля встановлення")
+            // підпис — лише про те, що справді вибирається: стиль, колір або обидва
+            let hint: LocalizedStringKey = styles.count > 1 && colors.count > 1 ? "Стиль і колір вибираються на браслеті\nпісля встановлення"
+                : styles.count > 1 ? "Стиль вибирається на браслеті\nпісля встановлення" : "Колір вибирається на браслеті\nпісля встановлення"
+            Text(hint)
                 .font(.caption).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

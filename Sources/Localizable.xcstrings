@@ -13042,6 +13042,52 @@
         }
       }
     },
+    "Стиль вибирається на браслеті\nпісля встановлення": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The style is chosen on the band\nafter installing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стиль выбирается на браслете\nпосле установки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стиль вибирається на браслеті\nпісля встановлення"
+          }
+        }
+      }
+    },
+    "Колір вибирається на браслеті\nпісля встановлення": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The color is chosen on the band\nafter installing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвет выбирается на браслете\nпосле установки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колір вибирається на браслеті\nпісля встановлення"
+          }
+        }
+      }
+    },
     "Стиль і колір вибираються на браслеті\nпісля встановлення": {
       "extractionState": "manual",
       "localizations": {
