@@ -381,7 +381,10 @@
           </RadioButton>
           <RadioButton x:Name="NavEditor" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
             <StackPanel Orientation="Horizontal">
-              <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE70F;"/>
+              <!-- олівець, як в iOS: висота як у браслета на «Головній» -->
+              <Viewbox Width="20" Height="20"><Canvas Width="26" Height="26">
+                <Path Data="M1.00,24.10 L3.68,15.91 L10.09,22.32 L1.90,25.00ZM4.80,14.79 L15.02,4.57 L21.43,10.98 L11.21,21.20ZM16.14,3.45 L17.26,2.33 L18.20,1.60 L19.29,1.15 L20.46,1.00 L21.65,1.15 L22.73,1.60 L23.67,2.33 L24.40,3.27 L24.85,4.35 L25.00,5.54 L24.85,6.71 L24.40,7.80 L23.67,8.74 L22.55,9.86Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+              </Canvas></Viewbox>
               <TextBlock x:Name="NavEditorText" Style="{StaticResource NavText}"/>
             </StackPanel>
           </RadioButton>
