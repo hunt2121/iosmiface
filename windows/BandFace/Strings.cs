@@ -154,6 +154,8 @@ namespace BandFace
             ["storeAod"] = new[] { "Завжди на екрані", "Always on display", "Всегда на экране" },
             ["storeStyleN"] = new[] { "Стиль {0}", "Style {0}", "Стиль {0}" },
             ["storeLooksHint"] = new[] { "Стиль і колір вибираються на браслеті\nпісля встановлення", "Style and color are chosen on the band\nafter installing", "Стиль и цвет выбираются на браслете\nпосле установки" },
+            ["storeLooksHintStyle"] = new[] { "Стиль вибирається на браслеті\nпісля встановлення", "The style is chosen on the band\nafter installing", "Стиль выбирается на браслете\nпосле установки" },
+            ["storeLooksHintColor"] = new[] { "Колір вибирається на браслеті\nпісля встановлення", "The color is chosen on the band\nafter installing", "Цвет выбирается на браслете\nпосле установки" },
             ["storeInfo"] = new[] { "Інформація", "Information", "Информация" },
             ["storeCompat"] = new[] { "Сумісність", "Compatibility", "Совместимость" },
             ["storeLook"] = new[] { "Вигляд", "Look", "Вид" },

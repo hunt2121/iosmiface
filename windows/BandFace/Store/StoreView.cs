@@ -512,7 +512,7 @@ namespace BandFace.Store
                 sp.Children.Add(row);
             }
             if (looks)
-                sp.Children.Add(new TextBlock { Text = S.Get("storeLooksHint"), FontSize = 12, Foreground = BrushOf("Sub"), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0) });
+                sp.Children.Add(new TextBlock { Text = S.Get(v.Styles.Count > 1 && v.Colors.Count > 1 ? "storeLooksHint" : v.Styles.Count > 1 ? "storeLooksHintStyle" : "storeLooksHintColor"), FontSize = 12, Foreground = BrushOf("Sub"), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0) });
             return new Border { Style = StyleOf("CardBox"), Padding = new Thickness(0, 22, 0, 20), Margin = new Thickness(0), Child = sp };
         }
 
