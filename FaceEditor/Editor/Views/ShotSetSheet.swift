@@ -483,8 +483,13 @@ private struct ShotZoomView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Color.black.ignoresSafeArea()
-            if let image { ZoomableImage(image: image, onClose: { dismiss() }).ignoresSafeArea() }
+            if let image {
+                // після змахування вже все сховано — закрити без анімації аркуша
+                ZoomableImage(image: image, onClose: {
+                    var t = Transaction(); t.disablesAnimations = true
+                    withTransaction(t) { dismiss() }
+                }).ignoresSafeArea()
+            } else { Color.black.ignoresSafeArea() }
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 44, height: 44)
@@ -494,7 +499,21 @@ private struct ShotZoomView: View {
             .accessibilityLabel(Text(loc("Закрити")))
         }
         .statusBarHidden()
+        .background(ClearCoverBackground())
     }
+}
+
+/// Прозоре тло повноекранного аркуша: під час змахування видно набір, як у «Фото»
+private struct ClearCoverBackground: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let v = UIView()
+        DispatchQueue.main.async {
+            var p = v.superview
+            while let x = p, !(x is UIWindow) { x.backgroundColor = .clear; p = x.superview }
+        }
+        return v
+    }
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
 private struct ZoomableImage: UIViewRepresentable {
