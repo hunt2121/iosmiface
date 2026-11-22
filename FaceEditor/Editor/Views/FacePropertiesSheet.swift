@@ -103,6 +103,8 @@ struct FacePropertiesSheet: View {
                         project.edit { t = ElementFactory.addStyle($0, copyOf: cur) }
                         theme = t; dismiss()
                     } label: { Label("Копіювати поточний стиль", systemImage: "square.on.square") }
+                    // роздільник — від лівого краю вмісту, як у рядках вище (а не від тексту після значка)
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                     Button {
                         var t = theme
                         project.edit { t = ElementFactory.addStyle($0, copyOf: nil) }
