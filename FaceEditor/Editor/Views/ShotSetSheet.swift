@@ -66,11 +66,12 @@ private struct ShotSetContent: View {
     /// Перегляд на всю ширину екрана; дотик — на весь екран з масштабуванням
     private var previewSection: some View {
         let w = UIScreen.main.bounds.width
+        let h = preview.map { min(w * $0.size.height / max(1, $0.size.width), 520) } ?? 240
         return Section {
             ZStack {
                 if let preview {
                     Image(uiImage: preview).resizable().scaledToFit()
-                        .frame(width: w, height: min(w * preview.size.height / max(1, preview.size.width), 520))
+                        .frame(width: w, height: h)
                         .contentShape(Rectangle())
                         .onTapGesture { zoomed = true }
                         .accessibilityAddTraits(.isButton)
@@ -80,7 +81,9 @@ private struct ShotSetContent: View {
                 }
             }
             // ширше за рядок списку — на всю ширину екрана (рядок не обрізає вміст)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: h, maxHeight: h)
+            // інші пропорції — новий рядок: список інакше лишає стару висоту й обрізає картинку
+            .id(Int(h.rounded()))
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
         } footer: {
