@@ -124,7 +124,7 @@ namespace BandFace.Creator
             ["shotNewScreen"] = new[] { "Новий екран", "New screen", "Новый экран" },
             ["shotFormat"] = new[] { "Формат", "Format", "Формат" },
             ["shotAuto"] = new[] { "Авто", "Auto", "Авто" },
-            ["shotFormatNote"] = new[] { "Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки.", "Auto — size depends on the number of screens. Others fit Instagram, Stories, covers.", "Авто — размер по количеству экранов. Остальные — под Instagram, Stories, обложки." },
+            ["shotFormatNote"] = new[] { "Авто — розмір за кількістю екранів. 1:1 — для Instagram, 16:9 — для обкладинок.", "Auto — size depends on the number of screens. 1:1 fits Instagram, 16:9 fits covers.", "Авто — размер по количеству экранов. 1:1 — для Instagram, 16:9 — для обложек." },
             ["shotSize"] = new[] { "Розмір", "Size", "Размер" },
             ["shotLarge"] = new[] { "Великі", "Large", "Большие" },
             ["shotMedium"] = new[] { "Середні", "Medium", "Средние" },

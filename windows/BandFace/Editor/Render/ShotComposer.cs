@@ -148,7 +148,6 @@ namespace BandFace.Creator
             switch (format)
             {
                 case "square": return new Size(960, 960);
-                case "story": return new Size(540, 960);
                 case "wide": return new Size(960, 540);
                 default: return null;
             }

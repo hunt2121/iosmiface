@@ -321,7 +321,7 @@ namespace BandFace.Creator
         void FormatBlock()
         {
             panel.Children.Add(Ui.Header(S.Get("shotFormat")));
-            panel.Children.Add(Ui.Chips(null, new[] { Ui.P("auto", S.Get("shotAuto")), Ui.P("square", "1 : 1"), Ui.P("story", "9 : 16"), Ui.P("wide", "16 : 9") },
+            panel.Children.Add(Ui.Chips(null, new[] { Ui.P("auto", S.Get("shotAuto")), Ui.P("square", "1 : 1"), Ui.P("wide", "16 : 9") },
                 s.Format, v => { s.Format = v; Changed(); }));
             panel.Children.Add(Ui.Note(S.Get("shotFormatNote")));
         }
