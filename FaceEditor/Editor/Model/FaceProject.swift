@@ -149,6 +149,8 @@ struct ProjectMeta: Codable {
     var demo = DemoValues()
     /// Вигляд рамки вибору на браслеті для кожного слота (за назвою слота)
     var slotFrames: [String: SlotFrame] = [:]
+    /// Запам'ятований «Набір знімків» (лише якщо ввімкнено «Запам'ятати для циферблата»)
+    var shots: ShotSet?
 
     init() {}
 
@@ -164,6 +166,7 @@ struct ProjectMeta: Codable {
         manualSize = (try? c.decodeIfPresent(Set<String>.self, forKey: .manualSize)) ?? []
         demo = (try? c.decodeIfPresent(DemoValues.self, forKey: .demo)) ?? DemoValues()
         slotFrames = (try? c.decodeIfPresent([String: SlotFrame].self, forKey: .slotFrames)) ?? [:]
+        shots = try? c.decodeIfPresent(ShotSet.self, forKey: .shots)
     }
 }
 

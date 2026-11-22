@@ -36,7 +36,7 @@ struct EditorView: View {
     @State private var showFonts = false
     @Environment(\.scenePhase) private var scenePhase
 
-    enum EditorSheet: Identifiable { case add, layers, background, source, properties
+    enum EditorSheet: Identifiable { case add, layers, background, source, properties, shots
         var id: Int { hashValue }
     }
 
@@ -57,7 +57,7 @@ struct EditorView: View {
                 .overlay(alignment: .topTrailing) { canvasButtons }
                 .overlay(alignment: .topLeading) {
                     // знімок циферблата: картинка → «Поділитися» (Файли, Фото, месенджери)
-                    roundButton("camera", "Знімок циферблата") { shareShot() }.padding(12)
+                    shotMenu.padding(12)
                 }
                 .overlay(alignment: .bottomLeading) { zoomChips }
                 .padding(.horizontal, 16)
@@ -87,6 +87,9 @@ struct EditorView: View {
                     .presentationDetents([.medium])
             case .properties:
                 FacePropertiesSheet(project: project, theme: $theme)
+                    .presentationDetents([.large])
+            case .shots:
+                ShotSetSheet(project: project, initial: shotStart)
                     .presentationDetents([.large])
             case .source:
                 if let sel = selected, let res = project.element(of: sel) {
@@ -239,11 +242,11 @@ struct EditorView: View {
     /// «Циферблат» — назва, фон, кольори (те саме, що дотик поза циферблатом)
     /// Знімок поточного екрана циферблата (з вибраним кольором) у 2×, із закругленими кутами й прозорістю, і стандартне вікно «Поділитися», як в інших застосунках:
     /// картинка (а не файл), тож є «Зберегти зображення» в Фото; назва й мініатюра — з циферблата.
-    private func shareShot() {
+    private func shareShot(rounded: Bool = true) {
         let rd = FaceRenderer(project)
         rd.colorVariant = variant
         let (img, _) = rd.render(theme: theme, scale: 2)
-        guard let png = ShotShare.png(Self.rounded(img, project.meta.device)), let pic = UIImage(data: png) else { return }
+        guard let png = ShotShare.png(rounded ? Self.rounded(img, project.meta.device) : img), let pic = UIImage(data: png) else { return }
         ShotShare.present(ShotShare(image: pic, title: project.displayName.isEmpty ? loc("Знімок циферблата") : project.displayName))
     }
 
@@ -282,6 +285,39 @@ struct EditorView: View {
 
     private func dropMissingSelection() {
         if let s = selected, !project.layouts(theme).contains(where: { $0 === s }) { selected = nil }
+    }
+
+    /// Кнопка знімка: меню, як у кнопки стилів — знімок із закругленими кутами, без них, або набір кількох екранів
+    private var shotMenu: some View {
+        Menu {
+            Section(loc("Знімок циферблата")) {
+                Button { shareShot() } label: { Label(loc("Із закругленими кутами"), systemImage: "capsule.portrait") }
+                Button { shareShot(rounded: false) } label: { Label(loc("Без закруглень"), systemImage: "rectangle.portrait") }
+            }
+            Section {
+                Button { sheet = .shots } label: {
+                    Label { Text(loc("Набір знімків…")); Text(loc("Кілька екранів на одній картинці")) } icon: { Image(systemName: "rectangle.split.3x1") }
+                }
+            }
+        } label: {
+            Image(systemName: "camera").font(.system(size: 16, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.editorTile))
+        }
+        .accessibilityLabel(Text(loc("Знімок циферблата")))
+    }
+
+    /// Набір: запам'ятований для циферблата або поточний стиль у поточному кольорі
+    private var shotStart: ShotSet {
+        if var s = project.meta.shots {
+            let n = project.styleThemes.count, c = ColorVariants.isEnabled(project) ? ColorVariants.colors(project).count : 1
+            s.screens = s.screens.filter { $0.style < n && $0.color < c }
+            if !s.screens.isEmpty { return s }
+        }
+        let style = project.styleThemes.firstIndex(of: project.styleTheme(of: theme)) ?? 0
+        var s = ShotSet.start(style: style, color: variant)
+        s.screens[0].aod = project.isAOD(theme)
+        return s
     }
 
     private func roundButton(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {

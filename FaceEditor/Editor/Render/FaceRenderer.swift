@@ -21,6 +21,11 @@ final class FaceRenderer {
 
     /// Кольоровий варіант циферблата: 0 — основний, далі за colorGroupTable
     var colorVariant = 0
+    /// Значення для перегляду замість збережених у проєкті (знімки з іншим часом)
+    var demo: DemoValues?
+    /// Стани для знімків: Bluetooth від'єднано, низький заряд (15 %)
+    var bluetoothOff = false
+    var lowBattery = false
 
     init(_ p: FaceProject) { self.p = p }
 
@@ -123,9 +128,7 @@ final class FaceRenderer {
         return false
     }
 
-    private func value(_ res: XNode) -> Int {
-        SampleData.value(res.string("source") ?? "", live: live, demo: p.meta.demo)
-    }
+    private func value(_ res: XNode) -> Int { value(res: res.string("source") ?? "") }
 
     /// Малює ресурс; повертає рамку.
     @discardableResult
@@ -467,5 +470,10 @@ final class FaceRenderer {
         return UIFont.systemFont(ofSize: size, weight: weights[key] ?? .regular)
     }
 
-    private func value(res src: String) -> Int { SampleData.value(src, live: live, demo: p.meta.demo) }
+    private func value(res src: String) -> Int {
+        let l = src.lowercased()
+        if bluetoothOff, l.contains("bluetooth") { return 0 }
+        if lowBattery, l.contains("battery") { return 15 }
+        return SampleData.value(src, live: live, demo: demo ?? p.meta.demo)
+    }
 }

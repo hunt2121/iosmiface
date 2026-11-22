@@ -70,6 +70,144 @@
         }
       }
     },
+    "%d кольори": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d colours"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d цвета"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d кольори"
+          }
+        }
+      }
+    },
+    "%d кольорів": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d colours"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d цветов"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d кольорів"
+          }
+        }
+      }
+    },
+    "%d колір": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d colour"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d цвет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d колір"
+          }
+        }
+      }
+    },
+    "%d стиль": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d style"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стиль"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стиль"
+          }
+        }
+      }
+    },
+    "%d стилі": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d styles"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стиля"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стилі"
+          }
+        }
+      }
+    },
+    "%d стилів": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d styles"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стилей"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d стилів"
+          }
+        }
+      }
+    },
     "(вже підключений до iPhone)": {
       "extractionState": "manual",
       "localizations": {
@@ -369,6 +507,29 @@
         }
       }
     },
+    "Bluetooth від'єднано": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth disconnected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth отключён"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth від'єднано"
+          }
+        }
+      }
+    },
     "ID %@ · %@ КБ": {
       "extractionState": "manual",
       "localizations": {
@@ -553,6 +714,29 @@
         }
       }
     },
+    "«Зроблено в BandFace»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Made with BandFace”"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Сделано в BandFace»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Зроблено в BandFace»"
+          }
+        }
+      }
+    },
     "Є дані": {
       "extractionState": "manual",
       "localizations": {
@@ -595,6 +779,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ідентифікатор"
+          }
+        }
+      }
+    },
+    "Із закругленими кутами": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With rounded corners"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Со скруглёнными углами"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Із закругленими кутами"
           }
         }
       }
@@ -756,6 +963,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Автентифікація…"
+          }
+        }
+      }
+    },
+    "Авто": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто"
+          }
+        }
+      }
+    },
+    "Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto — size depends on the number of screens. Others fit Instagram, Stories, covers."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто — размер по количеству экранов. Остальные — под Instagram, Stories, обложки."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто — розмір за кількістю екранів. Інші — під Instagram, Stories, обкладинки."
           }
         }
       }
@@ -990,6 +1243,29 @@
         }
       }
     },
+    "Без закруглень": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without rounded corners"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без скруглений"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без закруглень"
+          }
+        }
+      }
+    },
     "Без ключа застосунок не зможе підключитися до пристрою. Його можна знайти автоматично в даних Mi Fitness.": {
       "extractionState": "manual",
       "localizations": {
@@ -1078,6 +1354,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Безкоштовні"
+          }
+        }
+      }
+    },
+    "Браслет": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Band"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Браслет"
           }
         }
       }
@@ -1216,6 +1515,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Біла 50%"
+          }
+        }
+      }
+    },
+    "Біле": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Белый"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Біле"
           }
         }
       }
@@ -1400,6 +1722,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вгору"
+          }
+        }
+      }
+    },
+    "Великі": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Большие"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Великі"
           }
         }
       }
@@ -2876,6 +3221,52 @@
         }
       }
     },
+    "Готова картинка": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готовая картинка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готова картинка"
+          }
+        }
+      }
+    },
+    "Готова картинка · %d × %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished image · %d × %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готовая картинка · %d × %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готова картинка · %d × %d"
+          }
+        }
+      }
+    },
     "Готовий список…": {
       "extractionState": "manual",
       "localizations": {
@@ -3704,6 +4095,29 @@
         }
       }
     },
+    "Дублювати екран": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дублировать экран"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дублювати екран"
+          }
+        }
+      }
+    },
     "Дуга": {
       "extractionState": "manual",
       "localizations": {
@@ -3792,6 +4206,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Екран"
+          }
+        }
+      }
+    },
+    "Екрани": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screens"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экраны"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Екрани"
           }
         }
       }
@@ -3953,6 +4390,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "З файлу"
+          }
+        }
+      }
+    },
+    "З циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Из циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "З циферблата"
           }
         }
       }
@@ -4187,6 +4647,29 @@
         }
       }
     },
+    "Завжди на екрані (AOD)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always on display (AOD)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всегда на экране (AOD)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завжди на екрані (AOD)"
+          }
+        }
+      }
+    },
     "Загалом %lld джерел: час, дата, здоров'я, погода, система та інші.": {
       "extractionState": "manual",
       "localizations": {
@@ -4229,6 +4712,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Закрити"
+          }
+        }
+      }
+    },
+    "Закруглені кути": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rounded corners"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скруглённые углы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закруглені кути"
           }
         }
       }
@@ -4417,6 +4923,29 @@
         }
       }
     },
+    "Запам'ятати для циферблата": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remember for this watch face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запомнить для циферблата"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запам'ятати для циферблата"
+          }
+        }
+      }
+    },
     "Запас від елементів, px": {
       "extractionState": "manual",
       "localizations": {
@@ -4574,6 +5103,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Заряд %lld%%"
+          }
+        }
+      }
+    },
+    "Заряд 15 %": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery 15%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заряд 15 %"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заряд 15 %"
           }
         }
       }
@@ -4831,6 +5383,52 @@
         }
       }
     },
+    "Зберегти у Файли": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Files"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить в Файлы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти у Файли"
+          }
+        }
+      }
+    },
+    "Зберегти у Фото": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Photos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить в Фото"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти у Фото"
+          }
+        }
+      }
+    },
     "Зберегти і закрити": {
       "extractionState": "manual",
       "localizations": {
@@ -4850,6 +5448,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зберегти і закрити"
+          }
+        }
+      }
+    },
+    "Збереження": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранение"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збереження"
           }
         }
       }
@@ -4942,6 +5563,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Здоров'я"
+          }
+        }
+      }
+    },
+    "Змахніть рядок уліво, щоб прибрати його або повернути автоматичний текст.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe a row left to hide it or restore the automatic text."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смахните строку влево, чтобы убрать её или вернуть автоматический текст."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Змахніть рядок уліво, щоб прибрати його або повернути автоматичний текст."
           }
         }
       }
@@ -5218,6 +5862,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Золото"
+          }
+        }
+      }
+    },
+    "Зроблено в BandFace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Made with BandFace"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сделано в BandFace"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зроблено в BandFace"
           }
         }
       }
@@ -6372,6 +7039,29 @@
         }
       }
     },
+    "Кілька екранів на одній картинці": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Several screens in one image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Несколько экранов на одной картинке"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кілька екранів на одній картинці"
+          }
+        }
+      }
+    },
     "Кілька картинок стають кадрами.": {
       "extractionState": "manual",
       "localizations": {
@@ -6667,6 +7357,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Магазин"
+          }
+        }
+      }
+    },
+    "Малі": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маленькие"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Малі"
           }
         }
       }
@@ -7108,6 +7821,52 @@
         }
       }
     },
+    "Набір знімків": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot set"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набор снимков"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набір знімків"
+          }
+        }
+      }
+    },
+    "Набір знімків…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot set…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набор снимков…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набір знімків…"
+          }
+        }
+      }
+    },
     "Набір цифр": {
       "extractionState": "manual",
       "localizations": {
@@ -7154,6 +7913,29 @@
         }
       }
     },
+    "Над назвою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Above title"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Над названием"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Над назвою"
+          }
+        }
+      }
+    },
     "Над приглушенням AOD": {
       "extractionState": "manual",
       "localizations": {
@@ -7196,6 +7978,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Назва"
+          }
+        }
+      }
+    },
+    "Назва екрана": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen name"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название экрана"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назва екрана"
+          }
+        }
+      }
+    },
+    "Назва екрана…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen name…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название экрана…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назва екрана…"
           }
         }
       }
@@ -7522,6 +8350,29 @@
         }
       }
     },
+    "Наступного разу набір відкриється з цими екранами й налаштуваннями.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next time the set opens with these screens and settings."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В следующий раз набор откроется с этими экранами и настройками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наступного разу набір відкриється з цими екранами й налаштуваннями."
+          }
+        }
+      }
+    },
     "Натискання відкриває": {
       "extractionState": "manual",
       "localizations": {
@@ -7817,6 +8668,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новий ID"
+          }
+        }
+      }
+    },
+    "Новий екран": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый экран"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новий екран"
           }
         }
       }
@@ -8902,6 +9776,29 @@
         }
       }
     },
+    "Поділитися…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поділитися…"
+          }
+        }
+      }
+    },
     "Позиція": {
       "extractionState": "manual",
       "localizations": {
@@ -9592,6 +10489,52 @@
         }
       }
     },
+    "Прибрати": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Убрать"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибрати"
+          }
+        }
+      }
+    },
+    "Прибрати екран": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Убрать экран"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибрати екран"
+          }
+        }
+      }
+    },
     "Прибрати зі слота": {
       "extractionState": "manual",
       "localizations": {
@@ -10190,6 +11133,29 @@
         }
       }
     },
+    "Під назвою": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Below title"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Под названием"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Під назвою"
+          }
+        }
+      }
+    },
     "Підготовка…": {
       "extractionState": "manual",
       "localizations": {
@@ -10282,6 +11248,52 @@
         }
       }
     },
+    "Підпис стилем і кольором": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caption with style and colour"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подпись стилем и цветом"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підпис стилем і кольором"
+          }
+        }
+      }
+    },
+    "Підписи під екранами": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captions under screens"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подписи под экранами"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підписи під екранами"
+          }
+        }
+      }
+    },
     "Підсвітка": {
       "extractionState": "manual",
       "localizations": {
@@ -10370,6 +11382,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Радіус"
+          }
+        }
+      }
+    },
+    "Рамка": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frame"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рамка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рамка"
           }
         }
       }
@@ -10972,6 +12007,29 @@
         }
       }
     },
+    "Свій": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свой"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свій"
+          }
+        }
+      }
+    },
     "Свій кут": {
       "extractionState": "manual",
       "localizations": {
@@ -11014,6 +12072,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Світла"
+          }
+        }
+      }
+    },
+    "Світле": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Светлый"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Світле"
           }
         }
       }
@@ -11129,6 +12210,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Секундомір"
+          }
+        }
+      }
+    },
+    "Середні": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Средние"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Середні"
+          }
+        }
+      }
+    },
+    "Синє": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blue"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синий"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синє"
           }
         }
       }
@@ -12214,6 +13341,29 @@
         }
       }
     },
+    "Темне": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тёмный"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Темне"
+          }
+        }
+      }
+    },
     "Температура": {
       "extractionState": "manual",
       "localizations": {
@@ -12302,6 +13452,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Тиснення"
+          }
+        }
+      }
+    },
+    "Тло": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фон"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тло"
           }
         }
       }
@@ -12417,6 +13590,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Торкніться віджета — він з'явиться на полотні, і його можна налаштувати. Перший — типовий; порядок — через меню ⋯."
+          }
+        }
+      }
+    },
+    "Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним додають екран зі станом: Bluetooth від'єднано, заряд 15 %.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a screen: name, style, colour, duplicate, remove. The icons below it add a screen with a state: Bluetooth disconnected, battery 15%."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коснитесь экрана: название, стиль, цвет, дублировать, убрать. Значки под ним добавляют экран с состоянием: Bluetooth отключён, заряд 15 %."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Торкніться екрана: назва, стиль, колір, дублювати, прибрати. Значки під ним додають екран зі станом: Bluetooth від'єднано, заряд 15 %."
           }
         }
       }
@@ -12647,6 +13843,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Тінь праворуч, px"
+          }
+        }
+      }
+    },
+    "Тінь під екранами": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shadow under screens"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тень под экранами"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тінь під екранами"
           }
         }
       }
@@ -13111,6 +14330,29 @@
         }
       }
     },
+    "Формат": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Формат"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Формат"
+          }
+        }
+      }
+    },
     "Формат: .bin або .face": {
       "extractionState": "manual",
       "localizations": {
@@ -13525,6 +14767,29 @@
         }
       }
     },
+    "Циферблат для Xiaomi %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch face for Xiaomi %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Циферблат для Xiaomi %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Циферблат для Xiaomi %@"
+          }
+        }
+      }
+    },
     "Циферблат зникне з редактора. На пристрої він лишиться, якщо вже встановлений.": {
       "extractionState": "manual",
       "localizations": {
@@ -13778,6 +15043,29 @@
         }
       }
     },
+    "Час на екранах": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time on screens"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время на экранах"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Час на екранах"
+          }
+        }
+      }
+    },
     "Червона риска — точка X. Пунктир — цифра, що додається, коли «5» стає «15».": {
       "extractionState": "manual",
       "localizations": {
@@ -13912,6 +15200,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чистий"
+          }
+        }
+      }
+    },
+    "Чорне": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чёрный"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чорне"
           }
         }
       }
@@ -14353,6 +15664,29 @@
         }
       }
     },
+    "Як у циферблаті": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As in watch face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как в циферблате"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як у циферблаті"
+          }
+        }
+      }
+    },
     "Як це виглядає": {
       "extractionState": "manual",
       "localizations": {
@@ -14786,6 +16120,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "ліворуч"
+          }
+        }
+      }
+    },
+    "на картинці: %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in image: %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "на картинке: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "на картинці: %d"
           }
         }
       }
