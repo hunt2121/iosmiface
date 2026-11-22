@@ -5199,25 +5199,25 @@
         }
       }
     },
-    "Заряд 15 %": {
+    "Низький заряд": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Battery 15%"
+            "value": "Low battery"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заряд 15 %"
+            "value": "Низкий заряд"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заряд 15 %"
+            "value": "Низький заряд"
           }
         }
       }

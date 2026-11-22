@@ -47,7 +47,7 @@ enum ShotComposer {
     static func stateText(_ it: Item) -> String? {
         switch it.state {
         case 1: return loc("Bluetooth від'єднано")
-        case 2: return loc("Заряд 15 %")
+        case 2: return loc("Низький заряд")
         default: return it.screen.aod ? loc("Завжди на екрані") : nil
         }
     }

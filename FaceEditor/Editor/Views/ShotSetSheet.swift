@@ -68,7 +68,10 @@ private struct ShotSetContent: View {
     private var previewSection: some View {
         let w = UIScreen.main.bounds.width
         let h = preview.map { min(w * $0.size.height / max(1, $0.size.width), 520) } ?? 240
+        // перегляд — заголовком розділу: рядок списку має відступи й заокруглені кути й обрізає картинку
         return Section {
+            EmptyView()
+        } header: {
             ZStack {
                 if let preview {
                     Image(uiImage: preview).resizable().scaledToFit()
@@ -81,11 +84,11 @@ private struct ShotSetContent: View {
                     ProgressView().frame(width: w, height: 240)
                 }
             }
-            // ширше за рядок списку — на всю ширину екрана (рядок не обрізає вміст)
+            // на всю ширину екрана (ширше за поля списку)
             .frame(maxWidth: .infinity, minHeight: h, maxHeight: h)
-            // інші пропорції — новий рядок: список інакше лишає стару висоту й обрізає картинку
+            // інші пропорції — новий заголовок: список інакше може лишити стару висоту
             .id(Int(h.rounded()))
-            .listRowBackground(Color.clear)
+            .textCase(nil)
             .listRowInsets(EdgeInsets())
         } footer: {
             if let preview {
@@ -159,7 +162,7 @@ private struct ShotSetContent: View {
             // кнопки станів завжди; якщо екран стану не показує — бліда й не натискається
             HStack(spacing: 6) {
                 chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано", enabled: has("bluetooth", sc.wrappedValue))
-                chip(2, on: sc.battery, label: "Заряд 15 %", enabled: has("battery", sc.wrappedValue))
+                chip(2, on: sc.battery, label: "Низький заряд", enabled: has("battery", sc.wrappedValue))
             }
             .padding(.top, 8)
         }
