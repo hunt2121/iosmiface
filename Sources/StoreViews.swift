@@ -123,12 +123,22 @@ enum StoreText {
         return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
-    /// Слово до короткого числа в капсулі сторінки — завжди однакове: «1.2k завантажень», «7 переглядів»
-    static var downloadsWord: String {
-        switch lang { case "uk": return "завантажень"; case "ru": return "загрузок"; default: return "downloads" }
+    /// Слово до короткого числа в капсулі сторінки — узгоджене з числом: «1 перегляд», «42 перегляди», «1.2k переглядів»
+    static func downloadsWord(_ n: Int) -> String {
+        let m = n >= 1000 ? 5 : n
+        switch lang {
+        case "uk": return pluralWord(m, "завантаження", "завантаження", "завантажень")
+        case "ru": return pluralWord(m, "загрузка", "загрузки", "загрузок")
+        default: return n == 1 ? "download" : "downloads"
+        }
     }
-    static var viewsWord: String {
-        switch lang { case "uk": return "переглядів"; case "ru": return "просмотров"; default: return "views" }
+    static func viewsWord(_ n: Int) -> String {
+        let m = n >= 1000 ? 5 : n
+        switch lang {
+        case "uk": return pluralWord(m, "перегляд", "перегляди", "переглядів")
+        case "ru": return pluralWord(m, "просмотр", "просмотра", "просмотров")
+        default: return n == 1 ? "view" : "views"
+        }
     }
 
     /// Коротко для картки: до 999 — повністю; далі 1.1k, 15.5k, 120k, 1.2M (один знак до 100, округлення вниз)
@@ -442,13 +452,13 @@ struct StoreStatsCardRow: View {
 }
 
 /// Рядок у плашці «Розмір · Версія · Пристрої» на сторінці циферблата: «👁 3.4k переглядів   ↓ 1.2k завантажень» —
-/// числа коротко, як на картці, слово завжди «завантажень» / «переглядів»; проміжок — за правилом картки
+/// числа коротко, як на картці, слово узгоджене з числом; проміжок — за правилом картки
 struct StoreStatsLine: View {
     let stats: StoreServer.FaceStats
 
     var body: some View {
         let d = StoreText.short(stats.downloads), v = StoreText.short(stats.views)
-        StoreStatsRow(downloads: d + " " + StoreText.downloadsWord, views: v + " " + StoreText.viewsWord,
+        StoreStatsRow(downloads: d + " " + StoreText.downloadsWord(stats.downloads), views: v + " " + StoreText.viewsWord(stats.views),
                       font: StoreStatsRow.textFont(.footnote), roomy: true, gapBasis: (d, v), minGap: 27, maxGap: 44)
             .frame(minHeight: 18)
             .accessibilityElement(children: .ignore)
