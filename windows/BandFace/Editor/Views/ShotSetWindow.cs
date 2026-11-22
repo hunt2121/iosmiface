@@ -53,8 +53,8 @@ namespace BandFace.Creator
             DockPanel.SetDock(sizeText, Dock.Bottom);
             sizeText.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
             left.Children.Add(sizeText);
-            // підкладка — на всю ліву частину (з відступами вікна), картинка в ній по центру; клік — на весь екран
-            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12), Child = preview, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = S.Get("shotZoom") };
+            // підкладка — на всю ліву частину (з відступами вікна); картинка на всю її ширину, по центру; клік — на весь екран
+            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(0, 12, 0, 12), Child = preview, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = S.Get("shotZoom") };
             frame.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
             frame.SetResourceReference(Border.BackgroundProperty, "Card");
             left.Children.Add(frame);
