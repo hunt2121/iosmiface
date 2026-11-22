@@ -187,7 +187,7 @@ enum ShotComposer {
         guard !list.isEmpty else { return nil }
         let bg = background(p, s.background)
         let pal = Palette(light: isLight(bg))
-        let fixed: CGSize? = nil  // формат завжди автоматичний
+        let fixed = fixedSize(s.format)
         let pad = CGSize(width: 56, height: 48)
 
         // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
