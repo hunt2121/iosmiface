@@ -266,9 +266,7 @@ enum ColorVariants {
                 default: images = []
                 }
             } else {
-                // якщо хоч один кадр кольоровий лише частково — сірі частини лишаються в усіх кадрах (порожня шкала теж)
-                let keep = src.contains { tintPlan($0)?.chromaOnly == true }
-                images = src.compactMap { tint($0, to: c, keepNeutral: keep) }
+                images = src.compactMap { tint($0, to: c) }
             }
             guard images.count == src.count || base.tag == "ImageArray", !images.isEmpty else { continue }
             let tag = c.dropFirst().lowercased()
@@ -306,52 +304,35 @@ enum ColorVariants {
     // MARK: Перефарбування
 
     /// Колір одноколірної картинки (найяскравіший піксель), якщо всі видимі пікселі — його відтінки; інакше nil
-    private static func tintBase(_ img: RGBAImage) -> (Int, Int, Int)? { tintPlan(img)?.base }
-
-    /// Сірий / білий / чорний піксель (без відтінку)
-    private static func neutral(_ r: Int, _ g: Int, _ b: Int) -> Bool { max(r, g, b) - min(r, g, b) <= 24 }
-
-    /// Як перефарбувати картинку: усю (одноколірна) або лише кольорову частину (один колір + сірі / білі / чорні частини,
-    /// наприклад зелена шкала з сірими поділками — перефарбовується тільки зелене)
-    private static func tintPlan(_ img: RGBAImage) -> (base: (Int, Int, Int), chromaOnly: Bool)? {
+    private static func tintBase(_ img: RGBAImage) -> (Int, Int, Int)? {
         let px = img.px
-        func check(_ best: (Int, Int, Int), _ bestL: Int, allowNeutral: Bool) -> Bool {
-            var i = 0
-            while i < px.count {
-                if px[i + 3] > 32 {
-                    // піксель ≈ k × базовий колір (допуск на згладжування)
-                    let r = Int(px[i]), g = Int(px[i + 1]), b = Int(px[i + 2])
-                    if !(allowNeutral && neutral(r, g, b)) {
-                        let k = Double(r + g + b) / Double(bestL)
-                        if abs(Double(best.0) * k - Double(r)) > 28 || abs(Double(best.1) * k - Double(g)) > 28
-                            || abs(Double(best.2) * k - Double(b)) > 28 { return false }
-                    }
-                }
-                i += 4
-            }
-            return true
-        }
-        // найяскравіший піксель — усієї картинки й лише кольоровий
-        var best = (0, 0, 0), bestL = -1, chroma = (0, 0, 0), chromaL = -1
+        var best = (0, 0, 0), bestL = -1
         var i = 0
         while i < px.count {
             if px[i + 3] > 32 {
-                let r = Int(px[i]), g = Int(px[i + 1]), b = Int(px[i + 2]), l = r + g + b
-                if l > bestL { bestL = l; best = (r, g, b) }
-                if !neutral(r, g, b), l > chromaL { chromaL = l; chroma = (r, g, b) }
+                let l = Int(px[i]) + Int(px[i + 1]) + Int(px[i + 2])
+                if l > bestL { bestL = l; best = (Int(px[i]), Int(px[i + 1]), Int(px[i + 2])) }
             }
             i += 4
         }
         guard bestL > 30 else { return nil }   // порожня або майже чорна картинка
-        if check(best, bestL, allowNeutral: false) { return (best, false) }
-        if chromaL > 30, check(chroma, chromaL, allowNeutral: true) { return (chroma, true) }
-        return nil
+        i = 0
+        while i < px.count {
+            if px[i + 3] > 32 {
+                // піксель ≈ k × базовий колір (допуск на згладжування)
+                let r = Int(px[i]), g = Int(px[i + 1]), b = Int(px[i + 2])
+                let k = Double(r + g + b) / Double(bestL)
+                if abs(Double(best.0) * k - Double(r)) > 28 || abs(Double(best.1) * k - Double(g)) > 28
+                    || abs(Double(best.2) * k - Double(b)) > 28 { return nil }
+            }
+            i += 4
+        }
+        return best
     }
 
-    /// Перефарбовує картинку: відтінок → новий колір тієї ж яскравості відносно базового (сірі частини — без змін, якщо колір лише в частині)
-    static func tint(_ img: RGBAImage, to hex: String, keepNeutral: Bool = false) -> RGBAImage? {
-        guard let plan = tintPlan(img) else { return nil }
-        let base = plan.base
+    /// Перефарбовує одноколірну картинку: відтінок → новий колір тієї ж яскравості відносно базового
+    static func tint(_ img: RGBAImage, to hex: String) -> RGBAImage? {
+        guard let base = tintBase(img) else { return nil }
         let c = AssetFactory.color(hex)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         c.getRed(&r, green: &g, blue: &b, alpha: &a)
@@ -359,7 +340,7 @@ enum ColorVariants {
         var out = img.px
         var i = 0
         while i < out.count {
-            if out[i + 3] > 0 && !((plan.chromaOnly || keepNeutral) && neutral(Int(out[i]), Int(out[i + 1]), Int(out[i + 2]))) {
+            if out[i + 3] > 0 {
                 let k = min(1, Double(Int(out[i]) + Int(out[i + 1]) + Int(out[i + 2])) / baseL)
                 out[i] = UInt8(min(255, (Double(r) * 255 * k).rounded()))
                 out[i + 1] = UInt8(min(255, (Double(g) * 255 * k).rounded()))
