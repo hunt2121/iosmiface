@@ -14,6 +14,14 @@ namespace BandFace
             try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "bandface-crash.txt"), e?.ToString() ?? "?"); } catch (Exception) { }
         }
 
+        static App()
+        {
+            // підказки всюди — через секунду; без «швидкого показу» наступної, коли мишу переводять з однієї на іншу
+            // (інакше нова підказка з'являється миттєво й не там, де зупинилась миша)
+            System.Windows.Controls.ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(1000));
+            System.Windows.Controls.ToolTipService.BetweenShowDelayProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(0));
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             DispatcherUnhandledException += (s, a) =>
