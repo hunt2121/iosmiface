@@ -13916,29 +13916,6 @@
         }
       }
     },
-    "Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A black semi-transparent layer over the whole always-on screen: images stay shared with the main screen but look dimmer in AOD. 0 means off."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чёрный полупрозрачный слой поверх всего экрана «Всегда на экране»: картинки общие с основным экраном, а в AOD выглядят тусклее. 0 — без приглушения."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чорний напівпрозорий шар поверх усього екрана «Завжди на екрані»: картинки спільні з основним екраном, а в AOD виглядають тьмяніше. 0 — без приглушення."
-          }
-        }
-      }
-    },
     "Ш": {
       "extractionState": "manual",
       "localizations": {
