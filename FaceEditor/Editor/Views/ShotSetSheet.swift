@@ -501,6 +501,8 @@ private struct ShotSetContent: View {
 private struct ShotZoomView: View {
     let image: UIImage?
     @Environment(\.dismiss) private var dismiss
+    /// Хрестик зникає, щойно картинку почали тягнути (як у «Фото»)
+    @State private var dragging = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -509,7 +511,7 @@ private struct ShotZoomView: View {
                 ZoomableImage(image: image, onClose: {
                     var t = Transaction(); t.disablesAnimations = true
                     withTransaction(t) { dismiss() }
-                }).ignoresSafeArea()
+                }, onDrag: { d in withAnimation(.easeOut(duration: 0.15)) { dragging = d } }).ignoresSafeArea()
             } else { Color.black.ignoresSafeArea() }
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
@@ -517,6 +519,7 @@ private struct ShotZoomView: View {
                     .background(Circle().fill(Color.white.opacity(0.18)))
             }
             .padding(16)
+            .opacity(dragging ? 0 : 1)
             .accessibilityLabel(Text(loc("Закрити")))
         }
         .statusBarHidden()
@@ -551,6 +554,8 @@ private struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
     /// Змахнули вгору чи вниз (коли картинка не збільшена) — закрити
     var onClose: () -> Void = {}
+    /// Почали (true) чи скасували (false) змахування
+    var onDrag: (Bool) -> Void = { _ in }
 
     func makeUIView(context: Context) -> UIScrollView {
         let s = UIScrollView()
@@ -570,6 +575,7 @@ private struct ZoomableImage: UIViewRepresentable {
         pan.delegate = context.coordinator
         s.addGestureRecognizer(pan)
         context.coordinator.onClose = onClose
+        context.coordinator.onDrag = onDrag
         return s
     }
 
@@ -582,6 +588,7 @@ private struct ZoomableImage: UIViewRepresentable {
     final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         weak var imageView: UIImageView?
         var onClose: () -> Void = {}
+        var onDrag: (Bool) -> Void = { _ in }
         private var fitted = CGSize.zero
 
         /// Уся картинка в екрані; більше — пальцями (до 100 % пікселів × 2)
@@ -623,6 +630,7 @@ private struct ZoomableImage: UIViewRepresentable {
             switch g.state {
             case .began:
                 base = iv.transform
+                onDrag(true)
             case .changed:
                 iv.transform = base.concatenating(CGAffineTransform(translationX: 0, y: ty))
                 s.backgroundColor = UIColor.black.withAlphaComponent(max(0.3, 1 - abs(ty) / 400))
@@ -638,6 +646,7 @@ private struct ZoomableImage: UIViewRepresentable {
                         iv.transform = self.base
                         s.backgroundColor = .black
                     }
+                    onDrag(false)
                 }
             default: break
             }
