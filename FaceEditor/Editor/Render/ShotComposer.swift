@@ -133,7 +133,9 @@ enum ShotComposer {
     /// Розкладка сітки: стовпці, ширина екрана, вузький режим (дрібніші підписи, стани — лише значком)
     struct Layout {
         var cols: Int, w: CGFloat, narrow: Bool
-        var gap: CGFloat { narrow ? 18 : 30 }
+        /// Скільки екранів на картинці: два-три — розставлені ширше
+        var n = 0
+        var gap: CGFloat { narrow ? 18 : n <= 2 ? 72 : n == 3 ? 46 : 30 }
         let rowGap: CGFloat = 30
     }
 
@@ -196,21 +198,21 @@ enum ShotComposer {
         let n = list.count
         let capH = captionHeight(s, items: list)
         let pad = CGSize(width: 56, height: 48)
-        var lay = Layout(cols: autoColumns(n), w: screenWidth(s.size), narrow: false)
+        var lay = Layout(cols: autoColumns(n), w: screenWidth(s.size), narrow: false, n: n)
         var canvas: CGSize
         if let fx = fixed {
             // формат заданий: стовпці й ширина екрана — найбільші, що вміщаються з відступами
             let area = CGSize(width: fx.width - 2 * pad.width, height: fx.height - 2 * pad.height - header - footer)
-            var best = Layout(cols: 1, w: 10, narrow: false)
+            var best = Layout(cols: 1, w: 10, narrow: false, n: n)
             for narrow in [false, true] {
                 for c in 1...n {
                     var lo: CGFloat = 10, hi: CGFloat = 400
                     for _ in 0..<24 {
                         let m = (lo + hi) / 2
-                        let g = gridSize(s, Layout(cols: c, w: m, narrow: narrow), n: n, capH: capH)
+                        let g = gridSize(s, Layout(cols: c, w: m, narrow: narrow, n: n), n: n, capH: capH)
                         if g.width <= area.width && g.height <= area.height { lo = m } else { hi = m }
                     }
-                    if lo > best.w { best = Layout(cols: c, w: lo, narrow: narrow) }
+                    if lo > best.w { best = Layout(cols: c, w: lo, narrow: narrow, n: n) }
                 }
                 // вузький режим — лише коли звичайний дає зовсім дрібні екрани
                 if best.w >= 90 { break }
@@ -230,7 +232,7 @@ enum ShotComposer {
                 var lo: CGFloat = 30, hi = lay.w
                 for _ in 0..<24 {
                     let m = (lo + hi) / 2
-                    let c = fit(Layout(cols: lay.cols, w: m, narrow: false))
+                    let c = fit(Layout(cols: lay.cols, w: m, narrow: false, n: n))
                     if max(c.width, c.height) <= maxSide { lo = m } else { hi = m }
                 }
                 lay.w = floor(lo)

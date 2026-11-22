@@ -514,7 +514,7 @@ private struct ShotZoomView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             Color.black.ignoresSafeArea()
-            if let image { ZoomableImage(image: image).ignoresSafeArea() }
+            if let image { ZoomableImage(image: image, onClose: { dismiss() }).ignoresSafeArea() }
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 44, height: 44)
@@ -529,6 +529,8 @@ private struct ShotZoomView: View {
 
 private struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
+    /// Змахнули вгору чи вниз (коли картинка не збільшена) — закрити
+    var onClose: () -> Void = {}
 
     func makeUIView(context: Context) -> UIScrollView {
         let s = UIScrollView()
@@ -544,6 +546,10 @@ private struct ZoomableImage: UIViewRepresentable {
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.doubleTap(_:)))
         tap.numberOfTapsRequired = 2
         s.addGestureRecognizer(tap)
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pan(_:)))
+        pan.delegate = context.coordinator
+        s.addGestureRecognizer(pan)
+        context.coordinator.onClose = onClose
         return s
     }
 
@@ -553,8 +559,9 @@ private struct ZoomableImage: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    final class Coordinator: NSObject, UIScrollViewDelegate {
+    final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         weak var imageView: UIImageView?
+        var onClose: () -> Void = {}
         private var fitted = CGSize.zero
 
         /// Уся картинка в екрані; більше — пальцями (до 100 % пікселів × 2)
@@ -578,6 +585,37 @@ private struct ZoomableImage: UIViewRepresentable {
             guard let iv = imageView else { return }
             let dx = max(0, (s.bounds.width - iv.frame.width) / 2), dy = max(0, (s.bounds.height - iv.frame.height) / 2)
             s.contentInset = UIEdgeInsets(top: dy, left: dx, bottom: dy, right: dx)
+        }
+
+        /// Змахування вгору/вниз — лише коли картинка не збільшена (інакше це прокрутка)
+        func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+            guard let pan = g as? UIPanGestureRecognizer, let s = pan.view as? UIScrollView else { return true }
+            let v = pan.velocity(in: s)
+            return s.zoomScale <= s.minimumZoomScale * 1.01 && abs(v.y) > abs(v.x)
+        }
+
+        @objc func pan(_ g: UIPanGestureRecognizer) {
+            guard let s = g.view as? UIScrollView, let iv = imageView else { return }
+            let ty = g.translation(in: s).y
+            switch g.state {
+            case .changed:
+                iv.transform = CGAffineTransform(translationX: 0, y: ty)
+                s.backgroundColor = UIColor.black.withAlphaComponent(max(0.3, 1 - abs(ty) / 400))
+            case .ended, .cancelled:
+                let v = g.velocity(in: s).y
+                if abs(ty) > 120 || abs(v) > 900 {
+                    UIView.animate(withDuration: 0.2, animations: {
+                        iv.transform = CGAffineTransform(translationX: 0, y: ty > 0 || v > 0 ? s.bounds.height : -s.bounds.height)
+                        s.backgroundColor = .clear
+                    }, completion: { _ in self.onClose() })
+                } else {
+                    UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0) {
+                        iv.transform = .identity
+                        s.backgroundColor = .black
+                    }
+                }
+            default: break
+            }
         }
 
         @objc func doubleTap(_ g: UITapGestureRecognizer) {
