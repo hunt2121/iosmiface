@@ -142,11 +142,12 @@ namespace BandFace.Creator
 
         static int AutoColumns(int n) => n <= 5 ? Math.Max(1, n) : n <= 12 ? (n + 1) / 2 : 6;
 
+        /// <summary>Задані формати — довша сторона 960 pt (1920 px), як і найбільша «Авто»</summary>
         static Size? Fixed(string format)
         {
             switch (format)
             {
-                case "square": return new Size(620, 620);
+                case "square": return new Size(960, 960);
                 case "story": return new Size(540, 960);
                 case "wide": return new Size(960, 540);
                 default: return null;
@@ -159,18 +160,24 @@ namespace BandFace.Creator
             public int Cols; public double W; public bool Narrow;
             /// <summary>Скільки екранів на картинці: два-три — розставлені ширше</summary>
             public int N;
-            public double Gap => Narrow ? 18 : N <= 2 ? 72 : N == 3 ? 46 : 30;
-            public const double RowGap = 30;
+            /// <summary>Масштаб текстів (у вузьких форматах тексти менші) і найширша мітка стану</summary>
+            public double Ts, Pill;
+            public double Gap => (Narrow ? 18 : N <= 2 ? 72 : N == 3 ? 46 : 30) * Ts;
+            public double RowGap => 30 * Ts;
         }
 
-        static double ItemWidth(ShotSet s, Layout l) => Math.Max(CellBody(s, l.W).Width, s.Captions ? l.W + (l.Narrow ? 18 : 40) : 0);
+        static double ItemWidth(ShotSet s, Layout l) =>
+            Math.Max(CellBody(s, l.W).Width, s.Captions ? (l.Narrow ? l.W + 18 * l.Ts : Math.Max(l.W + 40 * l.Ts, l.Pill)) : 0);
 
         static Size GridSize(ShotSet s, Layout l, int n, double capH)
         {
             int rows = (n + l.Cols - 1) / l.Cols;
             var body = CellBody(s, l.W);
-            return new Size(l.Cols * ItemWidth(s, l) + (l.Cols - 1) * l.Gap, rows * (body.Height + capH) + (rows - 1) * Layout.RowGap);
+            return new Size(l.Cols * ItemWidth(s, l) + (l.Cols - 1) * l.Gap, rows * (body.Height + capH) + (rows - 1) * l.RowGap);
         }
+
+        /// <summary>Ширина мітки стану в повному вигляді</summary>
+        static double PillWidth(string text, double ts) => (12 + 20 + 7 + 14) * ts + Text(text, 17.8 * ts, FontWeights.Medium, Brushes.Black).WidthIncludingTrailingWhitespace;
 
         static readonly BitmapImage[] bands = new BitmapImage[2];
         static BitmapImage BandImage(bool dark)
@@ -213,31 +220,37 @@ namespace BandFace.Creator
             var bgc = BackgroundColors(p, s.Background);
             var pal = new Palette { Light = IsLight(bgc) };
             var fixedSize = Fixed(s.Format);
+            const double padX = 56, padY = 48;
 
+            // шапка; у вузьких форматах (9:16) усі тексти зменшуються, щоб рядок над назвою й назва вміщалися
             string above = s.Above ?? AutoAbove(p), title = s.Title ?? AutoTitle(p), below = s.Below ?? AutoBelow(p);
-            double titleSize = fixedSize == null ? 70 : s.Format == "wide" ? 48 : 53;
-            var aboveT = Text(above.ToUpperInvariant(), 18.4, FontWeights.SemiBold, pal.Sub);
-            var titleT = Text(title, titleSize, FontWeights.ExtraBold, pal.Fg);
+            double titleBase = fixedSize == null ? 70 : s.Format == "wide" ? 48 : 53;
+            Spaced(above.ToUpperInvariant(), 18.4, pal.Sub, 3.4, out double aw1, out _);
+            double need = Math.Max(above.Length == 0 ? 0 : aw1 + 2 * 58, title.Length == 0 ? 0 : Text(title, titleBase, FontWeights.ExtraBold, pal.Fg).WidthIncludingTrailingWhitespace);
+            double ts = fixedSize is Size f0 ? Math.Min(1, (f0.Width - 2 * padX) / Math.Max(1, need)) : 1;
+            var titleT = Text(title, titleBase * ts, FontWeights.ExtraBold, pal.Fg);
+            var spaced = Spaced(above.ToUpperInvariant(), 18.4 * ts, pal.Sub, 3.4 * ts, out double sw, out double sh);
             var chips = below.Split(new[] { " · " }, StringSplitOptions.RemoveEmptyEntries);
-            var chipT = chips.Select(c => Text(c, 19.5, FontWeights.Medium, pal.Sub)).ToList();
-            const double chipH = 36;
+            var chipT = chips.Select(c => Text(c, 19.5 * ts, FontWeights.Medium, pal.Sub)).ToList();
+            double chipH = 36 * ts;
             double header = 0;
-            if (above.Length > 0) header += aboveT.Height;
-            if (title.Length > 0) header += (header > 0 ? 14 : 0) + titleT.Height;
-            if (chips.Length > 0) header += (header > 0 ? 16 : 0) + chipH;
-            if (header > 0) header += 46;
-            var creditT = Text(S.Get("shotCredit"), 19.2, FontWeights.Medium, pal.SubSoft);
-            double footer = s.Credit ? 44 + creditT.Height : 0;
+            if (above.Length > 0) header += sh;
+            if (title.Length > 0) header += (header > 0 ? 14 * ts : 0) + titleT.Height;
+            if (chips.Length > 0) header += (header > 0 ? 16 * ts : 0) + chipH;
+            if (header > 0) header += 46 * ts;
+            var creditT = Text(S.Get("shotCredit"), 19.2 * ts, FontWeights.Medium, pal.SubSoft);
+            double footer = s.Credit ? 44 * ts + creditT.Height : 0;
 
             int n = list.Count;
-            double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) : 0;
-            const double padX = 56, padY = 48;
-            var lay = new Layout { Cols = AutoColumns(n), W = ScreenWidth(s.Size), N = n };
+            double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) * ts : 0;
+            double pill = list.Select(StateText).Where(t => t != null).Select(t => PillWidth(t, ts)).DefaultIfEmpty(0).Max();
+            Layout L(int cols, double w, bool narrow) => new Layout { Cols = cols, W = w, Narrow = narrow, N = n, Ts = ts, Pill = pill };
+            var lay = L(AutoColumns(n), ScreenWidth(s.Size), false);
             Size canvas;
             if (fixedSize is Size fx)
             {
                 var area = new Size(fx.Width - 2 * padX, fx.Height - 2 * padY - header - footer);
-                var best = new Layout { Cols = 1, W = 10, N = n };
+                var best = L(1, 10, false);
                 foreach (var narrow in new[] { false, true })
                 {
                     for (int c = 1; c <= n; c++)
@@ -246,39 +259,43 @@ namespace BandFace.Creator
                         for (int k = 0; k < 24; k++)
                         {
                             var m = (lo + hi) / 2;
-                            var g = GridSize(s, new Layout { Cols = c, W = m, Narrow = narrow, N = n }, n, capH);
+                            var g = GridSize(s, L(c, m, narrow), n, capH);
                             if (g.Width <= area.Width && g.Height <= area.Height) lo = m; else hi = m;
                         }
-                        if (lo > best.W) best = new Layout { Cols = c, W = lo, Narrow = narrow, N = n };
+                        if (lo > best.W) best = L(c, lo, narrow);
                     }
                     // вузький режим — лише коли звичайний дає зовсім дрібні екрани
-                    if (best.W >= 90) break;
+                    if (best.W >= 90 * ts) break;
                 }
-                best.W = Math.Min(Math.Floor(best.W * new[] { 1, 0.9, 0.78 }[Math.Max(0, Math.Min(2, s.Size))]), 260);
+                best.W = Math.Min(Math.Floor(best.W * new[] { 1, 0.9, 0.78 }[Math.Max(0, Math.Min(2, s.Size))]), 300);
                 lay = best;
                 canvas = fx;
             }
             else
             {
+                double minW = Math.Max(640, need + 2 * padX);
                 Size Fit(Layout l)
                 {
                     var g = GridSize(s, l, n, capH);
-                    return new Size(Math.Max(g.Width + 2 * padX, 640), g.Height + 2 * padY + header + footer);
+                    return new Size(Math.Max(g.Width + 2 * padX, minW), g.Height + 2 * padY + header + footer);
                 }
                 canvas = Fit(lay);
                 // не більше 1920 px по довшій стороні (960 pt): більші картинки месенджери однаково зменшують;
                 // замість зменшення всієї картинки — менші екрани, тексти лишаються того ж розміру
                 if (Math.Max(canvas.Width, canvas.Height) > MaxSide)
                 {
-                    double lo = 30, hi = lay.W;
-                    for (int k = 0; k < 24; k++)
+                    foreach (var narrow in new[] { false, true })
                     {
-                        var m = (lo + hi) / 2;
-                        var c = Fit(new Layout { Cols = lay.Cols, W = m, N = n });
-                        if (Math.Max(c.Width, c.Height) <= MaxSide) lo = m; else hi = m;
+                        double lo = 30, hi = ScreenWidth(s.Size);
+                        for (int k = 0; k < 24; k++)
+                        {
+                            var m = (lo + hi) / 2;
+                            var c = Fit(L(lay.Cols, m, narrow));
+                            if (Math.Max(c.Width, c.Height) <= MaxSide) lo = m; else hi = m;
+                        }
+                        lay = L(lay.Cols, Math.Floor(lo), narrow);
+                        if (lo >= 90) break;
                     }
-                    lay.W = Math.Floor(lo);
-                    lay.Narrow = lay.W < 90;
                     canvas = Fit(lay);
                 }
             }
@@ -313,31 +330,30 @@ namespace BandFace.Creator
                     if (above.Length > 0)
                     {
                         // розрідження літер: FormattedText його не вміє — рядок збирається з літер із проміжками
-                        var spaced = Spaced(above.ToUpperInvariant(), 18.4, pal.Sub, 3.4, out double sw, out double sh);
                         double x = (canvas.Width - sw) / 2;
                         foreach (var (t, dx) in spaced) dc.DrawText(t, new Point(x + dx, y));
                         double ly = y + sh / 2;
-                        dc.DrawRectangle(pal.Line, null, new Rect(x - 18 - 40, ly, 40, 1.5));
-                        dc.DrawRectangle(pal.Line, null, new Rect(x + sw + 18, ly, 40, 1.5));
+                        dc.DrawRectangle(pal.Line, null, new Rect(x - 58 * ts, ly, 40 * ts, 1.5));
+                        dc.DrawRectangle(pal.Line, null, new Rect(x + sw + 18 * ts, ly, 40 * ts, 1.5));
                         y += sh;
                     }
-                    if (title.Length > 0) { if (y > y0) y += 14; Center(titleT, y); y += titleT.Height; }
+                    if (title.Length > 0) { if (y > y0) y += 14 * ts; Center(titleT, y); y += titleT.Height; }
                     if (chips.Length > 0)
                     {
-                        if (y > y0) y += 16;
-                        var widths = chipT.Select(t => t.WidthIncludingTrailingWhitespace + 30).ToList();
-                        double x = (canvas.Width - (widths.Sum() + (chips.Length - 1) * 8)) / 2;
+                        if (y > y0) y += 16 * ts;
+                        var widths = chipT.Select(t => t.WidthIncludingTrailingWhitespace + 30 * ts).ToList();
+                        double x = (canvas.Width - (widths.Sum() + (chips.Length - 1) * 8 * ts)) / 2;
                         var pen = new Pen(pal.Line, 1); pen.Freeze();
                         for (int i = 0; i < chipT.Count; i++)
                         {
                             var r = new Rect(x + 0.5, y + 0.5, widths[i] - 1, chipH - 1);
                             dc.DrawRoundedRectangle(null, pen, r, chipH / 2, chipH / 2);
-                            dc.DrawText(chipT[i], new Point(x + 15, y + (chipH - chipT[i].Height) / 2));
-                            x += widths[i] + 8;
+                            dc.DrawText(chipT[i], new Point(x + 15 * ts, y + (chipH - chipT[i].Height) / 2));
+                            x += widths[i] + 8 * ts;
                         }
                         y += chipH;
                     }
-                    y += 46;
+                    y += 46 * ts;
                 }
 
                 int rows = (n + lay.Cols - 1) / lay.Cols;
@@ -348,19 +364,19 @@ namespace BandFace.Creator
                     int inRow = r == rows - 1 ? n - r * lay.Cols : lay.Cols;
                     double rowX = (canvas.Width - (inRow * iw + (inRow - 1) * lay.Gap)) / 2;
                     double cx = rowX + col * (iw + lay.Gap) + iw / 2;
-                    double top = y + r * (body.Height + capH + Layout.RowGap);
+                    double top = y + r * (body.Height + capH + lay.RowGap);
                     DrawScreen(dc, p, s, it, renderer, bandImg, pal.Light, new Rect(cx - body.Width / 2, top, body.Width, body.Height));
-                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, cx, iw, top + body.Height + 22);
+                    if (s.Captions) DrawCaption(dc, p, it, pal, lay.Narrow, ts, cx, iw, top + body.Height + 22 * ts);
                 }
                 if (s.Credit)
                 {
-                    double cy = y + grid.Height + 44;
-                    double tw = creditT.WidthIncludingTrailingWhitespace, x0 = (canvas.Width - (20 + 8 + tw)) / 2;
-                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - 20) / 2));
-                    dc.PushTransform(new ScaleTransform(20 / 26.0, 20 / 26.0));
+                    double cy = y + grid.Height + 44 * ts, icon = 20 * ts;
+                    double tw = creditT.WidthIncludingTrailingWhitespace, x0 = (canvas.Width - (icon + 8 * ts + tw)) / 2;
+                    dc.PushTransform(new TranslateTransform(x0, cy + (creditT.Height - icon) / 2));
+                    dc.PushTransform(new ScaleTransform(icon / 26.0, icon / 26.0));
                     dc.DrawGeometry(pal.SubSoft, null, (Geometry)Application.Current.Resources["BandGeometry"]);
                     dc.Pop(); dc.Pop();
-                    dc.DrawText(creditT, new Point(x0 + 28, cy));
+                    dc.DrawText(creditT, new Point(x0 + icon + 8 * ts, cy));
                 }
             }
             var rtb = new RenderTargetBitmap((int)Math.Round(canvas.Width * 2), (int)Math.Round(canvas.Height * 2), 192, 192, PixelFormats.Pbgra32);
@@ -386,9 +402,9 @@ namespace BandFace.Creator
         }
 
         /// <summary>Підпис під екраном: назва і мітка стану (кольорова капсула зі значком; у вузькому режимі — лише значок)</summary>
-        static void DrawCaption(DrawingContext dc, FaceProject p, Item it, Palette pal, bool narrow, double cx, double width, double top)
+        static void DrawCaption(DrawingContext dc, FaceProject p, Item it, Palette pal, bool narrow, double ts, double cx, double width, double top)
         {
-            var nameT = Text(Name(p, it.Screen), narrow ? 16 : 23, FontWeights.SemiBold, pal.Fg);
+            var nameT = Text(Name(p, it.Screen), (narrow ? 16 : 23) * ts, FontWeights.SemiBold, pal.Fg);
             nameT.MaxTextWidth = width; nameT.MaxLineCount = 1; nameT.Trimming = TextTrimming.CharacterEllipsis;
             nameT.TextAlignment = TextAlignment.Center;
             dc.DrawText(nameT, new Point(cx - width / 2, top));
@@ -396,14 +412,14 @@ namespace BandFace.Creator
             if (st == null) return;
             var col = Imaging.ParseColor(pal.State(it));
             var colB = new SolidColorBrush(col); colB.Freeze();
-            double pillY = top + nameT.Height + 9, pillH = 32, iconW = 20;
-            var textT = Text(st, 17.8, FontWeights.Medium, colB);
-            double w = narrow ? 38 : 12 + iconW + 7 + textT.WidthIncludingTrailingWhitespace + 14;
+            double pillY = top + nameT.Height + 9 * ts, pillH = 32 * ts, iconW = 20 * ts;
+            var textT = Text(st, 17.8 * ts, FontWeights.Medium, colB);
+            double w = narrow ? 38 * ts : PillWidth(st, ts);
             var bg = new SolidColorBrush(Color.FromArgb((byte)(255 * (pal.Light ? 0.12 : 0.15)), col.R, col.G, col.B)); bg.Freeze();
             dc.DrawRoundedRectangle(bg, null, new Rect(cx - w / 2, pillY, w, pillH), pillH / 2, pillH / 2);
-            var ir = new Rect(narrow ? cx - iconW / 2 : cx - w / 2 + 12, pillY + (pillH - iconW) / 2, iconW, iconW);
+            var ir = new Rect(narrow ? cx - iconW / 2 : cx - w / 2 + 12 * ts, pillY + (pillH - iconW) / 2, iconW, iconW);
             StateIcon(dc, it.State, ir, colB, null);
-            if (!narrow) dc.DrawText(textT, new Point(ir.Right + 7, pillY + (pillH - textT.Height) / 2));
+            if (!narrow) dc.DrawText(textT, new Point(ir.Right + 7 * ts, pillY + (pillH - textT.Height) / 2));
         }
 
         /// <summary>Значок стану в квадраті r: Bluetooth від'єднано, батарея, місяць (AOD); поле 18×18</summary>
