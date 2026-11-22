@@ -65,7 +65,12 @@ namespace BandFace.Creator
             it.State == 1 ? S.Get("shotBtOff") : it.State == 2 ? S.Get("shotLowBattery") : it.Screen.Aod ? S.Get("screenAod") : null;
 
         public static string AutoTitle(FaceProject p) => p.DisplayName;
-        public static string AutoAbove(FaceProject p) => S.Get("shotFor", p.Meta.Device.Title);
+        /// <summary>«Циферблат для Xiaomi Smart Band 10 • 11»: Band 10 і 11 мають той самий екран — циферблат підходить обом</summary>
+        public static string AutoAbove(FaceProject p)
+        {
+            var d = p.Meta.Device;
+            return S.Get("shotFor", d.Width == 212 && d.Height == 520 ? "Xiaomi Smart Band 10 • 11" : d.Title);
+        }
 
         public static string AutoBelow(FaceProject p)
         {
