@@ -190,8 +190,10 @@ namespace BandFace.Creator
             var t = new ToggleButton
             {
                 Width = 30, Height = 30, Margin = new Thickness(2, 0, 2, 0), IsChecked = on, ToolTip = tip,
-                Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : enabled ? Brushes.Red : fg) },
-                Style = (Style)Application.Current.Resources["Chip"],
+                // IconChip: без внутрішніх полів — значок 18 px по центру кнопки 30 px (у «Chip» поля 8 px обрізали його)
+                Content = new Image { Width = 18, Height = 18, Source = ShotComposer.StateImage(state, 18, fg, on ? Brushes.White : enabled ? Brushes.Red : fg),
+                                      HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+                Style = (Style)Application.Current.Resources["IconChip"],
                 // недоступна не через IsEnabled — стиль тоді блідне цілком; просто не реагує на мишу
                 IsHitTestVisible = enabled, Focusable = enabled,
             };
