@@ -54,7 +54,12 @@ enum ShotComposer {
     }
 
     static func autoTitle(_ p: FaceProject) -> String { p.displayName }
-    static func autoAbove(_ p: FaceProject) -> String { String(format: loc("Циферблат для Xiaomi %@"), p.meta.device.title) }
+    /// «Циферблат для Xiaomi Smart Band 10 • 11»: Band 10 і 11 мають той самий екран — циферблат підходить обом
+    static func autoAbove(_ p: FaceProject) -> String {
+        let d = p.meta.device
+        let name = d.width == 212 && d.height == 520 ? "Smart Band 10 • 11" : d.title
+        return String(format: loc("Циферблат для Xiaomi %@"), name)
+    }
     /// «2 стилі · 3 кольори»; один стиль без кольорів — порожньо
     static func autoBelow(_ p: FaceProject) -> String {
         let n = p.styleThemes.count, c = ColorVariants.isEnabled(p) ? ColorVariants.colors(p).count : 0
