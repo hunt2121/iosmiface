@@ -372,7 +372,8 @@ namespace BandFace.Creator
             }
             panel.Children.Add(row);
             var custom = s.Background.StartsWith("#") ? s.Background : "#3A6EA5";
-            panel.Children.Add(Ui.Row(S.Get("shotBg_custom"), Ui.ColorRow(S.Get("shotBg_custom"), custom, h => { s.Background = h; Changed(); }), 140));
+            // ColorRow — уже рядок із підписом (повторний Row давав обрізаний другий підпис «…»)
+            panel.Children.Add(Ui.ColorRow(S.Get("shotBg_custom"), custom, h => { s.Background = h; Changed(); }));
         }
 
         void TextBlockSection()
