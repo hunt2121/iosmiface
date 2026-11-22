@@ -140,21 +140,18 @@ private struct ShotSetContent: View {
         VStack(spacing: 0) {
             Menu { cardMenu(sc) } label: { capsule(thumb(sc.wrappedValue)) }
                 .accessibilityLabel(Text(ShotComposer.name(project, sc.wrappedValue)))
-            TextField(ShotComposer.defaultName(project, sc.wrappedValue), text: sc.name)
+            TextField(ShotComposer.defaultName(project, sc.wrappedValue) + (sc.wrappedValue.aod ? " · AOD" : ""), text: sc.name)
                 .font(.footnote.weight(.medium)).lineLimit(1).multilineTextAlignment(.center)
                 .focused($focus, equals: .name(sc.wrappedValue.id))
                 .submitLabel(.done)
                 .padding(.top, 8)
                 // назва за замовчуванням — сірою підказкою; така сама вписана — те саме, що порожня
                 .onSubmit { if sc.wrappedValue.name == ShotComposer.defaultName(project, sc.wrappedValue) { sc.wrappedValue.name = "" } }
-            HStack(spacing: 5) {
-                if !colors.isEmpty { Circle().fill(ProjectColorDots.color(colors[min(sc.wrappedValue.color, colors.count - 1)])).frame(width: 12, height: 12) }
-                if sc.wrappedValue.aod {
-                    Text(verbatim: "AOD").font(.system(size: 9, weight: .bold)).padding(.horizontal, 4).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(Color(.systemGray4)))
-                }
+            // під назвою — лише кружечок кольору (якщо кольори є); AOD видно в назві й по мініатюрі
+            if !colors.isEmpty {
+                Circle().fill(ProjectColorDots.color(colors[min(sc.wrappedValue.color, colors.count - 1)])).frame(width: 12, height: 12)
+                    .padding(.top, 4)
             }
-            .frame(height: 14).padding(.top, 4)
             if hasBluetooth || hasBattery {
                 HStack(spacing: 6) {
                     if hasBluetooth { chip(1, on: sc.bluetooth, label: "Bluetooth від'єднано") }
