@@ -53,12 +53,11 @@ namespace BandFace.Creator
             DockPanel.SetDock(sizeText, Dock.Bottom);
             sizeText.SetResourceReference(TextBlock.ForegroundProperty, "Sub");
             left.Children.Add(sizeText);
-            // без підкладки: картинка сама по собі по центру, з легкою тінню; клік — на весь екран
-            preview.HorizontalAlignment = HorizontalAlignment.Center; preview.VerticalAlignment = VerticalAlignment.Center;
-            preview.Cursor = System.Windows.Input.Cursors.Hand; preview.ToolTip = S.Get("shotZoom");
-            preview.Effect = new System.Windows.Media.Effects.DropShadowEffect { ShadowDepth = 6, BlurRadius = 24, Opacity = 0.45, Color = Colors.Black, Direction = 270 };
-            preview.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
-            left.Children.Add(preview);
+            // підкладка — на всю ліву частину (з відступами вікна), картинка в ній по центру; клік — на весь екран
+            var frame = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12), Child = preview, Cursor = System.Windows.Input.Cursors.Hand, ToolTip = S.Get("shotZoom") };
+            frame.MouseLeftButtonUp += (o, e) => { if (image != null) ShowZoom(); };
+            frame.SetResourceReference(Border.BackgroundProperty, "Card");
+            left.Children.Add(frame);
             root.Children.Add(left);
 
             scroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
