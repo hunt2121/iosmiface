@@ -288,7 +288,7 @@ namespace BandFace.Creator
             double capH = s.Captions ? (list.Any(i => StateText(i) != null) ? 94 : 52) * ts : 0;
             double pill = list.Select(StateText).Where(t => t != null).Select(t => PillWidth(t, ts)).DefaultIfEmpty(0).Max();
             Layout L(int cols, double w, bool narrow) => new Layout { Cols = cols, W = w, Narrow = narrow, N = n, Ts = ts, Pill = pill };
-            var lay = L(AutoColumns(n), ScreenWidth(s.Size), false);
+            var lay = L(AutoColumns(n), ScreenWidth(0), false);
             Size canvas;
             if (fixedSize is Size fx)
             {
@@ -331,7 +331,7 @@ namespace BandFace.Creator
                 {
                     foreach (var narrow in new[] { false, true })
                     {
-                        double lo = 30, hi = ScreenWidth(s.Size);
+                        double lo = 30, hi = ScreenWidth(0);
                         for (int k = 0; k < 24; k++)
                         {
                             var m = (lo + hi) / 2;
