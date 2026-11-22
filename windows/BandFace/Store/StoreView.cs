@@ -368,15 +368,15 @@ namespace BandFace.Store
         }
 
         /// <summary>Рядок у плашці «Розмір · Версія · Пристрої»: «↓ 1.2k завантажень   👁 3.4k переглядів» —
-        /// числа коротко, як на картці, слово завжди «завантажень» / «переглядів»; проміжок — за правилом картки</summary>
+        /// числа коротко, як на картці, слово узгоджене з числом («1 перегляд», «42 перегляди», «1.2k переглядів»); проміжок — за правилом картки</summary>
         FrameworkElement StatsLine(StoreEntry e)
         {
             var st = StatsOf(e);
             string d = Short(st.Item2), vw = Short(st.Item1);
             return new StatsRow
             {
-                Downloads = S.Get("storeDl5", d),
-                Views = S.Get("storeView5", vw),
+                Downloads = PluralShort(st.Item2, d, "storeDl1", "storeDl2", "storeDl5"),
+                Views = PluralShort(st.Item1, vw, "storeView1", "storeView2", "storeView5"),
                 GapDownloads = d, GapViews = vw,
                 Spread = true, MinGap = 27, MaxGap = 44,
                 TextSize = 13,
@@ -909,6 +909,14 @@ namespace BandFace.Store
             int a = n % 10, b = n % 100;
             var key = a == 1 && b != 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many;
             return S.Get(key, n);
+        }
+
+        /// <summary>Коротке число (text) зі словом, узгодженим з повним n; від тисячі (1.2k) — завжди «переглядів»</summary>
+        static string PluralShort(long n, string text, string one, string few, string many)
+        {
+            long a = n % 10, b = n % 100;
+            var key = n >= 1000 ? many : a == 1 && b != 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many;
+            return S.Get(key, text);
         }
 
         Style StyleOf(string key) => (Style)FindResource(key);
