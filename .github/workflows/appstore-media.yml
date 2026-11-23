@@ -1,0 +1,24 @@
+name: App Store media
+
+# Чернетка сторінки App Store: номер версії як у збірці, найновіша збірка (іконка), скріншоти з appstore/screenshots.
+# Лише ручний запуск; на перевірку нічого не подає.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  media:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyjwt cryptography requests
+      - name: Update App Store draft
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUNDLE_ID: com.bandface.app
+        run: python3 .github/scripts/appstore_media.py
