@@ -1,0 +1,26 @@
+name: TestFlight setup
+
+# Одноразове налаштування TestFlight через App Store Connect API (ті самі секрети, що й у TestFlight):
+# внутрішня група «BandFace» з доступом до всіх збірок + усі користувачі команди App Store Connect у ній.
+# Адреси користувачів у журнал не виводяться (репозиторій публічний).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyjwt cryptography requests
+      - name: Configure TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUNDLE_ID: com.bandface.app
+          GROUP_NAME: BandFace
+        run: python3 .github/scripts/testflight_setup.py
