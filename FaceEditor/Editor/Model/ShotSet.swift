@@ -95,7 +95,7 @@ struct ShotSet: Codable, Equatable {
     func effective(_ p: FaceProject) -> ShotSet {
         var s = self
         for i in s.screens.indices {
-            let t = ShotComposer.theme(p, s.screens[i])
+            let t = p.shotTheme(s.screens[i])
             if s.screens[i].bluetooth && !p.usesSource("bluetooth", theme: t) { s.screens[i].bluetooth = false }
             if s.screens[i].battery && !p.usesSource("battery", theme: t) { s.screens[i].battery = false }
         }
@@ -104,6 +104,14 @@ struct ShotSet: Codable, Equatable {
 }
 
 extension FaceProject {
+    /// Тема екрана набору: стиль або його AOD (якщо AOD немає — сам стиль)
+    func shotTheme(_ sc: ShotScreen) -> Int {
+        let styles = styleThemes
+        let t = styles.indices.contains(sc.style) ? styles[sc.style] : (styles.first ?? 0)
+        if sc.aod, let a = aodTheme(forStyle: t) { return a }
+        return t
+    }
+
     /// Слоти теми (місця, де віджет вибирають на браслеті) у порядку шарів
     func slots(_ theme: Int) -> [XNode] {
         layouts(theme).compactMap { resource(ref: $0.string("ref")) }.filter { $0.tag == "Slot" }

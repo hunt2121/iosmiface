@@ -24,12 +24,7 @@ enum ShotComposer {
     // MARK: Тексти
 
     /// Тема екрана: стиль або його AOD (якщо AOD немає — сам стиль)
-    static func theme(_ p: FaceProject, _ sc: ShotScreen) -> Int {
-        let styles = p.styleThemes
-        let t = styles.indices.contains(sc.style) ? styles[sc.style] : (styles.first ?? 0)
-        if sc.aod, let a = p.aodTheme(forStyle: t) { return a }
-        return t
-    }
+    static func theme(_ p: FaceProject, _ sc: ShotScreen) -> Int { p.shotTheme(sc) }
 
     static func colorName(_ i: Int) -> String { i == 0 ? loc("Основний колір") : String(format: loc("Колір %d"), i) }
 
