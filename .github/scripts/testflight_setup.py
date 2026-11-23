@@ -23,6 +23,16 @@ def call(method, path, **kw):
     return r.json() if r.content else {}
 
 
+if os.environ.get("REGISTER_ONLY"):
+    bid = os.environ["BUNDLE_ID"]
+    if call("GET", f"/bundleIds?filter[identifier]={bid}")["data"]:
+        print(f"Bundle ID {bid} уже зареєстровано")
+    else:
+        call("POST", "/bundleIds", json={"data": {"type": "bundleIds",
+             "attributes": {"identifier": bid, "name": bid.replace(".", " "), "platform": "IOS"}}})
+        print(f"Зареєстровано Bundle ID {bid}")
+    sys.exit(0)
+
 app = call("GET", f"/apps?filter[bundleId]={os.environ['BUNDLE_ID']}")["data"]
 if not app:
     sys.exit("Застосунок з цим Bundle ID не знайдено в App Store Connect")
