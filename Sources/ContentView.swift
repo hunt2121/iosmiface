@@ -667,10 +667,7 @@ struct ContentView: View {
                 }
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
-                // не стискається по висоті, коли під карткою стилі й кольори (інакше кнопки й шрифти дрібнішали до 75 %)
-                .fixedSize(horizontal: false, vertical: true)
             }
-            .fixedSize(horizontal: false, vertical: true)
             if let looks = fileLooks {
                 looksRow(looks)
             }
@@ -1105,9 +1102,10 @@ struct ContentView: View {
 private extension Text {
     /// Текст кнопки в блоці встановлення: один рядок, компактний шрифт, на всю ширину.
     func buttonText() -> some View {
+        // без minimumScaleFactor: у картці зі стилями й кольорами SwiftUI зменшував написи (і кнопки) без потреби;
+        // написи короткі й уміщаються повністю
         self.font(.subheadline.weight(.semibold))
             .lineLimit(1)
-            .minimumScaleFactor(0.75)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
     }
