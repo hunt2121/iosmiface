@@ -1,0 +1,100 @@
+name: TestFlight
+
+# Підписана збірка й вивантаження в App Store Connect (TestFlight). Лише ручний запуск.
+# Потрібні секрети репозиторію (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID  — Team ID з developer.apple.com (Membership)
+#   ASC_KEY_ID     — Key ID ключа App Store Connect API (Users and Access → Integrations, роль Admin)
+#   ASC_ISSUER_ID  — Issuer ID там само
+#   ASC_KEY_P8     — вміст файла AuthKey_XXXX.p8 цілком
+# Сертифікат і профіль Xcode створює й оновлює сам через цей ключ (автоматичне підписування).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: macos-15
+    env:
+      # номер збірки: більший за попередні вивантаження (окремий лічильник від непідписаних збірок)
+      BUILD_NUM: ${{ github.run_number }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!v}" ]; then echo "::error::Не задано секрет для $v"; exit 1; fi
+          done
+
+      - name: Select Xcode
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
+          echo "KEY_PATH=$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
+
+      - name: Archive
+        run: |
+          xcodebuild \
+            -project BandFace.xcodeproj \
+            -scheme BandFace \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/BandFace.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$BUILD_NUM" \
+            archive
+
+      - name: Upload to App Store Connect
+        run: |
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath build/BandFace.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Remove key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

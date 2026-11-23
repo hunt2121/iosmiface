@@ -1,6 +1,6 @@
 name: BandFace
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.bandface
   developmentLanguage: uk
   deploymentTarget:
     iOS: "16.0"
@@ -36,6 +36,8 @@ targets:
         # «Зберегти зображення» для знімка циферблата
         NSPhotoLibraryAddUsageDescription: "Щоб зберегти знімок циферблата у Фото."
         UILaunchScreen: {}
+        # Лише звільнене шифрування (HTTPS, стандартний AES для зв'язку з браслетом) — App Store не питає щоразу
+        ITSAppUsesNonExemptEncryption: false
         # Анімації на 120 Гц на iPhone з ProMotion (без цього — не більше 60 к/с)
         CADisableMinimumFrameDurationOnPhone: true
         UISupportedInterfaceOrientations:
@@ -56,7 +58,7 @@ targets:
         LSSupportsOpeningDocumentsInPlace: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface
+        PRODUCT_BUNDLE_IDENTIFIER: com.bandface.app
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         CURRENT_PROJECT_VERSION: "1"
@@ -85,7 +87,7 @@ targets:
       - target: BandFace
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.bandface.app.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: BandFace
 
@@ -117,7 +119,7 @@ targets:
           - UIInterfaceOrientationPortrait
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.faceeditor
+        PRODUCT_BUNDLE_IDENTIFIER: com.bandface.faceeditor
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         CURRENT_PROJECT_VERSION: "1"
@@ -136,7 +138,7 @@ targets:
       - target: BandFace
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.bandface.editortests
+        PRODUCT_BUNDLE_IDENTIFIER: com.bandface.app.editortests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/BandFace.app/BandFace"
         BUNDLE_LOADER: "$(TEST_HOST)"
