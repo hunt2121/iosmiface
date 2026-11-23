@@ -39,8 +39,16 @@ short = next(x["attributes"]["version"] for x in build.get("included", []) if x[
 if ver["attributes"]["versionString"] != short:
     call("PATCH", f"/appStoreVersions/{ver['id']}", json={"data": {"type": "appStoreVersions", "id": ver["id"], "attributes": {"versionString": short}}})
     print(f"Версію App Store перейменовано на {short}")
-call("PATCH", f"/appStoreVersions/{ver['id']}/relationships/build", json={"data": {"type": "builds", "id": b["id"]}})
-print(f"Збірку {b['attributes']['version']} прив'язано до версії {short} (іконка — з неї)")
+# прив'язка збірки: сервер Apple іноді відповідає 500 — кілька спроб, і без неї скріншоти все одно вивантажуються
+for attempt in range(3):
+    r = requests.patch(f"{API}/appStoreVersions/{ver['id']}/relationships/build", headers=H, timeout=120,
+                       json={"data": {"type": "builds", "id": b["id"]}})
+    if r.status_code < 400:
+        print(f"Збірку {b['attributes']['version']} прив'язано до версії {short} (іконка — з неї)")
+        break
+    time.sleep(20)
+else:
+    print(f"::warning::Збірку не прив'язано (Apple відповідає {r.status_code}) — можна вибрати вручну в розділі Build")
 
 # скріншоти для кожної мови з теки
 locs = {l["attributes"]["locale"]: l["id"] for l in call("GET", f"/appStoreVersions/{ver['id']}/appStoreVersionLocalizations")["data"]}
