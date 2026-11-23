@@ -629,6 +629,8 @@ struct ContentView: View {
 
     private var installSection: some View {
         Section("Встановлення циферблата") {
+            // стилі й кольори файла — в тому самому рядку під капсулою, без роздільника, як на сторінці циферблата в магазині
+            VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 18) {
                 // вибрано не основний стиль чи колір — його превʼю (без анімації)
                 FaceCapsule(image: lookImage ?? filePreview, animation: lookImage == nil ? fileAnimation : nil)
@@ -665,26 +667,23 @@ struct ContentView: View {
                 }
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
+                // не стискається по висоті, коли під карткою стилі й кольори (інакше кнопки й шрифти дрібнішали до 75 %)
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 8)
-            // роздільник під цим рядком — на всю ширину вмісту картки (від капсули), а не від тексту
-            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
-            // стилі й кольори — окремим рядком тієї самої картки, без роздільника
-            // (в одному рядку з капсулою кнопки й шрифти праворуч дрібнішали)
-            .listRowSeparator(fileLooks == nil ? .automatic : .hidden, edges: .bottom)
+            .fixedSize(horizontal: false, vertical: true)
             if let looks = fileLooks {
                 looksRow(looks)
             }
+            }
+            .padding(.top, 8)
+            // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули
+            .padding(.bottom, fileLooks == nil ? 8 : 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         }
     }
 
     /// Перемикач стилів, кружечки кольорів і підпис — як на сторінці циферблата в магазині
     private func looksRow(_ looks: FacePreviews.Looks) -> some View {
         LookPicker(styles: looks.styles.map { $0.name }, colors: looks.colors, style: $lookStyle, color: $lookColor)
-        // як на сторінці циферблата в магазині: без роздільника, від капсули до стилів — системний відступ рядка;
-        // знизу від букв підпису до краю картки — стільки ж, скільки від верху картки до капсули (системний відступ + 8)
-        .padding(.top, -8)
-        .padding(.bottom, 8 + UIFont.preferredFont(forTextStyle: .caption1).descender)
         .onChange(of: lookStyle) { _ in renderLook() }
         .onChange(of: lookColor) { _ in renderLook() }
     }
