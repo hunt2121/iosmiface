@@ -10,13 +10,19 @@ name: TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "Машина для збірки"
+        type: choice
+        options: [macos-15, macos-26, macos-15-intel]
+        default: macos-15
 
 permissions:
   contents: read
 
 jobs:
   upload:
-    runs-on: macos-15
+    runs-on: ${{ inputs.runner || 'macos-15' }}
     env:
       # номер збірки: більший за попередні вивантаження (окремий лічильник від непідписаних збірок)
       BUILD_NUM: ${{ github.run_number }}
