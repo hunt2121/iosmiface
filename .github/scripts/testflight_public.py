@@ -13,6 +13,15 @@ DESCRIPTION = (
     "an editor to create your own, and installation on the band over Bluetooth.")
 WHAT_TO_TEST = (
     "Store, watch-face previews, the editor (styles, colors, widgets), screenshots and installing faces on the band.")
+# українською — для української мови в TestFlight
+DESCRIPTION_UK = (
+    "BandFace — циферблати для Xiaomi Smart Band 10 і 11: магазин готових циферблатів, "
+    "редактор для створення власних і встановлення на браслет через Bluetooth.")
+WHAT_TO_TEST_UK = (
+    "Магазин, перегляд циферблатів, редактор (стилі, кольори, віджети), знімки й встановлення циферблатів на браслет.")
+LOCALES = ["en-US", "uk"]   # англійська — основна, українська — окремо
+TEXT = {"uk": (DESCRIPTION_UK, WHAT_TO_TEST_UK)}
+
 REVIEW_NOTES = """BandFace installs watch faces on Xiaomi Smart Band 10/11 over Bluetooth Low Energy.
 
 Without a band you can test:
@@ -55,8 +64,8 @@ print("Застосунок знайдено")
 
 # 1. Інформація для тестування (основна мова й англійська)
 locs = {l["attributes"]["locale"]: l["id"] for l in call("GET", f"/apps/{app_id}/betaAppLocalizations")["data"]}
-attrs = {"description": DESCRIPTION, "feedbackEmail": contact["email"], "privacyPolicyUrl": PRIVACY}
-for loc in dict.fromkeys([primary, "en-US"]):
+for loc in dict.fromkeys([primary] + LOCALES):
+    attrs = {"description": TEXT.get(loc, (DESCRIPTION,))[0], "feedbackEmail": contact["email"], "privacyPolicyUrl": PRIVACY}
     if loc in locs:
         call("PATCH", f"/betaAppLocalizations/{locs[loc]}", json={"data": {"type": "betaAppLocalizations", "id": locs[loc], "attributes": attrs}})
     else:
@@ -96,10 +105,15 @@ build = builds[0]
 bid, num = build["id"], build["attributes"].get("version")
 print(f"Збірка {num} готова")
 
-# що тестувати — для кожної мови інформації
-for loc in dict.fromkeys([primary, "en-US"]):
-    call("POST", "/betaBuildLocalizations", ok=(409,), json={"data": {"type": "betaBuildLocalizations",
-         "attributes": {"locale": loc, "whatsNew": WHAT_TO_TEST}, "relationships": {"build": {"data": {"type": "builds", "id": bid}}}}})
+# що тестувати — для кожної мови інформації (наявні — оновлюються)
+have = {l["attributes"]["locale"]: l["id"] for l in call("GET", f"/builds/{bid}/betaBuildLocalizations")["data"]}
+for loc in dict.fromkeys([primary] + LOCALES):
+    text = TEXT.get(loc, (None, WHAT_TO_TEST))[1]
+    if loc in have:
+        call("PATCH", f"/betaBuildLocalizations/{have[loc]}", json={"data": {"type": "betaBuildLocalizations", "id": have[loc], "attributes": {"whatsNew": text}}})
+    else:
+        call("POST", "/betaBuildLocalizations", ok=(409,), json={"data": {"type": "betaBuildLocalizations",
+             "attributes": {"locale": loc, "whatsNew": text}, "relationships": {"build": {"data": {"type": "builds", "id": bid}}}}})
 
 call("POST", f"/betaGroups/{gid}/relationships/builds", json={"data": [{"type": "builds", "id": bid}]})
 print(f"Збірку {num} додано в групу «{GROUP}»")
