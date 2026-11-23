@@ -19,8 +19,14 @@ DESCRIPTION_UK = (
     "редактор для створення власних і встановлення на браслет через Bluetooth.")
 WHAT_TO_TEST_UK = (
     "Магазин, перегляд циферблатів, редактор (стилі, кольори, віджети), знімки й встановлення циферблатів на браслет.")
-LOCALES = ["en-US", "uk"]   # англійська — основна, українська — окремо
-TEXT = {"uk": (DESCRIPTION_UK, WHAT_TO_TEST_UK)}
+# російською — для російської мови
+DESCRIPTION_RU = (
+    "BandFace — циферблаты для Xiaomi Smart Band 10 и 11: магазин готовых циферблатов, "
+    "редактор для создания своих и установка на браслет по Bluetooth.")
+WHAT_TO_TEST_RU = (
+    "Магазин, просмотр циферблатов, редактор (стили, цвета, виджеты), снимки и установка циферблатов на браслет.")
+LOCALES = ["en-US", "uk", "ru"]   # англійська — основна, українська й російська — окремо
+TEXT = {"uk": (DESCRIPTION_UK, WHAT_TO_TEST_UK), "ru": (DESCRIPTION_RU, WHAT_TO_TEST_RU)}
 
 REVIEW_NOTES = """BandFace installs watch faces on Xiaomi Smart Band 10/11 over Bluetooth Low Energy.
 
