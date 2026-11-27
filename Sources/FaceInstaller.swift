@@ -105,6 +105,31 @@ final class FaceInstaller {
         }
     }
 
+    func rpkList(authKey: [UInt8]) async throws -> [RpkInfo] {
+        try await run(authKey: authKey) { options, session, key in
+            var installer = RpkInstaller()
+            installer.phoneInfo = options.phoneInfo; installer.commandsAfterAuth = options.commandsAfterAuth
+            return try await installer.list(authKey: key, session: session)
+        }
+    }
+
+    func installRpk(_ file: RpkFile, authKey: [UInt8],
+                    progress: (@Sendable (Int, Int) -> Void)? = nil) async throws -> [RpkInfo] {
+        try await run(authKey: authKey) { options, session, key in
+            var installer = RpkInstaller()
+            installer.phoneInfo = options.phoneInfo; installer.commandsAfterAuth = options.commandsAfterAuth
+            return try await installer.install(file, authKey: key, session: session, progress: progress)
+        }
+    }
+
+    func deleteRpk(_ app: RpkInfo, authKey: [UInt8]) async throws -> [RpkInfo] {
+        try await run(authKey: authKey) { options, session, key in
+            var installer = RpkInstaller()
+            installer.phoneInfo = options.phoneInfo; installer.commandsAfterAuth = options.commandsAfterAuth
+            return try await installer.delete(app, authKey: key, session: session)
+        }
+    }
+
     /// Перша команда Mi Fitness після автентифікації (2/92: 4.59.1 = 2)
     private static let commandAfterAuth: [UInt8] = [0x08, 0x02, 0x10, 0x5C, 0x22, 0x05, 0xDA, 0x03, 0x02, 0x08, 0x02]
 

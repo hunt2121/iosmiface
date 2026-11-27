@@ -272,6 +272,15 @@ public actor BandSession {
         return try await request(body, timeout: timeout) { $0.type == type && $0.subtype == subtype }
     }
 
+    /// Some commands (RPK deletion) have no response. Verify their result by
+    /// querying device state; completion here only means transport write finished.
+    public func sendCommandWithoutReply(_ body: [UInt8]) async throws {
+        guard state == .authenticated, let keys else { throw BandError.notAuthenticated }
+        let header = try Command(body: body)
+        log("→ cmd \(header.name) (no reply expected)")
+        try await writeData(DataPacket(channel: .protobuf, opcode: .encrypted, body: keys.encryptCommand(body)))
+    }
+
     private func sendRegistered(id: UUID, body: [UInt8], encrypted: Bool, timeout: Duration, redactLog: Bool) async {
         guard waiters[id] != nil else { return }
         let header = (try? Command(body: body))?.name ?? "?"
