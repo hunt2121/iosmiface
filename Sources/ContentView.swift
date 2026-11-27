@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import BandFaceKit
 
 struct ContentView: View {
-    enum Tab: Hashable { case faces, store, editor, settings }
+    enum Tab: Hashable { case faces, store, editor, apps, settings }
     enum SettingsRoute: Hashable { case key, log }
 
     @EnvironmentObject var ble: BLEManager
@@ -47,6 +47,7 @@ struct ContentView: View {
     @State private var progress: Double = 0
     @State private var progressText = ""
     @State private var busy = false
+    @State private var selectedRpk: RpkFile?
     @State private var message: String?
     @State private var messageIsError = false
     @State private var filePreview: UIImage?
@@ -131,6 +132,10 @@ struct ContentView: View {
             ProjectsView(store: editorStore, editing: $editorProject, title: "Редактор")
                 .tabItem { Label("Редактор", image: "TabEditor") }
                 .tag(Tab.editor)
+
+            RpkAppsView(authKey: authKey, busy: $busy, syncing: syncing, selectedFile: $selectedRpk)
+                .tabItem { Label("Приложения", systemImage: "square.grid.2x2") }
+                .tag(Tab.apps)
 
             settingsTab
                 .tabItem { Label("Ще", image: "TabSettings") }
@@ -983,6 +988,14 @@ struct ContentView: View {
             if scoped { url.stopAccessingSecurityScopedResource() }
             // копія в Documents/Inbox більше не потрібна
             if url.path.contains("/Inbox/") { try? FileManager.default.removeItem(at: url) }
+        }
+        if url.pathExtension.lowercased() == "rpk" {
+            guard !busy, !syncing else { storeAlert = "Дождитесь завершения текущей операции"; return }
+            do {
+                selectedRpk = try RpkAppsView.readFile(url)
+                tab = .apps
+            } catch { storeAlert = error.localizedDescription }
+            return
         }
         guard let data = try? Data(contentsOf: url), let parsed = try? FaceFile(data: data) else {
             storeAlert = String(localized: "Це не файл циферблата Xiaomi")

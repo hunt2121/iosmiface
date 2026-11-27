@@ -47,12 +47,20 @@ targets:
           - CFBundleTypeName: Xiaomi watch face
             LSHandlerRank: Owner
             LSItemContentTypes: [app.bandface.watchface]
+          - CFBundleTypeName: Xiaomi RPK application
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [app.bandface.rpk]
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: app.bandface.watchface
             UTTypeDescription: Xiaomi watch face
             UTTypeConformsTo: [public.data]
             UTTypeTagSpecification:
               public.filename-extension: [bin, face]
+          - UTTypeIdentifier: app.bandface.rpk
+            UTTypeDescription: Xiaomi RPK application
+            UTTypeConformsTo: [public.data, public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [rpk]
         # проєкти редактора (Documents/FaceProjects) видно й можна змінювати в застосунку «Файли»
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true

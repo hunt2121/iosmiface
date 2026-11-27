@@ -7,10 +7,10 @@
 public enum FileTransfer {
     public static let streamHeader: [UInt8] = [0x00, 0x10]
 
-    public static func stream(file: [UInt8], md5: [UInt8], resumePosition: Int = 0) -> [UInt8] {
+    public static func stream(file: [UInt8], md5: [UInt8], resumePosition: Int = 0, type: UInt8 = 0x10) -> [UInt8] {
         precondition(md5.count == 16)
         let start = min(max(resumePosition, 0), file.count)
-        var out = streamHeader
+        var out: [UInt8] = [0x00, type]
         out.reserveCapacity(2 + 16 + 4 + (file.count - start) + 4)
         out.append(contentsOf: md5)
         out.appendLE32(UInt32(file.count))
@@ -43,7 +43,7 @@ public enum FileTransfer {
         return parts
     }
 
-    public static func parts(file: [UInt8], md5: [UInt8], resumePosition: Int, chunkSize: Int) -> [[UInt8]] {
-        parts(stream: stream(file: file, md5: md5, resumePosition: resumePosition), chunkSize: chunkSize)
+    public static func parts(file: [UInt8], md5: [UInt8], resumePosition: Int, chunkSize: Int, type: UInt8 = 0x10) -> [[UInt8]] {
+        parts(stream: stream(file: file, md5: md5, resumePosition: resumePosition, type: type), chunkSize: chunkSize)
     }
 }
