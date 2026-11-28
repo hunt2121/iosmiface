@@ -232,7 +232,7 @@ struct StoreView: View, Equatable {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 4)
+                .padding(.top, 5)
                 .padding(.bottom, 16)
             }
             .refreshable { await onRefresh(); await loadStats() }
