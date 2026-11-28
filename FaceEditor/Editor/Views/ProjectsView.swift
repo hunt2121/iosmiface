@@ -31,20 +31,27 @@ struct ProjectsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                if store.projects.isEmpty {
-                    emptyState
-                } else {
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(store.projects) { p in
-                            card(p)
+            // системний список: верхній відступ над першим блоком дає сама система
+            List {
+                Section {
+                    Group {
+                        if store.projects.isEmpty {
+                            emptyState
+                        } else {
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(store.projects) { p in
+                                    card(p)
+                                }
+                            }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 16)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
             .refreshable { await install?.refresh() }
             .navigationTitle(title)
