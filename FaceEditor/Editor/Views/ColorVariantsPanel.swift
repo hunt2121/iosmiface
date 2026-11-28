@@ -44,7 +44,20 @@ struct ColorVariantsPanel: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(Text("Показати на полотні"))
-                        ColorRow(title: i == 0 ? "Основний колір" : String(format: loc("Колір %d"), i), hex: c) { h in setColor(i, h) }
+                        if i == 0 {
+                            // основний колір — лише для перегляду: це вигляд «як намальовано», змінювати його немає чого
+                            HStack(spacing: 10) {
+                                Text("Основний колір").font(.subheadline).lineLimit(2)
+                                Spacer(minLength: 6)
+                                RoundedRectangle(cornerRadius: 8).fill(Color(AssetFactory.color(c)))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.25), lineWidth: 1))
+                                Text(verbatim: c).font(.system(.subheadline, design: .monospaced)).foregroundStyle(.secondary)
+                                    .frame(width: 96, alignment: .leading).padding(.horizontal, 8).frame(height: 34)
+                            }
+                        } else {
+                            ColorRow(title: String(format: loc("Колір %d"), i), hex: c) { h in setColor(i, h) }
+                        }
                         if i > 0 {
                             Button(role: .destructive) {
                                 var list = colors

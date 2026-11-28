@@ -52,24 +52,34 @@ enum ColorVariants {
         write(p, [normalize(base), normalize(first)])
     }
 
-    /// Нові кольори: таблиці оновлюються, варіанти всіх увімкнених елементів малюються заново
-    /// (варіанти прибраних кольорів видаляються). Перший колір — основний вигляд.
+    /// Нові кольори: таблиці оновлюються. Чіпаємо лише те, що справді змінилося: варіанти кольорів, що лишились,
+    /// не перемальовуються (готові варіанти чужих циферблатів і раніше намальовані лишаються як є);
+    /// варіанти прибраних кольорів видаляються, для нових і змінених — малюються. Перший колір — основний вигляд,
+    /// його зміна варіантів не зачіпає.
     static func setColors(_ p: FaceProject, _ list: [String]) {
         let old = colors(p)
         let new = Array(list.map(normalize).filter { !$0.isEmpty }.prefix(maxColors))
-        let enabled = targetsWithVariants(p, colors: old)
-        // картинки, які редактор може намалювати заново, — малюються; готові варіанти з чужих циферблатів
-        // лишаються для кольорів, що лишились у списку
-        let redraw = enabled.filter { canRedraw(p, $0) }
-        for t in redraw { removeVariants(p, of: t) }
-        for t in enabled where !redraw.contains(where: { $0 === t }) {
-            for v in variants(p, of: t) where !new.dropFirst().contains(normalize(v.string("colorGroup") ?? "")) {
-                drop(p, v)
+        guard new != old else { return }
+        // варіанти беремо до запису таблиці: «основним» ще вважається старий перший колір
+        let existing = targetsWithVariants(p, colors: old).map { ($0, variants(p, of: $0)) }
+        guard new.count > 1 else { write(p, new); return }
+        // ресурси, що позначені як основний колір, переходять на новий основний
+        if let o = old.first, let n = new.first, o != n {
+            for r in p.resources.elements where (r.tag == "Image" || r.tag == "ImageArray") && normalize(r.string("colorGroup") ?? "") == o {
+                r.set("colorGroup", n)
             }
         }
         write(p, new)
-        guard new.count > 1 else { return }
-        for t in redraw { rebuild(p, target: t) }
+        let keep = Set(new.dropFirst())
+        for (t, vs) in existing {
+            var have = Set<String>()
+            for v in vs {
+                let c = normalize(v.string("colorGroup") ?? "")
+                if keep.contains(c) { have.insert(c) } else { drop(p, v) }
+            }
+            let missing = keep.subtracting(have)
+            if !missing.isEmpty, canRedraw(p, t) { rebuild(p, target: t, colorsOnly: missing) }
+        }
         // елементи з галочкою, у яких варіантів ще не було (кольори щойно з'явилися)
         for n in p.meta.colorFollow {
             guard let el = p.resource(named: n), availability(p, element: el).isAvailable else { continue }
@@ -241,8 +251,9 @@ enum ColorVariants {
     }
 
     /// Малює варіанти картинки для всіх кольорів, крім основного (старі прибираються)
-    private static func rebuild(_ p: FaceProject, target base: XNode, element: XNode? = nil) {
-        removeVariants(p, of: base)
+    /// `colorsOnly` — намалювати лише ці кольори, решту варіантів не чіпати
+    private static func rebuild(_ p: FaceProject, target base: XNode, element: XNode? = nil, colorsOnly: Set<String>? = nil) {
+        if colorsOnly == nil { removeVariants(p, of: base) }
         let cols = colors(p)
         guard cols.count > 1, let name = base.string("name") else { return }
         let el = element ?? owner(p, of: base)
@@ -250,8 +261,10 @@ enum ColorVariants {
         let src = frames(p, base)
         guard !src.isEmpty else { return }
         // нові вузли — одразу після основного й попередніх варіантів
-        var insertAt = (p.resources.kids.firstIndex { $0 === base } ?? p.resources.kids.count - 1) + 1
+        var insertAt = (([base] + variants(p, of: base)).compactMap { n in p.resources.kids.firstIndex { $0 === n } }.max()
+                        ?? p.resources.kids.count - 1) + 1
         for (i, c) in cols.enumerated() where i > 0 {
+            if let only = colorsOnly, !only.contains(c) { continue }
             var images: [RGBAImage] = []
             if let gen, gen.kind != .image, gen.kind != .frames {
                 var g = gen; g.color = c
