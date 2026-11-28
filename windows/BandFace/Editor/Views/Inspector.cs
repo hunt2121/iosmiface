@@ -238,13 +238,16 @@ namespace BandFace.Creator
                 var row = new Grid();
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                row.Children.Add(Ui.ColorRow(i == 0 ? S.Get("baseColor") : S.Get("colorN", i), cols[i], h =>
+                var colorRow = Ui.ColorRow(i == 0 ? S.Get("baseColor") : S.Get("colorN", i), cols[i], h =>
                 {
                     var list = ColorVariants.Colors(project);
                     if (idx >= list.Count || list.Contains(ColorVariants.Normalize(h))) return;
                     list[idx] = h;
                     project.Edit(p => ColorVariants.SetColors(p, list));
-                }));
+                });
+                // основний колір — лише для перегляду: це вигляд «як намальовано», змінювати його немає чого
+                if (i == 0) colorRow.IsEnabled = false;
+                row.Children.Add(colorRow);
                 if (i > 0)
                 {
                     var del = Ui.Icon("", S.Get("deleteColor"), () =>

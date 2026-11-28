@@ -47,18 +47,27 @@ namespace BandFace.Creator
         {
             var old = Colors(p);
             var nw = list.Select(Normalize).Where(s => s.Length > 0).Take(MaxColors).ToList();
-            var enabled = TargetsWithVariants(p);
-            var redraw = enabled.Where(t => CanRedraw(p, t)).ToList();
-            foreach (var t in redraw) RemoveVariants(p, t);
-            foreach (var t in enabled)
-            {
-                if (redraw.Contains(t)) continue;
-                foreach (var v in Variants(p, t))
-                    if (!nw.Skip(1).Contains(Normalize(v.Str("colorGroup")))) Drop(p, v);
-            }
+            if (nw.SequenceEqual(old)) return;
+            // варіанти беремо до запису таблиці; чіпаємо лише змінені й нові кольори, решта лишається як є
+            var existing = TargetsWithVariants(p).Select(t => (t, Variants(p, t))).ToList();
+            if (nw.Count < 2) { Write(p, nw); return; }
+            // ресурси, позначені як основний колір, переходять на новий основний
+            if (old.Count > 0 && old[0] != nw[0])
+                foreach (var r in p.Resources.Elements)
+                    if ((r.Tag == "Image" || r.Tag == "ImageArray") && Normalize(r.Str("colorGroup")) == old[0]) r.Set("colorGroup", nw[0]);
             Write(p, nw);
-            if (nw.Count < 2) return;
-            foreach (var t in redraw) Rebuild(p, t, null);
+            var keep = new HashSet<string>(nw.Skip(1));
+            foreach (var (t, vs) in existing)
+            {
+                var have = new HashSet<string>();
+                foreach (var v in vs)
+                {
+                    var c = Normalize(v.Str("colorGroup"));
+                    if (keep.Contains(c)) have.Add(c); else Drop(p, v);
+                }
+                var missing = new HashSet<string>(keep.Where(c => !have.Contains(c)));
+                if (missing.Count > 0 && CanRedraw(p, t)) Rebuild(p, t, null, missing);
+            }
             // елементи з галочкою, у яких варіантів ще не було (кольори щойно з'явилися)
             foreach (var n in p.Meta.ColorFollow.ToList())
             {
@@ -239,9 +248,10 @@ namespace BandFace.Creator
         }
 
         /// <summary>Малює варіанти картинки для всіх кольорів, крім основного (старі прибираються)</summary>
-        static void Rebuild(FaceProject p, XNode b, XNode element)
+        // colorsOnly — намалювати лише ці кольори, решту варіантів не чіпати
+        static void Rebuild(FaceProject p, XNode b, XNode element, HashSet<string> colorsOnly = null)
         {
-            RemoveVariants(p, b);
+            if (colorsOnly == null) RemoveVariants(p, b);
             var cols = Colors(p);
             var name = b.Str("name");
             if (cols.Count < 2 || name == null) return;
@@ -251,10 +261,12 @@ namespace BandFace.Creator
             if (src.Count == 0) return;
             var kids = p.Resources.Kids;
             int insertAt = kids.IndexOf(b);
+            foreach (var v in Variants(p, b)) insertAt = Math.Max(insertAt, kids.IndexOf(v));
             insertAt = (insertAt < 0 ? kids.Count - 1 : insertAt) + 1;
             for (int i = 1; i < cols.Count; i++)
             {
                 var c = cols[i];
+                if (colorsOnly != null && !colorsOnly.Contains(c)) continue;
                 List<RgbaImage> images;
                 if (gen != null && gen.Drawn)
                 {
