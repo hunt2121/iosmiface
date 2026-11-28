@@ -188,10 +188,6 @@ struct StoreView: View, Equatable {
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
-    /// Потягування вниз: наскільки витягнуто, чи йде оновлення, і положення верху вмісту в спокої
-    @State private var pull: CGFloat = 0
-    @State private var refreshing = false
-    @State private var restY: CGFloat?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -217,13 +213,6 @@ struct StoreView: View, Equatable {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                // положення верху вмісту — для свого індикатора оновлення
-                GeometryReader { g in
-                    Color.clear.preference(key: StorePullKey.self, value: g.frame(in: .named("storeScroll")).minY)
-                }
-                .frame(height: 0)
-                // поки йде оновлення — картки чекають під індикатором
-                Color.clear.frame(height: refreshing ? 52 : 0)
                 let items = shown
                 Group {
                     if items.isEmpty {
@@ -246,25 +235,7 @@ struct StoreView: View, Equatable {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            // свій індикатор оновлення замість системного: системний із заголовком у рядку кнопок часом опинявся під картками
-            .coordinateSpace(name: "storeScroll")
-            // пружина вгорі — завжди (без неї короткий список не піддається, і індикатор не з'являється)
-            .alwaysBounce()
-            .onPreferenceChange(StorePullKey.self) { y in
-                if restY == nil { restY = y }
-                pull = y - (restY ?? y)
-                if pull > 90 && !refreshing { startRefresh() }
-            }
-            .overlay(alignment: .top) {
-                if refreshing || pull > 6 {
-                    ProgressView()
-                        .controlSize(.regular)
-                        .opacity(refreshing ? 1 : min(1, Double(pull) / 70))
-                        .rotationEffect(.degrees(refreshing ? 0 : Double(pull) * 3))
-                        .padding(.top, (restY ?? 0) + (refreshing ? 14 : max(4, pull / 2 - 10)))
-                        .allowsHitTesting(false)
-                }
-            }
+            .refreshable { await onRefresh(); await loadStats() }
             .task { await loadStats() }
             .background(Color(.systemGroupedBackground))
             // Без фільтра — «Магазин», з фільтром — його назва («Платні», «Безкоштовні», «Цифровий»…)
@@ -312,16 +283,6 @@ struct StoreView: View, Equatable {
             .alert(menuError ?? "", isPresented: Binding(get: { menuError != nil }, set: { if !$0 { menuError = nil } })) {
                 Button("OK", role: .cancel) {}
             }
-        }
-    }
-
-    private func startRefresh() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        withAnimation(.easeOut(duration: 0.2)) { refreshing = true }
-        Task {
-            await onRefresh()
-            await loadStats()
-            withAnimation(.easeInOut(duration: 0.25)) { refreshing = false }
         }
     }
 
@@ -1087,12 +1048,6 @@ private enum MenuThumb {
     }
 }
 
-/// Положення верху вмісту магазину в прокрутці (для потягування вниз)
-private struct StorePullKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 /// Великий заголовок у рядку кнопок (як у TestFlight): по центру висоти рядка, при прокрутці згортається.
 /// iOS 16 — звичайний великий заголовок
 struct InlineLargeTitle: ViewModifier {
@@ -1103,11 +1058,4 @@ struct InlineLargeTitle: ViewModifier {
 
 extension View {
     func inlineLargeTitle() -> some View { modifier(InlineLargeTitle()) }
-}
-
-extension View {
-    /// Список піддається потягуванню вниз і тоді, коли вміст коротший за екран (iOS 16.4+)
-    @ViewBuilder func alwaysBounce() -> some View {
-        if #available(iOS 16.4, *) { scrollBounceBehavior(.always, axes: .vertical) } else { self }
-    }
 }
