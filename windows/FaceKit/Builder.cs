@@ -176,7 +176,8 @@ namespace BandFace.Faces
             }
             var wid = w.Raw("id");
             if (wid == null) throw new FaceCompilerException("Watchface should have id parameter!");
-            if (wid.Length != 9 && wid.Length != 12) throw new FaceCompilerException("Watchface id must be 9 or 12 digits long!");
+            // у циферблатах інших авторів ID буває різної довжини; у заголовку під нього є 0x40 байтів
+            if (wid.Length == 0 || wid.Length > 63) throw new FaceCompilerException("Watchface id must be 1 to 63 digits long!");
             if (!wid.All(c => c >= 0x30 && c <= 0x39)) throw new FaceCompilerException("Watchface id must use digits only!");
             for (int i = 0; i < wid.Length; i++) header[0x28 + i] = wid[i];
             var name = w.Raw("name") ?? new byte[0];
