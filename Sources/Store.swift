@@ -538,7 +538,7 @@ struct StoreDetailView: View {
                     deleteRow
                 }
             }
-            .padding(16)
+            .padding(EdgeInsets(top: 5, leading: 16, bottom: 16, trailing: 16))
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(item.name)
