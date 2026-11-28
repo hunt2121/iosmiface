@@ -41,7 +41,7 @@ struct ProjectsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 5)
+                    .padding(.top, 4)
                     .padding(.bottom, 16)
                 }
             }
