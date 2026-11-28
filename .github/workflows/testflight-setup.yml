@@ -13,6 +13,10 @@ on:
       group:
         description: "Назва внутрішньої групи"
         default: BandFace
+      invite:
+        description: "Надіслати листи-запрошення TestFlight тестерам групи"
+        type: boolean
+        default: false
       register:
         description: "Лише зареєструвати Bundle ID (до створення застосунку в App Store Connect)"
         type: boolean
@@ -35,4 +39,5 @@ jobs:
           BUNDLE_ID: ${{ inputs.bundle_id || 'com.bandface.app' }}
           GROUP_NAME: ${{ inputs.group || 'BandFace' }}
           REGISTER_ONLY: ${{ inputs.register && '1' || '' }}
+          SEND_INVITES: ${{ inputs.invite && '1' || '' }}
         run: python3 .github/scripts/testflight_setup.py

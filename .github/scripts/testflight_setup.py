@@ -66,3 +66,18 @@ for u in users:
         "relationships": {"betaGroups": {"data": [{"type": "betaGroups", "id": gid}]}}}})
     added += 1
 print(f"Користувачів команди: {len(users)}; додано в групу: {added}; уже були: {len(existing)}")
+
+# листи-запрошення TestFlight всім тестерам групи (на пошту акаунта); адреси не друкуються
+if os.environ.get("SEND_INVITES"):
+    sent = 0
+    for t in call("GET", f"/betaGroups/{gid}/betaTesters?limit=200")["data"]:
+        r = requests.post(API + "/betaTesterInvitations", headers=H, timeout=60, json={"data": {
+            "type": "betaTesterInvitations",
+            "relationships": {"betaTester": {"data": {"type": "betaTesters", "id": t["id"]}},
+                              "app": {"data": {"type": "apps", "id": app_id}}}}})
+        if r.status_code < 300:
+            sent += 1
+        else:
+            errs = [e.get("detail") or e.get("title") for e in r.json().get("errors", [])] if r.content else []
+            print(f"Запрошення не надіслано ({r.status_code}): {'; '.join(map(str, errs))}")
+    print(f"Надіслано запрошень: {sent}")
