@@ -15,11 +15,32 @@ final class ProjectStore: ObservableObject {
         return d
     }()
 
-    init() { reload() }
+    /// `deferLoad` — застосунок BandFace: список читається у фоні, щоб запуск не чекав диска (раніше — чорний екран, поки читалися файли всіх циферблатів)
+    init(deferLoad: Bool = false) {
+        if deferLoad { reloadInBackground() } else { reload() }
+    }
 
     func reload() {
+        projects = Self.loadAll(base)
+    }
+
+    private nonisolated static func loadAll(_ base: URL) -> [FaceProject] {
         let dirs = (try? FileManager.default.contentsOfDirectory(at: base, includingPropertiesForKeys: nil)) ?? []
-        projects = dirs.compactMap { FaceProject.load(folder: $0) }.sorted { $0.meta.modified > $1.meta.modified }
+        return dirs.compactMap { FaceProject.load(folder: $0) }.sorted { $0.meta.modified > $1.meta.modified }
+    }
+
+    private struct Loaded: @unchecked Sendable { let list: [FaceProject] }
+
+    /// Те саме, що reload(), але читання файлів — поза головним потоком
+    func reloadInBackground() {
+        let base = base
+        Task {
+            let loaded = await Task.detached(priority: .userInitiated) { Loaded(list: Self.loadAll(base)) }.value
+            // що додали, поки йшло читання (новий чи імпортований циферблат), не губимо
+            let ids = Set(loaded.list.map(\.id))
+            let added = projects.filter { !ids.contains($0.id) }
+            projects = (added + loaded.list).sorted { $0.meta.modified > $1.meta.modified }
+        }
     }
 
     private func newFolder() -> URL { base.appendingPathComponent(UUID().uuidString) }

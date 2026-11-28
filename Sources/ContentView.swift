@@ -59,7 +59,7 @@ struct ContentView: View {
     /// Превʼю вибраного стилю й кольору; nil — основний вигляд (картинка й анімація файла)
     @State private var lookImage: UIImage?
     // Редактор циферблатів
-    @StateObject private var editorStore = ProjectStore()
+    @StateObject private var editorStore = ProjectStore(deferLoad: true)
     /// Циферблат, відкритий у редакторі
     @State private var editorProject: FaceProject?
     /// Файл циферблата, відкритий у BandFace з «Файлів», AirDrop чи «Поділитися»

@@ -80,7 +80,7 @@ struct ProjectsView: View {
             }
         }
         .fullScreenCover(item: $editing, onDismiss: {
-            store.reload()
+            store.reloadInBackground()
         }) { p in
             EditorView(project: p)
                 .environment(\.faceInstall, install)
