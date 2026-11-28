@@ -41,8 +41,7 @@ struct ProjectsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 16)
+                        .padding(.bottom, 16)
                 }
             }
             .background(Color(.systemGroupedBackground))
