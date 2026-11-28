@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   public:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # збірки з позначкою [internal] у коміті (експерименти) в публічну групу й на перевірку Apple не йдуть
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_commit.message, '[internal]'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
