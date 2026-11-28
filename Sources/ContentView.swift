@@ -233,6 +233,7 @@ struct ContentView: View {
                 installSection
             }
             .navigationTitle("Головна")
+            .inlineLargeTitle()
         }
     }
 
@@ -290,6 +291,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Налаштування")
+            .inlineLargeTitle()
             .navigationDestination(for: SettingsRoute.self) { route in
                 switch route {
                 case .key:

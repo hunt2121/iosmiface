@@ -188,6 +188,10 @@ struct StoreView: View, Equatable {
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
+    /// Потягування вниз: наскільки витягнуто, чи йде оновлення, і положення верху вмісту в спокої
+    @State private var pull: CGFloat = 0
+    @State private var refreshing = false
+    @State private var restY: CGFloat?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -213,6 +217,13 @@ struct StoreView: View, Equatable {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
+                // положення верху вмісту — для свого індикатора оновлення
+                GeometryReader { g in
+                    Color.clear.preference(key: StorePullKey.self, value: g.frame(in: .named("storeScroll")).minY)
+                }
+                .frame(height: 0)
+                // поки йде оновлення — картки чекають під індикатором
+                Color.clear.frame(height: refreshing ? 52 : 0)
                 let items = shown
                 Group {
                     if items.isEmpty {
@@ -235,13 +246,29 @@ struct StoreView: View, Equatable {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .refreshable { await onRefresh(); await loadStats() }
+            // свій індикатор оновлення замість системного: системний із заголовком у рядку кнопок часом опинявся під картками
+            .coordinateSpace(name: "storeScroll")
+            .onPreferenceChange(StorePullKey.self) { y in
+                if restY == nil { restY = y }
+                pull = y - (restY ?? y)
+                if pull > 90 && !refreshing { startRefresh() }
+            }
+            .overlay(alignment: .top) {
+                if refreshing || pull > 6 {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .opacity(refreshing ? 1 : min(1, Double(pull) / 70))
+                        .rotationEffect(.degrees(refreshing ? 0 : Double(pull) * 3))
+                        .padding(.top, (restY ?? 0) + (refreshing ? 14 : max(4, pull / 2 - 10)))
+                        .allowsHitTesting(false)
+                }
+            }
             .task { await loadStats() }
             .background(Color(.systemGroupedBackground))
             // Без фільтра — «Магазин», з фільтром — його назва («Платні», «Безкоштовні», «Цифровий»…)
             .navigationTitle(filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
-            .navigationBarTitleDisplayMode(.large)
+            .inlineLargeTitle()
             // Під заголовком — поточне сортування («Спочатку нові», «Більше переглядів»…), з iOS 26
             .modifier(NavigationSubtitle(text: (StoreSort(rawValue: sortKey) ?? .date).direction(reversed: StoreSort(rawValue: sortKey) == nil ? false : sortReversed)))
             .navigationDestination(for: String.self) { id in
@@ -283,6 +310,16 @@ struct StoreView: View, Equatable {
             .alert(menuError ?? "", isPresented: Binding(get: { menuError != nil }, set: { if !$0 { menuError = nil } })) {
                 Button("OK", role: .cancel) {}
             }
+        }
+    }
+
+    private func startRefresh() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        withAnimation(.easeOut(duration: 0.2)) { refreshing = true }
+        Task {
+            await onRefresh()
+            await loadStats()
+            withAnimation(.easeInOut(duration: 0.25)) { refreshing = false }
         }
     }
 
@@ -872,7 +909,9 @@ private struct StoreToolbar: ViewModifier {
 
     func body(content: Content) -> some View {
         content.toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+            // фільтр — праворуч поруч із меню «Встановлено»: ліворуч великий заголовок (у рядку кнопок),
+            // а кнопка зліва ховалась у меню «…»
+            ToolbarItem(placement: .navigationBarTrailing) {
                 FilterSortMenuButton(filters: filters, filter: $filter,
                                      sortKey: $sortKey, sortReversed: $sortReversed)
                     .frame(width: 32, height: 32)
@@ -1044,4 +1083,22 @@ private enum MenuThumb {
         cache[key] = image
         return image
     }
+}
+
+/// Положення верху вмісту магазину в прокрутці (для потягування вниз)
+private struct StorePullKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
+/// Великий заголовок у рядку кнопок (як у TestFlight): по центру висоти рядка, при прокрутці згортається.
+/// iOS 16 — звичайний великий заголовок
+struct InlineLargeTitle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) { content.toolbarTitleDisplayMode(.inlineLarge) } else { content }
+    }
+}
+
+extension View {
+    func inlineLargeTitle() -> some View { modifier(InlineLargeTitle()) }
 }
