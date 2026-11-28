@@ -48,6 +48,7 @@ struct ProjectsView: View {
             .background(Color(.systemGroupedBackground))
             .refreshable { await install?.refresh() }
             .navigationTitle(title)
+            .inlineLargeTitle()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
