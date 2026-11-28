@@ -248,6 +248,8 @@ struct StoreView: View, Equatable {
             }
             // свій індикатор оновлення замість системного: системний із заголовком у рядку кнопок часом опинявся під картками
             .coordinateSpace(name: "storeScroll")
+            // пружина вгорі — завжди (без неї короткий список не піддається, і індикатор не з'являється)
+            .alwaysBounce()
             .onPreferenceChange(StorePullKey.self) { y in
                 if restY == nil { restY = y }
                 pull = y - (restY ?? y)
@@ -1101,4 +1103,11 @@ struct InlineLargeTitle: ViewModifier {
 
 extension View {
     func inlineLargeTitle() -> some View { modifier(InlineLargeTitle()) }
+}
+
+extension View {
+    /// Список піддається потягуванню вниз і тоді, коли вміст коротший за екран (iOS 16.4+)
+    @ViewBuilder func alwaysBounce() -> some View {
+        if #available(iOS 16.4, *) { scrollBounceBehavior(.always, axes: .vertical) } else { self }
+    }
 }
