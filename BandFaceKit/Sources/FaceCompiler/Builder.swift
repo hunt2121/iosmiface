@@ -136,7 +136,8 @@ public final class FaceBuilder {
             ti.tables[5] += lists[5] ?? []
         }
         guard let wid = w.raw("id") else { throw FaceCompilerError("Watchface should have id parameter!") }
-        if wid.count != 9 && wid.count != 12 { throw FaceCompilerError("Watchface id must be 9 or 12 digits long!") }
+        // у циферблатах інших авторів ID буває різної довжини; у заголовку під нього є 0x40 байтів
+        if wid.isEmpty || wid.count > 63 { throw FaceCompilerError("Watchface id must be 1 to 63 digits long!") }
         if !wid.allSatisfy({ $0 >= 0x30 && $0 <= 0x39 }) { throw FaceCompilerError("Watchface id must use digits only!") }
         for (i, c) in wid.enumerated() { header[0x28 + i] = c }
         let name = w.raw("name") ?? []
