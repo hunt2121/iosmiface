@@ -218,6 +218,8 @@ struct ProjectsView: View {
             if sizes[k] == nil, let n = await Task.detached(priority: .utility, operation: { (try? p.compile())?.0.count }).value {
                 sizes[k] = n
             }
+            // 50–100 циферблатів не тримаємо в пам'яті цілком: файли знову прочитаються з диска, коли знадобляться
+            if editing?.id != p.id { p.unloadFiles() }
         }
         .contextMenu {
             if install != nil {

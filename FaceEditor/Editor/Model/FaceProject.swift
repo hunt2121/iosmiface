@@ -247,7 +247,14 @@ final class FaceProject: ObservableObject, Identifiable {
     /// Дерево manifest.xml
     @Published private(set) var root: XNode
     /// Усі файли проєкту, крім manifest.xml і editor.json (шлях -> вміст)
-    @Published private(set) var files: [String: Data]
+    /// Читаються з диска при першому зверненні (список циферблатів показує лише маніфест — запуск не залежить від кількості циферблатів)
+    private(set) var files: [String: Data] {
+        get { ensureFiles(); return storedFiles }
+        set { filesLock.lock(); filesPending = false; storedFiles = newValue; filesLock.unlock() }
+    }
+    private var storedFiles: [String: Data]
+    private var filesPending = false
+    private let filesLock = NSRecursiveLock()
     @Published var meta: ProjectMeta
     /// Лічильник змін — перерисовує полотно
     @Published private(set) var revision = 0
@@ -266,7 +273,31 @@ final class FaceProject: ObservableObject, Identifiable {
     private var fullSave = true
 
     init(id: String, folder: URL, root: XNode, files: [String: Data], meta: ProjectMeta) {
-        self.id = id; self.folder = folder; self.root = root; self.files = files; self.meta = meta
+        self.id = id; self.folder = folder; self.root = root; self.storedFiles = files; self.meta = meta
+    }
+
+    /// Проєкт з диска: файли ще не прочитано (див. `files`)
+    private init(lazyFolder folder: URL, root: XNode, meta: ProjectMeta) {
+        self.id = folder.lastPathComponent; self.folder = folder; self.root = root; self.storedFiles = [:]; self.meta = meta
+        filesPending = true
+        markSaved()
+    }
+
+    private func ensureFiles() {
+        filesLock.lock(); defer { filesLock.unlock() }
+        guard filesPending else { return }
+        storedFiles = Self.readFiles(folder)
+        filesPending = false
+        AodDim.markFromOrder(self)   // шари вище за приглушення (з .bin або старих проєктів) лишаються над ним
+    }
+
+    /// Звільняє пам'ять: файли знову читатимуться з диска за потреби. Лише якщо на диску все збережено.
+    func unloadFiles() {
+        filesLock.lock(); defer { filesLock.unlock() }
+        guard !filesPending, !fullSave, dirty.isEmpty, removed.isEmpty, undoStack.isEmpty, redoStack.isEmpty else { return }
+        storedFiles = [:]
+        filesPending = true
+        images.removeAll()
     }
 
     // MARK: Доступ до маніфесту
@@ -353,11 +384,13 @@ final class FaceProject: ObservableObject, Identifiable {
 
     func setFile(_ path: String, _ data: Data) {
         let k = MemoryStorage.normalizedPath(path)
-        files[k] = data; images.remove(k); dirty.insert(k); removed.remove(k)
+        ensureFiles(); objectWillChange.send()
+        storedFiles[k] = data; images.remove(k); dirty.insert(k); removed.remove(k)
     }
     func removeFile(_ path: String) {
         let k = MemoryStorage.normalizedPath(path)
-        files[k] = nil; images.remove(k); dirty.remove(k); removed.insert(k)
+        ensureFiles(); objectWillChange.send()
+        storedFiles[k] = nil; images.remove(k); dirty.remove(k); removed.insert(k)
     }
 
     // MARK: Збереження
@@ -375,7 +408,8 @@ final class FaceProject: ObservableObject, Identifiable {
         // лише змінені файли; повністю — після відкату й при першому збереженні
         if fullSave { try? fm.removeItem(at: filesDir) }
         for p in removed { try? fm.removeItem(at: filesDir.appendingPathComponent(p)) }
-        for (p, d) in files where fullSave || dirty.contains(p) {
+        // не прочитані файли (проєкт лише в списку) нічого записувати: нічого не змінювалося
+        for (p, d) in (filesPending ? [:] : storedFiles) where fullSave || dirty.contains(p) {
             let u = filesDir.appendingPathComponent(p)
             try? fm.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? d.write(to: u)
@@ -437,25 +471,8 @@ final class FaceProject: ObservableObject, Identifiable {
     static func load(folder: URL) -> FaceProject? {
         guard let xml = try? Data(contentsOf: folder.appendingPathComponent("manifest.xml")),
               let root = try? XML.parse([UInt8](xml)) else { return nil }
-        let meta = readMeta(folder)
-        var files: [String: Data] = [:]
-        let filesDir = folder.appendingPathComponent("files")
-        // Відносні шляхи беремо прямо з перелічувача: на iOS /var і /private/var — той самий каталог,
-        // тож відрізання префікса від абсолютного шляху ненадійне (раніше всі картинки губилися).
-        let fm = FileManager.default
-        if let en = fm.enumerator(atPath: filesDir.path) {
-            for case let rel as String in en {
-                var isDir: ObjCBool = false
-                let full = filesDir.appendingPathComponent(rel)
-                guard fm.fileExists(atPath: full.path, isDirectory: &isDir), !isDir.boolValue,
-                      let d = try? Data(contentsOf: full) else { continue }
-                files[MemoryStorage.normalizedPath(rel)] = d
-            }
-        }
-        let project = FaceProject(id: folder.lastPathComponent, folder: folder, root: root, files: files, meta: meta)
-        AodDim.markFromOrder(project)   // шари вище за приглушення (з .bin або старих проєктів) лишаються над ним
-        project.markSaved()
-        return project
+        // лише маніфест і налаштування: картинки читаються, коли проєкт справді потрібен
+        return FaceProject(lazyFolder: folder, root: root, meta: readMeta(folder))
     }
 
     /// Розпаковує .bin у дерево маніфесту й файли (без запису на диск).
