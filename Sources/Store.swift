@@ -188,6 +188,8 @@ struct StoreView: View, Equatable {
     /// Циферблат, який просять видалити з меню (підтвердження), і помилка дії з меню
     @State private var menuDelete: BandFace?
     @State private var menuError: String?
+    /// Йде оновлення: заголовок стає «Оновлення…»
+    @State private var refreshing = false
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -235,11 +237,18 @@ struct StoreView: View, Equatable {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .refreshable { await onRefresh(); await loadStats() }
+            .refreshable {
+                refreshing = true
+                await onRefresh()
+                await loadStats()
+                refreshing = false
+            }
             .task { await loadStats() }
             .background(Color(.systemGroupedBackground))
             // Без фільтра — «Магазин», з фільтром — його назва («Платні», «Безкоштовні», «Цифровий»…)
-            .navigationTitle(filter == "all" ? String(localized: "Магазин")
+            // на час оновлення замість назви — «Оновлення…»
+            .navigationTitle(refreshing ? String(localized: "Оновлення…")
+                             : filter == "all" ? String(localized: "Магазин")
                              : filterOptions.first { $0.0 == filter }?.1 ?? String(localized: "Магазин"))
             .inlineLargeTitle()
             // Під заголовком — поточне сортування («Спочатку нові», «Більше переглядів»…), з iOS 26

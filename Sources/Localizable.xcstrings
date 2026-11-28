@@ -9086,6 +9086,29 @@
         }
       }
     },
+    "Оновлення…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення…"
+          }
+        }
+      }
+    },
     "Оновити": {
       "extractionState": "manual",
       "localizations": {
