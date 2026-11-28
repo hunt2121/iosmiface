@@ -225,10 +225,9 @@ struct StoreView: View, Equatable {
                         } else {
                             LazyVGrid(columns: columns, spacing: 12) {
                                 ForEach(items) { item in
-                                    NavigationLink(value: item.storeKey) {
-                                        card(item)
-                                    }
-                                    .buttonStyle(.plain)
+                                    // кнопка, а не NavigationLink: у рядку списку NavigationLink малює стрілку й відкриває всі картки разом
+                                    Button { path.append(item.storeKey) } label: { card(item) }
+                                        .buttonStyle(.plain)
                                 }
                             }
                         }
