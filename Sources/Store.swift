@@ -212,28 +212,34 @@ struct StoreView: View, Equatable {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
+            // системний список: верхній відступ над першим блоком дає сама система (як у «Налаштуваннях»)
+            List {
                 let items = shown
-                Group {
-                    if items.isEmpty {
-                        Text("Нічого не знайдено")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
-                    } else {
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(items) { item in
-                                NavigationLink(value: item.storeKey) {
-                                    card(item)
+                Section {
+                    Group {
+                        if items.isEmpty {
+                            Text("Нічого не знайдено")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 40)
+                        } else {
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(items) { item in
+                                    NavigationLink(value: item.storeKey) {
+                                        card(item)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
             }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
             .refreshable { await onRefresh(); await loadStats() }
             .task { await loadStats() }
             .background(Color(.systemGroupedBackground))
